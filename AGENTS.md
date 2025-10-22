@@ -23,6 +23,11 @@ This project uses `pants` as a build tool. For more information, see the [Pants 
 
 - **Modern Python**: We adhere to modern Python conventions, utilizing linters and formatters to maintain code quality and readability.
 - **Type Hinting**: All new Python code should include comprehensive type hints to improve code clarity, maintainability, and enable static analysis.
+- **Dataclasses**: Prefer using dataclasses for data structures to enhance readability and maintainability.
+- **Testable Code**: Always strive to write code that is easily testable, and ensure new features and bug fixes are accompanied by appropriate tests.
+- **Dependency Management**: When introducing new libraries or packages, always verify their established usage within the project (e.g., `requirements.txt`, `pyproject.toml`) or confirm with the user before adding them.
+- **Error Handling**: All new or modified code should include robust error handling mechanisms to ensure application stability and provide clear feedback in case of issues.
+- **Documentation**: For significant code changes or new features, ensure that relevant documentation (e.g., docstrings, inline comments, `README.md` updates) is created or updated to reflect the changes.
 - **Formatting and Linting**: Before committing any changes, always run `pants fmt` and `pants check` to ensure code is clean and conforms to the project style. The pre-commit hooks will also run these checks.
 - **Unit Tests**: Test files should be placed next to the source file they are testing (e.g., `crud.py` and `crud_test.py` in the same directory). We prefer `pytest` style tests. Always write tests for new features and bug fixes.
 - **Integration Tests**: A dedicated `tests/` directory within each component (or at the root for broader integration tests) should be used for integration tests.
