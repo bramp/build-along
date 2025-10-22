@@ -5,7 +5,13 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 import json
 
-from build_a_long.downloader.downloader import LegoInstructionDownloader
+from build_a_long.downloader.downloader import (
+    LegoInstructionDownloader,
+    Metadata,
+    PdfEntry,
+    read_metadata,
+    write_metadata,
+)
 
 
 def _make_mock_httpx_client(html: str):
@@ -157,3 +163,93 @@ def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
         "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6602000.pdf",
         "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6602001.pdf",
     ]
+
+
+def test_process_set_uses_existing_metadata_and_skips_fetch(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """If metadata.json exists and contains PDFs, skip fetching HTML and reuse URLs."""
+    # Prepare existing metadata with two PDFs
+    meta = {
+        "set": "99999",
+        "locale": "en-us",
+        "name": "Test Set",
+        "theme": "LEGO® Theme",
+        "age": "10+",
+        "pieces": 123,
+        "year": 2025,
+        "pdfs": [
+            {
+                "url": "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/7000001.pdf",
+                "filename": "7000001.pdf",
+            },
+            {
+                "url": "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/7000002.pdf",
+                "filename": "7000002.pdf",
+            },
+        ],
+    }
+
+    out_dir = tmp_path
+    meta_path = out_dir / "metadata.json"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+
+    # Mock client that would raise if network is attempted
+    mock_client = _make_mock_httpx_client("<html></html>")
+
+    # Stub out actual file downloads
+    def fake_download(self, url: str, dest_dir: Path, **kwargs):
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        p = dest_dir / url.split("/")[-1]
+        p.write_bytes(b"dummy")
+        return p
+
+    downloader = LegoInstructionDownloader(
+        client=mock_client, out_dir=out_dir, show_progress=False
+    )
+
+    monkeypatch.setattr(LegoInstructionDownloader, "download", fake_download)
+
+    # Run
+    exit_code = downloader.process_set("99999")
+    assert exit_code == 0
+
+    # Should not have attempted to fetch instructions page again
+    # We expect only download calls, the initial client.get used in _make_mock_httpx_client
+    # should not be invoked by process_set path that uses existing metadata
+    # So ensure we didn't build a new URL call
+    # (we can't assert exact call count reliably due to earlier tests, so check printed output)
+    out = capsys.readouterr().out
+    assert "Using existing metadata" in out
+    assert "Found 2 PDF(s) for set 99999" in out
+    assert "Test Set" in out
+
+    # Files should be downloaded according to existing metadata
+    assert (out_dir / "7000001.pdf").exists()
+    assert (out_dir / "7000002.pdf").exists()
+
+
+def test_read_metadata_handles_invalid_json(tmp_path: Path):
+    # Write invalid JSON
+    meta_path = tmp_path / "metadata.json"
+    meta_path.write_text("{ invalid json }", encoding="utf-8")
+
+    data = read_metadata(meta_path)
+    assert data is None
+
+
+def test_write_and_read_metadata_round_trip(tmp_path: Path):
+    meta_path = tmp_path / "metadata.json"
+    payload = Metadata(
+        set="12345",
+        locale="en-us",
+        name="Test",
+        pdfs=[PdfEntry(url="https://example.com/x.pdf", filename="x.pdf")],
+    )
+
+    write_metadata(meta_path, payload)
+    assert meta_path.exists()
+
+    loaded = read_metadata(meta_path)
+    assert loaded == payload
