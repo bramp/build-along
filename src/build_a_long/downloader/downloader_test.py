@@ -1,7 +1,9 @@
 """Tests for downloader.py - LegoInstructionDownloader class (pytest style)."""
+
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+import json
 
 from build_a_long.downloader.downloader import LegoInstructionDownloader
 
@@ -52,8 +54,7 @@ def test_download_skips_if_exists(tmp_path: Path):
     dest = tmp_path / "file.pdf"
     dest.write_bytes(b"already")
 
-    downloader = LegoInstructionDownloader(
-        overwrite=False, show_progress=False)
+    downloader = LegoInstructionDownloader(overwrite=False, show_progress=False)
     out = downloader.download(url, tmp_path)
 
     assert out == dest
@@ -113,16 +114,46 @@ def test_context_manager_creates_and_closes_client():
         mock_instance.close.assert_called_once()
 
 
-def test_process_set_dry_run(capsys):
-    html = '<a href="/cdn/product-assets/product.bi.core.pdf/test.pdf">Download</a>'
+def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
+    # Sample HTML with OG title, age, pieces, year, and two PDFs
+    html = (
+        '<meta property="og:title" content="Starfighter" />'
+        "<div>Ages 9+ · 1,083 pieces · Year: 2024</div>"
+        '<a href="/cdn/product-assets/product.bi.core.pdf/6602000.pdf">PDF 1</a>'
+        '<a href="/cdn/product-assets/product.bi.core.pdf/6602001.pdf">PDF 2</a>'
+    )
+
+    # Mock network
     mock_client = _make_mock_httpx_client(html)
 
-    downloader = LegoInstructionDownloader(
-        dry_run=True, client=mock_client, show_progress=False
-    )
-    exit_code = downloader.process_set("12345")
+    # Stub out actual file downloads
+    def fake_download(self, url: str, dest_dir: Path, **kwargs):
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        p = dest_dir / url.split("/")[-1]
+        p.write_bytes(b"dummy")
+        return p
 
+    downloader = LegoInstructionDownloader(
+        client=mock_client, out_dir=tmp_path, show_progress=False
+    )
+
+    monkeypatch.setattr(LegoInstructionDownloader, "download", fake_download)
+
+    exit_code = downloader.process_set("12345")
     assert exit_code == 0
-    output = capsys.readouterr().out
-    assert "Found 1 PDF(s)" in output
-    assert "Dry run: no files downloaded" in output
+
+    meta_path = tmp_path / "metadata.json"
+    assert meta_path.exists()
+
+    data = json.loads(meta_path.read_text())
+    assert data["set"] == "12345"
+    assert data.get("name") == "Starfighter"
+    assert data.get("age") == "9+"
+    assert data.get("pieces") == 1083
+    assert data.get("year") == 2024
+    # Ensure PDFs preserved order
+    urls = [e["url"] for e in data.get("pdfs", [])]
+    assert urls == [
+        "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6602000.pdf",
+        "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6602001.pdf",
+    ]
