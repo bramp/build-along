@@ -1,0 +1,55 @@
+# Copyright 2020 Pants project contributors.
+# Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+# See https://www.pantsbuild.org/stable/docs/using-pants/using-pants-in-ci for tips on how to set up your CI with Pants.
+
+name: Pants
+
+on: [push, pull_request]
+
+jobs:
+    format:
+        name: Lint and Formatting
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: [3.14]
+        steps:
+            - uses: actions/checkout@v5
+              with:
+                  submodules: true
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: ${{ matrix.python-version }}
+            - uses: pantsbuild/actions/init-pants@v10
+              with:
+                  gha-cache-key: v0-py${{ matrix.python_version }}
+                  named-caches-hash: ${{ hashFiles('python-default.lock') }}
+                  cache-lmdb-store: "true"
+
+            - name: Checking
+              run: |
+                  pants check ::
+
+    test:
+        name: Run Tests
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: [3.14]
+        steps:
+            - uses: actions/checkout@v5
+              with:
+                  submodules: true
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: ${{ matrix.python-version }}
+            - uses: pantsbuild/actions/init-pants@v10
+              with:
+                  gha-cache-key: v0-py${{ matrix.python_version }}
+                  named-caches-hash: ${{ hashFiles('python-default.lock') }}
+                  cache-lmdb-store: "true"
+
+            - name: Testing
+              run: |
+                  pants test ::
