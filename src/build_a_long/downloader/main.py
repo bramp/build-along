@@ -1,86 +1,63 @@
 import argparse
+import sys
 from pathlib import Path
-from typing import List
 
-import httpx
-from bs4 import BeautifulSoup
-
-
-LEGO_BASE = "https://www.lego.com"
+from build_a_long.downloader.downloader import LegoInstructionDownloader
+from build_a_long.downloader.util import is_valid_set_id
 
 
-def find_instruction_pdfs(set_number: str, locale: str = "en-us") -> List[str]:
-    """
-    Scrape the LEGO building instructions page for a set and return all PDF URLs.
+def get_set_numbers_from_args(args: argparse.Namespace) -> list[str]:
+    """Extract and validate LEGO set numbers from command-line arguments.
 
     Args:
-        set_number: The LEGO set number, e.g. "75419".
-        locale: The locale segment used by lego.com, e.g. "en-us".
+        args: Parsed command-line arguments containing either set_number or stdin flag.
 
     Returns:
-        List of absolute PDF URLs.
+        List of validated LEGO set IDs (all numeric strings).
+        Invalid IDs are skipped with a warning to stderr.
     """
-    url = f"{LEGO_BASE}/{locale}/service/building-instructions/{set_number}"
-    with httpx.Client(follow_redirects=True, timeout=30) as client:
-        resp = client.get(url)
-        resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-
-    pdfs: List[str] = []
-    for a in soup.find_all("a", href=True):
-        href = a.get("href")
-        if href and isinstance(href, str) and href.lower().endswith(".pdf"):
-            # some links are relative, but LEGO uses absolute for CDN links; handle both
-            if href.startswith("/"):
-                href = f"{LEGO_BASE}{href}"
-            pdfs.append(href)
-
-    # Deduplicate while preserving order and filter for instruction manuals.
-    # Example instruction manual URL: https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6392465.pdf
-    seen = set()
-    unique_pdfs = []
-    for u in pdfs:
-        if u not in seen and "product.bi.core.pdf" in u:
-            seen.add(u)
-            unique_pdfs.append(u)
-    return unique_pdfs
+    set_numbers = []
+    if args.set_number:
+        candidate = str(args.set_number).strip()
+        if is_valid_set_id(candidate):
+            set_numbers.append(candidate)
+        else:
+            print(
+                f"Warning: Invalid set ID '{candidate}' from argument. Skipping.",
+                file=sys.stderr,
+            )
+    elif args.stdin:
+        for line in sys.stdin:
+            candidate = line.strip()
+            if is_valid_set_id(candidate):
+                set_numbers.append(candidate)
+            else:
+                print(
+                    f"Warning: Invalid set ID '{candidate}' from stdin. Skipping.",
+                    file=sys.stderr,
+                )
+    return [s for s in set_numbers if s]
 
 
-def download(
-    url: str, dest_dir: Path, *, overwrite: bool = False, show_progress: bool = True
-) -> Path:
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    filename = url.split("/")[-1]
-    dest = dest_dir / filename
-    if dest.exists() and not overwrite:
-        print(f"Skip (exists): {dest}")
-        return dest
-    with httpx.stream("GET", url, follow_redirects=True, timeout=None) as r:
-        r.raise_for_status()
-        total = int(r.headers.get("Content-Length", "0"))
-        downloaded = 0
-        last_pct = -1
-        with open(dest, "wb") as f:
-            for chunk in r.iter_raw(chunk_size=64 * 1024):
-                if not chunk:
-                    continue
-                f.write(chunk)
-                if show_progress:
-                    downloaded += len(chunk)
-                    if total > 0:
-                        pct = int(downloaded * 100 / total)
-                        if pct != last_pct:
-                            print(f"  {filename}: {pct}%", end="\r", flush=True)
-                            last_pct = pct
-        if show_progress:
-            # Clear the progress line
-            print(" " * 60, end="\r")
-    return dest
+def _parse_args() -> argparse.Namespace:
+    """Parse command-line arguments for the downloader script.
 
-
-def main():
+    Returns:
+        Parsed arguments with set_number, stdin flag, locale, out_dir, dry_run, and force options.
+    """
     parser = argparse.ArgumentParser(description="Download LEGO instruction manuals.")
-    parser.add_argument("set_number", help="The LEGO set number, e.g. 75419")
+
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument(
+        "set_number",
+        nargs="?",  # Make it optional
+        help="The LEGO set number, e.g. 75419 (for single set download)",
+    )
+    input_group.add_argument(
+        "--stdin",
+        action="store_true",
+        help="Read LEGO set numbers from standard input (one per line)",
+    )
     parser.add_argument(
         "--locale",
         default="en-us",
@@ -101,32 +78,38 @@ def main():
         action="store_true",
         help="Re-download PDFs even if the file already exists",
     )
-    args = parser.parse_args()
 
-    set_number = str(args.set_number).strip()
-    out_dir = Path(args.out_dir) if args.out_dir else Path("data") / set_number
+    return parser.parse_args()
 
-    pdfs = find_instruction_pdfs(set_number, args.locale)
-    if not pdfs:
-        print(f"No PDFs found for set {set_number} (locale={args.locale}).")
-        return 2
 
-    print(f"Found {len(pdfs)} PDF(s) for set {set_number}:")
-    for u in pdfs:
-        print(f" - {u}")
+def main() -> int:
+    """Main entry point for the LEGO instruction downloader.
 
-    if args.dry_run:
-        print("Dry run: no files downloaded.")
-        return 0
+    Parses arguments, validates set numbers, and downloads instruction PDFs
+    for one or more LEGO sets using the LegoInstructionDownloader class.
 
-    print(f"Downloading to: {out_dir}")
-    for u in pdfs:
-        dest = download(u, out_dir, overwrite=args.force, show_progress=True)
-        size = dest.stat().st_size
-        print(f"Downloaded {dest} ({size / 1_000_000:.2f} MB)")
+    Returns:
+        Exit code: 0 for success, 1 if no valid set numbers provided or on error.
+    """
+    args = _parse_args()
+    all_set_numbers = get_set_numbers_from_args(args)
 
-    print("Done.")
-    return 0
+    if not all_set_numbers:
+        print("Error: No LEGO set numbers provided.", file=sys.stderr)
+        return 1
+
+    # Use the class-based downloader with shared state
+    with LegoInstructionDownloader(
+        locale=args.locale,
+        out_dir=Path(args.out_dir) if args.out_dir else None,
+        dry_run=args.dry_run,
+        overwrite=args.force,
+        show_progress=True,
+    ) as downloader:
+        exit_code = downloader.process_sets(all_set_numbers)
+
+    print("All done.")
+    return exit_code
 
 
 if __name__ == "__main__":
