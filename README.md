@@ -73,14 +73,17 @@ Download LEGO building instruction PDFs for a given set number by scraping the o
 Run with Pants (recommended):
 
 ```bash
-# List targets to confirm the binary exists
-pants list src/build_a_long/downloader:
-
 # Dry run: only list PDFs for set 75419
-pants run src/build_a_long/downloader:downloader -- 75419 --dry-run
+pants run src/build_a_long/downloader:main -- 75419 --dry-run
 
 # Download PDFs to data/75419
-pants run src/build_a_long/downloader:downloader -- 75419
+pants run src/build_a_long/downloader:main -- 75419
+
+# Pipe a list of set numbers into the downloader
+echo -e "75419\n75159\n" | pants run src/build_a_long/downloader:main -- --stdin
+
+# Or from a file
+pants run src/build_a_long/downloader:main -- --stdin < sets.txt
 ```
 
 Options:
