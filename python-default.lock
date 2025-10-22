@@ -9,6 +9,7 @@
 //     "CPython==3.14.*"
 //   ],
 //   "generated_with_requirements": [
+//     "PyMuPDF",
 //     "beautifulsoup4",
 //     "httpx"
 //   ],
@@ -201,6 +202,44 @@
           "artifacts": [
             {
               "algorithm": "sha256",
+              "hash": "e24e7a7d696bd398543cc5c147869edb2026d5d5a21b7f8e35db2f20170b389e",
+              "url": "https://files.pythonhosted.org/packages/28/90/87b7fdfc9cd6991a3eb69a5752f6343374c34f258c511c242f4d60791eea/pymupdf-1.26.5-cp39-abi3-musllinux_1_2_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "caad0ffeb63dcc4a29ca40f3c68d7b78d32a932e834b0056b529cc0bdbaaffc9",
+              "url": "https://files.pythonhosted.org/packages/5b/5a/1292a0df4ff71fbc00dfa8c08759d17c97e1e8ea9277eb5bc5f079ca188d/pymupdf-1.26.5-cp39-abi3-manylinux_2_28_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "8ef335e07f648492df240f2247854d0e7c0467afb9c4dc2376ec30978ec158c3",
+              "url": "https://files.pythonhosted.org/packages/8d/9a/e0a4e92a85fc17be7c54afdbb113f0ade2a8bca49856d510e28bd249e462/pymupdf-1.26.5.tar.gz"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "d58599479bc471d3ae56c3d68d9160d0b7de8a3bd40221ddc3a4eaae2d281b86",
+              "url": "https://files.pythonhosted.org/packages/c1/e2/e87e62284ba98d59f1fd4fc7542ef2ed0002525754a485fa4077b3bbddae/pymupdf-1.26.5-cp39-abi3-macosx_11_0_arm64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "2bfb58f07ad631e5f71ad0bd6f1ff52700f7ba7ebb4973130e81e75b721beae1",
+              "url": "https://files.pythonhosted.org/packages/dd/3f/7fc927fd66922ce838d4c974ff9a685c5f5aba108a5d94914dc05c9371f5/pymupdf-1.26.5-cp39-abi3-macosx_10_9_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "7dfea81fdd73437a6a6ce83e1fcf556faee9327a6540571e58bf04fa362bb0cd",
+              "url": "https://files.pythonhosted.org/packages/df/c2/af93c6367f79e9b5435f803bde51c1dc8225f054f8238162dda80b44986d/pymupdf-1.26.5-cp39-abi3-manylinux_2_28_aarch64.whl"
+            }
+          ],
+          "project_name": "pymupdf",
+          "requires_dists": [],
+          "requires_python": ">=3.9",
+          "version": "1.26.5"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
               "hash": "2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2",
               "url": "https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl"
             },
@@ -263,6 +302,7 @@
   "pip_version": "24.2",
   "prefer_older_binary": false,
   "requirements": [
+    "PyMuPDF",
     "beautifulsoup4",
     "httpx"
   ],
