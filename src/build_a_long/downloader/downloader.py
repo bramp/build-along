@@ -7,8 +7,76 @@ from build_a_long.downloader.legocom import (
     LEGO_BASE,
     build_instructions_url,
     build_metadata,
+    Metadata,
+    PdfEntry,
     parse_instruction_pdf_urls,
 )
+
+
+def read_metadata(path: Path) -> Optional[Metadata]:
+    """Read a metadata.json file from disk.
+
+    Args:
+        path: Path to the metadata.json file.
+
+    Returns:
+        The parsed Metadata object if successful; otherwise None.
+    """
+    import json
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if not isinstance(raw, dict):
+            print(f"Warning: Metadata at {path} is not a JSON object; ignoring")
+            return None
+
+        # Build PdfEntry list
+        pdf_entries: List[PdfEntry] = []
+        for item in raw.get("pdfs", []) or []:
+            if isinstance(item, dict) and item.get("url") and item.get("filename"):
+                pdf_entries.append(PdfEntry(url=item["url"], filename=item["filename"]))
+
+        meta = Metadata(
+            set=str(raw.get("set", "")),
+            locale=str(raw.get("locale", "en-us")),
+            name=raw.get("name"),
+            theme=raw.get("theme"),
+            age=raw.get("age"),
+            pieces=raw.get("pieces"),
+            year=raw.get("year"),
+            pdfs=pdf_entries,
+        )
+        return meta
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"Warning: Could not read existing metadata ({e}); ignoring")
+    return None
+
+
+def write_metadata(path: Path, data: Metadata) -> None:
+    """Write metadata to disk atomically as UTF-8 JSON.
+
+    This creates parent directories if they do not exist and writes with
+    pretty formatting. In case of failure, it emits a warning and does
+    not raise to keep downloads non-fatal.
+
+    Args:
+        path: Destination path for metadata.json
+        data: The Metadata object to write
+    """
+    import json
+    from dataclasses import asdict
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(asdict(data), f, indent=2, ensure_ascii=False)
+        tmp.replace(path)
+        print(f"Wrote metadata: {path}")
+    except Exception as e:  # pragma: no cover - non-fatal write error
+        print(f"Warning: Failed to write metadata.json: {e}")
+
 
 # TODO Rename to Downloader
 
@@ -167,33 +235,39 @@ class LegoInstructionDownloader:
             Exit code: 0 for success, non-zero for errors.
         """
         out_dir = self.out_dir if self.out_dir else Path("data") / set_number
+        meta_path = out_dir / "metadata.json"
 
-        # Fetch page once and build metadata (includes ordered PDFs).
-        html = self.fetch_instructions_page(set_number)
-        meta_dc = build_metadata(html, set_number, self.locale, base=LEGO_BASE)
-        pdfs = [p.url for p in meta_dc.pdfs]
+        # Try to load existing metadata first (if allowed)
+        existing_meta: Optional[Metadata] = None
+        if meta_path.exists() and not self.overwrite:
+            existing_meta = read_metadata(meta_path)
+
+        if existing_meta and existing_meta.pdfs:
+            # Use existing metadata to avoid re-fetching the index page
+            print(f"Using existing metadata from {meta_path}")
+            pdfs = [p.url for p in existing_meta.pdfs]
+            meta_dc = None  # We'll skip writing metadata later
+            # Print metadata info from existing metadata
+            self._print_metadata_info(set_number, existing_meta, len(pdfs))
+        else:
+            # Build fresh metadata (includes ordered PDFs)
+            meta_dc = self._build_metadata_for_set(set_number)
+            pdfs = [p.url for p in meta_dc.pdfs]
+
         if not pdfs:
             print(f"No PDFs found for set {set_number} (locale={self.locale}).")
             return 0
 
-        print(f"Found {len(pdfs)} PDF(s) for set {set_number}:")
+        # Print metadata info if we fetched fresh metadata
+        if meta_dc is not None:
+            self._print_metadata_info(set_number, meta_dc, len(pdfs))
+
         for u in pdfs:
             print(f" - {u}")
 
-        # Ensure out_dir exists before writing metadata
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        # Write metadata.json alongside downloaded PDFs
-        meta_path = out_dir / "metadata.json"
-        try:
-            import json
-            from dataclasses import asdict
-
-            with open(meta_path, "w", encoding="utf-8") as f:
-                json.dump(asdict(meta_dc), f, indent=2, ensure_ascii=False)
-            print(f"Wrote metadata: {meta_path}")
-        except Exception as e:  # pragma: no cover - non-fatal write error
-            print(f"Warning: Failed to write metadata.json: {e}")
+        # Write metadata.json alongside downloaded PDFs (only if we fetched it)
+        if meta_dc is not None:
+            write_metadata(meta_path, meta_dc)
 
         print(f"Downloading to: {out_dir}")
         for u in pdfs:
@@ -202,6 +276,36 @@ class LegoInstructionDownloader:
             print(f"Downloaded {dest} ({size / 1_000_000:.2f} MB)")
 
         return 0
+
+    def _build_metadata_for_set(self, set_number: str):
+        """Fetch the instructions page and build metadata dataclass for a set."""
+        html = self.fetch_instructions_page(set_number)
+        return build_metadata(html, set_number, self.locale, base=LEGO_BASE)
+
+    def _print_metadata_info(
+        self, set_number: str, metadata: Metadata, pdf_count: int
+    ) -> None:
+        """Print metadata information on a single line.
+
+        Args:
+            set_number: The LEGO set number.
+            metadata: Metadata object.
+            pdf_count: Number of PDFs found.
+        """
+        parts = [f"Found {pdf_count} PDF(s) for set {set_number}"]
+
+        if metadata.name:
+            parts.append(f"{metadata.name}")
+        if metadata.theme:
+            parts.append(f"({metadata.theme})")
+        if metadata.pieces is not None:
+            parts.append(f"{metadata.pieces} pieces")
+        if metadata.age:
+            parts.append(f"ages {metadata.age}")
+        if metadata.year is not None:
+            parts.append(f"released {metadata.year}")
+
+        print(" - ".join(parts) + ":")
 
     def process_sets(self, set_numbers: List[str]) -> int:
         """Process multiple LEGO sets.
