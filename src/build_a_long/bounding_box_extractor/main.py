@@ -1,11 +1,20 @@
 import argparse
 import json
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Dict, List
 
 from PIL import Image, ImageDraw  # type: ignore
 
 from build_a_long.bounding_box_extractor.bbox import BBox
+from build_a_long.bounding_box_extractor.hierarchy import (
+    build_hierarchy_from_elements,
+)
+from build_a_long.bounding_box_extractor.page_elements import (
+    StepNumber,
+    Drawing,
+    Unknown,
+)
 
 # Require PyMuPDF at import time. This purposefully fails fast if missing.
 import fitz  # type: ignore  # PyMuPDF
@@ -43,10 +52,10 @@ def draw_and_save_bboxes(
     draw = ImageDraw.Draw(img)
 
     for element in page_data["elements"]:
-        bbox_coords = element["bbox"]
-        # Convert bbox to (x0, y0, x1, y1) tuple for Pillow
-        bbox_tuple = (bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3])
-        color = "red" if element["type"] == "instruction_number" else "blue"
+        # Elements are typed PageElements now
+        bbox = element.bbox
+        bbox_tuple = (bbox.x0, bbox.y0, bbox.x1, bbox.y1)
+        color = "red" if isinstance(element, StepNumber) else "blue"
         draw.rectangle(bbox_tuple, outline=color, width=2)
 
     output_path = output_dir / f"page_{page_num:03d}.png"
@@ -78,6 +87,7 @@ def extract_bounding_boxes(pdf_path: str, output_dir: Path | None) -> Dict[str, 
             print(f"  Processing page {page_num}/{num_pages}")
 
             page_data: Dict[str, Any] = {"page_number": page_num, "elements": []}
+            typed_elements = []  # In-memory typed elements for this page
 
             # Use rawdict to get both text and image blocks with bboxes
             raw = page.get_text("rawdict")
@@ -109,26 +119,32 @@ def extract_bounding_boxes(pdf_path: str, output_dir: Path | None) -> Dict[str, 
                                 text_fragments.append(t)
                     text = "".join(text_fragments)
                     label = _classify_text(text)
-                    page_data["elements"].append(
-                        {
-                            "type": label,
-                            "bbox": [nbbox.x0, nbbox.y0, nbbox.x1, nbbox.y1],
-                            "content": text,
-                            "id": f"text_{bi}",
-                        }
-                    )
+                    # Build typed element directly
+                    if label == "instruction_number" and text.strip().isdigit():
+                        typed_elements.append(
+                            StepNumber(bbox=nbbox, value=int(text.strip()))
+                        )
+                    else:
+                        typed_elements.append(
+                            Unknown(
+                                bbox=nbbox,
+                                label="parts_list" if label == "parts_list" else None,
+                                raw_type=label,
+                                content=text,
+                                source_id=f"text_{bi}",
+                            )
+                        )
                 elif btype == 1:
-                    # Image block
-                    page_data["elements"].append(
-                        {
-                            "type": "image",
-                            "bbox": [nbbox.x0, nbbox.y0, nbbox.x1, nbbox.y1],
-                            "id": f"image_{bi}",
-                        }
-                    )
+                    # Image block -> build typed element directly
+                    typed_elements.append(Drawing(bbox=nbbox, image_id=f"image_{bi}"))
                 else:
                     # Other block types (e.g., drawings) - skip for now, could be used for build steps later.
                     pass
+
+            # Build containment hierarchy from typed elements and store typed structures
+            roots = build_hierarchy_from_elements(typed_elements)
+            page_data["elements"] = typed_elements  # typed Element list
+            page_data["hierarchy"] = roots  # tuple[ElementNode, ...]
 
             # Placeholder for build step identification (future work)
             extracted_data["pages"].append(page_data)
@@ -146,11 +162,40 @@ def extract_bounding_boxes(pdf_path: str, output_dir: Path | None) -> Dict[str, 
         except Exception:
             pass
 
-    # Write JSON output
-    output_filename = pdf_path.replace(".pdf", ".json")
-    with open(output_filename, "w") as f:
-        json.dump(extracted_data, f, indent=4)
-    print(f"Extracted data saved to {output_filename}")
+    # JSON serialization: auto-serialize dataclasses using dataclasses.asdict()
+    def _element_to_json(ele: Any) -> Dict[str, Any]:
+        """Convert a PageElement to a JSON-friendly dict using asdict()."""
+        data = asdict(ele)
+        # Add a type discriminator for deserialization if needed later
+        data["__type__"] = ele.__class__.__name__
+        return data
+
+    def _node_to_json(node: Any) -> Dict[str, Any]:
+        """Convert an ElementNode to JSON recursively."""
+        return {
+            "element": _element_to_json(node.element),
+            "children": [_node_to_json(c) for c in node.children],
+        }
+
+    json_data: Dict[str, Any] = {"pages": []}
+    for page in extracted_data["pages"]:
+        json_page: Dict[str, Any] = {"page_number": page["page_number"]}
+        json_page["elements"] = [_element_to_json(e) for e in page["elements"]]
+        if "hierarchy" in page:
+            json_page["hierarchy"] = [_node_to_json(n) for n in page["hierarchy"]]
+        json_data["pages"].append(json_page)
+
+    output_json_path = (
+        Path(pdf_path).with_suffix(".json")
+        if output_dir is None
+        else output_dir / (Path(pdf_path).stem + ".json")
+    )
+    try:
+        with open(output_json_path, "w") as f:
+            json.dump(json_data, f, indent=4)
+        print(f"Extracted data saved to {output_json_path}")
+    except Exception as e:
+        print(f"Warning: failed to write JSON output to {output_json_path}: {e}")
     return extracted_data
 
 
