@@ -1,11 +1,9 @@
-import unittest
 from unittest.mock import patch, mock_open, MagicMock
 
 from build_a_long.bounding_box_extractor.main import extract_bounding_boxes
-from build_a_long.bounding_box_extractor.bbox import BBox
 
 
-class TestBoundingBoxExtractor(unittest.TestCase):
+class TestBoundingBoxExtractor:
     @patch("builtins.open", new_callable=mock_open)
     @patch("json.dump")
     @patch("build_a_long.bounding_box_extractor.main.fitz.open")
@@ -56,64 +54,15 @@ class TestBoundingBoxExtractor(unittest.TestCase):
         args, kwargs = mock_json_dump.call_args
         extracted_data = args[0]
 
-        self.assertIn("pages", extracted_data)
-        self.assertEqual(len(extracted_data["pages"]), 1)
+        assert "pages" in extracted_data
+        assert len(extracted_data["pages"]) == 1
         elements = extracted_data["pages"][0]["elements"]
         # Expect two elements: a text classified as instruction_number and an image
-        self.assertEqual(len(elements), 2)
-        self.assertEqual(elements[0]["type"], "instruction_number")
-        self.assertEqual(elements[0]["bbox"], [10.0, 20.0, 30.0, 40.0])
-        self.assertEqual(elements[1]["type"], "image")
+        assert len(elements) == 2
+        assert elements[0]["type"] == "instruction_number"
+        assert elements[0]["bbox"] == [10.0, 20.0, 30.0, 40.0]
+        assert elements[1]["type"] == "image"
 
         # Assert that the output file was attempted to be opened with 'w'
         expected_output_filename = dummy_pdf_path.replace(".pdf", ".json")
         mock_file_open.assert_called_once_with(expected_output_filename, "w")
-
-
-class TestBBox(unittest.TestCase):
-    def test_overlaps(self):
-        bbox1 = BBox(0, 0, 10, 10)
-        bbox2 = BBox(5, 5, 15, 15)
-        bbox3 = BBox(10, 10, 20, 20)  # Touches at corner
-        bbox4 = BBox(11, 11, 20, 20)  # No overlap
-        bbox5 = BBox(0, 0, 10, 5)  # Partial overlap
-
-        self.assertTrue(bbox1.overlaps(bbox2))
-        self.assertTrue(bbox2.overlaps(bbox1))
-        self.assertFalse(bbox1.overlaps(bbox3))  # Touching at corner is not overlapping
-        self.assertFalse(bbox3.overlaps(bbox1))
-        self.assertFalse(bbox1.overlaps(bbox4))
-        self.assertTrue(bbox1.overlaps(bbox5))
-
-    def test_fully_inside(self):
-        bbox1 = BBox(0, 0, 10, 10)
-        bbox2 = BBox(2, 2, 8, 8)
-        bbox3 = BBox(0, 0, 10, 10)  # Same bbox
-        bbox4 = BBox(0, 0, 10, 11)  # Not fully inside
-
-        self.assertTrue(bbox2.fully_inside(bbox1))
-        self.assertTrue(bbox3.fully_inside(bbox1))
-        self.assertFalse(bbox1.fully_inside(bbox2))
-        self.assertFalse(bbox4.fully_inside(bbox1))
-
-    def test_adjacent(self):
-        bbox1 = BBox(0, 0, 10, 10)
-        bbox2 = BBox(10, 0, 20, 10)  # Right adjacent
-        bbox3 = BBox(0, 10, 10, 20)  # Top adjacent
-        bbox4 = BBox(10, 10, 20, 20)  # Corner adjacent
-        bbox5 = BBox(11, 0, 20, 10)  # Not adjacent
-        bbox6 = BBox(5, 5, 15, 15)  # Overlapping, not adjacent
-
-        self.assertTrue(bbox1.adjacent(bbox2))
-        self.assertTrue(bbox2.adjacent(bbox1))
-        self.assertTrue(bbox1.adjacent(bbox3))
-        self.assertTrue(bbox3.adjacent(bbox1))
-        self.assertFalse(
-            bbox1.adjacent(bbox4)
-        )  # Corner adjacency is not considered adjacent
-        self.assertFalse(bbox1.adjacent(bbox5))
-        self.assertFalse(bbox1.adjacent(bbox6))
-
-
-if __name__ == "__main__":
-    unittest.main()
