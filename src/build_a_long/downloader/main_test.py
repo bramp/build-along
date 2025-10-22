@@ -66,7 +66,6 @@ def test_main_single_set_number_from_arg(mock_downloader_class, monkeypatch, cap
     mock_downloader_class.assert_called_once()
     call_kwargs = mock_downloader_class.call_args[1]
     assert call_kwargs["locale"] == "en-us"
-    assert call_kwargs["dry_run"] is False
     assert call_kwargs["overwrite"] is False
 
     # Verify process_sets was called with the set number
@@ -110,19 +109,48 @@ def test_main_custom_locale_and_force(mock_downloader_class, monkeypatch):
 
 
 @patch("build_a_long.downloader.main.LegoInstructionDownloader")
-def test_main_dry_run(mock_downloader_class, monkeypatch):
+@patch("build_a_long.downloader.main.build_metadata")
+def test_main_metadata_mode(
+    mock_build_metadata, mock_downloader_class, monkeypatch, capsys
+):
+    """Test --metadata flag outputs JSON without downloading."""
+    from build_a_long.downloader.legocom import Metadata, PdfEntry
+
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
-    mock_instance.process_sets.return_value = 0
+    mock_instance.fetch_instructions_page.return_value = "<html></html>"
     mock_downloader_class.return_value = mock_instance
 
-    monkeypatch.setattr(sys, "argv", ["main.py", "--dry-run", "12345"])
+    # Mock metadata return
+    mock_meta = Metadata(
+        set="12345",
+        locale="en-us",
+        name="Test Set",
+        theme="LEGO® Theme",
+        age="9+",
+        pieces=100,
+        year=2024,
+        pdfs=[PdfEntry(url="https://example.com/test.pdf", filename="test.pdf")],
+    )
+    mock_build_metadata.return_value = mock_meta
+
+    monkeypatch.setattr(sys, "argv", ["main.py", "12345", "--metadata"])
     exit_code = main()
 
     assert exit_code == 0
-    call_kwargs = mock_downloader_class.call_args[1]
-    assert call_kwargs["dry_run"] is True
+    # Should not call process_sets (download path)
+    mock_instance.process_sets.assert_not_called()
+    # Should fetch page and build metadata
+    mock_instance.fetch_instructions_page.assert_called_once_with("12345")
+    mock_build_metadata.assert_called_once()
+
+    # Check JSON output
+    output = capsys.readouterr().out
+    assert '"set": "12345"' in output
+    assert '"name": "Test Set"' in output
+    assert '"theme": "LEGO® Theme"' in output
+    assert '"age": "9+"' in output
 
 
 @patch("build_a_long.downloader.main.LegoInstructionDownloader")

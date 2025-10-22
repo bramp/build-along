@@ -73,8 +73,8 @@ Download LEGO building instruction PDFs for a given set number by scraping the o
 Run with Pants (recommended):
 
 ```bash
-# Dry run: only list PDFs for set 75419
-pants run src/build_a_long/downloader:main -- 75419 --dry-run
+# Fetch metadata only (no downloads) for set 75419
+pants run src/build_a_long/downloader:main -- 75419 --metadata
 
 # Download PDFs to data/75419
 pants run src/build_a_long/downloader:main -- 75419
@@ -82,15 +82,15 @@ pants run src/build_a_long/downloader:main -- 75419
 # Pipe a list of set numbers into the downloader
 echo -e "75419\n75159\n" | pants run src/build_a_long/downloader:main -- --stdin
 
-# Or from a file
-pants run src/build_a_long/downloader:main -- --stdin < sets.txt
+# Fetch metadata for multiple sets from stdin
+cat sets.txt | pants run src/build_a_long/downloader:main -- --stdin --metadata
 ```
 
 Options:
 
 - `--locale` (default `en-us`): Locale segment used by lego.com.
 - `--out-dir`: Output directory (defaults to `data/<set>`).
-- `--dry-run`: Only list found PDFs without downloading.
+- `--metadata`: Only fetch and print metadata as JSON (no downloads).
 - `--force`: Re-download PDFs even if the file already exists.
 
 Notes:
@@ -98,6 +98,54 @@ Notes:
 - Large PDFs may take time to download; files are saved under the `data/` folder (ignored by git).
 - Sources are scraped from pages like `https://www.lego.com/en-us/service/building-instructions/<set>`.
 - Existing files are skipped by default; use `--force` to overwrite. A simple progress indicator is shown per file.
+- Metadata includes: set number, title, age, pieces, year, and ordered list of instruction PDF URLs.
+
+### Bounding Box Extractor CLI
+
+Analyze a LEGO instruction PDF and emit a JSON file with page elements and bounding boxes.
+
+Run with Pants:
+
+```bash
+pants list src/build_a_long/bounding_box_extractor:
+pants run src/build_a_long/bounding_box_extractor:main -- path/to/manual.pdf
+```
+
+Notes:
+
+- Requires `PyMuPDF` (imported as `fitz`). The tool fails fast at import if it's not installed.
+- Output is written alongside the PDF, replacing `.pdf` with `.json`.
+- JSON schema (simplified):
+  
+    ```json
+    {
+        "pages": [
+            {
+                "page_number": 1,
+                "elements": [
+                    {"type": "instruction_number", "bbox": [x0, y0, x1, y1], "content": "1", "id": "text_0"},
+                    {"type": "image", "bbox": [x0, y0, x1, y1], "id": "image_1"}
+                ]
+            }
+        ]
+    }
+        ```
+
+### Running Tests
+
+Run all tests with Pants:
+
+```bash
+pants test ::
+```
+
+If running without Pants, you'll need the project on `PYTHONPATH` and dependencies installed, e.g.:
+
+```bash
+export PYTHONPATH=$PWD/src
+pip install -r 3rdparty/requirements.txt
+python -m unittest
+```
 
 ## Contributing
 

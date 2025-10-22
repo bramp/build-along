@@ -1,8 +1,10 @@
 import argparse
+import json
 import sys
 from pathlib import Path
 
 from build_a_long.downloader.downloader import LegoInstructionDownloader
+from build_a_long.downloader.legocom import LEGO_BASE, build_metadata
 from build_a_long.downloader.util import is_valid_set_id
 
 
@@ -69,9 +71,9 @@ def _parse_args() -> argparse.Namespace:
         help="Directory to store PDFs. Defaults to data/<set_number>",
     )
     parser.add_argument(
-        "--dry-run",
+        "--metadata",
         action="store_true",
-        help="Only list found PDFs without downloading",
+        help="Only fetch and print metadata as JSON (no downloads)",
     )
     parser.add_argument(
         "--force",
@@ -98,11 +100,28 @@ def main() -> int:
         print("Error: No LEGO set numbers provided.", file=sys.stderr)
         return 1
 
-    # Use the class-based downloader with shared state
+    # Metadata mode: fetch and print JSON without downloading
+    if args.metadata:
+        with LegoInstructionDownloader(locale=args.locale) as downloader:
+            for set_number in all_set_numbers:
+                try:
+                    html = downloader.fetch_instructions_page(set_number)
+                    meta = build_metadata(html, set_number, args.locale, base=LEGO_BASE)
+                    from dataclasses import asdict
+
+                    print(json.dumps(asdict(meta), indent=2, ensure_ascii=False))
+                except Exception as e:
+                    print(
+                        f"Error fetching metadata for set {set_number}: {e}",
+                        file=sys.stderr,
+                    )
+                    return 1
+        return 0
+
+    # Download mode: use the class-based downloader with shared state
     with LegoInstructionDownloader(
         locale=args.locale,
         out_dir=Path(args.out_dir) if args.out_dir else None,
-        dry_run=args.dry_run,
         overwrite=args.force,
         show_progress=True,
     ) as downloader:

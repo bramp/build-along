@@ -3,9 +3,10 @@ from typing import Any, Callable, ContextManager, Iterable, List, Optional
 
 import httpx
 
-from build_a_long.downloader.util import (
+from build_a_long.downloader.legocom import (
     LEGO_BASE,
     build_instructions_url,
+    build_metadata,
     parse_instruction_pdf_urls,
 )
 
@@ -23,7 +24,6 @@ class LegoInstructionDownloader:
         self,
         locale: str = "en-us",
         out_dir: Optional[Path] = None,
-        dry_run: bool = False,
         overwrite: bool = False,
         show_progress: bool = True,
         client: Optional[httpx.Client] = None,
@@ -33,14 +33,12 @@ class LegoInstructionDownloader:
         Args:
             locale: LEGO locale to use (e.g., "en-us", "en-gb").
             out_dir: Base output directory for downloads.
-            dry_run: If True, only list PDFs without downloading.
             overwrite: If True, re-download existing files.
             show_progress: If True, show download progress.
             client: Optional httpx.Client to use (if None, creates one internally).
         """
         self.locale = locale
         self.out_dir = out_dir
-        self.dry_run = dry_run
         self.overwrite = overwrite
         self.show_progress = show_progress
         self._client = client
@@ -92,6 +90,11 @@ class LegoInstructionDownloader:
         url = build_instructions_url(set_number, self.locale)
         html = self.fetch_url_text(url)
         return parse_instruction_pdf_urls(html, base=LEGO_BASE)
+
+    def fetch_instructions_page(self, set_number: str) -> str:
+        """Fetch the HTML for the instructions page of a set."""
+        url = build_instructions_url(set_number, self.locale)
+        return self.fetch_url_text(url)
 
     def download(
         self,
@@ -165,7 +168,10 @@ class LegoInstructionDownloader:
         """
         out_dir = self.out_dir if self.out_dir else Path("data") / set_number
 
-        pdfs = self.find_instruction_pdfs(set_number)
+        # Fetch page once and build metadata (includes ordered PDFs).
+        html = self.fetch_instructions_page(set_number)
+        meta_dc = build_metadata(html, set_number, self.locale, base=LEGO_BASE)
+        pdfs = [p.url for p in meta_dc.pdfs]
         if not pdfs:
             print(f"No PDFs found for set {set_number} (locale={self.locale}).")
             return 0
@@ -174,9 +180,20 @@ class LegoInstructionDownloader:
         for u in pdfs:
             print(f" - {u}")
 
-        if self.dry_run:
-            print("Dry run: no files downloaded.")
-            return 0
+        # Ensure out_dir exists before writing metadata
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        # Write metadata.json alongside downloaded PDFs
+        meta_path = out_dir / "metadata.json"
+        try:
+            import json
+            from dataclasses import asdict
+
+            with open(meta_path, "w", encoding="utf-8") as f:
+                json.dump(asdict(meta_dc), f, indent=2, ensure_ascii=False)
+            print(f"Wrote metadata: {meta_path}")
+        except Exception as e:  # pragma: no cover - non-fatal write error
+            print(f"Warning: Failed to write metadata.json: {e}")
 
         print(f"Downloading to: {out_dir}")
         for u in pdfs:
