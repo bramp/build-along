@@ -71,6 +71,11 @@ def test_extract_name_from_json():
     assert _extract_name_from_json(html) == "Millennium Falcon™ Mini-Build"
 
 
+def test_extract_name_from_json_with_unicode_escapes():
+    html = r'"name":"Rock \u0026 Roll Band","setNumber":"12345"'
+    assert _extract_name_from_json(html) == "Rock & Roll Band"
+
+
 def test_extract_name_from_json_not_found():
     html = "<div>No JSON here</div>"
     assert _extract_name_from_json(html) is None
@@ -103,6 +108,11 @@ def test_extract_name_from_html_not_found():
 def test_extract_theme_from_json():
     html = '"themeName":"LEGO® Star Wars™"'
     assert _extract_theme_from_json(html) == "LEGO® Star Wars™"
+
+
+def test_extract_theme_from_json_with_unicode_escapes():
+    html = r'"themeName":"LEGO® Friends \u0026 Family"'
+    assert _extract_theme_from_json(html) == "LEGO® Friends & Family"
 
 
 def test_extract_theme_from_json_not_found():
