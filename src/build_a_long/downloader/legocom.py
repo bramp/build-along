@@ -50,13 +50,29 @@ def _clean_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _decode_json_string(text: str) -> str:
+    """Decode Unicode escape sequences from JSON strings.
+
+    Converts sequences like \\u0026 to their actual characters (&).
+    This is needed because we extract JSON values via regex rather than
+    parsing the full JSON, so escape sequences aren't automatically decoded.
+    """
+
+    # Replace \uXXXX escape sequences with their corresponding Unicode characters
+    def replace_unicode_escape(match):
+        code = int(match.group(1), 16)
+        return chr(code)
+
+    return re.sub(r"\\u([0-9a-fA-F]{4})", replace_unicode_escape, text)
+
+
 def _extract_name_from_json(html: str) -> Optional[str]:
     """Extract set name from JSON data in HTML.
 
     Looks for: "name":"Millennium Falcon™ Mini-Build","setNumber":"..."
     """
     match = re.search(r'"name"\s*:\s*"([^"]+)"\s*,\s*"setNumber"', html)
-    return match.group(1) if match else None
+    return _decode_json_string(match.group(1)) if match else None
 
 
 def _extract_name_from_html(soup: BeautifulSoup) -> Optional[str]:
@@ -85,7 +101,7 @@ def _extract_theme_from_json(html: str) -> Optional[str]:
     Looks for: "themeName":"LEGO® Star Wars™"
     """
     match = re.search(r'"themeName"\s*:\s*"([^"]+)"', html)
-    return match.group(1) if match else None
+    return _decode_json_string(match.group(1)) if match else None
 
 
 def _extract_age_from_json(html: str) -> Optional[str]:
