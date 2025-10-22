@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
+from PIL import Image, ImageDraw  # type: ignore
+
 from build_a_long.bounding_box_extractor.bbox import BBox
 
 # Require PyMuPDF at import time. This purposefully fails fast if missing.
@@ -25,8 +27,35 @@ def _classify_text(text: str) -> str:
     return "text"
 
 
+def draw_and_save_bboxes(
+    page: fitz.Page,
+    page_data: Dict[str, Any],
+    output_dir: Path,
+    page_num: int,
+    image_dpi: int = 150,
+):
+    """
+    Draws bounding boxes on the PDF page image and saves the image to disk.
+    """
+    # Render page to an image
+    pix = page.get_pixmap(colorspace=fitz.csRGB, dpi=image_dpi)
+    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    draw = ImageDraw.Draw(img)
+
+    for element in page_data["elements"]:
+        bbox_coords = element["bbox"]
+        # Convert bbox to (x0, y0, x1, y1) tuple for Pillow
+        bbox_tuple = (bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3])
+        color = "red" if element["type"] == "instruction_number" else "blue"
+        draw.rectangle(bbox_tuple, outline=color, width=2)
+
+    output_path = output_dir / f"page_{page_num:03d}.png"
+    img.save(output_path)
+    print(f"  Saved image with bboxes to {output_path}")
+
+
 # TODO pdf_path should be Path-like
-def extract_bounding_boxes(pdf_path: str) -> Dict[str, Any]:
+def extract_bounding_boxes(pdf_path: str, output_dir: Path | None) -> Dict[str, Any]:
     """
     Extract bounding boxes for instruction numbers, parts lists, and build steps
     from a given PDF file using PyMuPDF when available.
@@ -36,6 +65,8 @@ def extract_bounding_boxes(pdf_path: str) -> Dict[str, Any]:
     print(f"Processing PDF: {pdf_path}")
     extracted_data: Dict[str, Any] = {"pages": []}
 
+    if output_dir:
+        output_dir.mkdir(parents=True, exist_ok=True)
     doc = None
     try:
         doc = fitz.open(pdf_path)
@@ -102,6 +133,10 @@ def extract_bounding_boxes(pdf_path: str) -> Dict[str, Any]:
             # Placeholder for build step identification (future work)
             extracted_data["pages"].append(page_data)
 
+            # Draw and save bounding boxes if output_dir is provided
+            if output_dir:
+                draw_and_save_bboxes(page, page_data, output_dir, page_num)
+
     except Exception as e:
         print(f"An error occurred while processing '{pdf_path}': {e}")
     finally:
@@ -124,6 +159,11 @@ def main() -> int:
         description="Extract bounding boxes from a PDF file."
     )
     parser.add_argument("pdf_path", help="The path to the PDF file.")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help="Directory to save images with drawn bounding boxes.",
+    )
     args = parser.parse_args()
 
     pdf_path = Path(args.pdf_path)
@@ -131,7 +171,10 @@ def main() -> int:
         print(f"File not found: {pdf_path}")
         return 2
 
-    extract_bounding_boxes(str(pdf_path))
+    if args.output_dir:
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+
+    extract_bounding_boxes(str(pdf_path), args.output_dir)
     return 0
 
 

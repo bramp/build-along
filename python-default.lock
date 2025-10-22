@@ -9,6 +9,7 @@
 //     "CPython==3.14.*"
 //   ],
 //   "generated_with_requirements": [
+//     "Pillow",
 //     "PyMuPDF",
 //     "beautifulsoup4",
 //     "httpx"
@@ -202,6 +203,126 @@
           "artifacts": [
             {
               "algorithm": "sha256",
+              "hash": "afbefa430092f71a9593a99ab6a4e7538bc9eabbf7bf94f91510d3503943edc4",
+              "url": "https://files.pythonhosted.org/packages/30/4b/667dfcf3d61fc309ba5a15b141845cece5915e39b99c1ceab0f34bf1d124/pillow-12.0.0-cp314-cp314t-musllinux_1_2_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "c98fa880d695de164b4135a52fd2e9cd7b7c90a9d8ac5e9e443a24a95ef9248e",
+              "url": "https://files.pythonhosted.org/packages/3a/be/ee90a3d79271227e0f0a33c453531efd6ed14b2e708596ba5dd9be948da3/pillow-12.0.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "fa3ed2a29a9e9d2d488b4da81dcb54720ac3104a20bf0bd273f1e4648aff5af9",
+              "url": "https://files.pythonhosted.org/packages/44/34/a16b6a4d1ad727de390e9bd9f19f5f669e079e5826ec0f329010ddea492f/pillow-12.0.0-cp314-cp314-musllinux_1_2_aarch64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "b2e4b27a6e15b04832fe9bf292b94b5ca156016bbc1ea9c2c20098a0320d6cf6",
+              "url": "https://files.pythonhosted.org/packages/44/76/20776057b4bfd1aef4eeca992ebde0f53a4dce874f3ae693d0ec90a4f79b/pillow-12.0.0-cp314-cp314t-macosx_11_0_arm64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "87d4f8125c9988bfbed67af47dd7a953e2fc7b0cc1e7800ec6d2080d490bb353",
+              "url": "https://files.pythonhosted.org/packages/5a/b0/cace85a1b0c9775a9f8f5d5423c8261c858760e2466c79b2dd184638b056/pillow-12.0.0.tar.gz"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "5d5c411a8eaa2299322b647cd932586b1427367fd3184ffbb8f7a219ea2041ca",
+              "url": "https://files.pythonhosted.org/packages/75/87/fcea108944a52dad8cca0715ae6247e271eb80459364a98518f1e4f480c1/pillow-12.0.0-cp314-cp314t-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "792a2c0be4dcc18af9d4a2dfd8a11a17d5e25274a1062b0ec1c2d79c76f3e7f8",
+              "url": "https://files.pythonhosted.org/packages/7b/f4/2dd3d721f875f928d48e83bb30a434dee75a2531bca839bb996bb0aa5a91/pillow-12.0.0-cp314-cp314t-musllinux_1_2_aarch64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "fb3096c30df99fd01c7bf8e544f392103d0795b9f98ba71a8054bcbf56b255f1",
+              "url": "https://files.pythonhosted.org/packages/82/3f/d9ff92ace07be8836b4e7e87e6a4c7a8318d47c2f1463ffcf121fc57d9cb/pillow-12.0.0-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "58eea5ebe51504057dd95c5b77d21700b77615ab0243d8152793dc00eb4faf01",
+              "url": "https://files.pythonhosted.org/packages/86/62/2a88339aa40c4c77e79108facbd307d6091e2c0eb5b8d3cf4977cfca2fe6/pillow-12.0.0-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "d7e091d464ac59d2c7ad8e7e08105eaf9dafbc3883fd7265ffccc2baad6ac925",
+              "url": "https://files.pythonhosted.org/packages/91/52/0d31b5e571ef5fd111d2978b84603fce26aba1b6092f28e941cb46570745/pillow-12.0.0-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "7438839e9e053ef79f7112c881cef684013855016f928b168b81ed5835f3e75e",
+              "url": "https://files.pythonhosted.org/packages/9f/7a/4f7ff87f00d3ad33ba21af78bfcd2f032107710baf8280e3722ceec28cda/pillow-12.0.0-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "d034140032870024e6b9892c692fe2968493790dd57208b2c37e3fb35f6df3ab",
+              "url": "https://files.pythonhosted.org/packages/b6/39/1aa5850d2ade7d7ba9f54e4e4c17077244ff7a2d9e25998c38a29749eb3f/pillow-12.0.0-cp314-cp314-musllinux_1_2_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "f13711b1a5ba512d647a0e4ba79280d3a9a045aaf7e0cc6fbe96b91d4cdf6b0c",
+              "url": "https://files.pythonhosted.org/packages/c7/33/5425a8992bcb32d1cb9fa3dd39a89e613d09a22f2c8083b7bf43c455f760/pillow-12.0.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "6846bd2d116ff42cba6b646edf5bf61d37e5cbd256425fa089fee4ff5c07a99e",
+              "url": "https://files.pythonhosted.org/packages/d8/61/3f5d3b35c5728f37953d3eec5b5f3e77111949523bd2dd7f31a851e50690/pillow-12.0.0-cp314-cp314-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "1979f4566bb96c1e50a62d9831e2ea2d1211761e5662afc545fa766f996632f6",
+              "url": "https://files.pythonhosted.org/packages/f5/7a/ceee0840aebc579af529b523d530840338ecf63992395842e54edc805987/pillow-12.0.0-cp314-cp314t-macosx_10_15_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "e5d8efac84c9afcb40914ab49ba063d94f5dbdf5066db4482c66a992f47a3a3b",
+              "url": "https://files.pythonhosted.org/packages/f6/b7/13957fda356dc46339298b351cae0d327704986337c3c69bb54628c88155/pillow-12.0.0-cp314-cp314-macosx_10_15_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "266cd5f2b63ff316d5a1bba46268e603c9caf5606d44f38c2873c380950576ad",
+              "url": "https://files.pythonhosted.org/packages/fc/f5/eae31a306341d8f331f43edb2e9122c7661b975433de5e447939ae61c5da/pillow-12.0.0-cp314-cp314-macosx_11_0_arm64.whl"
+            }
+          ],
+          "project_name": "pillow",
+          "requires_dists": [
+            "arro3-compute; extra == \"test-arrow\"",
+            "arro3-core; extra == \"test-arrow\"",
+            "check-manifest; extra == \"tests\"",
+            "coverage>=7.4.2; extra == \"tests\"",
+            "defusedxml; extra == \"tests\"",
+            "defusedxml; extra == \"xmp\"",
+            "furo; extra == \"docs\"",
+            "markdown2; extra == \"tests\"",
+            "nanoarrow; extra == \"test-arrow\"",
+            "olefile; extra == \"docs\"",
+            "olefile; extra == \"fpx\"",
+            "olefile; extra == \"mic\"",
+            "olefile; extra == \"tests\"",
+            "packaging; extra == \"tests\"",
+            "pyarrow; extra == \"test-arrow\"",
+            "pyroma>=5; extra == \"tests\"",
+            "pytest-cov; extra == \"tests\"",
+            "pytest-timeout; extra == \"tests\"",
+            "pytest-xdist; extra == \"tests\"",
+            "pytest; extra == \"tests\"",
+            "sphinx-autobuild; extra == \"docs\"",
+            "sphinx-copybutton; extra == \"docs\"",
+            "sphinx-inline-tabs; extra == \"docs\"",
+            "sphinx>=8.2; extra == \"docs\"",
+            "sphinxext-opengraph; extra == \"docs\"",
+            "trove-classifiers>=2024.10.12; extra == \"tests\""
+          ],
+          "requires_python": ">=3.10",
+          "version": "12.0.0"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
               "hash": "e24e7a7d696bd398543cc5c147869edb2026d5d5a21b7f8e35db2f20170b389e",
               "url": "https://files.pythonhosted.org/packages/28/90/87b7fdfc9cd6991a3eb69a5752f6343374c34f258c511c242f4d60791eea/pymupdf-1.26.5-cp39-abi3-musllinux_1_2_x86_64.whl"
             },
@@ -302,6 +423,7 @@
   "pip_version": "24.2",
   "prefer_older_binary": false,
   "requirements": [
+    "Pillow",
     "PyMuPDF",
     "beautifulsoup4",
     "httpx"
