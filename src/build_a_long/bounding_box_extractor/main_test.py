@@ -1,16 +1,13 @@
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import patch, MagicMock
 from pathlib import Path
 
 from build_a_long.bounding_box_extractor.main import extract_bounding_boxes
+from build_a_long.bounding_box_extractor.page_elements import StepNumber, Drawing
 
 
 class TestBoundingBoxExtractor:
-    @patch("builtins.open", new_callable=mock_open)
-    @patch("json.dump")
     @patch("build_a_long.bounding_box_extractor.main.fitz.open")
-    def test_extract_bounding_boxes_basic(
-        self, mock_fitz_open, mock_json_dump, mock_file_open
-    ):
+    def test_extract_bounding_boxes_basic(self, mock_fitz_open):
         # Create a dummy PDF path for testing
         dummy_pdf_path = "/path/to/dummy.pdf"
 
@@ -38,7 +35,6 @@ class TestBoundingBoxExtractor:
 
         fake_doc = MagicMock()
         fake_doc.__len__.return_value = 1
-        # __getitem__ for index 0 returns our fake page
 
         def _getitem(idx):
             assert idx == 0
@@ -48,28 +44,17 @@ class TestBoundingBoxExtractor:
         mock_fitz_open.return_value = fake_doc
 
         # Call the function
-        extract_bounding_boxes(dummy_pdf_path, output_dir=None)
+        result = extract_bounding_boxes(dummy_pdf_path, output_dir=None)
 
-        # Assert that json.dump was called with the expected structure
-        mock_json_dump.assert_called_once()
-        args, kwargs = mock_json_dump.call_args
-        extracted_data = args[0]
-
-        assert "pages" in extracted_data
-        assert len(extracted_data["pages"]) == 1
-        elements = extracted_data["pages"][0]["elements"]
-        # Expect two elements: a text classified as instruction_number and an image
+        # Validate typed elements structure
+        assert "pages" in result
+        assert len(result["pages"]) == 1
+        elements = result["pages"][0]["elements"]
         assert len(elements) == 2
-        assert elements[0]["type"] == "instruction_number"
-        assert elements[0]["bbox"] == [10.0, 20.0, 30.0, 40.0]
-        assert elements[1]["type"] == "image"
+        assert isinstance(elements[0], StepNumber)
+        assert elements[0].bbox.x0 == 10.0 and elements[0].bbox.y0 == 20.0
+        assert isinstance(elements[1], Drawing)
 
-        # Assert that the output file was attempted to be opened with 'w'
-        expected_output_filename = dummy_pdf_path.replace(".pdf", ".json")
-        mock_file_open.assert_called_once_with(expected_output_filename, "w")
-
-    @patch("builtins.open", new_callable=mock_open)
-    @patch("json.dump")
     @patch("build_a_long.bounding_box_extractor.main.fitz.open")
     @patch("build_a_long.bounding_box_extractor.main.Image.frombytes")
     @patch("pathlib.Path.mkdir")
@@ -78,8 +63,6 @@ class TestBoundingBoxExtractor:
         mock_path_mkdir,
         mock_image_frombytes,
         mock_fitz_open,
-        mock_json_dump,
-        mock_file_open,
     ):
         dummy_pdf_path = "/path/to/dummy.pdf"
         dummy_output_dir = Path("/tmp/output")
@@ -116,10 +99,17 @@ class TestBoundingBoxExtractor:
         mock_doc.__getitem__.return_value = mock_page
         mock_fitz_open.return_value = mock_doc
 
-        extract_bounding_boxes(dummy_pdf_path, output_dir=dummy_output_dir)
+        result = extract_bounding_boxes(dummy_pdf_path, output_dir=dummy_output_dir)
 
         # Assert that image saving was attempted
         mock_image.save.assert_called_once_with(dummy_output_dir / "page_001.png")
 
         # Ensure that the output directory was created
         mock_path_mkdir.assert_called_once_with(parents=True, exist_ok=True)
+
+        # Typed elements exist
+        assert "pages" in result
+        assert len(result["pages"]) == 1
+        elements = result["pages"][0]["elements"]
+        assert len(elements) == 1
+        assert isinstance(elements[0], StepNumber)
