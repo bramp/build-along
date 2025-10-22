@@ -16,6 +16,7 @@ repos:
         entry: pants test
         language: system
         stages: [pre-commit]
+
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.2.0
     hooks:

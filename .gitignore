@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.venv*/
+.pex/
+
+# Pants
+.pants.d/
+.dist/
+
+# Local data and downloads
+/data/
+*.pdf
+
+# VS Code
+.vscode/
+
+# TODO remove this eventually
+example/

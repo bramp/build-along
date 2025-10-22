@@ -14,6 +14,9 @@ backend_packages = [
     "pants.backend.experimental.python.lint.ruff.check",
     "pants.backend.experimental.python.typecheck.pyright",
 
+    # Enable this later
+    #"pants.backend.python.providers.experimental.pyenv",
+
     "pants.backend.experimental.tools.yamllint",
 ]
 pants_ignore = [".vscode/settings.json"]
@@ -27,7 +30,7 @@ resolves = { python-default = "python-default.lock" }
 unowned_dependency_behavior = "error"
 
 [source]
-root_patterns = ["/*/src/", "/*/tests/"]
+root_patterns = ["/src/", "/tests/"]
 
 [anonymous-telemetry]
 enabled = true
