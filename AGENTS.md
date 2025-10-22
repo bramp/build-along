@@ -24,6 +24,7 @@ This project uses `pants` as a build tool. For more information, see the [Pants 
 - **Modern Python**: We adhere to modern Python conventions, utilizing linters and formatters to maintain code quality and readability.
 - **Type Hinting**: All new Python code should include comprehensive type hints to improve code clarity, maintainability, and enable static analysis.
 - **Dataclasses**: Prefer using dataclasses for data structures to enhance readability and maintainability.
+- **Complex Data Structures**: When returning a tuple or dict with more than two fields, prefer creating a class or dataclass to improve readability and maintainability.
 - **Testable Code**: Always strive to write code that is easily testable, and ensure new features and bug fixes are accompanied by appropriate tests.
 - **Dependency Management**: When introducing new libraries or packages, always verify their established usage within the project (e.g., `requirements.txt`, `pyproject.toml`) or confirm with the user before adding them.
 - **Error Handling**: All new or modified code should include robust error handling mechanisms to ensure application stability and provide clear feedback in case of issues.
