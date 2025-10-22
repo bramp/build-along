@@ -221,7 +221,7 @@ def test_process_set_uses_existing_metadata_and_skips_fetch(
     # So ensure we didn't build a new URL call
     # (we can't assert exact call count reliably due to earlier tests, so check printed output)
     out = capsys.readouterr().out
-    assert "Using existing metadata" in out
+    assert "Processing set: 99999 [cached]" in out
     assert "Found 2 PDF(s) for set 99999" in out
     assert "Test Set" in out
 
