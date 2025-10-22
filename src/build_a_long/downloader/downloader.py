@@ -169,6 +169,7 @@ class LegoInstructionDownloader:
         url: str,
         dest_dir: Path,
         *,
+        progress_prefix: str = "",
         stream_fn: Optional[Callable[..., ContextManager[Any]]] = None,
         chunk_iter: Optional[Callable[[Any, int], Iterable[bytes]]] = None,
     ) -> Path:
@@ -177,6 +178,7 @@ class LegoInstructionDownloader:
         Args:
             url: The file URL.
             dest_dir: Destination directory (created if missing).
+            progress_prefix: Optional prefix for progress line (e.g., " - url").
             stream_fn: Injectable streaming function (for testing).
             chunk_iter: Optional injector to iterate raw chunks (for testing).
 
@@ -188,7 +190,10 @@ class LegoInstructionDownloader:
         dest = dest_dir / filename
 
         if dest.exists() and not self.overwrite:
-            print(f"Skip (exists): {dest}")
+            if progress_prefix:
+                print(f"{progress_prefix} [cached]")
+            else:
+                print(f"Skip (exists): {dest}")
             return dest
 
         # Use injected stream_fn for testing, otherwise use client.stream
@@ -218,11 +223,23 @@ class LegoInstructionDownloader:
                         if total > 0:
                             pct = int(downloaded * 100 / total)
                             if pct != last_pct:
-                                print(f"  {filename}: {pct}%", end="\r", flush=True)
+                                if progress_prefix:
+                                    print(
+                                        f"{progress_prefix} {pct}%",
+                                        end="\r",
+                                        flush=True,
+                                    )
+                                else:
+                                    print(f"  {filename}: {pct}%", end="\r", flush=True)
                                 last_pct = pct
             if self.show_progress:
-                # Clear the progress line
-                print(" " * 60, end="\r")
+                if progress_prefix:
+                    # Show final size on same line
+                    size = dest.stat().st_size
+                    print(f"{progress_prefix} [{size / 1_000_000:.2f} MB]")
+                else:
+                    # Clear the progress line
+                    print(" " * 60, end="\r")
         return dest
 
     def process_set(self, set_number: str) -> int:
@@ -242,38 +259,37 @@ class LegoInstructionDownloader:
         if meta_path.exists() and not self.overwrite:
             existing_meta = read_metadata(meta_path)
 
+        if existing_meta:
+            print(f"Processing set: {set_number} [cached]")
+        else:
+            print(f"Processing set: {set_number}")
+
         if existing_meta and existing_meta.pdfs:
             # Use existing metadata to avoid re-fetching the index page
-            print(f"Using existing metadata from {meta_path}")
-            pdfs = [p.url for p in existing_meta.pdfs]
             meta_dc = None  # We'll skip writing metadata later
-            # Print metadata info from existing metadata
-            self._print_metadata_info(set_number, existing_meta, len(pdfs))
+            pdfs = [p.url for p in existing_meta.pdfs]
+            metadata = existing_meta
         else:
             # Build fresh metadata (includes ordered PDFs)
             meta_dc = self._build_metadata_for_set(set_number)
             pdfs = [p.url for p in meta_dc.pdfs]
+            metadata = meta_dc
 
         if not pdfs:
             print(f"No PDFs found for set {set_number} (locale={self.locale}).")
             return 0
 
-        # Print metadata info if we fetched fresh metadata
-        if meta_dc is not None:
-            self._print_metadata_info(set_number, meta_dc, len(pdfs))
-
-        for u in pdfs:
-            print(f" - {u}")
+        # Print metadata info
+        self._print_metadata_info(set_number, metadata, len(pdfs))
 
         # Write metadata.json alongside downloaded PDFs (only if we fetched it)
         if meta_dc is not None:
             write_metadata(meta_path, meta_dc)
 
-        print(f"Downloading to: {out_dir}")
-        for u in pdfs:
-            dest = self.download(u, out_dir)
-            size = dest.stat().st_size
-            print(f"Downloaded {dest} ({size / 1_000_000:.2f} MB)")
+        # Download each PDF with inline progress
+        for i, u in enumerate(pdfs, 1):
+            progress_prefix = f" - {u}"
+            self.download(u, out_dir, progress_prefix=progress_prefix)
 
         return 0
 
@@ -318,7 +334,6 @@ class LegoInstructionDownloader:
         """
         overall_exit_code = 0
         for set_number in set_numbers:
-            print(f"Processing set: {set_number}")
             exit_code = self.process_set(set_number)
             if exit_code != 0:
                 overall_exit_code = exit_code
