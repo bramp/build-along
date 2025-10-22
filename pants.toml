@@ -1,0 +1,34 @@
+[GLOBAL]
+pants_version = "2.29.0"
+unmatched_build_file_globs = "error"
+backend_packages = [
+    "pants.backend.experimental.adhoc",
+    "pants.backend.python",
+    "pants.backend.shell",
+
+    "pants.backend.build_files.fmt.ruff",
+    # This current fails due to a pip install bug.
+    # "pants.backend.python.lint.docformatter",
+    "pants.backend.experimental.python.lint.ruff.format",
+
+    "pants.backend.experimental.python.lint.ruff.check",
+    "pants.backend.experimental.python.typecheck.pyright",
+
+    "pants.backend.experimental.tools.yamllint",
+]
+pants_ignore = [".vscode/settings.json"]
+
+[python]
+interpreter_constraints = ["==3.14.*"]
+enable_resolves = true
+resolves = { python-default = "python-default.lock" }
+
+[python-infer]
+unowned_dependency_behavior = "error"
+
+[source]
+root_patterns = ["/*/src/", "/*/tests/"]
+
+[anonymous-telemetry]
+enabled = true
+repo_id = "5248FD55-6F42-4A65-9D07-ECA6D25DF325"

@@ -1,0 +1,23 @@
+repos:
+  - repo: local
+    hooks:
+      - id: pants-fmt
+        name: Pants Fmt
+        entry: pants fmt
+        language: system
+        stages: [pre-commit]
+      - id: pants-check
+        name: Pants Check
+        entry: pants check
+        language: system
+        stages: [pre-commit]
+      - id: pants-test
+        name: Pants Test
+        entry: pants test
+        language: system
+        stages: [pre-commit]
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.2.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
