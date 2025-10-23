@@ -102,20 +102,65 @@ Notes:
 
 ### Bounding Box Extractor CLI
 
-Analyze a LEGO instruction PDF and emit a JSON file with page elements and bounding boxes.
+Analyze a LEGO instruction PDF and extract bounding boxes with hierarchical structure for debugging and classifier development.
 
 Run with Pants:
 
 ```bash
-pants list src/build_a_long/bounding_box_extractor:
+# Process all pages (outputs to same directory as PDF)
 pants run src/build_a_long/bounding_box_extractor:main -- path/to/manual.pdf
+
+# Process a single page
+pants run src/build_a_long/bounding_box_extractor:main -- \
+  path/to/manual.pdf \
+  --pages 1
+
+# Process a range of pages (e.g., pages 5-10)
+pants run src/build_a_long/bounding_box_extractor:main -- \
+  path/to/manual.pdf \
+  --pages 5-10
+
+# Process from page 10 to end
+pants run src/build_a_long/bounding_box_extractor:main -- \
+  path/to/manual.pdf \
+  --pages 10-
+
+# Process from start to page 5
+pants run src/build_a_long/bounding_box_extractor:main -- \
+  path/to/manual.pdf \
+  --pages -5
+
+# Specify custom output directory
+pants run src/build_a_long/bounding_box_extractor:main -- \
+  path/to/manual.pdf \
+  --pages 5-10 \
+  --output-dir output/debug
 ```
+
+Options:
+
+- `--output-dir`: Directory to save extracted images and JSON files. Defaults to same directory as the PDF.
+- `--pages`: Page range to process (1-indexed). Supports:
+  - Single page: `"5"`
+  - Explicit range: `"5-10"`
+  - Open-ended from page: `"10-"` (from page 10 to end)
+  - Open-ended to page: `"-5"` (from start to page 5)
+  - Defaults to all pages if not specified
+
+Output:
+
+- **Images**: One PNG per page (`page_001.png`, `page_002.png`, etc.) with bounding boxes drawn in red (step numbers) or blue (other elements).
+- **JSON**: Single file named `page_001-003.json` (for pages 1-3) containing:
+  - Flat list of typed page elements (StepNumber, Drawing, Unknown)
+  - Hierarchical tree based on bounding box containment
+  - Full element metadata serialized via dataclasses
 
 Notes:
 
-- Requires `PyMuPDF` (imported as `fitz`). The tool fails fast at import if it's not installed.
-- Output is written alongside the PDF, replacing `.pdf` with `.json`.
-- JSON schema (simplified):
+- Requires `PyMuPDF` and `Pillow`.
+- Page numbers are 1-indexed to match PDF viewers.
+- JSON schema includes `__type__` discriminators for each element to enable deserialization.
+- Example JSON structure:
   
     ```json
     {
@@ -123,13 +168,27 @@ Notes:
             {
                 "page_number": 1,
                 "elements": [
-                    {"type": "instruction_number", "bbox": [x0, y0, x1, y1], "content": "1", "id": "text_0"},
-                    {"type": "image", "bbox": [x0, y0, x1, y1], "id": "image_1"}
+                    {
+                        "bbox": {"x0": 10.0, "y0": 20.0, "x1": 30.0, "y1": 40.0},
+                        "value": 1,
+                        "__type__": "StepNumber"
+                    },
+                    {
+                        "bbox": {"x0": 50.0, "y0": 60.0, "x1": 150.0, "y1": 200.0},
+                        "image_id": "image_0",
+                        "__type__": "Drawing"
+                    }
+                ],
+                "hierarchy": [
+                    {
+                        "element": {...},
+                        "children": [...]
+                    }
                 ]
             }
         ]
     }
-        ```
+    ```
 
 ### Running Tests
 
