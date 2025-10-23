@@ -144,12 +144,22 @@ def draw_and_save_bboxes(
     img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
     draw = ImageDraw.Draw(img)
 
+    # Get page dimensions for scaling
+    page_rect = page.rect
+    scale_x = pix.width / page_rect.width
+    scale_y = pix.height / page_rect.height
+
     for element in page_data["elements"]:
         # Elements are typed PageElements now
         bbox = element.bbox
-        bbox_tuple = (bbox.x0, bbox.y0, bbox.x1, bbox.y1)
+        scaled_bbox = (
+            bbox.x0 * scale_x,
+            bbox.y0 * scale_y,
+            bbox.x1 * scale_x,
+            bbox.y1 * scale_y,
+        )
         color = "red" if isinstance(element, StepNumber) else "blue"
-        draw.rectangle(bbox_tuple, outline=color, width=2)
+        draw.rectangle(scaled_bbox, outline=color, width=2)
 
     output_path = output_dir / f"page_{page_num:03d}.png"
     img.save(output_path)
