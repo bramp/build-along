@@ -13,8 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
 
-from build_a_long.bounding_box_extractor.bbox import BBox
-from build_a_long.bounding_box_extractor.page_elements import (
+from build_a_long.bounding_box_extractor.extractor.bbox import BBox
+from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Element,
     Unknown,
 )
@@ -84,6 +84,7 @@ def build_hierarchy_from_elements(
                 raw_type=ele.raw_type,
                 content=ele.content,
                 source_id=ele.source_id,
+                btype=ele.btype,
                 children=tuple(c.element for c in child_nodes),
             )
         return ElementNode(element=ele, children=child_nodes)

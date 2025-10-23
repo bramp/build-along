@@ -1,6 +1,8 @@
-from build_a_long.bounding_box_extractor.bbox import BBox
-from build_a_long.bounding_box_extractor.hierarchy import build_hierarchy_from_elements
-from build_a_long.bounding_box_extractor.page_elements import (
+from build_a_long.bounding_box_extractor.extractor.bbox import BBox
+from build_a_long.bounding_box_extractor.extractor.hierarchy import (
+    build_hierarchy_from_elements,
+)
+from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
     StepNumber,
     Unknown,

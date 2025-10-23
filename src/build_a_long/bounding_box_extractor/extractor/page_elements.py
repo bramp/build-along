@@ -15,7 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Union, Tuple
 
-from build_a_long.bounding_box_extractor.bbox import BBox
+from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 
 
 @dataclass(frozen=True)
@@ -92,6 +92,13 @@ class PartsList(PageElement):
 
 
 @dataclass(frozen=True)
+class PathElement(PageElement):
+    """A vector graphics path."""
+
+    pass
+
+
+@dataclass(frozen=True)
 class Unknown(PageElement):
     """An element with unknown semantics for now.
 
@@ -109,8 +116,9 @@ class Unknown(PageElement):
     raw_type: Optional[str] = None
     content: Optional[str] = None
     source_id: Optional[str] = None
+    btype: Optional[int] = None
     children: Tuple["Element", ...] = ()
 
 
 # A helpful alias if callers want to store a heterogeneous collection
-Element = Union[PartsList, Part, PartCount, StepNumber, Drawing, Unknown]
+Element = Union[PartsList, Part, PartCount, StepNumber, Drawing, PathElement, Unknown]

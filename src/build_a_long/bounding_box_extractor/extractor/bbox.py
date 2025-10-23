@@ -8,6 +8,17 @@ class BBox:
     x1: float
     y1: float
 
+    def equals(self, other: "BBox") -> bool:
+        """
+        Checks if this bounding box is equal to another bounding box.
+        """
+        return (
+            self.x0 == other.x0
+            and self.y0 == other.y0
+            and self.x1 == other.x1
+            and self.y1 == other.y1
+        )
+
     def overlaps(self, other: "BBox") -> bool:
         """
         Checks if this bounding box overlaps with another bounding box.

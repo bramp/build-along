@@ -1,4 +1,4 @@
-from build_a_long.bounding_box_extractor.bbox import BBox
+from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 
 
 def test_overlaps():
@@ -40,6 +40,7 @@ def test_adjacent():
     assert bbox2.adjacent(bbox1)
     assert bbox1.adjacent(bbox3)
     assert bbox3.adjacent(bbox1)
-    assert not bbox1.adjacent(bbox4)  # Corner adjacency is not considered adjacent
+    # Corner adjacency is not considered adjacent
+    assert not bbox1.adjacent(bbox4)
     assert not bbox1.adjacent(bbox5)
     assert not bbox1.adjacent(bbox6)
