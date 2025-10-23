@@ -2,7 +2,7 @@ import argparse
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from PIL import Image, ImageDraw  # type: ignore
 
@@ -16,8 +16,101 @@ from build_a_long.bounding_box_extractor.page_elements import (
     Unknown,
 )
 
-# Require PyMuPDF at import time. This purposefully fails fast if missing.
 import fitz  # type: ignore  # PyMuPDF
+
+
+def parse_page_range(page_str: str) -> Tuple[int | None, int | None]:
+    """Parse a page range string into start and end page numbers.
+
+    Supported formats:
+    - "5": Single page (returns 5, 5)
+    - "5-10": Page range from 5 to 10 (returns 5, 10)
+    - "10-": From page 10 to end (returns 10, None)
+    - "-5": From start to page 5 (returns None, 5)
+
+    Args:
+        page_str: The page range string to parse.
+
+    Returns:
+        A tuple of (start_page, end_page), where None indicates an unbounded range.
+
+    Raises:
+        ValueError: If the page range format is invalid or contains invalid numbers.
+    """
+    # TODO in future support accepting lists, e.g "1, 2, 3" or "1-3,5,7-9"
+
+    page_str = page_str.strip()
+    if not page_str:
+        raise ValueError("Page range cannot be empty")
+
+    # Check for range syntax
+    if "-" in page_str:
+        parts = page_str.split("-", 1)
+        start_str = parts[0].strip()
+        end_str = parts[1].strip()
+
+        # Handle "-5" format (start to page 5)
+        if not start_str:
+            if not end_str:
+                raise ValueError(
+                    "Invalid page range: '-'. At least one page number required."
+                )
+            try:
+                end_page = int(end_str)
+                # Reject negative numbers - they look like "-5" but are actually negative
+                if end_str.startswith("-"):
+                    raise ValueError(f"Page number must be >= 1, got {end_page}")
+                if end_page < 1:
+                    raise ValueError(f"Page number must be >= 1, got {end_page}")
+                return None, end_page
+            except ValueError as e:
+                if "invalid literal" in str(e):
+                    raise ValueError(f"Invalid end page number: '{end_str}'")
+                raise
+
+        # Handle "10-" format (page 10 to end)
+        if not end_str:
+            try:
+                start_page = int(start_str)
+                if start_page < 1:
+                    raise ValueError(f"Page number must be >= 1, got {start_page}")
+                return start_page, None
+            except ValueError as e:
+                if "invalid literal" in str(e):
+                    raise ValueError(f"Invalid start page number: '{start_str}'")
+                raise
+
+        # Handle "5-10" format (explicit range)
+        try:
+            start_page = int(start_str)
+        except ValueError:
+            raise ValueError(f"Invalid start page number: '{start_str}'")
+
+        try:
+            end_page = int(end_str)
+        except ValueError:
+            raise ValueError(f"Invalid end page number: '{end_str}'")
+
+        if start_page < 1:
+            raise ValueError(f"Start page must be >= 1, got {start_page}")
+        if end_page < 1:
+            raise ValueError(f"End page must be >= 1, got {end_page}")
+        if start_page > end_page:
+            raise ValueError(
+                f"Start page ({start_page}) cannot be greater than end page ({end_page})"
+            )
+        return start_page, end_page
+    else:
+        # Single page number
+        try:
+            page_num = int(page_str)
+            if page_num < 1:
+                raise ValueError(f"Page number must be >= 1, got {page_num}")
+            return page_num, page_num
+        except ValueError as e:
+            if "invalid literal" in str(e):
+                raise ValueError(f"Invalid page number: '{page_str}'")
+            raise
 
 
 def _classify_text(text: str) -> str:
@@ -64,10 +157,21 @@ def draw_and_save_bboxes(
 
 
 # TODO pdf_path should be Path-like
-def extract_bounding_boxes(pdf_path: str, output_dir: Path | None) -> Dict[str, Any]:
+def extract_bounding_boxes(
+    pdf_path: str,
+    output_dir: Path | None,
+    start_page: int | None = None,
+    end_page: int | None = None,
+) -> Dict[str, Any]:
     """
     Extract bounding boxes for instruction numbers, parts lists, and build steps
     from a given PDF file using PyMuPDF when available.
+
+    Args:
+        pdf_path: Path to the PDF file
+        output_dir: Directory to save images and JSON files (required for output)
+        start_page: First page to process (1-indexed), None for first page
+        end_page: Last page to process (1-indexed, inclusive), None for last page
 
     Returns the extracted data dict for convenience (also written to JSON file).
     """
@@ -76,12 +180,30 @@ def extract_bounding_boxes(pdf_path: str, output_dir: Path | None) -> Dict[str, 
 
     if output_dir:
         output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Initialize page range variables
+    first_page = 0
+    last_page = 0
     doc = None
     try:
         doc = fitz.open(pdf_path)
         num_pages = len(doc)
 
-        for page_index in range(num_pages):
+        # Determine page range (convert to 0-indexed)
+        first_page = (start_page - 1) if start_page is not None else 0
+        last_page = (end_page - 1) if end_page is not None else (num_pages - 1)
+
+        # Validate and clamp page range
+        first_page = max(0, min(first_page, num_pages - 1))
+        last_page = max(0, min(last_page, num_pages - 1))
+
+        if first_page > last_page:
+            print(f"Warning: Invalid page range {start_page}-{end_page}")
+            return extracted_data
+
+        print(f"Processing pages {first_page + 1}-{last_page + 1} of {num_pages}")
+
+        for page_index in range(first_page, last_page + 1):
             page = doc[page_index]
             page_num = page_index + 1
             print(f"  Processing page {page_num}/{num_pages}")
@@ -201,13 +323,18 @@ def extract_bounding_boxes(pdf_path: str, output_dir: Path | None) -> Dict[str, 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Extract bounding boxes from a PDF file."
+        description="Extract bounding boxes from a PDF file and export images/JSON for debugging."
     )
     parser.add_argument("pdf_path", help="The path to the PDF file.")
     parser.add_argument(
         "--output-dir",
         type=Path,
-        help="Directory to save images with drawn bounding boxes.",
+        help="Directory to save images and JSON files. Defaults to same directory as PDF.",
+    )
+    parser.add_argument(
+        "--pages",
+        type=str,
+        help='Page range to process (1-indexed), e.g., "5", "5-10", "10-" (from 10 to end), or "-5" (from 1 to 5). Defaults to all pages.',
     )
     args = parser.parse_args()
 
@@ -216,10 +343,21 @@ def main() -> int:
         print(f"File not found: {pdf_path}")
         return 2
 
-    if args.output_dir:
-        args.output_dir.mkdir(parents=True, exist_ok=True)
+    # Default output directory to same directory as PDF
+    output_dir = args.output_dir if args.output_dir else pdf_path.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    extract_bounding_boxes(str(pdf_path), args.output_dir)
+    # Parse page range
+    start_page = None
+    end_page = None
+    if args.pages:
+        try:
+            start_page, end_page = parse_page_range(args.pages)
+        except ValueError as e:
+            print(f"Error: {e}")
+            return 2
+
+    extract_bounding_boxes(str(pdf_path), output_dir, start_page, end_page)
     return 0
 
 
