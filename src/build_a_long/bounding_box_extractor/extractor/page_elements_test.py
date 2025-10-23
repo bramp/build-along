@@ -1,5 +1,5 @@
-from build_a_long.bounding_box_extractor.bbox import BBox
-from build_a_long.bounding_box_extractor.page_elements import (
+from build_a_long.bounding_box_extractor.extractor.bbox import BBox
+from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
     Part,
     PartCount,
