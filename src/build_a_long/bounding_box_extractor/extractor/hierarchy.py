@@ -9,8 +9,7 @@ ancestor for each child.
 from __future__ import annotations
 
 import logging
-from dataclasses import replace
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 from build_a_long.bounding_box_extractor.extractor.page_elements import Element
@@ -20,12 +19,15 @@ logger = logging.getLogger(__name__)
 
 def build_hierarchy_from_elements(
     elements: Sequence[Element],
-) -> Tuple[Element, ...]:
+) -> List[Element]:
     """Build a containment-based hierarchy from typed elements.
 
     Strategy:
     - Sort elements by area ascending (smallest first) so children attach before parents.
     - For each element, find the smallest containing ancestor and attach as a child.
+
+    Returns:
+        List of top-level elements with their children nested in the children field.
     """
     converted: List[Element] = list(elements)
 
@@ -63,11 +65,9 @@ def build_hierarchy_from_elements(
             children_lists[p].append(i)
 
     # Recursively produce Element trees with children attached.
-    # Each element is replaced with a copy that includes its children.
     def build_element(i: int) -> Element:
-        child_elements = tuple(build_element(cidx) for cidx in children_lists[i])
         ele = converted[i]
-        # Use dataclass replace to add children to the element
-        return replace(ele, children=child_elements)
+        ele.children = [build_element(cidx) for cidx in children_lists[i]]
+        return ele
 
-    return tuple(build_element(r) for r in roots)
+    return [build_element(r) for r in roots]

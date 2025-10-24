@@ -12,26 +12,26 @@ hints to keep them easy to test and reason about.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import List, Optional, Union, Tuple
+from dataclasses import dataclass, field
+from typing import List, Optional, Union
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 
 
-@dataclass(frozen=True)
+@dataclass
 class PageElement:
     """Base class for anything detected on a page.
 
     Contract:
     - Every element has exactly one bounding box in page coordinates
       (same coordinate system produced by the extractor).
-    - Subclasses should remain immutable and small data holders.
+    - Subclasses are small data holders.
     """
 
     bbox: BBox
 
 
-@dataclass(frozen=True)
+@dataclass
 class Drawing(PageElement):
     """A vector drawing on the page.
 
@@ -40,10 +40,10 @@ class Drawing(PageElement):
     """
 
     image_id: Optional[str] = None
-    children: Tuple["Element", ...] = ()
+    children: List["Element"] = field(default_factory=list)
 
 
-@dataclass(frozen=True)
+@dataclass
 class Text(PageElement):
     """A text element on the page.
 
@@ -52,10 +52,10 @@ class Text(PageElement):
 
     content: str
     label: Optional[str] = None  # e.g., 'parts_list', 'instruction', etc.
-    children: Tuple["Element", ...] = ()
+    children: List["Element"] = field(default_factory=list)
 
 
-@dataclass(frozen=True)
+@dataclass
 class Image(PageElement):
     """An image element on the page (raster image from PDF).
 
@@ -63,17 +63,17 @@ class Image(PageElement):
     """
 
     image_id: Optional[str] = None
-    children: Tuple["Element", ...] = ()
+    children: List["Element"] = field(default_factory=list)
 
 
-@dataclass(frozen=True)
+@dataclass
 class Root(PageElement):
     """A root element that contains all top-level elements on a page.
 
     The bbox encompasses the entire page bounds.
     """
 
-    children: Tuple["Element", ...] = ()
+    children: List["Element"] = field(default_factory=list)
 
 
 ###
@@ -81,27 +81,27 @@ class Root(PageElement):
 ###
 
 
-@dataclass(frozen=True)
+@dataclass
 class StepNumber(PageElement):
     """A step number label, usually a small integer on the page."""
 
     value: int
-    children: Tuple["Element", ...] = ()
+    children: List["Element"] = field(default_factory=list)
 
 
-@dataclass(frozen=True)
+@dataclass
 class PartCount(PageElement):
     """The visual count label associated with a part entry (e.g., 'x3')."""
 
     count: int
-    children: Tuple["Element", ...] = ()
+    children: List["Element"] = field(default_factory=list)
 
-    def __post_init__(self) -> None:  # type: ignore[override]
+    def __post_init__(self) -> None:
         if self.count < 0:
             raise ValueError("PartCount.count must be non-negative")
 
 
-@dataclass(frozen=True)
+@dataclass
 class Part(PageElement):
     """A single part entry within a parts list.
 
@@ -113,15 +113,15 @@ class Part(PageElement):
     name: Optional[str]
     number: Optional[str]
     count: PartCount
-    children: Tuple["Element", ...] = ()
+    children: List["Element"] = field(default_factory=list)
 
 
-@dataclass(frozen=True)
+@dataclass
 class PartsList(PageElement):
     """A container of multiple parts for the page's parts list."""
 
     parts: List[Part]
-    children: Tuple["Element", ...] = ()
+    children: List["Element"] = field(default_factory=list)
 
     @property
     def total_items(self) -> int:

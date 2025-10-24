@@ -30,15 +30,12 @@ class TestMain:
             StepNumber,
             Root,
         )
-        from build_a_long.bounding_box_extractor.extractor import (
-            ExtractedData,
-            PageData,
-        )
+        from build_a_long.bounding_box_extractor.extractor import PageData
 
         step_element = StepNumber(
-            bbox=BBox(10.0, 20.0, 30.0, 40.0), value=1, children=()
+            bbox=BBox(10.0, 20.0, 30.0, 40.0), value=1, children=[]
         )
-        root_element = Root(bbox=BBox(0.0, 0.0, 100.0, 100.0), children=(step_element,))
+        root_element = Root(bbox=BBox(0.0, 0.0, 100.0, 100.0), children=[step_element])
 
         page_data = PageData(
             page_number=1,
@@ -46,7 +43,8 @@ class TestMain:
             elements=[step_element],
         )
 
-        mock_extract_bounding_boxes.return_value = ExtractedData(pages=[page_data])
+        # extract_bounding_boxes now returns List[PageData]
+        mock_extract_bounding_boxes.return_value = [page_data]
 
         # Mock the PDF document
         mock_page = MagicMock()
@@ -61,6 +59,11 @@ class TestMain:
 
         # Assert success
         assert result == 0
+
+        # Assert extract_bounding_boxes was called with the document
+        mock_extract_bounding_boxes.assert_called_once()
+        call_args = mock_extract_bounding_boxes.call_args
+        assert call_args[0][0] == mock_doc  # First arg is the document
 
         # Assert JSON was written
         mock_file_open.assert_called_once()
