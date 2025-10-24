@@ -6,6 +6,7 @@ from build_a_long.bounding_box_extractor.extractor.extractor import (
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
     StepNumber,
+    Text,
 )
 
 
@@ -99,3 +100,45 @@ class TestBoundingBoxExtractor:
         elements = result["pages"][0]["elements"]
         assert len(elements) == 1
         assert isinstance(elements[0], StepNumber)
+
+    @patch("build_a_long.bounding_box_extractor.extractor.extractor.fitz.open")
+    def test_extract_text_elements(self, mock_fitz_open):
+        """Test that regular text is extracted as Text elements with content."""
+        dummy_pdf_path = "/path/to/dummy.pdf"
+
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": [
+                {
+                    "type": 0,
+                    "bbox": [10, 20, 100, 40],
+                    "lines": [
+                        {
+                            "spans": [
+                                {
+                                    "text": "Build Step Instructions",
+                                    "bbox": [10, 20, 100, 40],
+                                },
+                            ]
+                        }
+                    ],
+                }
+            ]
+        }
+        mock_page.get_drawings.return_value = []
+
+        mock_doc = MagicMock()
+        mock_doc.__len__.return_value = 1
+        mock_doc.__getitem__.return_value = mock_page
+        mock_fitz_open.return_value = mock_doc
+
+        result = extract_bounding_boxes(dummy_pdf_path)
+
+        # Validate text element
+        assert "pages" in result
+        assert len(result["pages"]) == 1
+        elements = result["pages"][0]["elements"]
+        assert len(elements) == 1
+        assert isinstance(elements[0], Text)
+        assert elements[0].content == "Build Step Instructions"
+        assert elements[0].bbox.x0 == 10.0
