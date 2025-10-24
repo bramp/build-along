@@ -22,11 +22,11 @@ def _element_to_json(ele: Any) -> Dict[str, Any]:
     return data
 
 
-def _node_to_json(node: Any) -> Dict[str, Any]:
-    """Convert an ElementNode to JSON recursively."""
+def _node_to_json(element: Any) -> Dict[str, Any]:
+    """Convert a PageElement with children to JSON recursively."""
     return {
-        "element": _element_to_json(node.element),
-        "children": [_node_to_json(c) for c in node.children],
+        "element": _element_to_json(element),
+        "children": [_node_to_json(c) for c in element.children],
     }
 
 
@@ -75,19 +75,15 @@ def render_annotated_images(
         output_dir: Directory where PNG images should be saved
     """
     with pymupdf.open(str(pdf_path)) as doc:
-        num_pages = len(doc)
-        for page in extracted_data.get("pages", []):
-            page_num = int(page["page_number"])  # 1-indexed
-            if 1 <= page_num <= num_pages:
-                draw_and_save_bboxes(
-                    doc[page_num - 1], tuple(page["hierarchy"]), output_dir, page_num
-                )
-            else:
-                logger.warning(
-                    "Page %s out of bounds for document with %s pages",
-                    page_num,
-                    num_pages,
-                )
+        for page_data in extracted_data.get("pages", []):
+            page_num = int(page_data["page_number"])  # 1-indexed
+            page = doc[page_num - 1]  # 0-indexed
+            output_path = output_dir / f"page_{page_num:03d}.png"
+            draw_and_save_bboxes(
+                page,
+                tuple(page_data["hierarchy"]),
+                output_path,
+            )
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -114,7 +110,7 @@ def parse_arguments() -> argparse.Namespace:
         "--include-types",
         type=str,
         help="Comma-separated list of element types to include. Defaults to all types.",
-        default="text,image,drawing,path",
+        default="text,image,drawing",
     )
     return parser.parse_args()
 

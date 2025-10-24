@@ -2,44 +2,34 @@
 Utilities to build a hierarchy of page elements from a flat list of
 extracted blocks, using bounding-box containment.
 
-We convert the extractor's dict-based elements to typed PageElement instances
-when possible (StepNumber, Drawing) and fall back to Unknown when the type is
-ambiguous. We then nest elements by bbox containment, choosing the smallest
-containing ancestor for each child.
+We nest elements by bbox containment, choosing the smallest containing
+ancestor for each child.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import logging
+from dataclasses import replace
 from typing import List, Optional, Sequence, Tuple
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
-from build_a_long.bounding_box_extractor.extractor.page_elements import (
-    Element,
-    Unknown,
-)
+from build_a_long.bounding_box_extractor.extractor.page_elements import Element
 
-
-@dataclass(frozen=True)
-class ElementNode:
-    """A tree node holding a PageElement and the nested children."""
-
-    element: Element
-    children: Tuple["ElementNode", ...] = ()
+logger = logging.getLogger(__name__)
 
 
 def build_hierarchy_from_elements(
     elements: Sequence[Element],
-) -> Tuple[ElementNode, ...]:
+) -> Tuple[Element, ...]:
     """Build a containment-based hierarchy from typed elements.
 
     Strategy:
     - Sort elements by area ascending (smallest first) so children attach before parents.
     - For each element, find the smallest containing ancestor and attach as a child.
-    - Unknown parents mirror their direct children's elements in their `children` tuple.
     """
     converted: List[Element] = list(elements)
 
+    # TODO Move this to a method on BBox
     def _area(b: BBox) -> float:
         return max(0.0, (b.x1 - b.x0)) * max(0.0, (b.y1 - b.y0))
 
@@ -72,21 +62,12 @@ def build_hierarchy_from_elements(
         else:
             children_lists[p].append(i)
 
-    # Recursively produce ElementNode trees. For Unknown parents, we also
-    # embed children into the Unknown element's `children` tuple for convenience.
-    def build_node(i: int) -> ElementNode:
-        child_nodes = tuple(build_node(cidx) for cidx in children_lists[i])
+    # Recursively produce Element trees with children attached.
+    # Each element is replaced with a copy that includes its children.
+    def build_element(i: int) -> Element:
+        child_elements = tuple(build_element(cidx) for cidx in children_lists[i])
         ele = converted[i]
-        if isinstance(ele, Unknown):
-            ele = Unknown(
-                bbox=ele.bbox,
-                label=ele.label,
-                raw_type=ele.raw_type,
-                content=ele.content,
-                source_id=ele.source_id,
-                btype=ele.btype,
-                children=tuple(c.element for c in child_nodes),
-            )
-        return ElementNode(element=ele, children=child_nodes)
+        # Use dataclass replace to add children to the element
+        return replace(ele, children=child_elements)
 
-    return tuple(build_node(r) for r in roots)
+    return tuple(build_element(r) for r in roots)

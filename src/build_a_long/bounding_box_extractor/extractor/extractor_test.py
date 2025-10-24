@@ -4,7 +4,7 @@ from build_a_long.bounding_box_extractor.extractor import (
     extract_bounding_boxes,
 )
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
-    Drawing,
+    Image,
     Text,
 )
 
@@ -59,7 +59,7 @@ class TestBoundingBoxExtractor:
         assert isinstance(elements[0], Text)
         assert elements[0].content == "1"
         assert elements[0].bbox.x0 == 10.0 and elements[0].bbox.y0 == 20.0
-        assert isinstance(elements[1], Drawing)
+        assert isinstance(elements[1], Image)
 
     @patch("build_a_long.bounding_box_extractor.extractor.extractor.pymupdf.open")
     def test_extract_bounding_boxes_with_output(
