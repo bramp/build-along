@@ -17,6 +17,8 @@ This file outlines the tasks required to build the Lego instructions project.
 - [x] Define a storage location for downloaded PDFs (e.g., a `data/` directory).
 - [x] Don't download a pdf if it already exists locally.
 - [x] Add a progress indicator for downloads.
+- [ ] In the metadata for the pdfs, can you add a hash (if the file is downloaded and accessable on the disk)
+- [ ] Fix the integration tests (or figure out a way to run on demand)
 
 ## Phase 3: Bounding Box Extractor
 
@@ -48,3 +50,7 @@ This file outlines the tasks required to build the Lego instructions project.
 - [ ] Add error handling and logging.
 - [ ] Write unit and integration tests.
 - [ ] Document the code and usage.
+
+## Misc
+
+- [ ] pytest is in requirements.txt but should it instead be in requirements-dev.txt?

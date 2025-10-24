@@ -5,7 +5,6 @@ from build_a_long.bounding_box_extractor.extractor import (
 )
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
-    StepNumber,
     Text,
 )
 
@@ -57,7 +56,8 @@ class TestBoundingBoxExtractor:
         assert len(result["pages"]) == 1
         elements = result["pages"][0]["elements"]
         assert len(elements) == 2
-        assert isinstance(elements[0], StepNumber)
+        assert isinstance(elements[0], Text)
+        assert elements[0].content == "1"
         assert elements[0].bbox.x0 == 10.0 and elements[0].bbox.y0 == 20.0
         assert isinstance(elements[1], Drawing)
 
@@ -99,7 +99,8 @@ class TestBoundingBoxExtractor:
         assert len(result["pages"]) == 1
         elements = result["pages"][0]["elements"]
         assert len(elements) == 1
-        assert isinstance(elements[0], StepNumber)
+        assert isinstance(elements[0], Text)
+        assert elements[0].content == "1"
 
     @patch("build_a_long.bounding_box_extractor.extractor.extractor.pymupdf.open")
     def test_extract_text_elements(self, mock_pymupdf_open):
