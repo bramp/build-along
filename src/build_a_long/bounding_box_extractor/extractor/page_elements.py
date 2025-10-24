@@ -50,7 +50,7 @@ class Text(PageElement):
     Stores the actual text content extracted from the PDF.
     """
 
-    content: str
+    text: str
     label: Optional[str] = None  # e.g., 'parts_list', 'instruction', etc.
     children: List["Element"] = field(default_factory=list)
 
