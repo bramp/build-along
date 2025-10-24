@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from build_a_long.bounding_box_extractor.extractor import (
     extract_bounding_boxes,
@@ -7,23 +7,17 @@ from build_a_long.bounding_box_extractor.extractor.extractor import (
     _extract_text_elements,
     _extract_image_elements,
     _extract_drawing_elements,
-    _create_root_element,
     _warn_unknown_block_types,
 )
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
     Image,
-    Root,
     Text,
 )
 
 
 class TestBoundingBoxExtractor:
-    @patch("build_a_long.bounding_box_extractor.extractor.extractor.pymupdf.open")
-    def test_extract_bounding_boxes_basic(self, mock_pymupdf_open):
-        # Create a dummy PDF path for testing
-        dummy_pdf_path = "/path/to/dummy.pdf"
-
+    def test_extract_bounding_boxes_basic(self):
         # Build a fake document with 1 page and simple rawdict content
         fake_page = MagicMock()
         fake_page.get_text.return_value = {
@@ -46,6 +40,7 @@ class TestBoundingBoxExtractor:
             ]
         }
         fake_page.get_drawings.return_value = []
+        fake_page.rect = MagicMock(x0=0, y0=0, x1=612, y1=792)
 
         fake_doc = MagicMock()
         fake_doc.__len__.return_value = 1
@@ -55,14 +50,13 @@ class TestBoundingBoxExtractor:
             return fake_page
 
         fake_doc.__getitem__.side_effect = _getitem
-        mock_pymupdf_open.return_value = fake_doc
 
-        # Call the function (no output_dir parameter after refactor)
-        result = extract_bounding_boxes(dummy_pdf_path)
+        # Call the function with document instead of path
+        result = extract_bounding_boxes(fake_doc)
 
         # Validate typed elements structure
-        assert len(result.pages) == 1
-        page_data = result.pages[0]
+        assert len(result) == 1
+        page_data = result[0]
         assert page_data.page_number == 1
         elements = page_data.elements
         assert len(elements) == 2
@@ -71,14 +65,8 @@ class TestBoundingBoxExtractor:
         assert elements[0].bbox.x0 == 10.0 and elements[0].bbox.y0 == 20.0
         assert isinstance(elements[1], Image)
 
-    @patch("build_a_long.bounding_box_extractor.extractor.extractor.pymupdf.open")
-    def test_extract_bounding_boxes_with_output(
-        self,
-        mock_pymupdf_open,
-    ):
+    def test_extract_bounding_boxes_with_output(self):
         """Test that extractor does NOT write images/json (that's in main.py now)."""
-        dummy_pdf_path = "/path/to/dummy.pdf"
-
         mock_page = MagicMock()
         mock_page.get_text.return_value = {
             "blocks": [
@@ -96,27 +84,24 @@ class TestBoundingBoxExtractor:
             ]
         }
         mock_page.get_drawings.return_value = []
+        mock_page.rect = MagicMock(x0=0, y0=0, x1=612, y1=792)
 
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 1
         mock_doc.__getitem__.return_value = mock_page
-        mock_pymupdf_open.return_value = mock_doc
 
-        result = extract_bounding_boxes(dummy_pdf_path)
+        result = extract_bounding_boxes(mock_doc)
 
         # Typed elements exist
-        assert len(result.pages) == 1
-        page_data = result.pages[0]
+        assert len(result) == 1
+        page_data = result[0]
         elements = page_data.elements
         assert len(elements) == 1
         assert isinstance(elements[0], Text)
         assert elements[0].content == "1"
 
-    @patch("build_a_long.bounding_box_extractor.extractor.extractor.pymupdf.open")
-    def test_extract_text_elements(self, mock_pymupdf_open):
+    def test_extract_text_elements(self):
         """Test that regular text is extracted as Text elements with content."""
-        dummy_pdf_path = "/path/to/dummy.pdf"
-
         mock_page = MagicMock()
         mock_page.get_text.return_value = {
             "blocks": [
@@ -137,17 +122,17 @@ class TestBoundingBoxExtractor:
             ]
         }
         mock_page.get_drawings.return_value = []
+        mock_page.rect = MagicMock(x0=0, y0=0, x1=612, y1=792)
 
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 1
         mock_doc.__getitem__.return_value = mock_page
-        mock_pymupdf_open.return_value = mock_doc
 
-        result = extract_bounding_boxes(dummy_pdf_path)
+        result = extract_bounding_boxes(mock_doc)
 
         # Validate text element
-        assert len(result.pages) == 1
-        page_data = result.pages[0]
+        assert len(result) == 1
+        page_data = result[0]
         elements = page_data.elements
         assert len(elements) == 1
         assert isinstance(elements[0], Text)
@@ -253,24 +238,6 @@ class TestExtractedMethods:
         assert isinstance(result[1], Drawing)
         assert result[1].bbox.x0 == 50.0
         assert result[1].bbox.y0 == 60.0
-
-    def test_create_root_element(self):
-        """Test _create_root_element creates Root with page bounds."""
-        mock_page = MagicMock()
-        mock_rect = MagicMock()
-        mock_rect.x0 = 0.0
-        mock_rect.y0 = 0.0
-        mock_rect.x1 = 612.0  # Letter size width
-        mock_rect.y1 = 792.0  # Letter size height
-        mock_page.rect = mock_rect
-
-        result = _create_root_element(mock_page)
-
-        assert isinstance(result, Root)
-        assert result.bbox.x0 == 0.0
-        assert result.bbox.y0 == 0.0
-        assert result.bbox.x1 == 612.0
-        assert result.bbox.y1 == 792.0
 
     def test_warn_unknown_block_types_valid(self):
         """Test _warn_unknown_block_types returns True for valid blocks."""

@@ -35,13 +35,6 @@ class PageData:
     elements: List[Element]
 
 
-@dataclass
-class ExtractedData:
-    """Complete data extracted from a PDF document."""
-
-    pages: List[PageData]
-
-
 def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
     """Extract text elements from a page's raw dictionary blocks.
 
@@ -66,7 +59,7 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
         text_block: TextBlockDict = b  # type: ignore[assignment]
 
         for line in text_block.get("lines", []):
-            for si, span in enumerate(line.get("spans", [])):
+            for span in line.get("spans", []):
                 sbbox: BBoxTuple = span.get("bbox", (0.0, 0.0, 0.0, 0.0))
                 nbbox = BBox(
                     x0=float(sbbox[0]),
@@ -145,25 +138,6 @@ def _extract_drawing_elements(drawings: List[Any]) -> List[Element]:
     return elements
 
 
-def _create_root_element(page: pymupdf.Page) -> Root:
-    """Create a Root element encompassing the entire page.
-
-    Args:
-        page: PyMuPDF page object
-
-    Returns:
-        Root element with page bounds
-    """
-    page_rect = page.rect
-    root_bbox = BBox(
-        x0=float(page_rect.x0),
-        y0=float(page_rect.y0),
-        x1=float(page_rect.x1),
-        y1=float(page_rect.y1),
-    )
-    return Root(bbox=root_bbox)
-
-
 def _warn_unknown_block_types(blocks: List[Any]) -> bool:
     """Log warnings for blocks with unsupported types.
 
@@ -219,81 +193,69 @@ def _extract_page_elements(
         typed_elements.extend(_extract_drawing_elements(drawings))
 
     # Create root element and build hierarchy
-    root_element = _create_root_element(page)
     hierarchy = build_hierarchy_from_elements(typed_elements)
 
-    # Set the hierarchy as children of the root element
-    from dataclasses import replace
-
-    root_with_children = replace(root_element, children=hierarchy)
+    # Create root element with the hierarchy as children
+    page_rect = page.rect
+    root_bbox = BBox(
+        x0=float(page_rect.x0),
+        y0=float(page_rect.y0),
+        x1=float(page_rect.x1),
+        y1=float(page_rect.y1),
+    )
+    root_element = Root(bbox=root_bbox, children=hierarchy)
 
     return PageData(
         page_number=page_num,
-        root=root_with_children,
+        root=root_element,
         elements=typed_elements,
     )
 
 
 def extract_bounding_boxes(
-    pdf_path: str,  # TODO Change to path like
+    doc: pymupdf.Document,
     start_page: int | None = None,
     end_page: int | None = None,
     include_types: Set[str] = {"text", "image", "drawing"},
-) -> ExtractedData:
+) -> List[PageData]:
     """
     Extract bounding boxes for instruction numbers, parts lists, and build steps
-    from a given PDF file using PyMuPDF when available.
+    from a given PDF document using PyMuPDF.
 
     Args:
-        pdf_path: Path to the PDF file
+        doc: PyMuPDF Document object
         start_page: First page to process (1-indexed), None for first page
         end_page: Last page to process (1-indexed, inclusive), None for last page
         include_types: Set of element types to include ("text", "image", "drawing")
 
     Returns:
-        ExtractedData containing all pages with their elements and hierarchies
+        List of PageData containing all pages with their elements and hierarchies
     """
-    logger.info(f"Processing PDF: {pdf_path}")
     pages: List[PageData] = []
 
-    doc = None
-    try:
-        # TODO Do I need to call doc.close() later?
-        doc = pymupdf.open(pdf_path)
-        num_pages = len(doc)
+    num_pages = len(doc)
 
-        # Determine page range (convert to 0-indexed)
-        first_page = (start_page - 1) if start_page is not None else 0
-        last_page = (end_page - 1) if end_page is not None else (num_pages - 1)
+    # Determine page range (convert to 0-indexed)
+    first_page = (start_page - 1) if start_page is not None else 0
+    last_page = (end_page - 1) if end_page is not None else (num_pages - 1)
 
-        # Validate and clamp page range
-        first_page = max(0, min(first_page, num_pages - 1))
-        last_page = max(0, min(last_page, num_pages - 1))
+    # Validate and clamp page range
+    first_page = max(0, min(first_page, num_pages - 1))
+    last_page = max(0, min(last_page, num_pages - 1))
 
-        if first_page > last_page:
-            logger.warning("Invalid page range %s-%s", str(start_page), str(end_page))
-            return ExtractedData(pages=[])
+    if first_page > last_page:
+        logger.warning("Invalid page range %s-%s", str(start_page), str(end_page))
+        return []
 
-        logger.info(
-            "Processing pages %s-%s of %s", first_page + 1, last_page + 1, num_pages
-        )
+    logger.info(
+        "Processing pages %s-%s of %s", first_page + 1, last_page + 1, num_pages
+    )
 
-        for page_index in range(first_page, last_page + 1):
-            page = doc[page_index]
-            page_num = page_index + 1
+    for page_index in range(first_page, last_page + 1):
+        page = doc[page_index]
+        page_num = page_index + 1
 
-            page_data = _extract_page_elements(page, page_num, include_types)
-            pages.append(page_data)
+        page_data = _extract_page_elements(page, page_num, include_types)
+        pages.append(page_data)
 
-    except Exception:
-        # logger.exception will include the traceback automatically
-        logger.exception("An error occurred while processing %s", pdf_path)
-
-    finally:
-        try:
-            if doc is not None:
-                doc.close()
-        except Exception:
-            pass
-
-    return ExtractedData(pages=pages)
+    return pages

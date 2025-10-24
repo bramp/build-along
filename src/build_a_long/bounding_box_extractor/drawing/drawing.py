@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Tuple
+from typing import List
 
 import pymupdf
 from PIL import Image, ImageDraw
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def draw_and_save_bboxes(
     page: pymupdf.Page,
-    hierarchy: Tuple[Element, ...],
+    hierarchy: List[Element],
     output_path: Path,
 ) -> None:
     """
