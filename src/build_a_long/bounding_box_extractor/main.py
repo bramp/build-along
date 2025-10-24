@@ -2,15 +2,98 @@ import argparse
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict
+
+import fitz  # type: ignore  # PyMuPDF
 
 from build_a_long.bounding_box_extractor.extractor.extractor import (
     extract_bounding_boxes,
 )
+from build_a_long.bounding_box_extractor.drawing.drawing import (
+    draw_and_save_bboxes,
+)
 from build_a_long.bounding_box_extractor.parser.parser import parse_page_range
 
 
-def main() -> int:
+def _element_to_json(ele: Any) -> Dict[str, Any]:
+    """Convert a PageElement to a JSON-friendly dict using asdict()."""
+    data = asdict(ele)
+    data["__type__"] = ele.__class__.__name__
+    return data
+
+
+def _node_to_json(node: Any) -> Dict[str, Any]:
+    """Convert an ElementNode to JSON recursively."""
+    return {
+        "element": _element_to_json(node.element),
+        "children": [_node_to_json(c) for c in node.children],
+    }
+
+
+def serialize_extracted_data(extracted_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert extracted data with dataclass elements to JSON-serializable format.
+
+    Args:
+        extracted_data: The raw extracted data with dataclass elements
+
+    Returns:
+        JSON-serializable dictionary with type metadata
+    """
+    json_data: Dict[str, Any] = {"pages": []}
+    for page in extracted_data.get("pages", []):
+        json_page: Dict[str, Any] = {"page_number": page["page_number"]}
+        json_page["elements"] = [_element_to_json(e) for e in page["elements"]]
+        if "hierarchy" in page:
+            json_page["hierarchy"] = [_node_to_json(n) for n in page["hierarchy"]]
+        json_data["pages"].append(json_page)
+    return json_data
+
+
+def save_json(extracted_data: Dict[str, Any], output_dir: Path, pdf_path: Path) -> None:
+    """Save extracted data as JSON file.
+
+    Args:
+        extracted_data: The raw extracted data to serialize
+        output_dir: Directory where JSON should be saved
+        pdf_path: Original PDF path (used for naming the JSON file)
+    """
+    json_data = serialize_extracted_data(extracted_data)
+    output_json_path = output_dir / (pdf_path.stem + ".json")
+    with open(output_json_path, "w") as f:
+        json.dump(json_data, f, indent=4)
+    print(f"Saved JSON to {output_json_path}")
+
+
+def render_annotated_images(
+    extracted_data: Dict[str, Any], pdf_path: Path, output_dir: Path
+) -> None:
+    """Render PDF pages with annotated bounding boxes as PNG images.
+
+    Args:
+        extracted_data: The extracted data containing hierarchy information
+        pdf_path: Path to the source PDF file
+        output_dir: Directory where PNG images should be saved
+    """
+    with fitz.open(str(pdf_path)) as doc:
+        num_pages = len(doc)
+        for page in extracted_data.get("pages", []):
+            page_num = int(page["page_number"])  # 1-indexed
+            if 1 <= page_num <= num_pages:
+                draw_and_save_bboxes(
+                    doc[page_num - 1], tuple(page["hierarchy"]), output_dir, page_num
+                )
+            else:
+                print(
+                    f"Warning: page {page_num} out of bounds for document with {num_pages} pages"
+                )
+
+
+def parse_arguments() -> argparse.Namespace:
+    """Parse and return command-line arguments.
+
+    Returns:
+        Parsed arguments namespace
+    """
     parser = argparse.ArgumentParser(
         description="Extract bounding boxes from a PDF file and export images/JSON for debugging."
     )
@@ -30,7 +113,16 @@ def main() -> int:
         type=str,
         help="Comma-separated list of element types to include (e.g., text,image,drawing,path). Defaults to all types.",
     )
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main() -> int:
+    """Main entry point for the bounding box extractor CLI.
+
+    Returns:
+        Exit code (0 for success, non-zero for error)
+    """
+    args = parse_arguments()
 
     pdf_path = Path(args.pdf_path)
     if not pdf_path.exists():
@@ -53,9 +145,15 @@ def main() -> int:
 
     include_types = args.include_types.split(",") if args.include_types else None
 
-    extract_bounding_boxes(
-        str(pdf_path), output_dir, start_page, end_page, include_types=include_types
+    # Extract bounding box data from PDF
+    extracted_data: Dict[str, Any] = extract_bounding_boxes(
+        str(pdf_path), start_page, end_page, include_types=include_types
     )
+
+    # Save results as JSON and render annotated images
+    save_json(extracted_data, output_dir, pdf_path)
+    render_annotated_images(extracted_data, pdf_path, output_dir)
+
     return 0
 
 

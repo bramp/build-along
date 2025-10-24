@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from build_a_long.bounding_box_extractor.extractor.extractor import (
@@ -49,8 +48,8 @@ class TestBoundingBoxExtractor:
         fake_doc.__getitem__.side_effect = _getitem
         mock_fitz_open.return_value = fake_doc
 
-        # Call the function
-        result = extract_bounding_boxes(dummy_pdf_path, output_dir=None)
+        # Call the function (no output_dir parameter after refactor)
+        result = extract_bounding_boxes(dummy_pdf_path)
 
         # Validate typed elements structure
         assert "pages" in result
@@ -62,28 +61,14 @@ class TestBoundingBoxExtractor:
         assert isinstance(elements[1], Drawing)
 
     @patch("build_a_long.bounding_box_extractor.extractor.extractor.fitz.open")
-    @patch("build_a_long.bounding_box_extractor.drawing.drawing.Image.frombytes")
-    @patch("pathlib.Path.mkdir")
-    def test_extract_bounding_boxes_with_image_output(
+    def test_extract_bounding_boxes_with_output(
         self,
-        mock_path_mkdir,
-        mock_image_frombytes,
         mock_fitz_open,
     ):
+        """Test that extractor does NOT write images/json (that's in main.py now)."""
         dummy_pdf_path = "/path/to/dummy.pdf"
-        dummy_output_dir = Path("/tmp/output")
-
-        # Mock the pixmap and image objects
-        mock_pixmap = MagicMock()
-        mock_pixmap.width = 100
-        mock_pixmap.height = 100
-        mock_pixmap.samples = b"dummy_samples"
-
-        mock_image = MagicMock()
-        mock_image_frombytes.return_value = mock_image
 
         mock_page = MagicMock()
-        mock_page.get_pixmap.return_value = mock_pixmap
         mock_page.get_text.return_value = {
             "blocks": [
                 {
@@ -106,13 +91,7 @@ class TestBoundingBoxExtractor:
         mock_doc.__getitem__.return_value = mock_page
         mock_fitz_open.return_value = mock_doc
 
-        result = extract_bounding_boxes(dummy_pdf_path, output_dir=dummy_output_dir)
-
-        # Assert that image saving was attempted
-        mock_image.save.assert_called_once_with(dummy_output_dir / "page_001.png")
-
-        # Ensure that the output directory was created
-        mock_path_mkdir.assert_called_once_with(parents=True, exist_ok=True)
+        result = extract_bounding_boxes(dummy_pdf_path)
 
         # Typed elements exist
         assert "pages" in result
