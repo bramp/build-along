@@ -10,12 +10,12 @@ __pycache__/
 .pants.d/
 .dist/
 
-# Local data and downloads
-/data/
-*.pdf
 
 # VS Code
 .vscode/
 
 # TODO remove this eventually
 example/
+
+# macOS
+.DS_Store
