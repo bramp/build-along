@@ -7,7 +7,10 @@ from typing import Any, Dict
 
 import pymupdf
 
-from build_a_long.bounding_box_extractor.extractor import extract_bounding_boxes
+from build_a_long.bounding_box_extractor.extractor import (
+    extract_bounding_boxes,
+    ExtractedData,
+)
 from build_a_long.bounding_box_extractor.drawing import draw_and_save_bboxes
 from build_a_long.bounding_box_extractor.parser import parse_page_range
 
@@ -30,30 +33,29 @@ def _node_to_json(element: Any) -> Dict[str, Any]:
     }
 
 
-def serialize_extracted_data(extracted_data: Dict[str, Any]) -> Dict[str, Any]:
+def serialize_extracted_data(extracted_data: ExtractedData) -> Dict[str, Any]:
     """Convert extracted data with dataclass elements to JSON-serializable format.
 
     Args:
-        extracted_data: The raw extracted data with dataclass elements
+        extracted_data: The ExtractedData containing all pages
 
     Returns:
         JSON-serializable dictionary with type metadata
     """
     json_data: Dict[str, Any] = {"pages": []}
-    for page in extracted_data.get("pages", []):
-        json_page: Dict[str, Any] = {"page_number": page["page_number"]}
-        json_page["elements"] = [_element_to_json(e) for e in page["elements"]]
-        if "hierarchy" in page:
-            json_page["hierarchy"] = [_node_to_json(n) for n in page["hierarchy"]]
+    for page_data in extracted_data.pages:
+        json_page: Dict[str, Any] = {"page_number": page_data.page_number}
+        json_page["elements"] = [_element_to_json(e) for e in page_data.elements]
+        json_page["hierarchy"] = [_node_to_json(n) for n in page_data.root.children]
         json_data["pages"].append(json_page)
     return json_data
 
 
-def save_json(extracted_data: Dict[str, Any], output_dir: Path, pdf_path: Path) -> None:
+def save_json(extracted_data: ExtractedData, output_dir: Path, pdf_path: Path) -> None:
     """Save extracted data as JSON file.
 
     Args:
-        extracted_data: The raw extracted data to serialize
+        extracted_data: The ExtractedData to serialize
         output_dir: Directory where JSON should be saved
         pdf_path: Original PDF path (used for naming the JSON file)
     """
@@ -65,23 +67,23 @@ def save_json(extracted_data: Dict[str, Any], output_dir: Path, pdf_path: Path) 
 
 
 def render_annotated_images(
-    extracted_data: Dict[str, Any], pdf_path: Path, output_dir: Path
+    extracted_data: ExtractedData, pdf_path: Path, output_dir: Path
 ) -> None:
     """Render PDF pages with annotated bounding boxes as PNG images.
 
     Args:
-        extracted_data: The extracted data containing hierarchy information
+        extracted_data: The ExtractedData containing hierarchy information
         pdf_path: Path to the source PDF file
         output_dir: Directory where PNG images should be saved
     """
     with pymupdf.open(str(pdf_path)) as doc:
-        for page_data in extracted_data.get("pages", []):
-            page_num = int(page_data["page_number"])  # 1-indexed
+        for page_data in extracted_data.pages:
+            page_num = page_data.page_number  # 1-indexed
             page = doc[page_num - 1]  # 0-indexed
             output_path = output_dir / f"page_{page_num:03d}.png"
             draw_and_save_bboxes(
                 page,
-                tuple(page_data["hierarchy"]),
+                page_data.root.children,
                 output_path,
             )
 
@@ -145,7 +147,7 @@ def main() -> int:
     include_types = args.include_types.split(",")
 
     # Extract bounding box data from PDF
-    extracted_data: Dict[str, Any] = extract_bounding_boxes(
+    extracted_data: ExtractedData = extract_bounding_boxes(
         str(pdf_path), start_page, end_page, include_types=include_types
     )
 

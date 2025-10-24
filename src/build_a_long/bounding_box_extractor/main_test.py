@@ -28,21 +28,25 @@ class TestMain:
         from build_a_long.bounding_box_extractor.extractor.bbox import BBox
         from build_a_long.bounding_box_extractor.extractor.page_elements import (
             StepNumber,
+            Root,
+        )
+        from build_a_long.bounding_box_extractor.extractor import (
+            ExtractedData,
+            PageData,
         )
 
         step_element = StepNumber(
             bbox=BBox(10.0, 20.0, 30.0, 40.0), value=1, children=()
         )
+        root_element = Root(bbox=BBox(0.0, 0.0, 100.0, 100.0), children=(step_element,))
 
-        mock_extract_bounding_boxes.return_value = {
-            "pages": [
-                {
-                    "page_number": 1,
-                    "elements": [step_element],
-                    "hierarchy": [step_element],
-                }
-            ]
-        }
+        page_data = PageData(
+            page_number=1,
+            root=root_element,
+            elements=[step_element],
+        )
+
+        mock_extract_bounding_boxes.return_value = ExtractedData(pages=[page_data])
 
         # Mock the PDF document
         mock_page = MagicMock()

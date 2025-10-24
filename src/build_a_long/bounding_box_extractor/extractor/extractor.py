@@ -1,57 +1,267 @@
 import logging
-from typing import Any, Dict, Set
+from dataclasses import dataclass
+from typing import Any, List, Set
 
 import pymupdf
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
-
 from build_a_long.bounding_box_extractor.extractor.hierarchy import (
     build_hierarchy_from_elements,
 )
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
+    Element,
     Image,
     Root,
     Text,
 )
 from build_a_long.bounding_box_extractor.extractor.pymupdf_types import (
     BBoxTuple,
+    BlockDict,
+    ImageBlockDict,
     RawDict,
+    TextBlockDict,
 )
 
 logger = logging.getLogger("extractor")
 
 
+@dataclass
+class PageData:
+    """Data extracted from a single PDF page."""
+
+    page_number: int
+    root: Root
+    elements: List[Element]
+
+
+@dataclass
+class ExtractedData:
+    """Complete data extracted from a PDF document."""
+
+    pages: List[PageData]
+
+
+def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
+    """Extract text elements from a page's raw dictionary blocks.
+
+    Args:
+        blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
+
+    Returns:
+        List of Text elements
+    """
+    elements: List[Element] = []
+
+    for b in blocks:
+        assert isinstance(b, dict)
+
+        bi: int | None = b.get("number")
+        btype: int | None = b.get("type")  # 0=text, 1=image
+
+        if btype != 0:  # Skip non-text blocks
+            continue
+
+        # Now we know b is a text block
+        text_block: TextBlockDict = b  # type: ignore[assignment]
+
+        for line in text_block.get("lines", []):
+            for si, span in enumerate(line.get("spans", [])):
+                sbbox: BBoxTuple = span.get("bbox", (0.0, 0.0, 0.0, 0.0))
+                nbbox = BBox(
+                    x0=float(sbbox[0]),
+                    y0=float(sbbox[1]),
+                    x1=float(sbbox[2]),
+                    y1=float(sbbox[3]),
+                )
+
+                text: str = span.get("text", "")
+                logger.debug("Found text %s %r with bbox %s", bi, text, nbbox)
+
+                elements.append(Text(bbox=nbbox, content=text, label=None))
+
+    return elements
+
+
+def _extract_image_elements(blocks: List[BlockDict]) -> List[Element]:
+    """Extract image elements from a page's raw dictionary blocks.
+
+    Args:
+        blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
+
+    Returns:
+        List of Image elements
+    """
+    elements: List[Element] = []
+
+    for b in blocks:
+        assert isinstance(b, dict)
+
+        bi: int | None = b.get("number")
+        btype: int | None = b.get("type")  # 0=text, 1=image
+
+        if btype != 1:  # Skip non-image blocks
+            continue
+
+        # Now we know b is an image block
+        image_block: ImageBlockDict = b  # type: ignore[assignment]
+
+        bbox: BBoxTuple = image_block.get("bbox", (0.0, 0.0, 0.0, 0.0))
+        nbbox = BBox(
+            x0=float(bbox[0]),
+            y0=float(bbox[1]),
+            x1=float(bbox[2]),
+            y1=float(bbox[3]),
+        )
+
+        elements.append(Image(bbox=nbbox, image_id=f"image_{bi}"))
+        logger.debug("Found image %s with %s", bi, nbbox)
+
+    return elements
+
+
+def _extract_drawing_elements(drawings: List[Any]) -> List[Element]:
+    """Extract drawing (vector path) elements from a page.
+
+    Args:
+        drawings: List of drawing dictionaries from page.get_drawings()
+
+    Returns:
+        List of Drawing elements
+    """
+    elements: List[Element] = []
+
+    for d in drawings:
+        drect = d["rect"]
+        nbbox = BBox(
+            x0=float(drect.x0),
+            y0=float(drect.y0),
+            x1=float(drect.x1),
+            y1=float(drect.y1),
+        )
+        elements.append(Drawing(bbox=nbbox))
+        logger.debug("Found drawing with %s", nbbox)
+
+    return elements
+
+
+def _create_root_element(page: pymupdf.Page) -> Root:
+    """Create a Root element encompassing the entire page.
+
+    Args:
+        page: PyMuPDF page object
+
+    Returns:
+        Root element with page bounds
+    """
+    page_rect = page.rect
+    root_bbox = BBox(
+        x0=float(page_rect.x0),
+        y0=float(page_rect.y0),
+        x1=float(page_rect.x1),
+        y1=float(page_rect.y1),
+    )
+    return Root(bbox=root_bbox)
+
+
+def _warn_unknown_block_types(blocks: List[Any]) -> bool:
+    """Log warnings for blocks with unsupported types.
+
+    Args:
+        blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
+
+    Returns:
+        True if all blocks are valid types, False if any unknown types were found
+    """
+    for b in blocks:
+        assert isinstance(b, dict)
+        bi: int | None = b.get("number")
+        btype: int | None = b.get("type")  # 0=text, 1=image
+
+        if btype not in (0, 1):
+            logger.warning(
+                "Skipping block with unsupported type %s at index %s", btype, bi
+            )
+            return False
+    return True
+
+
+def _extract_page_elements(
+    page: pymupdf.Page, page_num: int, include_types: Set[str]
+) -> PageData:
+    """Extract all elements from a single page.
+
+    Args:
+        page: PyMuPDF page object
+        page_num: Page number (1-indexed)
+        include_types: Set of element types to include
+
+    Returns:
+        PageData with all extracted elements and hierarchy
+    """
+    logger.info("Processing page %s", page_num)
+
+    # Get raw dictionary with text and image blocks
+    raw: RawDict = page.get_text("rawdict")  # type: ignore[assignment]
+    assert isinstance(raw, dict)
+
+    blocks = raw.get("blocks", [])
+    assert _warn_unknown_block_types(blocks)
+
+    # Extract elements by type
+    typed_elements: List[Element] = []
+    if "text" in include_types:
+        typed_elements.extend(_extract_text_elements(blocks))
+    if "image" in include_types:
+        typed_elements.extend(_extract_image_elements(blocks))
+    if "drawing" in include_types:
+        drawings = page.get_drawings()
+        typed_elements.extend(_extract_drawing_elements(drawings))
+
+    # Create root element and build hierarchy
+    root_element = _create_root_element(page)
+    hierarchy = build_hierarchy_from_elements(typed_elements)
+
+    # Set the hierarchy as children of the root element
+    from dataclasses import replace
+
+    root_with_children = replace(root_element, children=hierarchy)
+
+    return PageData(
+        page_number=page_num,
+        root=root_with_children,
+        elements=typed_elements,
+    )
+
+
 def extract_bounding_boxes(
-    pdf_path: str,
+    pdf_path: str,  # TODO Change to path like
     start_page: int | None = None,
     end_page: int | None = None,
     include_types: Set[str] = {"text", "image", "drawing"},
-) -> Dict[str, Any]:
+) -> ExtractedData:
     """
     Extract bounding boxes for instruction numbers, parts lists, and build steps
     from a given PDF file using PyMuPDF when available.
 
     Args:
         pdf_path: Path to the PDF file
-        output_dir: Directory to save images and JSON files (required for output)
         start_page: First page to process (1-indexed), None for first page
         end_page: Last page to process (1-indexed, inclusive), None for last page
+        include_types: Set of element types to include ("text", "image", "drawing")
 
-    Returns the extracted data dict for convenience (also written to JSON file).
+    Returns:
+        ExtractedData containing all pages with their elements and hierarchies
     """
     logger.info(f"Processing PDF: {pdf_path}")
-    extracted_data: Dict[str, Any] = {"pages": []}
+    pages: List[PageData] = []
 
-    # Initialize page range variables
     doc = None
     try:
         # TODO Do I need to call doc.close() later?
         doc = pymupdf.open(pdf_path)
         num_pages = len(doc)
 
-        # TODO Let's remove the zero based page indexing variables. It just
-        # .     confuses things.
         # Determine page range (convert to 0-indexed)
         first_page = (start_page - 1) if start_page is not None else 0
         last_page = (end_page - 1) if end_page is not None else (num_pages - 1)
@@ -62,7 +272,7 @@ def extract_bounding_boxes(
 
         if first_page > last_page:
             logger.warning("Invalid page range %s-%s", str(start_page), str(end_page))
-            return extracted_data
+            return ExtractedData(pages=[])
 
         logger.info(
             "Processing pages %s-%s of %s", first_page + 1, last_page + 1, num_pages
@@ -71,103 +281,9 @@ def extract_bounding_boxes(
         for page_index in range(first_page, last_page + 1):
             page = doc[page_index]
             page_num = page_index + 1
-            logger.info("Processing page %s/%s", page_num, num_pages)
 
-            page_data: Dict[str, Any] = {"page_number": page_num, "elements": []}
-            typed_elements = []  # In-memory typed elements for this page
-
-            # Use rawdict to get both text and image blocks with bboxes
-            raw: RawDict = page.get_text("rawdict")  # type: ignore[assignment]
-            assert isinstance(raw, dict)
-
-            # See https://pymupdf.readthedocs.io/en/latest/textpage.html#page-dictionary
-            for b in raw.get("blocks", []):
-                assert isinstance(b, dict)
-
-                # See https://pymupdf.readthedocs.io/en/latest/textpage.html#block-dictionaries
-                bi: int | None = b.get("number")
-                btype: int | None = b.get("type")  # 0=text, 1=image
-
-                if btype == 0:  # Text block
-                    if "text" not in include_types:
-                        continue
-
-                    for line in b.get("lines", []):
-                        for si, span in enumerate(line.get("spans", [])):
-                            sbbox: BBoxTuple = span.get("bbox", (0.0, 0.0, 0.0, 0.0))
-                            nbbox = BBox(
-                                x0=float(sbbox[0]),
-                                y0=float(sbbox[1]),
-                                x1=float(sbbox[2]),
-                                y1=float(sbbox[3]),
-                            )
-
-                            text: str = span.get("text", "")
-                            logger.debug(
-                                "Found text %s %r with bbox %s", bi, text, nbbox
-                            )
-
-                            # Create a Text element for regular text
-                            typed_elements.append(
-                                Text(
-                                    bbox=nbbox,
-                                    content=text,
-                                    label=None,
-                                )
-                            )
-
-                elif btype == 1:
-                    if "image" not in include_types:
-                        continue
-
-                    bbox: BBoxTuple = b.get("bbox", (0.0, 0.0, 0.0, 0.0))
-                    nbbox = BBox(
-                        x0=float(bbox[0]),
-                        y0=float(bbox[1]),
-                        x1=float(bbox[2]),
-                        y1=float(bbox[3]),
-                    )
-                    typed_elements.append(Image(bbox=nbbox, image_id=f"image_{bi}"))
-
-                    logger.debug("Found image %s with %s", bi, nbbox)
-
-                else:
-                    logger.warning(
-                        "Skipping block with unsupported type %s at index %s", btype, bi
-                    )
-
-            # Now get drawings (paths)
-            if "drawing" in include_types:
-                drawings = page.get_drawings()
-                for d in drawings:
-                    drect = d["rect"]
-                    nbbox = BBox(
-                        x0=float(drect.x0),
-                        y0=float(drect.y0),
-                        x1=float(drect.x1),
-                        y1=float(drect.y1),
-                    )
-                    typed_elements.append(Drawing(bbox=nbbox))
-                    logger.debug("Found drawing with %s", nbbox)
-
-            # Create a Root element encompassing the entire page
-            page_rect = page.rect
-            root_bbox = BBox(
-                x0=float(page_rect.x0),
-                y0=float(page_rect.y0),
-                x1=float(page_rect.x1),
-                y1=float(page_rect.y1),
-            )
-            root_element = Root(bbox=root_bbox)
-
-            # Build containment hierarchy from typed elements
-            roots = build_hierarchy_from_elements(typed_elements)
-            page_data["root"] = root_element
-            page_data["elements"] = typed_elements  # typed Element list
-            page_data["hierarchy"] = roots  # tuple[Element, ...]
-
-            # Placeholder for build step identification (future work)
-            extracted_data["pages"].append(page_data)
+            page_data = _extract_page_elements(page, page_num, include_types)
+            pages.append(page_data)
 
     except Exception:
         # logger.exception will include the traceback automatically
@@ -180,4 +296,4 @@ def extract_bounding_boxes(
         except Exception:
             pass
 
-    return extracted_data
+    return ExtractedData(pages=pages)
