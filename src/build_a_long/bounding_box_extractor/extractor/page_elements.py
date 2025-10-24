@@ -99,6 +99,17 @@ class PathElement(PageElement):
 
 
 @dataclass(frozen=True)
+class Text(PageElement):
+    """A text element on the page.
+
+    Stores the actual text content extracted from the PDF.
+    """
+
+    content: str
+    label: Optional[str] = None  # e.g., 'parts_list', 'instruction', etc.
+
+
+@dataclass(frozen=True)
 class Unknown(PageElement):
     """An element with unknown semantics for now.
 
@@ -121,4 +132,6 @@ class Unknown(PageElement):
 
 
 # A helpful alias if callers want to store a heterogeneous collection
-Element = Union[PartsList, Part, PartCount, StepNumber, Drawing, PathElement, Unknown]
+Element = Union[
+    PartsList, Part, PartCount, StepNumber, Drawing, PathElement, Text, Unknown
+]

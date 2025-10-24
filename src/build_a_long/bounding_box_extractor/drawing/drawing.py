@@ -5,7 +5,11 @@ import fitz  # type: ignore  # PyMuPDF
 from PIL import Image, ImageDraw  # type: ignore
 
 from build_a_long.bounding_box_extractor.extractor.hierarchy import ElementNode
-from build_a_long.bounding_box_extractor.extractor.page_elements import Drawing, Unknown
+from build_a_long.bounding_box_extractor.extractor.page_elements import (
+    Drawing,
+    Text,
+    Unknown,
+)
 
 
 def draw_and_save_bboxes(
@@ -56,6 +60,12 @@ def draw_and_save_bboxes(
         if isinstance(element, Drawing):
             if element.image_id:
                 label = f"{label} ({element.image_id})"
+        elif isinstance(element, Text):
+            # For Text elements, show the actual text content
+            content = element.content.strip()
+            if len(content) > 50:  # Truncate long text
+                content = content[:47] + "..."
+            label = f"{label}: {content}"
         elif isinstance(element, Unknown):
             if element.btype is not None:
                 btype_map = {0: "text", 1: "image", 2: "drawing"}

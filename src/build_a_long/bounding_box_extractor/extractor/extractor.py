@@ -10,6 +10,7 @@ from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
     PathElement,
     StepNumber,
+    Text,
     Unknown,
 )
 
@@ -52,8 +53,6 @@ def extract_bounding_boxes(
     extracted_data: Dict[str, Any] = {"pages": []}
 
     # Initialize page range variables
-    first_page = 0
-    last_page = 0
     doc = None
     try:
         doc = fitz.open(pdf_path)
@@ -108,6 +107,10 @@ def extract_bounding_boxes(
                                 if not isinstance(text, str):
                                     text = ""
 
+                                print(
+                                    f"    Found text span: '{text}' with bbox {nbbox}"
+                                )
+
                                 label = _classify_text(text)
                                 if (
                                     label == "instruction_number"
@@ -117,18 +120,16 @@ def extract_bounding_boxes(
                                         StepNumber(bbox=nbbox, value=int(text.strip()))
                                     )
                                 else:
+                                    # Create a Text element for regular text
                                     typed_elements.append(
-                                        Unknown(
+                                        Text(
                                             bbox=nbbox,
+                                            content=text,
                                             label=(
                                                 "parts_list"
                                                 if label == "parts_list"
                                                 else None
                                             ),
-                                            raw_type=label,
-                                            content=text,
-                                            source_id=f"text_{bi}_{li}_{si}",
-                                            btype=0,
                                         )
                                     )
 
