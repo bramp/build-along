@@ -6,13 +6,9 @@ from typing import Any, Dict
 
 import fitz  # type: ignore  # PyMuPDF
 
-from build_a_long.bounding_box_extractor.extractor.extractor import (
-    extract_bounding_boxes,
-)
-from build_a_long.bounding_box_extractor.drawing.drawing import (
-    draw_and_save_bboxes,
-)
-from build_a_long.bounding_box_extractor.parser.parser import parse_page_range
+from build_a_long.bounding_box_extractor.extractor import extract_bounding_boxes
+from build_a_long.bounding_box_extractor.drawing import draw_and_save_bboxes
+from build_a_long.bounding_box_extractor.parser import parse_page_range
 
 
 def _element_to_json(ele: Any) -> Dict[str, Any]:
