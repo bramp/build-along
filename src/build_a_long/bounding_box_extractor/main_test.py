@@ -26,22 +26,20 @@ class TestMain:
 
         # Mock the extractor to return structured data
         from build_a_long.bounding_box_extractor.extractor.bbox import BBox
-        from build_a_long.bounding_box_extractor.extractor.hierarchy import (
-            ElementNode,
-        )
         from build_a_long.bounding_box_extractor.extractor.page_elements import (
             StepNumber,
         )
 
-        step_element = StepNumber(bbox=BBox(10.0, 20.0, 30.0, 40.0), value=1)
-        root_node = ElementNode(element=step_element, children=())
+        step_element = StepNumber(
+            bbox=BBox(10.0, 20.0, 30.0, 40.0), value=1, children=()
+        )
 
         mock_extract_bounding_boxes.return_value = {
             "pages": [
                 {
                     "page_number": 1,
                     "elements": [step_element],
-                    "hierarchy": [root_node],
+                    "hierarchy": [step_element],
                 }
             ]
         }
@@ -49,7 +47,6 @@ class TestMain:
         # Mock the PDF document
         mock_page = MagicMock()
         mock_doc = MagicMock()
-        mock_doc.__len__.return_value = 1
         mock_doc.__getitem__.return_value = mock_page
         mock_doc.__enter__.return_value = mock_doc
         mock_doc.__exit__.return_value = None
@@ -68,12 +65,14 @@ class TestMain:
         assert str(json_path).endswith("test.json")
         assert call_args[0][1] == "w"
 
-        # Assert draw_and_save_bboxes was called
+        # Assert draw_and_save_bboxes was called with correct arguments
         mock_draw_and_save_bboxes.assert_called_once()
         draw_call_args = mock_draw_and_save_bboxes.call_args
-        assert draw_call_args[0][0] == mock_page
-        assert draw_call_args[0][2] == Path("/path/to")
-        assert draw_call_args[0][3] == 1
+        # page: pymupdf.Page, hierarchy: Tuple[Element, ...], output_path: Path
+        assert draw_call_args[0][0] == mock_page  # page object
+        assert len(draw_call_args[0][1]) == 1  # hierarchy tuple
+        assert isinstance(draw_call_args[0][2], Path)  # output_path
+        assert draw_call_args[0][2].name == "page_001.png"
 
     @patch("pathlib.Path.exists")
     @patch("sys.argv", ["main.py", "/nonexistent/file.pdf"])

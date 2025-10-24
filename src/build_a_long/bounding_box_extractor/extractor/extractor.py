@@ -10,7 +10,8 @@ from build_a_long.bounding_box_extractor.extractor.hierarchy import (
 )
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
-    PathElement,
+    Image,
+    Root,
     Text,
 )
 from build_a_long.bounding_box_extractor.extractor.pymupdf_types import (
@@ -25,7 +26,7 @@ def extract_bounding_boxes(
     pdf_path: str,
     start_page: int | None = None,
     end_page: int | None = None,
-    include_types: Set[str] = {"text", "image", "drawing", "path"},
+    include_types: Set[str] = {"text", "image", "drawing"},
 ) -> Dict[str, Any]:
     """
     Extract bounding boxes for instruction numbers, parts lists, and build steps
@@ -126,7 +127,7 @@ def extract_bounding_boxes(
                         x1=float(bbox[2]),
                         y1=float(bbox[3]),
                     )
-                    typed_elements.append(Drawing(bbox=nbbox, image_id=f"image_{bi}"))
+                    typed_elements.append(Image(bbox=nbbox, image_id=f"image_{bi}"))
 
                     logger.debug("Found image %s with %s", bi, nbbox)
 
@@ -136,7 +137,7 @@ def extract_bounding_boxes(
                     )
 
             # Now get drawings (paths)
-            if "path" in include_types:
+            if "drawing" in include_types:
                 drawings = page.get_drawings()
                 for d in drawings:
                     drect = d["rect"]
@@ -146,13 +147,24 @@ def extract_bounding_boxes(
                         x1=float(drect.x1),
                         y1=float(drect.y1),
                     )
-                    typed_elements.append(PathElement(bbox=nbbox))
+                    typed_elements.append(Drawing(bbox=nbbox))
                     logger.debug("Found drawing with %s", nbbox)
 
-            # Build containment hierarchy from typed elements and store typed structures
+            # Create a Root element encompassing the entire page
+            page_rect = page.rect
+            root_bbox = BBox(
+                x0=float(page_rect.x0),
+                y0=float(page_rect.y0),
+                x1=float(page_rect.x1),
+                y1=float(page_rect.y1),
+            )
+            root_element = Root(bbox=root_bbox)
+
+            # Build containment hierarchy from typed elements
             roots = build_hierarchy_from_elements(typed_elements)
+            page_data["root"] = root_element
             page_data["elements"] = typed_elements  # typed Element list
-            page_data["hierarchy"] = roots  # tuple[ElementNode, ...]
+            page_data["hierarchy"] = roots  # tuple[Element, ...]
 
             # Placeholder for build step identification (future work)
             extracted_data["pages"].append(page_data)

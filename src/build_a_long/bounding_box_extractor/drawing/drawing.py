@@ -5,11 +5,11 @@ from typing import Tuple
 import pymupdf
 from PIL import Image, ImageDraw
 
-from build_a_long.bounding_box_extractor.extractor.hierarchy import ElementNode
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
+    Element,
+    Image as ImageElement,
     Text,
-    Unknown,
 )
 
 logger = logging.getLogger(__name__)
@@ -17,15 +17,15 @@ logger = logging.getLogger(__name__)
 
 def draw_and_save_bboxes(
     page: pymupdf.Page,
-    hierarchy: Tuple[ElementNode, ...],
-    output_dir: Path,
-    page_num: int,
-    image_dpi: int = 150,
-):
+    hierarchy: Tuple[Element, ...],
+    output_path: Path,
+) -> None:
     """
     Draws bounding boxes from a hierarchy on the PDF page image and saves it.
     Colors are based on nesting depth, and element types are labeled.
     """
+    image_dpi = 150
+
     # Render page to an image
     pix = page.get_pixmap(colorspace=pymupdf.csRGB, dpi=image_dpi)
     img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
@@ -39,9 +39,8 @@ def draw_and_save_bboxes(
     # Colors for different nesting depths (cycles through this list)
     depth_colors = ["red", "green", "blue", "yellow", "purple", "orange"]
 
-    def _draw_node(node: ElementNode, depth: int) -> None:
-        """Recursively draw a node and its children."""
-        element = node.element
+    def _draw_element(element: Element, depth: int) -> None:
+        """Recursively draw an element and its children."""
         bbox = element.bbox
 
         # Scale the bounding box
@@ -63,35 +62,27 @@ def draw_and_save_bboxes(
         if isinstance(element, Drawing):
             if element.image_id:
                 label = f"{label} ({element.image_id})"
+        elif isinstance(element, ImageElement):
+            if element.image_id:
+                label = f"{label} ({element.image_id})"
         elif isinstance(element, Text):
             # For Text elements, show the actual text content
             content = element.content.strip()
             if len(content) > 50:  # Truncate long text
                 content = content[:47] + "..."
             label = f"{label}: {content}"
-        elif isinstance(element, Unknown):
-            if element.btype is not None:
-                btype_map = {0: "text", 1: "image", 2: "drawing"}
-                btype_str = btype_map.get(element.btype, f"btype={element.btype}")
-                label = f"{label} ({btype_str})"
-            if element.source_id:
-                # source_id is like "text_bi_li_si" or "unknown_bi"
-                parts = element.source_id.split("_")
-                if len(parts) > 1:
-                    label = f"{label} bi={parts[1]}"
 
         # Below bottom-left
         text_position = (scaled_bbox[0], scaled_bbox[3] + 2)
         draw.text(text_position, label, fill=color)
 
         # Recursively draw children
-        for child in node.children:
-            _draw_node(child, depth + 1)
+        for child in element.children:
+            _draw_element(child, depth + 1)
 
-    # Start traversal from root nodes
-    for root_node in hierarchy:
-        _draw_node(root_node, 0)
+    # Start traversal from root elements
+    for root_element in hierarchy:
+        _draw_element(root_element, 0)
 
-    output_path = output_dir / f"page_{page_num:03d}.png"
     img.save(output_path)
     logger.info("Saved image with bboxes to %s", output_path)
