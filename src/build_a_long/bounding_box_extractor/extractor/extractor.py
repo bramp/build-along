@@ -68,10 +68,14 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
                     y1=float(sbbox[3]),
                 )
 
-                text: str = span.get("text", "")
+                text: str = span.get("text", None)
+                if text is None or text == "":
+                    chars = span.get("chars", [])
+                    text = "".join(c["c"] for c in chars)
+
                 logger.debug("Found text %s %r with bbox %s", bi, text, nbbox)
 
-                elements.append(Text(bbox=nbbox, content=text, label=None))
+                elements.append(Text(bbox=nbbox, text=text, label=None))
 
     return elements
 

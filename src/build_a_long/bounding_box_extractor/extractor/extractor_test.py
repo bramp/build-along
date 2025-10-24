@@ -61,7 +61,7 @@ class TestBoundingBoxExtractor:
         elements = page_data.elements
         assert len(elements) == 2
         assert isinstance(elements[0], Text)
-        assert elements[0].content == "1"
+        assert elements[0].text == "1"
         assert elements[0].bbox.x0 == 10.0 and elements[0].bbox.y0 == 20.0
         assert isinstance(elements[1], Image)
 
@@ -98,7 +98,7 @@ class TestBoundingBoxExtractor:
         elements = page_data.elements
         assert len(elements) == 1
         assert isinstance(elements[0], Text)
-        assert elements[0].content == "1"
+        assert elements[0].text == "1"
 
     def test_extract_text_elements(self):
         """Test that regular text is extracted as Text elements with content."""
@@ -136,7 +136,7 @@ class TestBoundingBoxExtractor:
         elements = page_data.elements
         assert len(elements) == 1
         assert isinstance(elements[0], Text)
-        assert elements[0].content == "Build Step Instructions"
+        assert elements[0].text == "Build Step Instructions"
         assert elements[0].bbox.x0 == 10.0
 
 
@@ -171,10 +171,10 @@ class TestExtractedMethods:
 
         assert len(result) == 2
         assert isinstance(result[0], Text)
-        assert result[0].content == "Hello"
+        assert result[0].text == "Hello"
         assert result[0].bbox.x0 == 10.0
         assert isinstance(result[1], Text)
-        assert result[1].content == "World"
+        assert result[1].text == "World"
         assert result[1].bbox.x0 == 35.0
 
     def test_extract_image_elements(self):

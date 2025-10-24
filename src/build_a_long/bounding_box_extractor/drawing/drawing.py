@@ -67,7 +67,7 @@ def draw_and_save_bboxes(
                 label = f"{label} ({element.image_id})"
         elif isinstance(element, Text):
             # For Text elements, show the actual text content
-            content = element.content.strip()
+            content = element.text.strip()
             if len(content) > 50:  # Truncate long text
                 content = content[:47] + "..."
             label = f"{label}: {content}"
