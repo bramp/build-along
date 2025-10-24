@@ -1,6 +1,7 @@
 import argparse
 import json
 from dataclasses import asdict
+import logging
 from pathlib import Path
 from typing import Any, Dict
 
@@ -9,6 +10,9 @@ import pymupdf
 from build_a_long.bounding_box_extractor.extractor import extract_bounding_boxes
 from build_a_long.bounding_box_extractor.drawing import draw_and_save_bboxes
 from build_a_long.bounding_box_extractor.parser import parse_page_range
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def _element_to_json(ele: Any) -> Dict[str, Any]:
@@ -57,7 +61,7 @@ def save_json(extracted_data: Dict[str, Any], output_dir: Path, pdf_path: Path) 
     output_json_path = output_dir / (pdf_path.stem + ".json")
     with open(output_json_path, "w") as f:
         json.dump(json_data, f, indent=4)
-    print(f"Saved JSON to {output_json_path}")
+    logger.info("Saved JSON to %s", output_json_path)
 
 
 def render_annotated_images(
@@ -79,8 +83,10 @@ def render_annotated_images(
                     doc[page_num - 1], tuple(page["hierarchy"]), output_dir, page_num
                 )
             else:
-                print(
-                    f"Warning: page {page_num} out of bounds for document with {num_pages} pages"
+                logger.warning(
+                    "Page %s out of bounds for document with %s pages",
+                    page_num,
+                    num_pages,
                 )
 
 
@@ -107,7 +113,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--include-types",
         type=str,
-        help="Comma-separated list of element types to include (e.g., text,image,drawing,path). Defaults to all types.",
+        help="Comma-separated list of element types to include. Defaults to all types.",
+        default="text,image,drawing,path",
     )
     return parser.parse_args()
 
@@ -122,7 +129,7 @@ def main() -> int:
 
     pdf_path = Path(args.pdf_path)
     if not pdf_path.exists():
-        print(f"File not found: {pdf_path}")
+        logger.error("File not found: %s", pdf_path)
         return 2
 
     # Default output directory to same directory as PDF
@@ -136,10 +143,10 @@ def main() -> int:
         try:
             start_page, end_page = parse_page_range(args.pages)
         except ValueError as e:
-            print(f"Error: {e}")
+            logger.error("Invalid page range: %s", e)
             return 2
 
-    include_types = args.include_types.split(",") if args.include_types else None
+    include_types = args.include_types.split(",")
 
     # Extract bounding box data from PDF
     extracted_data: Dict[str, Any] = extract_bounding_boxes(

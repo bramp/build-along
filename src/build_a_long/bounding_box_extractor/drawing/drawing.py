@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Tuple
 
@@ -10,6 +11,8 @@ from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Text,
     Unknown,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def draw_and_save_bboxes(
@@ -91,4 +94,4 @@ def draw_and_save_bboxes(
 
     output_path = output_dir / f"page_{page_num:03d}.png"
     img.save(output_path)
-    print(f"  Saved image with bboxes to {output_path}")
+    logger.info("Saved image with bboxes to %s", output_path)

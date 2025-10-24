@@ -198,14 +198,6 @@ Run all tests with Pants:
 pants test ::
 ```
 
-If running without Pants, you'll need the project on `PYTHONPATH` and dependencies installed, e.g.:
-
-```bash
-export PYTHONPATH=$PWD/src
-pip install -r 3rdparty/requirements.txt
-python -m unittest
-```
-
 ## Contributing
 
 Contributions are welcome! Please refer to the `TODO.md` file for a list of
