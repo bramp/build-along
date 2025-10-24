@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from build_a_long.bounding_box_extractor.extractor.extractor import (
+from build_a_long.bounding_box_extractor.extractor import (
     extract_bounding_boxes,
 )
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
@@ -11,8 +11,8 @@ from build_a_long.bounding_box_extractor.extractor.page_elements import (
 
 
 class TestBoundingBoxExtractor:
-    @patch("build_a_long.bounding_box_extractor.extractor.extractor.fitz.open")
-    def test_extract_bounding_boxes_basic(self, mock_fitz_open):
+    @patch("build_a_long.bounding_box_extractor.extractor.extractor.pymupdf.open")
+    def test_extract_bounding_boxes_basic(self, mock_pymupdf_open):
         # Create a dummy PDF path for testing
         dummy_pdf_path = "/path/to/dummy.pdf"
 
@@ -47,7 +47,7 @@ class TestBoundingBoxExtractor:
             return fake_page
 
         fake_doc.__getitem__.side_effect = _getitem
-        mock_fitz_open.return_value = fake_doc
+        mock_pymupdf_open.return_value = fake_doc
 
         # Call the function (no output_dir parameter after refactor)
         result = extract_bounding_boxes(dummy_pdf_path)
@@ -61,10 +61,10 @@ class TestBoundingBoxExtractor:
         assert elements[0].bbox.x0 == 10.0 and elements[0].bbox.y0 == 20.0
         assert isinstance(elements[1], Drawing)
 
-    @patch("build_a_long.bounding_box_extractor.extractor.extractor.fitz.open")
+    @patch("build_a_long.bounding_box_extractor.extractor.extractor.pymupdf.open")
     def test_extract_bounding_boxes_with_output(
         self,
-        mock_fitz_open,
+        mock_pymupdf_open,
     ):
         """Test that extractor does NOT write images/json (that's in main.py now)."""
         dummy_pdf_path = "/path/to/dummy.pdf"
@@ -90,7 +90,7 @@ class TestBoundingBoxExtractor:
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 1
         mock_doc.__getitem__.return_value = mock_page
-        mock_fitz_open.return_value = mock_doc
+        mock_pymupdf_open.return_value = mock_doc
 
         result = extract_bounding_boxes(dummy_pdf_path)
 
@@ -101,8 +101,8 @@ class TestBoundingBoxExtractor:
         assert len(elements) == 1
         assert isinstance(elements[0], StepNumber)
 
-    @patch("build_a_long.bounding_box_extractor.extractor.extractor.fitz.open")
-    def test_extract_text_elements(self, mock_fitz_open):
+    @patch("build_a_long.bounding_box_extractor.extractor.extractor.pymupdf.open")
+    def test_extract_text_elements(self, mock_pymupdf_open):
         """Test that regular text is extracted as Text elements with content."""
         dummy_pdf_path = "/path/to/dummy.pdf"
 
@@ -130,7 +130,7 @@ class TestBoundingBoxExtractor:
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 1
         mock_doc.__getitem__.return_value = mock_page
-        mock_fitz_open.return_value = mock_doc
+        mock_pymupdf_open.return_value = mock_doc
 
         result = extract_bounding_boxes(dummy_pdf_path)
 

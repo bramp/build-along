@@ -5,7 +5,7 @@ from build_a_long.bounding_box_extractor.main import main
 
 
 class TestMain:
-    @patch("build_a_long.bounding_box_extractor.main.fitz.open")
+    @patch("build_a_long.bounding_box_extractor.main.pymupdf.open")
     @patch("build_a_long.bounding_box_extractor.main.extract_bounding_boxes")
     @patch("build_a_long.bounding_box_extractor.main.draw_and_save_bboxes")
     @patch("pathlib.Path.exists")
@@ -19,7 +19,7 @@ class TestMain:
         mock_exists,
         mock_draw_and_save_bboxes,
         mock_extract_bounding_boxes,
-        mock_fitz_open,
+        mock_pymupdf_open,
     ):
         """Test that main.py writes JSON and PNG files using extracted data."""
         mock_exists.return_value = True
@@ -53,7 +53,7 @@ class TestMain:
         mock_doc.__getitem__.return_value = mock_page
         mock_doc.__enter__.return_value = mock_doc
         mock_doc.__exit__.return_value = None
-        mock_fitz_open.return_value = mock_doc
+        mock_pymupdf_open.return_value = mock_doc
 
         # Run main
         result = main()

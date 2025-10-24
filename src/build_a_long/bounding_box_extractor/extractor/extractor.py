@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-import fitz  # type: ignore  # PyMuPDF
+import pymupdf
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 from build_a_long.bounding_box_extractor.extractor.hierarchy import (
@@ -55,9 +55,12 @@ def extract_bounding_boxes(
     # Initialize page range variables
     doc = None
     try:
-        doc = fitz.open(pdf_path)
+        # TODO Do I need to call doc.close() later?
+        doc = pymupdf.open(pdf_path)
         num_pages = len(doc)
 
+        # TODO Let's remove the zero based page indexing variables. It just
+        # .     confuses things.
         # Determine page range (convert to 0-indexed)
         first_page = (start_page - 1) if start_page is not None else 0
         last_page = (end_page - 1) if end_page is not None else (num_pages - 1)
