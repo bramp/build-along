@@ -1,4 +1,9 @@
-python_sources(sources=["*.py"])
+python_sources()
+
+python_tests(
+    name="tests",
+    sources=["*_test.py"],
+)
 
 pex_binary(
     name="main",

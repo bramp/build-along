@@ -1,12 +1,8 @@
-import json
-from dataclasses import asdict
-from pathlib import Path
 from typing import Any, Dict, List
 
 import fitz  # type: ignore  # PyMuPDF
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
-from build_a_long.bounding_box_extractor.drawing.drawing import draw_and_save_bboxes
 from build_a_long.bounding_box_extractor.extractor.hierarchy import (
     build_hierarchy_from_elements,
 )
@@ -36,7 +32,6 @@ def _classify_text(text: str) -> str:
 
 def extract_bounding_boxes(
     pdf_path: str,
-    output_dir: Path | None,
     start_page: int | None = None,
     end_page: int | None = None,
     include_types: List[str] | None = None,
@@ -55,9 +50,6 @@ def extract_bounding_boxes(
     """
     print(f"Processing PDF: {pdf_path}")
     extracted_data: Dict[str, Any] = {"pages": []}
-
-    if output_dir:
-        output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize page range variables
     first_page = 0
@@ -205,9 +197,7 @@ def extract_bounding_boxes(
             # Placeholder for build step identification (future work)
             extracted_data["pages"].append(page_data)
 
-            # Draw and save bounding boxes if output_dir is provided
-            if output_dir:
-                draw_and_save_bboxes(page, page_data["hierarchy"], output_dir, page_num)
+            # Note: drawing PNGs is handled by the caller now.
 
     except Exception as e:
         print(f"An error occurred while processing '{pdf_path}': {e}")
@@ -218,38 +208,5 @@ def extract_bounding_boxes(
         except Exception:
             pass
 
-    # JSON serialization: auto-serialize dataclasses using dataclasses.asdict()
-    def _element_to_json(ele: Any) -> Dict[str, Any]:
-        """Convert a PageElement to a JSON-friendly dict using asdict()."""
-        data = asdict(ele)
-        # Add a type discriminator for deserialization if needed later
-        data["__type__"] = ele.__class__.__name__
-        return data
-
-    def _node_to_json(node: Any) -> Dict[str, Any]:
-        """Convert an ElementNode to JSON recursively."""
-        return {
-            "element": _element_to_json(node.element),
-            "children": [_node_to_json(c) for c in node.children],
-        }
-
-    json_data: Dict[str, Any] = {"pages": []}
-    for page in extracted_data["pages"]:
-        json_page: Dict[str, Any] = {"page_number": page["page_number"]}
-        json_page["elements"] = [_element_to_json(e) for e in page["elements"]]
-        if "hierarchy" in page:
-            json_page["hierarchy"] = [_node_to_json(n) for n in page["hierarchy"]]
-        json_data["pages"].append(json_page)
-
-    output_json_path = (
-        Path(pdf_path).with_suffix(".json")
-        if output_dir is None
-        else output_dir / (Path(pdf_path).stem + ".json")
-    )
-    try:
-        with open(output_json_path, "w") as f:
-            json.dump(json_data, f, indent=4)
-        print(f"Extracted data saved to {output_json_path}")
-    except Exception as e:
-        print(f"Warning: failed to write JSON output to {output_json_path}: {e}")
+    # Note: JSON persistence is handled by the caller now. We just return data.
     return extracted_data
