@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Tuple
 
-import fitz  # type: ignore  # PyMuPDF
-from PIL import Image, ImageDraw  # type: ignore
+import pymupdf
+from PIL import Image, ImageDraw
 
 from build_a_long.bounding_box_extractor.extractor.hierarchy import ElementNode
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
@@ -13,7 +13,7 @@ from build_a_long.bounding_box_extractor.extractor.page_elements import (
 
 
 def draw_and_save_bboxes(
-    page: fitz.Page,
+    page: pymupdf.Page,
     hierarchy: Tuple[ElementNode, ...],
     output_dir: Path,
     page_num: int,
@@ -24,7 +24,7 @@ def draw_and_save_bboxes(
     Colors are based on nesting depth, and element types are labeled.
     """
     # Render page to an image
-    pix = page.get_pixmap(colorspace=fitz.csRGB, dpi=image_dpi)
+    pix = page.get_pixmap(colorspace=pymupdf.csRGB, dpi=image_dpi)
     img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
     draw = ImageDraw.Draw(img)
 

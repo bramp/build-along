@@ -4,7 +4,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Dict
 
-import fitz  # type: ignore  # PyMuPDF
+import pymupdf
 
 from build_a_long.bounding_box_extractor.extractor import extract_bounding_boxes
 from build_a_long.bounding_box_extractor.drawing import draw_and_save_bboxes
@@ -70,7 +70,7 @@ def render_annotated_images(
         pdf_path: Path to the source PDF file
         output_dir: Directory where PNG images should be saved
     """
-    with fitz.open(str(pdf_path)) as doc:
+    with pymupdf.open(str(pdf_path)) as doc:
         num_pages = len(doc)
         for page in extracted_data.get("pages", []):
             page_num = int(page["page_number"])  # 1-indexed
