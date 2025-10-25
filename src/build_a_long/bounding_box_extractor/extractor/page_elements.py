@@ -31,8 +31,11 @@ class PageElement:
     """
 
     bbox: BBox
+    # Classification fields
     label: Optional[str] = field(default=None, kw_only=True)
     label_scores: Dict[str, float] = field(default_factory=dict, kw_only=True)
+    # Children are present on all elements for simpler tree handling
+    children: List["Element"] = field(default_factory=list, kw_only=True)
 
 
 @dataclass
@@ -44,7 +47,6 @@ class Drawing(PageElement):
     """
 
     image_id: Optional[str] = None
-    children: List["Element"] = field(default_factory=list)
 
 
 @dataclass
@@ -58,8 +60,6 @@ class Text(PageElement):
     font_name: Optional[str] = None
     font_size: Optional[float] = None
 
-    children: List["Element"] = field(default_factory=list)
-
 
 @dataclass
 class Image(PageElement):
@@ -69,7 +69,6 @@ class Image(PageElement):
     """
 
     image_id: Optional[str] = None
-    children: List["Element"] = field(default_factory=list)
 
 
 @dataclass
@@ -79,7 +78,7 @@ class Root(PageElement):
     The bbox encompasses the entire page bounds.
     """
 
-    children: List["Element"] = field(default_factory=list)
+    pass
 
 
 ###
@@ -92,7 +91,6 @@ class StepNumber(PageElement):
     """A step number label, usually a small integer on the page."""
 
     value: int
-    children: List["Element"] = field(default_factory=list)
 
 
 @dataclass
@@ -100,7 +98,6 @@ class PartCount(PageElement):
     """The visual count label associated with a part entry (e.g., 'x3')."""
 
     count: int
-    children: List["Element"] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if self.count < 0:
@@ -119,7 +116,6 @@ class Part(PageElement):
     name: Optional[str]
     number: Optional[str]
     count: PartCount
-    children: List["Element"] = field(default_factory=list)
 
 
 @dataclass
@@ -127,7 +123,6 @@ class PartsList(PageElement):
     """A container of multiple parts for the page's parts list."""
 
     parts: List[Part]
-    children: List["Element"] = field(default_factory=list)
 
     @property
     def total_items(self) -> int:

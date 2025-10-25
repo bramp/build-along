@@ -158,6 +158,53 @@ class TestClassifyPageNumber:
         assert corner_text.label == "page_number"
         assert center_text.label is None
 
+    def test_prefer_numeric_match_to_page_index(self) -> None:
+        """Prefer element whose numeric value equals PageData.page_number."""
+        page_bbox = BBox(0, 0, 100, 200)
+        # Two numbers, both near bottom, but only one matches the page number 7
+        txt6 = Text(bbox=BBox(10, 190, 14, 196), text="6")
+        txt7 = Text(bbox=BBox(90, 190, 94, 196), text="7")
+
+        page_data = PageData(
+            page_number=7, root=Root(bbox=page_bbox), elements=[txt6, txt7]
+        )
+
+        from build_a_long.bounding_box_extractor.classifier.classifier import (
+            _calculate_page_number_scores,
+        )
+
+        _calculate_page_number_scores(page_data)
+        _classify_page_number(page_data)
+
+        assert txt7.label == "page_number"
+        assert txt6.label is None
+
+    def test_remove_near_duplicate_bboxes(self) -> None:
+        """After choosing page number, remove nearly identical shadow/duplicate elements."""
+        page_bbox = BBox(0, 0, 100, 200)
+        # Chosen page number
+        pn = Text(bbox=BBox(10, 190, 14, 196), text="3")
+        # Very similar drawing (e.g., stroke/shadow) almost same bbox
+        from build_a_long.bounding_box_extractor.extractor.page_elements import Drawing
+
+        dup = Drawing(bbox=BBox(10.2, 190.1, 14.1, 195.9))
+
+        page_data = PageData(
+            page_number=3, root=Root(bbox=page_bbox), elements=[pn, dup]
+        )
+
+        from build_a_long.bounding_box_extractor.classifier.classifier import (
+            _calculate_page_number_scores,
+        )
+
+        _calculate_page_number_scores(page_data)
+        _classify_page_number(page_data)
+
+        # Page number kept and labeled; duplicate removed from flat list
+        assert pn.label == "page_number"
+        assert pn in page_data.elements
+        assert dup not in page_data.elements
+
     def test_not_in_bottom_region(self) -> None:
         """Test that elements outside bottom region score lower due to position."""
         page_bbox = BBox(0, 0, 100, 200)

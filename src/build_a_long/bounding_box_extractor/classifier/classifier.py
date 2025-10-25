@@ -13,7 +13,7 @@ threshold is assigned that label.
 import logging
 import math
 import re
-from typing import List
+from typing import List, Optional, Set
 
 from build_a_long.bounding_box_extractor.extractor import PageData
 from build_a_long.bounding_box_extractor.extractor.page_elements import Text
@@ -164,34 +164,44 @@ def _classify_page_number(page_data: PageData) -> None:
     if not page_data.elements:
         return
 
-    # Find the element with the highest page_number score
-    best_candidate: Text | None = None
-    best_score = MIN_CONFIDENCE_THRESHOLD
-
+    # Find candidates with scores and potential numeric values
+    candidates: list[tuple[Text, float, Optional[int]]] = []
     for element in page_data.elements:
         if not isinstance(element, Text):
             continue
-
         score = element.label_scores.get("page_number", 0.0)
-        if score > best_score:
-            best_score = score
-            best_candidate = element
+        if score < MIN_CONFIDENCE_THRESHOLD:
+            continue
+        value = _extract_page_number_value(element.text)
+        candidates.append((element, score, value))
 
-    # Label the best candidate
-    if best_candidate:
-        best_candidate.label = "page_number"
-        logger.info(
-            "Labeled element as page_number on page %d: %r (score=%.2f)",
-            page_data.page_number,
-            best_candidate.text,
-            best_score,
-        )
-    else:
+    # Prefer candidates whose numeric value matches the PageData.page_number
+    matching = [c for c in candidates if c[2] == page_data.page_number]
+    chosen: Optional[tuple[Text, float, Optional[int]]] = None
+    if matching:
+        chosen = max(matching, key=lambda c: c[1])
+    elif candidates:
+        chosen = max(candidates, key=lambda c: c[1])
+
+    if chosen is None:
         logger.debug(
             "No page number candidates found on page %d with score >= %.2f",
             page_data.page_number,
             MIN_CONFIDENCE_THRESHOLD,
         )
+        return
+
+    best_candidate, best_score, _ = chosen
+    best_candidate.label = "page_number"
+    logger.info(
+        "Labeled element as page_number on page %d: %r (score=%.2f)",
+        page_data.page_number,
+        best_candidate.text,
+        best_score,
+    )
+
+    # Remove near-duplicate visual elements around the chosen page number
+    _remove_similar_bboxes(page_data, best_candidate)
 
 
 def classify_elements(pages: List[PageData]) -> None:
@@ -224,3 +234,75 @@ def classify_elements(pages: List[PageData]) -> None:
         # Future classifiers can be added here:
         # _classify_step_numbers(page_data)
         # _classify_parts_list(page_data)
+
+
+def _extract_page_number_value(text: str) -> Optional[int]:
+    """Extract a numeric page value from text if present.
+
+    Supports forms like "7", "007", "Page 7", "p.7".
+    Returns None if no page-like number is found.
+    """
+    t = text.strip()
+    m = re.match(r"^0*(\d{1,3})$", t)
+    if m:
+        return int(m.group(1))
+    m = re.match(r"^(?:page|p\.?)\s*0*(\d{1,3})$", t, re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+    return None
+
+
+def _remove_similar_bboxes(page_data: PageData, target: Text) -> None:
+    """Remove elements with very similar bounding boxes to the target.
+
+    Intended to drop duplicate drawing strokes or shadow copies co-located
+    with the selected page number.
+    """
+    target_bbox = target.bbox
+    target_area = target_bbox.area()
+    tx, ty = target_bbox.center()
+
+    IOU_THRESHOLD = 0.8
+    CENTER_EPS = 1.5
+    AREA_TOL = 0.12  # +-12%
+
+    to_remove_ids: Set[int] = set()
+    for ele in page_data.elements:
+        if ele is target:
+            continue
+
+        b = ele.bbox
+        iou = target_bbox.iou(b)
+        if iou >= IOU_THRESHOLD:
+            to_remove_ids.add(id(ele))
+            continue
+
+        # Fallback: very close centers and near-equal area
+        cx, cy = b.center()
+        if abs(cx - tx) <= CENTER_EPS and abs(cy - ty) <= CENTER_EPS:
+            area = b.area()
+            if target_area > 0 and abs(area - target_area) / target_area <= AREA_TOL:
+                to_remove_ids.add(id(ele))
+
+    if not to_remove_ids:
+        return
+
+    # TODO Print out useful information about each element being removed.
+    logger.debug(
+        "Removing %d duplicate elements similar to page number on page %d",
+        len(to_remove_ids),
+        page_data.page_number,
+    )
+
+    # Prune from flat element list
+    page_data.elements = [e for e in page_data.elements if id(e) not in to_remove_ids]
+
+    # Prune from hierarchy recursively
+    def prune_children(container) -> None:
+        # All elements have a children list; filter in place and recurse.
+        kept = [c for c in container.children if id(c) not in to_remove_ids]
+        container.children[:] = kept
+        for c in kept:
+            prune_children(c)
+
+    prune_children(page_data.root)

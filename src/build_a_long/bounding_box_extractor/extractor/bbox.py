@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 
 @dataclass(frozen=True)
@@ -65,3 +66,34 @@ class BBox:
     def overlaps_vertical(self, other: "BBox") -> bool:
         """Helper to check if vertical projections overlap."""
         return max(self.y0, other.y0) < min(self.y1, other.y1)
+
+    def area(self) -> float:
+        """Return the area of this bounding box (non-negative)."""
+        return abs(self.x1 - self.x0) * abs(self.y1 - self.y0)
+
+    def intersection_area(self, other: "BBox") -> float:
+        """Return the area of intersection between this bbox and another."""
+        ix0 = max(self.x0, other.x0)
+        iy0 = max(self.y0, other.y0)
+        ix1 = min(self.x1, other.x1)
+        iy1 = min(self.y1, other.y1)
+        w = max(0.0, ix1 - ix0)
+        h = max(0.0, iy1 - iy0)
+        return w * h
+
+    def iou(self, other: "BBox") -> float:
+        """Intersection over Union with another bbox.
+
+        Returns 0.0 when there is no overlap or union is zero.
+        """
+        inter = self.intersection_area(other)
+        if inter == 0.0:
+            return 0.0
+        ua = self.area() + other.area() - inter
+        if ua <= 0.0:
+            return 0.0
+        return inter / ua
+
+    def center(self) -> Tuple[float, float]:
+        """Return the (x, y) center point of the bbox."""
+        return ((self.x0 + self.x1) / 2.0, (self.y0 + self.y1) / 2.0)
