@@ -73,9 +73,27 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
                     chars = span.get("chars", [])
                     text = "".join(c["c"] for c in chars)
 
-                logger.debug("Found text %s %r with bbox %s", bi, text, nbbox)
+                font_size: float = span.get("size", 0.0)
+                font_name: str = span.get("font", "unknown")
 
-                elements.append(Text(bbox=nbbox, text=text, label=None))
+                logger.debug(
+                    "Found text %s %r with bbox %s, font %s, size %s",
+                    bi,
+                    text,
+                    nbbox,
+                    font_name,
+                    font_size,
+                )
+
+                elements.append(
+                    Text(
+                        bbox=nbbox,
+                        text=text,
+                        label=None,
+                        font_name=font_name,
+                        font_size=font_size,
+                    )
+                )
 
     return elements
 
