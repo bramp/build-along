@@ -1,7 +1,7 @@
 """Integration tests for legocom.py - Tests against real LEGO.com (pytest style).
 
 These tests make real HTTP requests to LEGO.com and are skipped by default.
-Run with: pants test --test-pytest-extra-args='--integration' src/build_a_long/downloader::
+Run with: ENABLE_INTEGRATION_TESTS=true pants test src/build_a_long/downloader::
 
 Why integration tests:
 - Verify our parsing works against real HTML (not just test fixtures)
@@ -20,6 +20,8 @@ Note: These tests may fail if:
 - Page structure changes (expected over time)
 """
 
+import os
+
 import pytest
 
 from build_a_long.downloader.legocom import (
@@ -28,8 +30,16 @@ from build_a_long.downloader.legocom import (
     parse_set_metadata,
 )
 
-# Skip all tests in this module by default
-# TODO: Configure proper integration test runner
+# Skip all tests in this module unless explicitly enabled
+# Set ENABLE_INTEGRATION_TESTS=true to run these tests
+ENABLE_INTEGRATION_TESTS = (
+    os.getenv("ENABLE_INTEGRATION_TESTS", "false").lower() == "true"
+)
+
+pytestmark = pytest.mark.skipif(
+    not ENABLE_INTEGRATION_TESTS,
+    reason="Integration tests disabled - set ENABLE_INTEGRATION_TESTS=true to enable",
+)
 
 
 @pytest.fixture
@@ -130,24 +140,26 @@ def test_different_locale(http_client):
     assert meta.theme
 
 
-@pytest.mark.skip(
-    reason="LEGO.com handling of invalid sets varies - this test documents expected behavior but is not deterministic"
-)
 def test_invalid_set_number_handling(http_client):
     """Test that invalid/non-existent set numbers are handled gracefully.
 
-    Note: This test is skipped because LEGO.com's behavior for invalid sets
-    is not consistent - it may return 404, redirect, or show a search page.
+    Our parsing should not crash regardless of what LEGO.com returns for
+    invalid set numbers, even if the page structure is completely different.
     """
+    from build_a_long.downloader.metadata import Metadata
+
     set_number = "99999999"  # Unlikely to exist
-    url = build_instructions_url(set_number, "en-us")
+    locale = "en-us"
+    url = build_instructions_url(set_number, locale)
     response = http_client.get(url)
 
     # Our code should not crash regardless of what LEGO.com returns
     html = response.text
     pdfs = parse_instruction_pdf_urls(html)
-    meta = parse_set_metadata(html)
+    meta = parse_set_metadata(html, set_number=set_number, locale=locale)
 
-    # Should not crash, but likely returns empty results
+    # Should not crash, and should return proper types (likely with empty/minimal data)
     assert isinstance(pdfs, list)
-    assert isinstance(meta, dict)
+    assert isinstance(meta, Metadata)
+    assert meta.set == set_number
+    assert meta.locale == locale
