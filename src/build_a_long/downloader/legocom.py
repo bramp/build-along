@@ -53,48 +53,75 @@ def _get_building_instruction_data(
     return None
 
 
-def parse_set_metadata(html: str) -> Dict[str, Any]:
-    """Parse a LEGO instructions HTML page and extract set metadata."""
+def parse_set_metadata(html: str, set_number: str = "", locale: str = "") -> Metadata:
+    """Parse a LEGO instructions HTML page and extract set metadata.
+
+    Args:
+        html: The HTML content to parse
+        set_number: Optional set number to include in metadata
+        locale: Optional locale to include in metadata
+
+    Returns:
+        Metadata object with extracted fields, or minimal Metadata if parsing fails
+    """
     next_data = _extract_next_data(html)
     if not next_data:
-        return {}
+        return Metadata(set=set_number, locale=locale)
 
     apollo_state = _get_apollo_state(next_data)
     if not apollo_state:
-        return {}
+        return Metadata(set=set_number, locale=locale)
 
     bi_data = _get_building_instruction_data(apollo_state)
     if not bi_data:
-        return {}
+        return Metadata(set=set_number, locale=locale)
 
-    meta: Dict[str, Any] = {}
+    # Extract name
+    name = bi_data.get("name")
 
-    if bi_data.get("name"):
-        meta["name"] = bi_data["name"]
+    # Extract theme
+    theme = None
     if bi_data.get("theme"):
         theme_ref = bi_data["theme"].get("id")
         if theme_ref and theme_ref in apollo_state:
-            meta["theme"] = apollo_state[theme_ref].get("themeName")
-    if bi_data.get("ageRating"):
-        meta["age"] = bi_data["ageRating"]
+            theme = apollo_state[theme_ref].get("themeName")
+
+    # Extract age rating
+    age = bi_data.get("ageRating")
+
+    # Extract piece count
+    pieces = None
     if bi_data.get("setPieceCount"):
         try:
-            meta["pieces"] = int(bi_data["setPieceCount"])
+            pieces = int(bi_data["setPieceCount"])
         except (ValueError, TypeError):
             pass
+
+    # Extract year
+    year = None
     if bi_data.get("year"):
         try:
-            meta["year"] = int(bi_data["year"])
+            year = int(bi_data["year"])
         except (ValueError, TypeError):
             pass
+
+    # Extract set image URL
+    set_image_url = None
     if bi_data.get("setImage"):
         image_ref = bi_data["setImage"].get("id")
         if image_ref and image_ref in apollo_state:
-            meta["set_image_url"] = apollo_state[image_ref].get("src")
-    if bi_data.get("buildingInstructions"):
-        meta["buildingInstructions"] = bi_data["buildingInstructions"]
+            set_image_url = apollo_state[image_ref].get("src")
 
-    return meta
+    return Metadata(
+        set=set_number,
+        locale=locale,
+        name=name,
+        theme=theme,
+        age=age,
+        pieces=pieces,
+        year=year,
+        set_image_url=set_image_url,
+    )
 
 
 def _apollo_resolve(apollo_state: Dict[str, Any], item_or_ref: Any) -> Any:
@@ -217,22 +244,16 @@ def build_metadata(
     Parses both the set fields and the ordered list of instruction PDFs.
     """
     pdf_infos = parse_instruction_pdf_urls(html, base=base)
-    fields = parse_set_metadata(html)
-    return Metadata(
-        set=set_number,
-        locale=locale,
-        name=fields.get("name"),
-        theme=fields.get("theme"),
-        age=fields.get("age"),
-        pieces=fields.get("pieces"),
-        year=fields.get("year"),
-        set_image_url=fields.get("set_image_url"),
-        pdfs=[
-            PdfEntry(
-                url=info.url,
-                filename=info.url.split("/")[-1],
-                preview_url=info.preview_url,
-            )
-            for info in pdf_infos
-        ],
-    )
+    metadata = parse_set_metadata(html, set_number=set_number, locale=locale)
+
+    # Add PDFs to the metadata
+    metadata.pdfs = [
+        PdfEntry(
+            url=info.url,
+            filename=info.url.split("/")[-1],
+            preview_url=info.preview_url,
+        )
+        for info in pdf_infos
+    ]
+
+    return metadata

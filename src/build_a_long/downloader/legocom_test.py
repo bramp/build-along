@@ -187,13 +187,15 @@ def test_parse_instruction_pdf_urls():
 
 
 def test_parse_set_metadata():
-    meta = parse_set_metadata(HTML_WITH_METADATA)
-    assert meta["name"] == "Starfighter"
-    assert meta["theme"] == "Galaxy Explorers"
-    assert meta["age"] == "9+"
-    assert meta["pieces"] == 1083
-    assert meta["year"] == 2024
-    assert meta["set_image_url"] == "set_image.png"
+    meta = parse_set_metadata(HTML_WITH_METADATA, set_number="12345", locale="en-us")
+    assert meta.name == "Starfighter"
+    assert meta.theme == "Galaxy Explorers"
+    assert meta.age == "9+"
+    assert meta.pieces == 1083
+    assert meta.year == 2024
+    assert meta.set_image_url == "set_image.png"
+    assert meta.set == "12345"
+    assert meta.locale == "en-us"
 
 
 def test_build_metadata():
@@ -234,12 +236,12 @@ def test_json_fields_exist(monkeypatch):
     html = """<script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"__APOLLO_STATE__\":{\"$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\\\"setNumber\\\":\\\"12345\\\"}).data\":{\"name\":\"Starfighter\",\"theme\":{\"id\":\"theme1\"},\"ageRating\":\"9+\",\"setPieceCount\":\"1083\",\"year\":\"2024\",\"setImage\":{\"id\":\"img1\"},\"buildingInstructions\":[{\"pdf\":{\"id\":\"pdf1\"}},{\"pdf\":{\"id\":\"pdf2\"}}],\"__typename\":\"CS_BuildingInstructionData\"},\"theme1\":{\"themeName\":\"Galaxy Explorers\"},\"img1\":{\"src\":\"set_image.png\"},\"pdf1\":{\"pdfUrl\":\"/6602000.pdf\",\"coverImage\":{\"id\":\"img2\"}},\"pdf2\":{\"pdfUrl\":\"/6602001.pdf\",\"coverImage\":{\"id\":\"img3\"}},\"img2\":{\"src\":\"preview1.png\"},\"img3\":{\"src\":\"preview2.png\"}}}}}</script>"""
 
     # Check that JSON extraction methods return values
-    meta = parse_set_metadata(html)
-    assert meta["name"] == "Starfighter"
-    assert meta["theme"] == "Galaxy Explorers"
-    assert meta["age"] == "9+"
-    assert meta["pieces"] == 1083
-    assert meta["year"] == 2024
+    meta = parse_set_metadata(html, set_number="12345", locale="en-us")
+    assert meta.name == "Starfighter"
+    assert meta.theme == "Galaxy Explorers"
+    assert meta.age == "9+"
+    assert meta.pieces == 1083
+    assert meta.year == 2024
 
 
 def test_parse_instruction_pdf_urls_fallback_simple():
