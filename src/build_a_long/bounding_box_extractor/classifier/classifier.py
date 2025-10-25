@@ -228,6 +228,31 @@ def _classify_page_number(page_data: PageData) -> None:
     _remove_similar_bboxes(page_data, best_candidate)
 
 
+def _classify_part_counts(page_data: PageData) -> None:
+    """Label all text elements that look like piece counts as 'part_count'.
+
+    Unlike page numbers, there can be many per page, so we label all
+    elements with score above the threshold individually.
+    """
+    # First collect candidates to avoid mutating the list while iterating
+    candidates: list[Text] = []
+    for element in page_data.elements:
+        if not isinstance(element, Text):
+            continue
+        score = element.label_scores.get("part_count", 0.0)
+        if score >= MIN_CONFIDENCE_THRESHOLD:
+            candidates.append(element)
+
+    # Apply labels
+    for ele in candidates:
+        ele.label = ele.label or "part_count"
+
+    # Remove shadows/duplicates and fully-contained elements around each
+    for ele in candidates:
+        if ele in page_data.elements:
+            _remove_similar_bboxes(page_data, ele)
+
+
 def classify_elements(pages: List[PageData]) -> None:
     """Classify and label elements across all pages using rule-based heuristics.
 
@@ -282,7 +307,8 @@ def _remove_similar_bboxes(page_data: PageData, target: Text) -> None:
     """Remove elements with very similar bounding boxes to the target.
 
     Intended to drop duplicate drawing strokes or shadow copies co-located
-    with the selected page number.
+    with the selected page number or piece count. Also removes elements that
+    are completely contained within the target bbox (e.g., glyph strokes).
     """
     target_bbox = target.bbox
     target_area = target_bbox.area()
@@ -298,6 +324,11 @@ def _remove_similar_bboxes(page_data: PageData, target: Text) -> None:
             continue
 
         b = ele.bbox
+        # Remove anything fully contained within the target bbox
+        if b.fully_inside(target_bbox):
+            to_remove_ids.add(id(ele))
+            continue
+
         iou = target_bbox.iou(b)
         if iou >= IOU_THRESHOLD:
             to_remove_ids.add(id(ele))
@@ -332,17 +363,3 @@ def _remove_similar_bboxes(page_data: PageData, target: Text) -> None:
             prune_children(c)
 
     prune_children(page_data.root)
-
-
-def _classify_part_counts(page_data: PageData) -> None:
-    """Label all text elements that look like piece counts as 'part_count'.
-
-    Unlike page numbers, there can be many per page, so we label all
-    elements with score above the threshold individually.
-    """
-    for element in page_data.elements:
-        if not isinstance(element, Text):
-            continue
-        score = element.label_scores.get("part_count", 0.0)
-        if score >= MIN_CONFIDENCE_THRESHOLD:
-            element.label = element.label or "part_count"
