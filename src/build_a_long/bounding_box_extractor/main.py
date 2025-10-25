@@ -11,6 +11,7 @@ from build_a_long.bounding_box_extractor.extractor import (
     extract_bounding_boxes,
     PageData,
 )
+from build_a_long.bounding_box_extractor.classifier import classify_elements
 from build_a_long.bounding_box_extractor.drawing import draw_and_save_bboxes
 from build_a_long.bounding_box_extractor.parser import parse_page_range
 
@@ -152,6 +153,9 @@ def main() -> int:
         pages: List[PageData] = extract_bounding_boxes(
             doc, start_page, end_page, include_types=include_types
         )
+
+        # Classify elements to add labels (e.g., page numbers)
+        classify_elements(pages)
 
         # Save results as JSON and render annotated images
         save_json(pages, output_dir, pdf_path)
