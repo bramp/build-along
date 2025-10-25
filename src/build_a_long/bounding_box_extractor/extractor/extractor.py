@@ -11,9 +11,9 @@ from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
     Element,
     Image,
-    Root,
     Text,
 )
+from build_a_long.bounding_box_extractor.extractor.hierarchy import ElementTree
 from build_a_long.bounding_box_extractor.extractor.pymupdf_types import (
     BBoxTuple,
     BlockDict,
@@ -27,11 +27,19 @@ logger = logging.getLogger("extractor")
 
 @dataclass
 class PageData:
-    """Data extracted from a single PDF page."""
+    """Data extracted from a single PDF page.
+
+    Attributes:
+        page_number: The page number (1-indexed)
+      elements: Flat list of all elements on the page
+      bbox: The bounding box of the entire page (page coordinate space).
+        hierarchy: Optional tree structure for element containment relationships
+    """
 
     page_number: int
-    root: Root
     elements: List[Element]
+    bbox: BBox
+    hierarchy: ElementTree | None = None
 
 
 def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
@@ -212,22 +220,18 @@ def _extract_page_elements(
         drawings = page.get_drawings()
         typed_elements.extend(_extract_drawing_elements(drawings))
 
-    # Do not build or persist a hierarchy here. We'll construct it on-demand
-    # for rendering/serialization to avoid sync issues between flat elements
-    # and nested children.
     page_rect = page.rect
-    root_bbox = BBox(
+    page_bbox = BBox(
         x0=float(page_rect.x0),
         y0=float(page_rect.y0),
         x1=float(page_rect.x1),
         y1=float(page_rect.y1),
     )
-    root_element = Root(bbox=root_bbox)
 
     return PageData(
         page_number=page_num,
-        root=root_element,
         elements=typed_elements,
+        bbox=page_bbox,
     )
 
 

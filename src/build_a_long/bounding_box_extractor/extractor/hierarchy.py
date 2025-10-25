@@ -8,8 +8,9 @@ ancestor for each child.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 import logging
-from typing import List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 from build_a_long.bounding_box_extractor.extractor.page_elements import Element
@@ -17,9 +18,62 @@ from build_a_long.bounding_box_extractor.extractor.page_elements import Element
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class ElementTree:
+    """A tree structure for managing hierarchical relationships between elements.
+
+    This separates the hierarchy structure from the elements themselves, keeping
+    elements as pure data holders without circular references.
+
+    Attributes:
+        roots: Top-level elements with no parent
+        parent_map: Maps element id to its parent element (None for roots)
+        children_map: Maps element id to list of its children elements
+    """
+
+    roots: List[Element] = field(default_factory=list)
+    parent_map: Dict[int, Optional[Element]] = field(default_factory=dict)
+    children_map: Dict[int, List[Element]] = field(default_factory=dict)
+
+    def get_children(self, element: Element) -> List[Element]:
+        """Get the children of a given element.
+
+        Args:
+            element: The element to get children for
+
+        Returns:
+            List of child elements (empty list if no children)
+        """
+        return self.children_map.get(id(element), [])
+
+    def get_parent(self, element: Element) -> Optional[Element]:
+        """Get the parent of a given element.
+
+        Args:
+            element: The element to get parent for
+
+        Returns:
+            Parent element or None if this is a root element
+        """
+        return self.parent_map.get(id(element))
+
+    def is_root(self, element: Element) -> bool:
+        """Check if an element is a root element.
+
+        Args:
+            element: The element to check
+
+        Returns:
+            True if the element is a root, False otherwise
+        """
+        return (
+            id(element) not in self.parent_map or self.parent_map[id(element)] is None
+        )
+
+
 def build_hierarchy_from_elements(
     elements: Sequence[Element],
-) -> List[Element]:
+) -> ElementTree:
     """Build a containment-based hierarchy from typed elements.
 
     Strategy:
@@ -27,7 +81,7 @@ def build_hierarchy_from_elements(
     - For each element, find the smallest containing ancestor and attach as a child.
 
     Returns:
-        List of top-level elements with their children nested in the children field.
+        ElementTree containing the hierarchy with roots and parent/children mappings.
     """
     converted: List[Element] = list(elements)
 
@@ -64,10 +118,17 @@ def build_hierarchy_from_elements(
         else:
             children_lists[p].append(i)
 
-    # Recursively produce Element trees with children attached.
-    def build_element(i: int) -> Element:
-        ele = converted[i]
-        ele.children = [build_element(cidx) for cidx in children_lists[i]]
-        return ele
+    # Build ElementTree structure
+    tree = ElementTree()
+    tree.roots = [converted[r] for r in roots]
 
-    return [build_element(r) for r in roots]
+    for i, element in enumerate(converted):
+        parent_idx = parent[i]
+        if parent_idx is not None:
+            tree.parent_map[id(element)] = converted[parent_idx]
+        else:
+            tree.parent_map[id(element)] = None
+
+        tree.children_map[id(element)] = [converted[cidx] for cidx in children_lists[i]]
+
+    return tree

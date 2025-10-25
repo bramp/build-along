@@ -15,6 +15,7 @@ from build_a_long.bounding_box_extractor.classifier import classify_elements
 from build_a_long.bounding_box_extractor.drawing import draw_and_save_bboxes
 from build_a_long.bounding_box_extractor.extractor.hierarchy import (
     build_hierarchy_from_elements,
+    ElementTree,
 )
 from build_a_long.bounding_box_extractor.parser import parse_page_range
 
@@ -29,11 +30,20 @@ def _element_to_json(ele: Any) -> Dict[str, Any]:
     return data
 
 
-def _node_to_json(element: Any) -> Dict[str, Any]:
-    """Convert a PageElement with children to JSON recursively."""
+def _node_to_json(element: Any, tree: ElementTree) -> Dict[str, Any]:
+    """Convert a PageElement with children to JSON recursively.
+
+    Args:
+        element: The element to convert
+        tree: The ElementTree containing hierarchy information
+
+    Returns:
+        Dictionary with element data and its children
+    """
+    children = tree.get_children(element)
     return {
         "element": _element_to_json(element),
-        "children": [_node_to_json(c) for c in element.children],
+        "children": [_node_to_json(c, tree) for c in children],
     }
 
 
@@ -50,9 +60,7 @@ def serialize_extracted_data(pages: List[PageData]) -> Dict[str, Any]:
     for page_data in pages:
         json_page: Dict[str, Any] = {"page_number": page_data.page_number}
         json_page["elements"] = [_element_to_json(e) for e in page_data.elements]
-        # Build hierarchy on-demand to keep it in sync with the flat elements list
-        hierarchy = build_hierarchy_from_elements(page_data.elements)
-        json_page["hierarchy"] = [_node_to_json(n) for n in hierarchy]
+
         json_data["pages"].append(json_page)
     return json_data
 

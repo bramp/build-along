@@ -34,8 +34,6 @@ class PageElement:
     # Classification fields
     label: Optional[str] = field(default=None, kw_only=True)
     label_scores: Dict[str, float] = field(default_factory=dict, kw_only=True)
-    # Children are present on all elements for simpler tree handling
-    children: List["Element"] = field(default_factory=list, kw_only=True)
 
 
 @dataclass
@@ -71,14 +69,8 @@ class Image(PageElement):
     image_id: Optional[str] = None
 
 
-@dataclass
-class Root(PageElement):
-    """A root element that contains all top-level elements on a page.
-
-    The bbox encompasses the entire page bounds.
-    """
-
-    pass
+# Note: Previously, a synthetic Root element represented the full page bounds.
+# We now model the page bounds on PageData.bbox instead and omit any synthetic root element.
 
 
 ###
@@ -136,4 +128,4 @@ class PartsList(PageElement):
 
 
 # A helpful alias if callers want to store a heterogeneous collection
-Element = Union[PartsList, Part, PartCount, StepNumber, Drawing, Text, Image, Root]
+Element = Union[PartsList, Part, PartCount, StepNumber, Drawing, Text, Image]
