@@ -4,13 +4,18 @@ This module contains logic specific to parsing LEGO.com instruction pages,
 including URL construction, PDF extraction, and metadata parsing.
 """
 
+import json
+import logging
 import re
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from bs4 import BeautifulSoup
 
+from build_a_long.downloader.metadata import Metadata, PdfEntry, DownloadUrl
+
 LEGO_BASE = "https://www.lego.com"
+
+log = logging.getLogger(__name__)
 
 
 def build_instructions_url(set_number: str, locale: str = "en-us") -> str:
@@ -18,258 +23,190 @@ def build_instructions_url(set_number: str, locale: str = "en-us") -> str:
     return f"{LEGO_BASE}/{locale}/service/building-instructions/{set_number}"
 
 
-def parse_instruction_pdf_urls(html: str, base: str = LEGO_BASE) -> List[str]:
-    """Parse an instructions HTML page and return absolute instruction PDF URLs.
-
-    - Collects links ending with .pdf
-    - Normalizes relative links to absolute using `base`
-    - Filters to instruction manuals (product.bi.core.pdf)
-    - Deduplicates while preserving order
-    """
+def _extract_next_data(html: str) -> Optional[Dict[str, Any]]:
+    """Extracts the __NEXT_DATA__ JSON blob from the HTML."""
     soup = BeautifulSoup(html, "html.parser")
-
-    pdfs: List[str] = []
-    for a in soup.find_all("a", href=True):
-        href = a.get("href")
-        if href and isinstance(href, str) and href.lower().endswith(".pdf"):
-            if href.startswith("/"):
-                href = f"{base}{href}"
-            pdfs.append(href)
-
-    seen = set()
-    unique_pdfs: List[str] = []
-    for u in pdfs:
-        if u not in seen and "product.bi.core.pdf" in u:
-            seen.add(u)
-            unique_pdfs.append(u)
-    return unique_pdfs
-
-
-def _clean_text(text: str) -> str:
-    """Remove extra whitespace from text."""
-    return re.sub(r"\s+", " ", text).strip()
-
-
-def _decode_json_string(text: str) -> str:
-    """Decode Unicode escape sequences from JSON strings.
-
-    Converts sequences like \\u0026 to their actual characters (&).
-    This is needed because we extract JSON values via regex rather than
-    parsing the full JSON, so escape sequences aren't automatically decoded.
-    """
-
-    # Replace \uXXXX escape sequences with their corresponding Unicode characters
-    def replace_unicode_escape(match):
-        code = int(match.group(1), 16)
-        return chr(code)
-
-    return re.sub(r"\\u([0-9a-fA-F]{4})", replace_unicode_escape, text)
-
-
-def _extract_name_from_json(html: str) -> Optional[str]:
-    """Extract set name from JSON data in HTML.
-
-    Looks for: "name":"Millennium Falcon™ Mini-Build","setNumber":"..."
-    """
-    match = re.search(r'"name"\s*:\s*"([^"]+)"\s*,\s*"setNumber"', html)
-    return _decode_json_string(match.group(1)) if match else None
-
-
-def _extract_name_from_html(soup: BeautifulSoup) -> Optional[str]:
-    """Extract set name from HTML meta tags or headers.
-
-    Tries og:title meta tag first, then falls back to H1/H2 elements.
-    """
-    og_title = soup.find("meta", attrs={"property": "og:title"})
-    if og_title is not None:
-        content = og_title.get("content")
-        if isinstance(content, str):
-            title = content.strip()
-            if title:
-                return title
-
-    h1 = soup.find(["h1", "h2"])
-    if h1 and h1.get_text():
-        return _clean_text(h1.get_text())
-
-    return None
-
-
-def _extract_theme_from_json(html: str) -> Optional[str]:
-    """Extract theme name from JSON data in HTML.
-
-    Looks for: "themeName":"LEGO® Star Wars™"
-    """
-    match = re.search(r'"themeName"\s*:\s*"([^"]+)"', html)
-    return _decode_json_string(match.group(1)) if match else None
-
-
-def _extract_age_from_json(html: str) -> Optional[str]:
-    """Extract age rating from JSON data in HTML.
-
-    Looks for: "ageRating":"6+"
-    """
-    match = re.search(r'"ageRating"\s*:\s*"([^"]+)"', html)
-    return match.group(1) if match else None
-
-
-def _extract_age_from_text(text: str) -> Optional[str]:
-    """Extract age rating from visible text.
-
-    Looks for patterns like "Ages 9+", "9+ years", "6+".
-    Returns the first occurrence found.
-    """
-    candidates = re.findall(
-        r"(?:Ages?\s*)?(\d{1,2}\.?\d*\+)(?:\s*years?)?", text, re.IGNORECASE
-    )
-    return candidates[0] if candidates else None
-
-
-def _extract_pieces_from_json(html: str) -> Optional[int]:
-    """Extract piece count from JSON data in HTML.
-
-    Looks for: "setPieceCount":"74"
-    """
-    match = re.search(r'"setPieceCount"\s*:\s*"(\d+)"', html)
-    if match:
+    script_tag = soup.find("script", id="__NEXT_DATA__")
+    if script_tag and script_tag.string:
         try:
-            return int(match.group(1))
-        except ValueError:
+            return json.loads(script_tag.string)
+        except json.JSONDecodeError:
             pass
     return None
 
 
-def _extract_pieces_from_text(text: str) -> Optional[int]:
-    """Extract piece count from visible text.
-
-    Looks for patterns like "1,083 pieces", "74 pcs".
-    Returns the integer piece count.
-    """
-    match = re.search(
-        r"(\d{1,5}(?:,\d{3})*)(?:\s*)(?:pcs|pieces)\b", text, re.IGNORECASE
-    )
-    if match:
-        try:
-            return int(match.group(1).replace(",", ""))
-        except ValueError:
-            pass
-    return None
+def _get_apollo_state(next_data: Dict[str, Any]) -> Dict[str, Any]:
+    return next_data.get("props", {}).get("pageProps", {}).get("__APOLLO_STATE__", {})
 
 
-def _extract_year_from_json(html: str) -> Optional[int]:
-    """Extract year from JSON data in HTML.
+def _get_building_instruction_data(
+    apollo_state: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
+    # Find the main building instruction data entry
+    for value in apollo_state.values():
+        if (
+            isinstance(value, dict)
+            and value.get("__typename") == "CS_BuildingInstructionData"
+        ):
+            return value
 
-    Looks for: "year":"2025"
-    """
-    match = re.search(r'"year"\s*:\s*"(\d{4})"', html)
-    if match:
-        try:
-            return int(match.group(1))
-        except ValueError:
-            pass
-    return None
-
-
-def _extract_year_from_text(text: str) -> Optional[int]:
-    """Extract year from visible text.
-
-    Prefers years near the label "Year:", otherwise finds any plausible year
-    between 1970 and 2099.
-    """
-    # Try to find year near "Year" label first
-    year_label_match = re.search(
-        r"Year[^\d]{0,10}(20\d{2}|19\d{2})", text, re.IGNORECASE
-    )
-    year_match: Optional[re.Match[str]] = year_label_match or re.search(
-        r"\b(20\d{2}|19\d{2})\b", text
-    )
-    if year_match:
-        try:
-            year = int(year_match.group(1))
-            if 1970 <= year <= 2099:
-                return year
-        except ValueError:
-            pass
     return None
 
 
 def parse_set_metadata(html: str) -> Dict[str, Any]:
-    """Parse a LEGO instructions HTML page and extract set metadata.
+    """Parse a LEGO instructions HTML page and extract set metadata."""
+    next_data = _extract_next_data(html)
+    if not next_data:
+        return {}
 
-    Attempts to extract commonly available fields and is resilient to
-    missing data and layout changes.
+    apollo_state = _get_apollo_state(next_data)
+    if not apollo_state:
+        return {}
 
-    Extracted fields when available:
-    - name: Name/title of the set (from JSON or og:title meta or first H1)
-    - theme: Theme name (e.g., "LEGO® Star Wars™")
-    - age: Displayed age range (e.g., "9+")
-    - pieces: Integer piece count
-    - year: Integer year (e.g., 2024)
+    bi_data = _get_building_instruction_data(apollo_state)
+    if not bi_data:
+        return {}
 
-    Returns a dict with any fields found; absent fields are omitted.
-    """
-    soup = BeautifulSoup(html, "html.parser")
     meta: Dict[str, Any] = {}
 
-    # Extract name: try JSON first, then HTML fallback
-    name = _extract_name_from_json(html)
-    if not name:
-        name = _extract_name_from_html(soup)
-    if name:
-        meta["name"] = name
-
-    # Extract theme: JSON only (no fallback available)
-    theme = _extract_theme_from_json(html)
-    if theme:
-        meta["theme"] = theme
-
-    # Extract age: try JSON first, then text fallback
-    age = _extract_age_from_json(html)
-    if not age:
-        full_text = _clean_text(soup.get_text(" "))
-        age = _extract_age_from_text(full_text)
-    if age:
-        meta["age"] = age
-
-    # Extract pieces: try JSON first, then text fallback
-    pieces = _extract_pieces_from_json(html)
-    if pieces is None:
-        full_text = _clean_text(soup.get_text(" "))
-        pieces = _extract_pieces_from_text(full_text)
-    if pieces is not None:
-        meta["pieces"] = pieces
-
-    # Extract year: try JSON first, then text fallback
-    year = _extract_year_from_json(html)
-    if not year:
-        full_text = _clean_text(soup.get_text(" "))
-        year = _extract_year_from_text(full_text)
-    if year is not None:
-        meta["year"] = year
+    if bi_data.get("name"):
+        meta["name"] = bi_data["name"]
+    if bi_data.get("theme"):
+        theme_ref = bi_data["theme"].get("id")
+        if theme_ref and theme_ref in apollo_state:
+            meta["theme"] = apollo_state[theme_ref].get("themeName")
+    if bi_data.get("ageRating"):
+        meta["age"] = bi_data["ageRating"]
+    if bi_data.get("setPieceCount"):
+        try:
+            meta["pieces"] = int(bi_data["setPieceCount"])
+        except (ValueError, TypeError):
+            pass
+    if bi_data.get("year"):
+        try:
+            meta["year"] = int(bi_data["year"])
+        except (ValueError, TypeError):
+            pass
+    if bi_data.get("setImage"):
+        image_ref = bi_data["setImage"].get("id")
+        if image_ref and image_ref in apollo_state:
+            meta["set_image_url"] = apollo_state[image_ref].get("src")
+    if bi_data.get("buildingInstructions"):
+        meta["buildingInstructions"] = bi_data["buildingInstructions"]
 
     return meta
 
 
-@dataclass
-class PdfEntry:
-    """Represents a single instruction PDF file."""
+def _apollo_resolve(apollo_state: Dict[str, Any], item_or_ref: Any) -> Any:
+    """Resolve an Apollo reference to its concrete object.
 
-    url: str
-    filename: str
+    The Apollo cache often stores references like {"type": "id", "id": "some.key"}.
+    This utility follows those references recursively until a non-reference value is
+    reached, or a resolution cannot be performed. Non-dict values (e.g., strings)
+    are returned unchanged.
+
+    This guards against cycles by tracking visited ids.
+    """
+    if item_or_ref is None or not isinstance(item_or_ref, dict):
+        return item_or_ref
+
+    visited: Set[str] = set()
+    current: Any = item_or_ref
+    while (
+        isinstance(current, dict)
+        and current.get("type", "id") == "id"
+        and "id" in current
+    ):
+        ref_id = current["id"]
+        if ref_id in visited:
+            # Cycle detected; abort resolution
+            return current
+        visited.add(ref_id)
+        resolved = apollo_state.get(ref_id)
+        if resolved is None:
+            return current
+        current = resolved
+    return current
 
 
-@dataclass
-class Metadata:
-    """Complete metadata for a LEGO set's instructions."""
+def parse_instruction_pdf_urls_apollo(html: str) -> List[DownloadUrl]:
+    """Parse instruction PDFs using the Apollo (__NEXT_DATA__) approach only.
 
-    set: str
-    locale: str
-    name: Optional[str] = None
-    theme: Optional[str] = None
-    age: Optional[str] = None
-    pieces: Optional[int] = None
-    year: Optional[int] = None
-    pdfs: List[PdfEntry] = field(default_factory=list)
+    Returns an empty list if the expected Apollo structures are not present.
+    """
+    next_data = _extract_next_data(html)
+    if not next_data:
+        return []
+
+    apollo_state = _get_apollo_state(next_data)
+    if not apollo_state:
+        return []
+
+    bi_data = _get_building_instruction_data(apollo_state)
+    if not bi_data:
+        return []
+
+    results: List[DownloadUrl] = []
+    for item_or_ref in bi_data.get("buildingInstructions", []) or []:
+        item = _apollo_resolve(apollo_state, item_or_ref)
+        if not isinstance(item, dict):
+            continue
+
+        pdf = _apollo_resolve(apollo_state, item.get("pdf"))
+        if not isinstance(pdf, dict):
+            log.debug(
+                "Skipping building instructions with invalid pdf data: %s\n%s",
+                pdf,
+                item,
+            )
+            continue
+
+        pdf_url = _apollo_resolve(apollo_state, pdf.get("pdfUrl"))
+        if not isinstance(pdf_url, str):
+            log.debug(
+                "Skipping building instructions with invalid pdf url: %s\n%s",
+                pdf_url,
+                pdf,
+            )
+            continue
+
+        cover_image = _apollo_resolve(apollo_state, pdf.get("coverImage"))
+        preview_url = cover_image.get("src") if isinstance(cover_image, dict) else None
+
+        results.append(DownloadUrl(url=pdf_url, preview_url=preview_url))
+
+    return results
+
+
+def parse_instruction_pdf_urls_fallback(html: str) -> List[DownloadUrl]:
+    """Fallback parser that extracts LEGO instruction PDFs via regex.
+
+    This is used when Apollo data is missing or incomplete. Preview images are not
+    available via this mechanism, so preview_url will be None.
+    """
+    pattern = re.compile(
+        r"https://www\.lego\.com/cdn/product-assets/product\.bi\.core\.pdf/\w+\.pdf"
+    )
+    urls_in_order: List[str] = []
+    seen: Set[str] = set()
+    for m in pattern.finditer(html):
+        u = m.group(0)
+        if u not in seen:
+            seen.add(u)
+            urls_in_order.append(u)
+
+    return [DownloadUrl(url=u, preview_url=None) for u in urls_in_order]
+
+
+def parse_instruction_pdf_urls(html: str, base: str = LEGO_BASE) -> List[DownloadUrl]:
+    """Parse an instructions HTML page and return instruction PDF URLs.
+
+    Prefers Apollo/Next.js state when present. Falls back to regex scanning otherwise.
+    """
+    results = parse_instruction_pdf_urls_apollo(html)
+    if results:
+        return results
+    return parse_instruction_pdf_urls_fallback(html)
 
 
 def build_metadata(
@@ -279,7 +216,7 @@ def build_metadata(
 
     Parses both the set fields and the ordered list of instruction PDFs.
     """
-    pdf_urls = parse_instruction_pdf_urls(html, base=base)
+    pdf_infos = parse_instruction_pdf_urls(html, base=base)
     fields = parse_set_metadata(html)
     return Metadata(
         set=set_number,
@@ -289,5 +226,13 @@ def build_metadata(
         age=fields.get("age"),
         pieces=fields.get("pieces"),
         year=fields.get("year"),
-        pdfs=[PdfEntry(url=u, filename=u.split("/")[-1]) for u in pdf_urls],
+        set_image_url=fields.get("set_image_url"),
+        pdfs=[
+            PdfEntry(
+                url=info.url,
+                filename=info.url.split("/")[-1],
+                preview_url=info.preview_url,
+            )
+            for info in pdf_infos
+        ],
     )

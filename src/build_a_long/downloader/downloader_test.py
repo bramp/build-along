@@ -12,6 +12,7 @@ from build_a_long.downloader.downloader import (
     read_metadata,
     write_metadata,
 )
+from build_a_long.downloader.legocom_test import HTML_WITH_METADATA_AND_PDF
 
 
 def _make_mock_httpx_client(html: str):
@@ -24,44 +25,19 @@ def _make_mock_httpx_client(html: str):
     return mock_client
 
 
-def test_find_instruction_pdfs_parses_and_normalizes():
-    html = (
-        '<a href="https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6602644.pdf">Download</a>'
-        '<a href="/cdn/product-assets/product.bi.core.pdf/6602645.pdf">Download</a>'
-        '<a href="/cdn/x/notpdf.txt">Ignore</a>'
-    )
-    mock_client = _make_mock_httpx_client(html)
-    downloader = LegoInstructionDownloader(client=mock_client)
-
-    urls = downloader.find_instruction_pdfs("75419")
-    assert urls == [
-        "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6602644.pdf",
-        "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6602645.pdf",
-    ]
-
-
-def test_find_instruction_pdfs_uses_locale():
-    html = '<a href="/cdn/product-assets/product.bi.core.pdf/test.pdf">Download</a>'
-    mock_client = _make_mock_httpx_client(html)
-    downloader = LegoInstructionDownloader(locale="de-de", client=mock_client)
-
-    urls = downloader.find_instruction_pdfs("12345")
-    # Verify the URL was built with the correct locale
-    mock_client.get.assert_called_once()
-    called_url = mock_client.get.call_args[0][0]
-    assert "de-de" in called_url
-    assert urls == [
-        "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/test.pdf"
-    ]
-
-
 def test_download_skips_if_exists(tmp_path: Path):
     url = "https://example.com/file.pdf"
     dest = tmp_path / "file.pdf"
     dest.write_bytes(b"already")
 
-    downloader = LegoInstructionDownloader(overwrite=False, show_progress=False)
+    mock_client = MagicMock()
+
+    downloader = LegoInstructionDownloader(
+        client=mock_client, overwrite=False, show_progress=False
+    )
     out = downloader.download(url, tmp_path)
+
+    mock_client.stream.assert_not_called()
 
     assert out == dest
     assert dest.read_bytes() == b"already"
@@ -121,16 +97,8 @@ def test_context_manager_creates_and_closes_client():
 
 
 def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
-    # Sample HTML with OG title, age, pieces, year, and two PDFs
-    html = (
-        '<meta property="og:title" content="Starfighter" />'
-        "<div>Ages 9+ · 1,083 pieces · Year: 2024</div>"
-        '<a href="/cdn/product-assets/product.bi.core.pdf/6602000.pdf">PDF 1</a>'
-        '<a href="/cdn/product-assets/product.bi.core.pdf/6602001.pdf">PDF 2</a>'
-    )
-
     # Mock network
-    mock_client = _make_mock_httpx_client(html)
+    mock_client = _make_mock_httpx_client(HTML_WITH_METADATA_AND_PDF)
 
     # Stub out actual file downloads
     def fake_download(self, url: str, dest_dir: Path, **kwargs):
@@ -157,12 +125,14 @@ def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
     assert data.get("age") == "9+"
     assert data.get("pieces") == 1083
     assert data.get("year") == 2024
+    assert data.get("set_image_url") == "set_image.png"
     # Ensure PDFs preserved order
-    urls = [e["url"] for e in data.get("pdfs", [])]
-    assert urls == [
-        "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6602000.pdf",
-        "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6602001.pdf",
-    ]
+    pdfs = data.get("pdfs", [])
+    assert len(pdfs) == 2
+    assert pdfs[0]["url"] == "/6602000.pdf"
+    assert pdfs[0]["preview_url"] == "preview1.png"
+    assert pdfs[1]["url"] == "/6602001.pdf"
+    assert pdfs[1]["preview_url"] == "preview2.png"
 
 
 def test_process_set_uses_existing_metadata_and_skips_fetch(
@@ -180,12 +150,14 @@ def test_process_set_uses_existing_metadata_and_skips_fetch(
         "year": 2025,
         "pdfs": [
             {
-                "url": "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/7000001.pdf",
+                "url": "https://www.example.com/7000001.pdf",
                 "filename": "7000001.pdf",
+                "preview_url": "preview1.png",
             },
             {
-                "url": "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/7000002.pdf",
+                "url": "https://www.example.com/7000002.pdf",
                 "filename": "7000002.pdf",
+                "preview_url": "preview2.png",
             },
         ],
     }
