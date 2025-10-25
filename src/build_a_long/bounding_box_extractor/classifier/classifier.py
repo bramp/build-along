@@ -64,6 +64,19 @@ def _score_part_count_text(text: str) -> float:
     return 0.0
 
 
+def _score_step_number_text(text: str) -> float:
+    """Score how likely the text represents a step number.
+
+    Rules:
+    - 1 to 4 digits
+    - No leading zero
+    """
+    t = text.strip()
+    if re.fullmatch(r"[1-9]\d{0,3}", t):
+        return 1.0
+    return 0.0
+
+
 def _score_page_number_position(element: Text, page_bbox, page_height: float) -> float:
     """Score how likely element position indicates a page number.
 
@@ -175,6 +188,46 @@ def _calculate_part_count_scores(page_data: PageData) -> None:
             element.label_scores["part_count"] = score
 
 
+def _calculate_step_number_scores(page_data: PageData) -> None:
+    """Calculate step number scores for text elements.
+
+    Incorporates a size heuristic relative to the detected page number:
+    step numbers should be graphically taller than the page number.
+    """
+    if not page_data.elements:
+        return
+
+    # Find page number height, if available
+    page_num_height: Optional[float] = None
+    for e in page_data.elements:
+        if isinstance(e, Text) and e.label == "page_number":
+            page_num_height = max(0.0, e.bbox.y1 - e.bbox.y0)
+            break
+
+    for element in page_data.elements:
+        if not isinstance(element, Text):
+            continue
+        text_score = _score_step_number_text(element.text)
+        if text_score == 0.0:
+            continue
+
+        size_score = 0.0
+        if page_num_height and page_num_height > 0.0:
+            h = max(0.0, element.bbox.y1 - element.bbox.y0)
+            # Gate: must be at least 10% taller than the page number
+            if h <= page_num_height * 1.1:
+                final = 0.0
+                element.label_scores["step_number"] = final
+                continue
+            # Map ratio to [0,1] for scoring bonus: 10% -> 0, 60%+ -> 1
+            ratio_over = (h / page_num_height) - 1.0
+            size_score = max(0.0, min(1.0, ratio_over / 0.5))
+
+        # Combine scores: text dominates
+        final = 0.8 * text_score + 0.2 * size_score
+        element.label_scores["step_number"] = final
+
+
 def _classify_page_number(page_data: PageData) -> None:
     """Identify and label the page number element based on scores.
 
@@ -253,6 +306,27 @@ def _classify_part_counts(page_data: PageData) -> None:
             _remove_similar_bboxes(page_data, ele)
 
 
+def _classify_step_numbers(page_data: PageData) -> None:
+    """Label text elements that look like step numbers as 'step_number'.
+
+    Multiple step numbers can exist on a single page.
+    """
+    candidates: list[Text] = []
+    for element in page_data.elements:
+        if not isinstance(element, Text):
+            continue
+        score = element.label_scores.get("step_number", 0.0)
+        if score >= MIN_CONFIDENCE_THRESHOLD:
+            candidates.append(element)
+
+    for ele in candidates:
+        ele.label = ele.label or "step_number"
+
+    for ele in candidates:
+        if ele in page_data.elements:
+            _remove_similar_bboxes(page_data, ele)
+
+
 def classify_elements(pages: List[PageData]) -> None:
     """Classify and label elements across all pages using rule-based heuristics.
 
@@ -282,8 +356,10 @@ def classify_elements(pages: List[PageData]) -> None:
         # Phase 2: Assign labels based on scores
         _classify_page_number(page_data)
         _classify_part_counts(page_data)
+        # Now that page_number is labeled, compute step scores and classify
+        _calculate_step_number_scores(page_data)
+        _classify_step_numbers(page_data)
         # Future classifiers can be added here:
-        # _classify_step_numbers(page_data)
         # _classify_parts_list(page_data)
 
 
@@ -324,6 +400,7 @@ def _remove_similar_bboxes(page_data: PageData, target: Text) -> None:
             continue
 
         b = ele.bbox
+        # TODO we could also use target.children.
         # Remove anything fully contained within the target bbox
         if b.fully_inside(target_bbox):
             to_remove_ids.add(id(ele))
