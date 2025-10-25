@@ -55,6 +55,9 @@ class Text(PageElement):
     """
 
     text: str
+    font_name: Optional[str] = None
+    font_size: Optional[float] = None
+
     children: List["Element"] = field(default_factory=list)
 
 
