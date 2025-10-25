@@ -13,7 +13,7 @@ hints to keep them easy to test and reason about.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 
@@ -26,9 +26,13 @@ class PageElement:
     - Every element has exactly one bounding box in page coordinates
       (same coordinate system produced by the extractor).
     - Subclasses are small data holders.
+    - label: The assigned classification label (e.g., 'page_number', 'step_number').
+    - label_scores: Probability scores (0.0 to 1.0) for each potential label.
     """
 
     bbox: BBox
+    label: Optional[str] = field(default=None, kw_only=True)
+    label_scores: Dict[str, float] = field(default_factory=dict, kw_only=True)
 
 
 @dataclass
@@ -51,7 +55,6 @@ class Text(PageElement):
     """
 
     text: str
-    label: Optional[str] = None  # e.g., 'parts_list', 'instruction', etc.
     children: List["Element"] = field(default_factory=list)
 
 
