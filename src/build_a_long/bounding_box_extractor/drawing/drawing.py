@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import List
 
 import pymupdf
 from PIL import Image, ImageDraw
@@ -11,18 +10,24 @@ from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Image as ImageElement,
     Text,
 )
+from build_a_long.bounding_box_extractor.extractor.hierarchy import ElementTree
 
 logger = logging.getLogger(__name__)
 
 
 def draw_and_save_bboxes(
     page: pymupdf.Page,
-    hierarchy: List[Element],
+    hierarchy: ElementTree,
     output_path: Path,
 ) -> None:
     """
     Draws bounding boxes from a hierarchy on the PDF page image and saves it.
     Colors are based on nesting depth, and element types are labeled.
+
+    Args:
+        page: PyMuPDF page to render
+        hierarchy: ElementTree containing the element hierarchy
+        output_path: Where to save the output image
     """
     image_dpi = 150
 
@@ -76,12 +81,13 @@ def draw_and_save_bboxes(
         text_position = (scaled_bbox[0], scaled_bbox[3] + 2)
         draw.text(text_position, label, fill=color)
 
-        # Recursively draw children
-        for child in element.children:
+        # Recursively draw children using the hierarchy
+        children = hierarchy.get_children(element)
+        for child in children:
             _draw_element(child, depth + 1)
 
     # Start traversal from root elements
-    for root_element in hierarchy:
+    for root_element in hierarchy.roots:
         _draw_element(root_element, 0)
 
     img.save(output_path)

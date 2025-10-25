@@ -8,7 +8,6 @@ from build_a_long.bounding_box_extractor.classifier.classifier import (
 from build_a_long.bounding_box_extractor.extractor import PageData
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
-    Root,
     Text,
     Drawing,
 )
@@ -51,8 +50,8 @@ class TestClassifyPageNumber:
         """Test classification with no elements."""
         page_data = PageData(
             page_number=1,
-            root=Root(bbox=BBox(0, 0, 100, 200)),
             elements=[],
+            bbox=BBox(0, 0, 100, 200),
         )
         # First calculate scores (would normally be done by classify_elements)
         from build_a_long.bounding_box_extractor.classifier.classifier import (
@@ -73,8 +72,8 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=1,
-            root=Root(bbox=page_bbox),
             elements=[page_number_text],
+            bbox=page_bbox,
         )
 
         # Calculate scores first
@@ -99,8 +98,8 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=1,
-            root=Root(bbox=page_bbox),
             elements=[page_number_text],
+            bbox=page_bbox,
         )
 
         from build_a_long.bounding_box_extractor.classifier.classifier import (
@@ -131,8 +130,8 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=1,
-            root=Root(bbox=page_bbox),
             elements=[center_text, corner_text],
+            bbox=page_bbox,
         )
 
         from build_a_long.bounding_box_extractor.classifier.classifier import (
@@ -159,7 +158,9 @@ class TestClassifyPageNumber:
         txt7 = Text(bbox=BBox(90, 190, 94, 196), text="7")
 
         page_data = PageData(
-            page_number=7, root=Root(bbox=page_bbox), elements=[txt6, txt7]
+            page_number=7,
+            elements=[txt6, txt7],
+            bbox=page_bbox,
         )
 
         from build_a_long.bounding_box_extractor.classifier.classifier import (
@@ -183,7 +184,9 @@ class TestClassifyPageNumber:
         dup = Drawing(bbox=BBox(10.2, 190.1, 14.1, 195.9))
 
         page_data = PageData(
-            page_number=3, root=Root(bbox=page_bbox), elements=[pn, dup]
+            page_number=3,
+            elements=[pn, dup],
+            bbox=page_bbox,
         )
 
         from build_a_long.bounding_box_extractor.classifier.classifier import (
@@ -208,8 +211,8 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=1,
-            root=Root(bbox=page_bbox),
             elements=[top_text],
+            bbox=page_bbox,
         )
 
         from build_a_long.bounding_box_extractor.classifier.classifier import (
@@ -237,8 +240,8 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=1,
-            root=Root(bbox=page_bbox),
             elements=[text_element],
+            bbox=page_bbox,
         )
 
         from build_a_long.bounding_box_extractor.classifier.classifier import (
@@ -269,8 +272,8 @@ class TestClassifyElements:
 
             page_data = PageData(
                 page_number=i,
-                root=Root(bbox=page_bbox),
                 elements=[page_number_text],
+                bbox=page_bbox,
             )
             pages.append(page_data)
 
@@ -305,7 +308,9 @@ class TestPartCountClassification:
         t4 = Text(bbox=BBox(50, 50, 70, 60), text="hello")
 
         page = PageData(
-            page_number=1, root=Root(bbox=page_bbox), elements=[t1, t2, t3, t4]
+            page_number=1,
+            elements=[t1, t2, t3, t4],
+            bbox=page_bbox,
         )
         classify_elements([page])
 
@@ -329,8 +334,8 @@ class TestStepNumberClassification:
 
         page = PageData(
             page_number=5,
-            root=Root(bbox=page_bbox),
             elements=[pn, big_step, small_step],
+            bbox=page_bbox,
         )
 
         classify_elements([page])
@@ -365,8 +370,8 @@ class TestPartsListClassification:
 
         page = PageData(
             page_number=6,
-            root=Root(bbox=page_bbox),
             elements=[pn, step, d1, d2, pc1, pc2, other],
+            bbox=page_bbox,
         )
 
         classify_elements([page])

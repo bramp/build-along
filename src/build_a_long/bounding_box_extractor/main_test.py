@@ -3,6 +3,10 @@ from unittest.mock import MagicMock, mock_open, patch
 
 from build_a_long.bounding_box_extractor.main import main
 
+from build_a_long.bounding_box_extractor.extractor.hierarchy import (
+    ElementTree,
+)
+
 
 class TestMain:
     @patch("build_a_long.bounding_box_extractor.main.pymupdf.open")
@@ -28,19 +32,16 @@ class TestMain:
         from build_a_long.bounding_box_extractor.extractor.bbox import BBox
         from build_a_long.bounding_box_extractor.extractor.page_elements import (
             StepNumber,
-            Root,
         )
         from build_a_long.bounding_box_extractor.extractor import PageData
 
-        step_element = StepNumber(
-            bbox=BBox(10.0, 20.0, 30.0, 40.0), value=1, children=[]
-        )
-        root_element = Root(bbox=BBox(0.0, 0.0, 100.0, 100.0), children=[step_element])
+        step_element = StepNumber(bbox=BBox(10.0, 20.0, 30.0, 40.0), value=1)
+        page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
 
         page_data = PageData(
             page_number=1,
-            root=root_element,
             elements=[step_element],
+            bbox=page_bbox,
         )
 
         # extract_bounding_boxes now returns List[PageData]
@@ -75,9 +76,12 @@ class TestMain:
         # Assert draw_and_save_bboxes was called with correct arguments
         mock_draw_and_save_bboxes.assert_called_once()
         draw_call_args = mock_draw_and_save_bboxes.call_args
-        # page: pymupdf.Page, hierarchy: Tuple[Element, ...], output_path: Path
+        # page: pymupdf.Page, hierarchy: ElementTree, output_path: Path
         assert draw_call_args[0][0] == mock_page  # page object
-        assert len(draw_call_args[0][1]) == 1  # hierarchy tuple
+        # hierarchy is now an ElementTree, check that it has roots
+
+        hierarchy = draw_call_args[0][1]
+        assert isinstance(hierarchy, ElementTree)
         assert isinstance(draw_call_args[0][2], Path)  # output_path
         assert draw_call_args[0][2].name == "page_001.png"
 

@@ -15,12 +15,13 @@ def test_build_hierarchy_basic_containment():
         Drawing(bbox=BBox(0, 0, 100, 100), image_id="image_0"),
         StepNumber(bbox=BBox(10, 10, 20, 20), value=1),
     ]
-    roots = build_hierarchy_from_elements(elements)
-    assert len(roots) == 1
-    root = roots[0]
+    tree = build_hierarchy_from_elements(elements)
+    assert len(tree.roots) == 1
+    root = tree.roots[0]
     assert isinstance(root, Drawing)
-    assert len(root.children) == 1
-    assert isinstance(root.children[0], StepNumber)
+    children = tree.get_children(root)
+    assert len(children) == 1
+    assert isinstance(children[0], StepNumber)
 
 
 def test_build_hierarchy_with_children():
@@ -29,11 +30,12 @@ def test_build_hierarchy_with_children():
         Drawing(bbox=BBox(0, 0, 50, 50), image_id="drawing_0"),
         Text(bbox=BBox(5, 5, 10, 10), text="x3"),
     ]
-    roots = build_hierarchy_from_elements(elements)
-    assert len(roots) == 1
-    root = roots[0]
+    tree = build_hierarchy_from_elements(elements)
+    assert len(tree.roots) == 1
+    root = tree.roots[0]
     assert isinstance(root, Drawing)
     # The Drawing element should have the text as a child
-    assert len(root.children) == 1
-    assert isinstance(root.children[0], Text)
-    assert root.children[0].text == "x3"
+    children = tree.get_children(root)
+    assert len(children) == 1
+    assert isinstance(children[0], Text)
+    assert children[0].text == "x3"

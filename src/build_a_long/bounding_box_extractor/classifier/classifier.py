@@ -140,8 +140,8 @@ def _calculate_page_number_scores(page_data: PageData) -> None:
     if not page_data.elements:
         return
 
-    # Get page dimensions from root bbox
-    page_bbox = page_data.root.bbox
+    page_bbox = page_data.bbox
+    assert page_bbox is not None
     page_height = page_bbox.y1 - page_bbox.y0
 
     # Calculate scores for each text element
@@ -577,7 +577,7 @@ def _remove_similar_bboxes(
 def _prune_elements(page_data: PageData, to_remove_ids: Set[int]) -> None:
     """Remove elements with IDs in to_remove_ids from the page.
 
-    Removes from both the flat element list and the hierarchy.
+    Removes from the flat element list and rebuilds the hierarchy.
 
     Args:
         page_data: The page data to prune
@@ -596,14 +596,13 @@ def _prune_elements(page_data: PageData, to_remove_ids: Set[int]) -> None:
     # Prune from flat element list
     page_data.elements = [e for e in page_data.elements if id(e) not in to_remove_ids]
 
-    # Prune from hierarchy recursively
-    def prune_children(container) -> None:
-        kept = [c for c in container.children if id(c) not in to_remove_ids]
-        container.children[:] = kept
-        for c in kept:
-            prune_children(c)
+    # Rebuild hierarchy from remaining elements
+    # Import here to avoid circular dependency
+    from build_a_long.bounding_box_extractor.extractor.hierarchy import (
+        build_hierarchy_from_elements,
+    )
 
-    prune_children(page_data.root)
+    page_data.hierarchy = build_hierarchy_from_elements(page_data.elements)
 
 
 def _log_post_classification_warnings(page_data: PageData) -> None:

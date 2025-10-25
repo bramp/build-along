@@ -54,11 +54,12 @@ class TestBoundingBoxExtractor:
         # Call the function with document instead of path
         result = extract_bounding_boxes(fake_doc)
 
-        # Validate typed elements structure
+        # Validate typed elements structure (no artificial Root element)
         assert len(result) == 1
         page_data = result[0]
         assert page_data.page_number == 1
         elements = page_data.elements
+        # elements now only include actual content: 1 Text + 1 Image
         assert len(elements) == 2
         assert isinstance(elements[0], Text)
         assert elements[0].text == "1"
@@ -92,11 +93,11 @@ class TestBoundingBoxExtractor:
 
         result = extract_bounding_boxes(mock_doc)
 
-        # Typed elements exist
+        # Typed elements exist (no Root)
         assert len(result) == 1
         page_data = result[0]
         elements = page_data.elements
-        assert len(elements) == 1
+        assert len(elements) == 1  # Only 1 Text element
         assert isinstance(elements[0], Text)
         assert elements[0].text == "1"
 
@@ -130,11 +131,11 @@ class TestBoundingBoxExtractor:
 
         result = extract_bounding_boxes(mock_doc)
 
-        # Validate text element
+        # Validate text element (no Root)
         assert len(result) == 1
         page_data = result[0]
         elements = page_data.elements
-        assert len(elements) == 1
+        assert len(elements) == 1  # Only 1 Text element
         assert isinstance(elements[0], Text)
         assert elements[0].text == "Build Step Instructions"
         assert elements[0].bbox.x0 == 10.0
