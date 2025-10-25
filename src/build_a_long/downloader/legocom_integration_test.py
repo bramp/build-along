@@ -56,27 +56,14 @@ def test_fetch_real_set_30708(http_client):
     assert all(pdf.url.startswith("https://") for pdf in pdfs)
 
     # Test metadata extraction
-    meta = parse_set_metadata(html)
+    meta = parse_set_metadata(html, set_number=set_number, locale="en-us")
 
     # Verify we got the expected metadata
-    assert "name" in meta, "Should extract set name"
-    assert "Millennium Falcon" in meta["name"], (
-        f"Expected Millennium Falcon in name, got: {meta.get('name')}"
-    )
-
-    assert "theme" in meta, "Should extract theme"
-    assert "Star Wars" in meta["theme"], (
-        f"Expected Star Wars theme, got: {meta.get('theme')}"
-    )
-
-    assert "age" in meta, "Should extract age rating"
-    assert meta["age"] == "6+", f"Expected age 6+, got: {meta.get('age')}"
-
-    assert "pieces" in meta, "Should extract piece count"
-    assert meta["pieces"] == 74, f"Expected 74 pieces, got: {meta.get('pieces')}"
-
-    assert "year" in meta, "Should extract year"
-    assert meta["year"] >= 2024, f"Expected year >= 2024, got: {meta.get('year')}"
+    assert meta.name and "Millennium Falcon" in meta.name
+    assert meta.theme and "Star Wars" in meta.theme
+    assert meta.age == "6+"
+    assert meta.pieces == 74
+    assert meta.year and meta.year >= 2024
 
 
 def test_fetch_real_set_75419(http_client):
@@ -94,26 +81,13 @@ def test_fetch_real_set_75419(http_client):
     )
 
     # Test metadata extraction
-    meta = parse_set_metadata(html)
+    meta = parse_set_metadata(html, set_number=set_number, locale="en-us")
 
-    assert "name" in meta
-    assert "Death Star" in meta["name"], (
-        f"Expected Death Star in name, got: {meta.get('name')}"
-    )
-
-    assert "theme" in meta
-    assert "Star Wars" in meta["theme"]
-
-    assert "age" in meta
-    assert meta["age"] == "18+", f"Expected age 18+, got: {meta.get('age')}"
-
-    assert "pieces" in meta
-    assert meta["pieces"] > 9000, (
-        f"Death Star should have >9000 pieces, got: {meta.get('pieces')}"
-    )
-
-    assert "year" in meta
-    assert meta["year"] >= 2024
+    assert meta.name and "Death Star" in meta.name
+    assert meta.theme and "Star Wars" in meta.theme
+    assert meta.age == "18+"
+    assert meta.pieces and meta.pieces > 9000
+    assert meta.year and meta.year >= 2024
 
 
 def test_json_fields_exist_in_real_pages(http_client):
@@ -130,26 +104,12 @@ def test_json_fields_exist_in_real_pages(http_client):
     html = response.text
 
     # Check that JSON extraction methods return values
-    meta = parse_set_metadata(html)
-    assert "name" in meta, (
-        "JSON 'name' field not found - LEGO.com may have changed structure"
-    )
-
-    assert "theme" in meta, (
-        "JSON 'themeName' field not found - LEGO.com may have changed structure"
-    )
-
-    assert "age" in meta, (
-        "JSON 'ageRating' field not found - LEGO.com may have changed structure"
-    )
-
-    assert "pieces" in meta, (
-        "JSON 'setPieceCount' field not found - LEGO.com may have changed structure"
-    )
-
-    assert "year" in meta, (
-        "JSON 'year' field not found - LEGO.com may have changed structure"
-    )
+    meta = parse_set_metadata(html, set_number=set_number, locale="en-us")
+    assert meta.name
+    assert meta.theme
+    assert meta.age
+    assert meta.pieces
+    assert meta.year
 
 
 def test_different_locale(http_client):
@@ -165,12 +125,9 @@ def test_different_locale(http_client):
     assert len(pdfs) >= 1
 
     # Metadata extraction should still work (JSON fields are often not localized)
-    meta = parse_set_metadata(html)
-    assert "pieces" in meta
-    assert meta["pieces"] == 74
-
-    # Theme names might be localized or not - just check it exists
-    assert "theme" in meta
+    meta = parse_set_metadata(html, set_number=set_number, locale="de-de")
+    assert meta.pieces == 74
+    assert meta.theme
 
 
 @pytest.mark.skip(
