@@ -10,6 +10,7 @@ from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Root,
     Text,
+    Drawing,
 )
 
 
@@ -312,3 +313,67 @@ class TestPartCountClassification:
         assert t2.label == "part_count"
         assert t3.label == "part_count"
         assert t4.label is None
+
+
+class TestStepNumberClassification:
+    """Tests for step number detection with size heuristic."""
+
+    def test_step_numbers_must_be_taller_than_page_number(self) -> None:
+        page_bbox = BBox(0, 0, 200, 300)
+        # Page number near bottom, small height (10)
+        pn = Text(bbox=BBox(10, 285, 20, 295), text="5")
+
+        # Candidate step numbers elsewhere
+        big_step = Text(bbox=BBox(50, 100, 70, 120), text="12")  # height 20
+        small_step = Text(bbox=BBox(80, 100, 88, 108), text="3")  # height 8 (too small)
+
+        page = PageData(
+            page_number=5,
+            root=Root(bbox=page_bbox),
+            elements=[pn, big_step, small_step],
+        )
+
+        classify_elements([page])
+
+        assert pn.label == "page_number"
+        assert big_step.label == "step_number"
+        assert small_step.label is None
+
+
+class TestPartsListClassification:
+    """Tests for detecting a parts list drawing above a step containing part counts."""
+
+    def test_parts_list_drawing_above_step(self) -> None:
+        page_bbox = BBox(0, 0, 200, 300)
+
+        # Page and step
+        pn = Text(bbox=BBox(10, 285, 20, 295), text="6")
+        step = Text(
+            bbox=BBox(50, 180, 70, 210), text="10"
+        )  # height 30 (taller than PN)
+
+        # Two drawings above the step; only d1 contains part counts
+        d1 = Drawing(bbox=BBox(30, 100, 170, 160))
+        d2 = Drawing(bbox=BBox(20, 40, 180, 80))
+
+        # Part counts inside d1
+        pc1 = Text(bbox=BBox(40, 110, 55, 120), text="2x")
+        pc2 = Text(bbox=BBox(100, 130, 115, 140), text="5×")
+
+        # Some unrelated text
+        other = Text(bbox=BBox(10, 10, 40, 20), text="hello")
+
+        page = PageData(
+            page_number=6,
+            root=Root(bbox=page_bbox),
+            elements=[pn, step, d1, d2, pc1, pc2, other],
+        )
+
+        classify_elements([page])
+
+        # Part counts should be labeled, step labeled, and d1 chosen as parts list
+        assert pc1.label == "part_count"
+        assert pc2.label == "part_count"
+        assert step.label == "step_number"
+        assert d1.label == "parts_list"
+        assert d2.label is None or d2.label != "parts_list"

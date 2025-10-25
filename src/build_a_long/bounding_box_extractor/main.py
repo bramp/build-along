@@ -13,6 +13,9 @@ from build_a_long.bounding_box_extractor.extractor import (
 )
 from build_a_long.bounding_box_extractor.classifier import classify_elements
 from build_a_long.bounding_box_extractor.drawing import draw_and_save_bboxes
+from build_a_long.bounding_box_extractor.extractor.hierarchy import (
+    build_hierarchy_from_elements,
+)
 from build_a_long.bounding_box_extractor.parser import parse_page_range
 
 logging.basicConfig(level=logging.DEBUG)
@@ -47,7 +50,9 @@ def serialize_extracted_data(pages: List[PageData]) -> Dict[str, Any]:
     for page_data in pages:
         json_page: Dict[str, Any] = {"page_number": page_data.page_number}
         json_page["elements"] = [_element_to_json(e) for e in page_data.elements]
-        json_page["hierarchy"] = [_node_to_json(n) for n in page_data.root.children]
+        # Build hierarchy on-demand to keep it in sync with the flat elements list
+        hierarchy = build_hierarchy_from_elements(page_data.elements)
+        json_page["hierarchy"] = [_node_to_json(n) for n in hierarchy]
         json_data["pages"].append(json_page)
     return json_data
 
@@ -81,11 +86,9 @@ def render_annotated_images(
         page_num = page_data.page_number  # 1-indexed
         page = doc[page_num - 1]  # 0-indexed
         output_path = output_dir / f"page_{page_num:03d}.png"
-        draw_and_save_bboxes(
-            page,
-            page_data.root.children,
-            output_path,
-        )
+        # Build hierarchy on-demand for rendering to avoid sync issues
+        hierarchy = build_hierarchy_from_elements(page_data.elements)
+        draw_and_save_bboxes(page, hierarchy, output_path)
 
 
 def parse_arguments() -> argparse.Namespace:
