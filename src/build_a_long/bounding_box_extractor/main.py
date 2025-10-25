@@ -114,7 +114,75 @@ def parse_arguments() -> argparse.Namespace:
         help="Comma-separated list of element types to include. Defaults to all types.",
         default="text,image,drawing",
     )
+    # Summary controls
+    parser.add_argument(
+        "--no-summary",
+        dest="summary",
+        action="store_false",
+        help="Do not print a classification summary to stdout.",
+    )
+    parser.add_argument(
+        "--summary-detailed",
+        action="store_true",
+        help="Print a slightly more detailed summary, including pages missing page numbers.",
+    )
+    parser.set_defaults(summary=True, summary_detailed=False)
     return parser.parse_args()
+
+
+def _print_summary(pages: List[PageData], *, detailed: bool = False) -> None:
+    """Print a concise classification summary for the processed pages.
+
+    Args:
+        pages: The processed pages with extracted elements and labels applied.
+        detailed: If True, include a short list of pages missing page numbers.
+    """
+    total_pages = len(pages)
+    total_elements = 0
+    elements_by_type: Dict[str, int] = {}
+    labeled_counts: Dict[str, int] = {}
+
+    pages_with_page_number = 0
+    missing_page_numbers: List[int] = []
+
+    for page in pages:
+        total_elements += len(page.elements)
+        # Tally element types and labels
+        has_page_number = False
+        for ele in page.elements:
+            t = ele.__class__.__name__.lower()
+            elements_by_type[t] = elements_by_type.get(t, 0) + 1
+
+            if getattr(ele, "label", None):
+                label = str(ele.label)
+                labeled_counts[label] = labeled_counts.get(label, 0) + 1
+                if label == "page_number":
+                    has_page_number = True
+
+        if has_page_number:
+            pages_with_page_number += 1
+        else:
+            missing_page_numbers.append(page.page_number)
+
+    coverage = (pages_with_page_number / total_pages * 100.0) if total_pages else 0.0
+
+    # Human-friendly, single-shot summary
+    print("=== Classification summary ===")
+    print(f"Pages processed: {total_pages}")
+    print(f"Total elements: {total_elements}")
+    if elements_by_type:
+        parts = [f"{k}={v}" for k, v in sorted(elements_by_type.items())]
+        print("Elements by type: " + ", ".join(parts))
+    if labeled_counts:
+        parts = [f"{k}={v}" for k, v in sorted(labeled_counts.items())]
+        print("Labeled elements: " + ", ".join(parts))
+    print(
+        f"Page-number coverage: {pages_with_page_number}/{total_pages} ({coverage:.1f}%)"
+    )
+    if detailed and missing_page_numbers:
+        sample = ", ".join(str(n) for n in missing_page_numbers[:20])
+        more = " ..." if len(missing_page_numbers) > 20 else ""
+        print(f"Pages missing page number: {sample}{more}")
 
 
 def main() -> int:
@@ -156,6 +224,10 @@ def main() -> int:
 
         # Classify elements to add labels (e.g., page numbers)
         classify_elements(pages)
+
+        # Optionally print a concise summary to stdout
+        if args.summary:
+            _print_summary(pages, detailed=args.summary_detailed)
 
         # Save results as JSON and render annotated images
         save_json(pages, output_dir, pdf_path)
