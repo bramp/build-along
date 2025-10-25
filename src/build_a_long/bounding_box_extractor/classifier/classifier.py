@@ -30,7 +30,6 @@ def _score_page_number_text(text: str) -> float:
     Page numbers are typically:
     - Small integers (1-3 digits)
     - Sometimes with leading zeros (e.g., "001", "01")
-    - May have formatting like "Page 5", "p.5", or just "5"
 
     Args:
         text: The text content to check
@@ -48,11 +47,20 @@ def _score_page_number_text(text: str) -> float:
     if re.match(r"^\d{1,3}$", text):
         return 1.0
 
-    # Common page number formats - medium-high confidence
-    if re.match(r"^(page|p\.?)\s*\d{1,3}$", text, re.IGNORECASE):
-        return 0.85
-
     # Not a page number
+    return 0.0
+
+
+def _score_part_count_text(text: str) -> float:
+    """Score how likely the text represents a piece count like '2x'.
+
+    Rules:
+    - umber followed by an 'x' or '×' optionally with space (e.g., '2x', '10 x')
+    """
+    t = text.strip()
+    # number followed by x or times symbol
+    if re.fullmatch(r"\d{1,3}\s*[x×]", t, flags=re.IGNORECASE):
+        return 1.0
     return 0.0
 
 
@@ -151,6 +159,22 @@ def _calculate_page_number_scores(page_data: PageData) -> None:
         )
 
 
+def _calculate_part_count_scores(page_data: PageData) -> None:
+    """Calculate piece count scores for text elements.
+
+    Currently uses only text pattern signals; position not considered.
+    """
+    if not page_data.elements:
+        return
+
+    for element in page_data.elements:
+        if not isinstance(element, Text):
+            continue
+        score = _score_part_count_text(element.text)
+        if score > 0.0:
+            element.label_scores["part_count"] = score
+
+
 def _classify_page_number(page_data: PageData) -> None:
     """Identify and label the page number element based on scores.
 
@@ -225,12 +249,14 @@ def classify_elements(pages: List[PageData]) -> None:
 
         # Phase 1: Calculate scores
         _calculate_page_number_scores(page_data)
+        _calculate_part_count_scores(page_data)
         # Future scorers can be added here:
         # _calculate_step_number_scores(page_data)
         # _calculate_parts_list_scores(page_data)
 
         # Phase 2: Assign labels based on scores
         _classify_page_number(page_data)
+        _classify_part_counts(page_data)
         # Future classifiers can be added here:
         # _classify_step_numbers(page_data)
         # _classify_parts_list(page_data)
@@ -306,3 +332,17 @@ def _remove_similar_bboxes(page_data: PageData, target: Text) -> None:
             prune_children(c)
 
     prune_children(page_data.root)
+
+
+def _classify_part_counts(page_data: PageData) -> None:
+    """Label all text elements that look like piece counts as 'part_count'.
+
+    Unlike page numbers, there can be many per page, so we label all
+    elements with score above the threshold individually.
+    """
+    for element in page_data.elements:
+        if not isinstance(element, Text):
+            continue
+        score = element.label_scores.get("part_count", 0.0)
+        if score >= MIN_CONFIDENCE_THRESHOLD:
+            element.label = element.label or "part_count"

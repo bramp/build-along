@@ -29,14 +29,6 @@ class TestScorePageNumberText:
         assert _score_page_number_text("001") == 0.95
         assert _score_page_number_text("005") == 0.95
 
-    def test_formatted_page_numbers(self) -> None:
-        """Test formatted page numbers."""
-        assert _score_page_number_text("Page 5") == 0.85
-        assert _score_page_number_text("page 42") == 0.85
-        assert _score_page_number_text("p.5") == 0.85
-        assert _score_page_number_text("P.123") == 0.85
-        assert _score_page_number_text("p 7") == 0.85
-
     def test_whitespace_handling(self) -> None:
         """Test that whitespace is properly handled."""
         assert _score_page_number_text("  5  ") == 1.0
@@ -299,3 +291,24 @@ class TestClassifyElements:
         """Test with an empty list of pages."""
         classify_elements([])
         # Should not raise any errors
+
+
+class TestPartCountClassification:
+    """Tests for detecting piece counts like '2x'."""
+
+    def test_detect_multiple_piece_counts(self) -> None:
+        page_bbox = BBox(0, 0, 100, 200)
+        t1 = Text(bbox=BBox(10, 50, 20, 60), text="2x")
+        t2 = Text(bbox=BBox(10, 50, 20, 60), text="2X")  # uppercase X
+        t3 = Text(bbox=BBox(30, 50, 40, 60), text="2×")  # times symbol
+        t4 = Text(bbox=BBox(50, 50, 70, 60), text="hello")
+
+        page = PageData(
+            page_number=1, root=Root(bbox=page_bbox), elements=[t1, t2, t3, t4]
+        )
+        classify_elements([page])
+
+        assert t1.label == "part_count"
+        assert t2.label == "part_count"
+        assert t3.label == "part_count"
+        assert t4.label is None
