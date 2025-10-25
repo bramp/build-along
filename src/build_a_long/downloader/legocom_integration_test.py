@@ -30,7 +30,6 @@ from build_a_long.downloader.legocom import (
 
 # Skip all tests in this module by default
 # TODO: Configure proper integration test runner
-pytestmark = pytest.mark.skip(reason="Integration tests disabled - probe real LEGO.com")
 
 
 @pytest.fixture
@@ -53,8 +52,8 @@ def test_fetch_real_set_30708(http_client):
     # Test PDF extraction
     pdfs = parse_instruction_pdf_urls(html)
     assert len(pdfs) >= 1, "Should find at least one instruction PDF"
-    assert all("product.bi.core.pdf" in pdf for pdf in pdfs)
-    assert all(pdf.startswith("https://") for pdf in pdfs)
+    assert all("product.bi.core.pdf" in pdf.url for pdf in pdfs)
+    assert all(pdf.url.startswith("https://") for pdf in pdfs)
 
     # Test metadata extraction
     meta = parse_set_metadata(html)
@@ -124,14 +123,6 @@ def test_json_fields_exist_in_real_pages(http_client):
     extraction methods find SOMETHING, to detect if LEGO.com changes
     their JSON structure completely.
     """
-    from build_a_long.downloader.legocom import (
-        _extract_age_from_json,
-        _extract_name_from_json,
-        _extract_pieces_from_json,
-        _extract_theme_from_json,
-        _extract_year_from_json,
-    )
-
     set_number = "30708"
     url = build_instructions_url(set_number, "en-us")
     response = http_client.get(url)
@@ -139,28 +130,24 @@ def test_json_fields_exist_in_real_pages(http_client):
     html = response.text
 
     # Check that JSON extraction methods return values
-    name = _extract_name_from_json(html)
-    assert name is not None, (
+    meta = parse_set_metadata(html)
+    assert "name" in meta, (
         "JSON 'name' field not found - LEGO.com may have changed structure"
     )
 
-    theme = _extract_theme_from_json(html)
-    assert theme is not None, (
+    assert "theme" in meta, (
         "JSON 'themeName' field not found - LEGO.com may have changed structure"
     )
 
-    age = _extract_age_from_json(html)
-    assert age is not None, (
+    assert "age" in meta, (
         "JSON 'ageRating' field not found - LEGO.com may have changed structure"
     )
 
-    pieces = _extract_pieces_from_json(html)
-    assert pieces is not None, (
+    assert "pieces" in meta, (
         "JSON 'setPieceCount' field not found - LEGO.com may have changed structure"
     )
 
-    year = _extract_year_from_json(html)
-    assert year is not None, (
+    assert "year" in meta, (
         "JSON 'year' field not found - LEGO.com may have changed structure"
     )
 

@@ -114,7 +114,7 @@ def test_main_metadata_mode(
     mock_build_metadata, mock_downloader_class, monkeypatch, capsys
 ):
     """Test --metadata flag outputs JSON without downloading."""
-    from build_a_long.downloader.legocom import Metadata, PdfEntry
+    from build_a_long.downloader.metadata import Metadata, PdfEntry
 
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)

@@ -7,10 +7,17 @@ from build_a_long.downloader.legocom import (
     LEGO_BASE,
     build_instructions_url,
     build_metadata,
-    Metadata,
-    PdfEntry,
-    parse_instruction_pdf_urls,
 )
+from build_a_long.downloader.metadata import Metadata, PdfEntry, DownloadUrl
+
+__all__ = [
+    "LegoInstructionDownloader",
+    "Metadata",
+    "PdfEntry",
+    "DownloadUrl",
+    "read_metadata",
+    "write_metadata",
+]
 
 
 def read_metadata(path: Path) -> Optional[Metadata]:
@@ -146,19 +153,6 @@ class LegoInstructionDownloader:
         resp.raise_for_status()
         return resp.text
 
-    def find_instruction_pdfs(self, set_number: str) -> List[str]:
-        """Find all instruction PDF URLs for a LEGO set.
-
-        Args:
-            set_number: The LEGO set number (e.g., "75419").
-
-        Returns:
-            List of absolute PDF URLs.
-        """
-        url = build_instructions_url(set_number, self.locale)
-        html = self.fetch_url_text(url)
-        return parse_instruction_pdf_urls(html, base=LEGO_BASE)
-
     def fetch_instructions_page(self, set_number: str) -> str:
         """Fetch the HTML for the instructions page of a set."""
         url = build_instructions_url(set_number, self.locale)
@@ -197,11 +191,11 @@ class LegoInstructionDownloader:
             return dest
 
         # Use injected stream_fn for testing, otherwise use client.stream
-        if stream_fn is not None:
-            stream_ctx = stream_fn("GET", url, follow_redirects=True, timeout=None)
-        else:
+        if stream_fn is None:
             client = self._get_client()
-            stream_ctx = client.stream("GET", url, follow_redirects=True, timeout=None)
+            stream_fn = client.stream
+
+        stream_ctx = stream_fn("GET", url, follow_redirects=True, timeout=None)
 
         with stream_ctx as r:
             r.raise_for_status()
@@ -259,48 +253,43 @@ class LegoInstructionDownloader:
         if meta_path.exists() and not self.overwrite:
             existing_meta = read_metadata(meta_path)
 
-        if existing_meta:
+        # Decide whether to use cached metadata or fetch fresh
+        use_cached = existing_meta is not None and bool(existing_meta.pdfs)
+        if use_cached:
             print(f"Processing set: {set_number} [cached]")
+
+            # existing_meta is guaranteed non-None here
+            assert existing_meta is not None
+            metadata: Metadata = existing_meta
         else:
             print(f"Processing set: {set_number}")
+            metadata = self._fetch_metadata_for_set(set_number)
 
-        if existing_meta and existing_meta.pdfs:
-            # Use existing metadata to avoid re-fetching the index page
-            meta_dc = None  # We'll skip writing metadata later
-            pdfs = [p.url for p in existing_meta.pdfs]
-            metadata = existing_meta
-        else:
-            # Build fresh metadata (includes ordered PDFs)
-            meta_dc = self._build_metadata_for_set(set_number)
-            pdfs = [p.url for p in meta_dc.pdfs]
-            metadata = meta_dc
-
-        if not pdfs:
+        if not metadata.pdfs:
             print(f"No PDFs found for set {set_number} (locale={self.locale}).")
             return 0
 
         # Print metadata info
-        self._print_metadata_info(set_number, metadata, len(pdfs))
+        self._print_metadata_info(set_number, metadata)
 
         # Write metadata.json alongside downloaded PDFs (only if we fetched it)
-        if meta_dc is not None:
-            write_metadata(meta_path, meta_dc)
+        if not use_cached:
+            write_metadata(meta_path, metadata)
 
         # Download each PDF with inline progress
-        for i, u in enumerate(pdfs, 1):
-            progress_prefix = f" - {u}"
-            self.download(u, out_dir, progress_prefix=progress_prefix)
+        for entry in metadata.pdfs:
+            url = entry.url
+            progress_prefix = f" - {url}"
+            self.download(url, out_dir, progress_prefix=progress_prefix)
 
         return 0
 
-    def _build_metadata_for_set(self, set_number: str):
+    def _fetch_metadata_for_set(self, set_number: str):
         """Fetch the instructions page and build metadata dataclass for a set."""
         html = self.fetch_instructions_page(set_number)
         return build_metadata(html, set_number, self.locale, base=LEGO_BASE)
 
-    def _print_metadata_info(
-        self, set_number: str, metadata: Metadata, pdf_count: int
-    ) -> None:
+    def _print_metadata_info(self, set_number: str, metadata: Metadata) -> None:
         """Print metadata information on a single line.
 
         Args:
@@ -308,7 +297,7 @@ class LegoInstructionDownloader:
             metadata: Metadata object.
             pdf_count: Number of PDFs found.
         """
-        parts = [f"Found {pdf_count} PDF(s) for set {set_number}"]
+        parts = [f"Found {len(metadata.pdfs)} PDF(s) for set {set_number}"]
 
         if metadata.name:
             parts.append(f"{metadata.name}")
