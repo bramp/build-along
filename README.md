@@ -198,6 +198,22 @@ Run all tests with Pants:
 pants test ::
 ```
 
+#### Integration Tests
+
+Some tests make real HTTP requests to external services (e.g., LEGO.com) and are skipped by default to avoid hammering their servers during local development. These integration tests run automatically in CI.
+
+To run integration tests locally:
+
+```bash
+ENABLE_INTEGRATION_TESTS=true pants test ::
+```
+
+Or for a specific test file:
+
+```bash
+ENABLE_INTEGRATION_TESTS=true pants test src/build_a_long/downloader:legocom_integration_test
+```
+
 ## Contributing
 
 Contributions are welcome! Please refer to the `TODO.md` file for a list of
