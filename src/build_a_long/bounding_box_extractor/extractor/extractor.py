@@ -5,9 +5,8 @@ from typing import Any, List, Set
 import pymupdf
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
-from build_a_long.bounding_box_extractor.extractor.hierarchy import (
-    build_hierarchy_from_elements,
-)
+
+# Note: We intentionally do not build hierarchy here to avoid syncing issues
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
     Element,
@@ -89,7 +88,6 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
                     Text(
                         bbox=nbbox,
                         text=text,
-                        label=None,
                         font_name=font_name,
                         font_size=font_size,
                     )
@@ -214,10 +212,9 @@ def _extract_page_elements(
         drawings = page.get_drawings()
         typed_elements.extend(_extract_drawing_elements(drawings))
 
-    # Create root element and build hierarchy
-    hierarchy = build_hierarchy_from_elements(typed_elements)
-
-    # Create root element with the hierarchy as children
+    # Do not build or persist a hierarchy here. We'll construct it on-demand
+    # for rendering/serialization to avoid sync issues between flat elements
+    # and nested children.
     page_rect = page.rect
     root_bbox = BBox(
         x0=float(page_rect.x0),
@@ -225,7 +222,7 @@ def _extract_page_elements(
         x1=float(page_rect.x1),
         y1=float(page_rect.y1),
     )
-    root_element = Root(bbox=root_bbox, children=hierarchy)
+    root_element = Root(bbox=root_bbox)
 
     return PageData(
         page_number=page_num,

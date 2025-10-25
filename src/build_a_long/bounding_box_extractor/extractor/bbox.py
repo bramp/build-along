@@ -9,6 +9,16 @@ class BBox:
     x1: float
     y1: float
 
+    @classmethod
+    def from_tuple(cls, bbox_tuple: Tuple[float, float, float, float]) -> "BBox":
+        """Create a BBox from a tuple of four floats (x0, y0, x1, y1)."""
+        return cls(
+            x0=bbox_tuple[0],
+            y0=bbox_tuple[1],
+            x1=bbox_tuple[2],
+            y1=bbox_tuple[3],
+        )
+
     def equals(self, other: "BBox") -> bool:
         """
         Checks if this bounding box is equal to another bounding box.

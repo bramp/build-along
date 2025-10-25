@@ -16,7 +16,7 @@ import re
 from typing import List, Optional, Set
 
 from build_a_long.bounding_box_extractor.extractor import PageData
-from build_a_long.bounding_box_extractor.extractor.page_elements import Text
+from build_a_long.bounding_box_extractor.extractor.page_elements import Drawing, Text
 
 logger = logging.getLogger(__name__)
 
@@ -278,7 +278,10 @@ def _classify_page_number(page_data: PageData) -> None:
     )
 
     # Remove near-duplicate visual elements around the chosen page number
-    _remove_similar_bboxes(page_data, best_candidate)
+    to_remove: Set[int] = set()
+    _remove_child_bboxes(page_data, best_candidate, to_remove)
+    _remove_similar_bboxes(page_data, best_candidate, to_remove)
+    _prune_elements(page_data, to_remove)
 
 
 def _classify_part_counts(page_data: PageData) -> None:
@@ -303,7 +306,10 @@ def _classify_part_counts(page_data: PageData) -> None:
     # Remove shadows/duplicates and fully-contained elements around each
     for ele in candidates:
         if ele in page_data.elements:
-            _remove_similar_bboxes(page_data, ele)
+            to_remove: Set[int] = set()
+            _remove_child_bboxes(page_data, ele, to_remove)
+            _remove_similar_bboxes(page_data, ele, to_remove)
+            _prune_elements(page_data, to_remove)
 
 
 def _classify_step_numbers(page_data: PageData) -> None:
@@ -324,7 +330,119 @@ def _classify_step_numbers(page_data: PageData) -> None:
 
     for ele in candidates:
         if ele in page_data.elements:
-            _remove_similar_bboxes(page_data, ele)
+            to_remove: Set[int] = set()
+            _remove_child_bboxes(page_data, ele, to_remove)
+            _remove_similar_bboxes(page_data, ele, to_remove)
+            _prune_elements(page_data, to_remove)
+
+
+def _classify_parts_list(page_data: PageData) -> None:
+    """Detect and label parts list regions.
+
+    Heuristic:
+    - Candidate is a Drawing whose bbox is above a step_number's bbox.
+    - It must contain at least one element labeled 'part_count' (or strong pattern match).
+    - For each step_number, choose exactly one candidate: the closest drawing to the step.
+    """
+    # Gather labeled step numbers and part counts
+    steps: list[Text] = [
+        e
+        for e in page_data.elements
+        if isinstance(e, Text) and e.label == "step_number"
+    ]
+    if not steps:
+        return
+    texts: list[Text] = [e for e in page_data.elements if isinstance(e, Text)]
+    if not texts:
+        return
+
+    drawings: list[Drawing] = [e for e in page_data.elements if isinstance(e, Drawing)]
+    if not drawings:
+        return
+
+    # Small vertical slack to consider a drawing 'above' the step number
+    ABOVE_EPS = 2.0
+
+    used_drawings: set[int] = set()
+    for step in steps:
+        sb = step.bbox
+        # Build candidates per step
+        candidates: list[tuple[Drawing, int, float, float]] = []
+        for d in drawings:
+            if id(d) in used_drawings:
+                continue
+            db = d.bbox
+            # Above the step number
+            if db.y1 > sb.y0 + ABOVE_EPS:
+                continue
+            # Count contained part counts (prefer labeled; fall back to pattern)
+            contained = [
+                t
+                for t in texts
+                if t.bbox.fully_inside(db)
+                and (t.label == "part_count" or _score_part_count_text(t.text) >= 0.9)
+            ]
+            if not contained:
+                continue
+            count = len(contained)
+            # distance from drawing bottom to step top (smaller is closer)
+            proximity = max(0.0, sb.y0 - db.y1)
+            area = db.area()
+            candidates.append((d, count, proximity, area))
+
+        if not candidates:
+            # Fallback: allow drawings anywhere that contain counts; pick closest by proximity
+            fb: list[tuple[Drawing, int, float, float]] = []
+            for d in drawings:
+                if id(d) in used_drawings:
+                    continue
+                db = d.bbox
+                contained = [
+                    t
+                    for t in texts
+                    if t.bbox.fully_inside(db)
+                    and (
+                        t.label == "part_count" or _score_part_count_text(t.text) >= 0.9
+                    )
+                ]
+                if not contained:
+                    continue
+                count = len(contained)
+                # proximity: if drawing is below the step, use large penalty
+                if db.y1 <= sb.y0:
+                    proximity = sb.y0 - db.y1
+                else:
+                    proximity = (db.y1 - sb.y0) + 1000.0
+                area = db.area()
+                fb.append((d, count, proximity, area))
+
+            if not fb:
+                continue
+            # Choose the closest by proximity only
+            fb.sort(key=lambda x: x[2])
+            candidates = [fb[0]]
+
+        # Choose candidate: minimize proximity only (closest to the step)
+        candidates.sort(key=lambda x: x[2])
+        chosen, _, _, _ = candidates[0]
+        chosen.label = chosen.label or "parts_list"
+        used_drawings.add(id(chosen))
+
+        # Remove near-duplicate shadows around the parts list, but keep labeled elements inside
+        # (part counts, other drawings, etc. that are semantically part of the list)
+        keep_ids: Set[int] = set()
+        chosen_bbox = chosen.bbox
+        for ele in page_data.elements:
+            # Keep elements inside the parts list that have labels or are Drawings
+            if ele.bbox.fully_inside(chosen_bbox) and (
+                ele.label is not None or isinstance(ele, Drawing)
+            ):
+                keep_ids.add(id(ele))
+
+        to_remove: Set[int] = set()
+        _remove_child_bboxes(page_data, chosen, to_remove, keep_ids)
+        _remove_similar_bboxes(page_data, chosen, to_remove, keep_ids)
+        _prune_elements(page_data, to_remove)
 
 
 def classify_elements(pages: List[PageData]) -> None:
@@ -349,18 +467,18 @@ def classify_elements(pages: List[PageData]) -> None:
         # Phase 1: Calculate scores
         _calculate_page_number_scores(page_data)
         _calculate_part_count_scores(page_data)
-        # Future scorers can be added here:
-        # _calculate_step_number_scores(page_data)
-        # _calculate_parts_list_scores(page_data)
 
         # Phase 2: Assign labels based on scores
         _classify_page_number(page_data)
         _classify_part_counts(page_data)
+
         # Now that page_number is labeled, compute step scores and classify
         _calculate_step_number_scores(page_data)
+
         _classify_step_numbers(page_data)
-        # Future classifiers can be added here:
-        # _classify_parts_list(page_data)
+        _classify_parts_list(page_data)
+
+        _log_post_classification_warnings(page_data)
 
 
 def _extract_page_number_value(text: str) -> Optional[int]:
@@ -379,13 +497,57 @@ def _extract_page_number_value(text: str) -> Optional[int]:
     return None
 
 
-def _remove_similar_bboxes(page_data: PageData, target: Text) -> None:
+def _remove_child_bboxes(
+    page_data: PageData,
+    target,
+    to_remove_ids: Set[int],
+    keep_ids: Optional[Set[int]] = None,
+) -> None:
+    """Remove elements that are fully contained within the target bbox.
+
+    This removes child elements like glyph strokes or nested drawings that
+    are completely inside the target element's bounding box.
+
+    Args:
+        page_data: The page data containing elements
+        target: The target element whose children should be removed
+        to_remove_ids: Set of element IDs to remove (modified in place)
+        keep_ids: Optional set of element IDs to keep (won't be removed)
+    """
+    if keep_ids is None:
+        keep_ids = set()
+
+    target_bbox = target.bbox
+
+    for ele in page_data.elements:
+        if ele is target or id(ele) in keep_ids:
+            continue
+        # TODO This could be just target.children.
+        b = ele.bbox
+        if b.fully_inside(target_bbox):
+            to_remove_ids.add(id(ele))
+
+
+def _remove_similar_bboxes(
+    page_data: PageData,
+    target,
+    to_remove_ids: Set[int],
+    keep_ids: Optional[Set[int]] = None,
+) -> None:
     """Remove elements with very similar bounding boxes to the target.
 
     Intended to drop duplicate drawing strokes or shadow copies co-located
-    with the selected page number or piece count. Also removes elements that
-    are completely contained within the target bbox (e.g., glyph strokes).
+    with the selected element (e.g., drop shadows on page numbers or parts lists).
+
+    Args:
+        page_data: The page data containing elements
+        target: The target element whose duplicates should be removed
+        to_remove_ids: Set of element IDs to remove (modified in place)
+        keep_ids: Optional set of element IDs to keep (won't be removed)
     """
+    if keep_ids is None:
+        keep_ids = set()
+
     target_bbox = target.bbox
     target_area = target_bbox.area()
     tx, ty = target_bbox.center()
@@ -394,18 +556,11 @@ def _remove_similar_bboxes(page_data: PageData, target: Text) -> None:
     CENTER_EPS = 1.5
     AREA_TOL = 0.12  # +-12%
 
-    to_remove_ids: Set[int] = set()
     for ele in page_data.elements:
-        if ele is target:
+        if ele is target or id(ele) in keep_ids:
             continue
 
         b = ele.bbox
-        # TODO we could also use target.children.
-        # Remove anything fully contained within the target bbox
-        if b.fully_inside(target_bbox):
-            to_remove_ids.add(id(ele))
-            continue
-
         iou = target_bbox.iou(b)
         if iou >= IOU_THRESHOLD:
             to_remove_ids.add(id(ele))
@@ -418,12 +573,22 @@ def _remove_similar_bboxes(page_data: PageData, target: Text) -> None:
             if target_area > 0 and abs(area - target_area) / target_area <= AREA_TOL:
                 to_remove_ids.add(id(ele))
 
+
+def _prune_elements(page_data: PageData, to_remove_ids: Set[int]) -> None:
+    """Remove elements with IDs in to_remove_ids from the page.
+
+    Removes from both the flat element list and the hierarchy.
+
+    Args:
+        page_data: The page data to prune
+        to_remove_ids: Set of element IDs to remove
+    """
     if not to_remove_ids:
         return
 
-    # TODO Print out useful information about each element being removed.
+    # TODO print useful information (beyond just the id).
     logger.debug(
-        "Removing %d duplicate elements similar to page number on page %d",
+        "Removing %d duplicate/child elements on page %d",
         len(to_remove_ids),
         page_data.page_number,
     )
@@ -433,10 +598,61 @@ def _remove_similar_bboxes(page_data: PageData, target: Text) -> None:
 
     # Prune from hierarchy recursively
     def prune_children(container) -> None:
-        # All elements have a children list; filter in place and recurse.
         kept = [c for c in container.children if id(c) not in to_remove_ids]
         container.children[:] = kept
         for c in kept:
             prune_children(c)
 
     prune_children(page_data.root)
+
+
+def _log_post_classification_warnings(page_data: PageData) -> None:
+    """Emit warnings for common inconsistencies after classification.
+
+    Rules:
+    - Page has no page number
+    - Parts list contains no part counts (interpreted as no labeled 'part_count' texts inside)
+    - Step number has no corresponding parts list above it
+    """
+    # 1) Page-number presence
+    has_page_number = any(
+        isinstance(e, Text) and e.label == "page_number" for e in page_data.elements
+    )
+    if not has_page_number:
+        logger.warning("Page %d: missing page number", page_data.page_number)
+
+    # Collect elements we need
+    parts_lists: list[Drawing] = [
+        e
+        for e in page_data.elements
+        if isinstance(e, Drawing) and e.label == "parts_list"
+    ]
+    texts: list[Text] = [e for e in page_data.elements if isinstance(e, Text)]
+
+    # 2) Parts list with zero part counts inside
+    for pl in parts_lists:
+        inside_counts = [
+            t for t in texts if t.label == "part_count" and t.bbox.fully_inside(pl.bbox)
+        ]
+        if not inside_counts:
+            logger.warning(
+                "Page %d: parts list at %s contains no part counts",
+                page_data.page_number,
+                pl.bbox,
+            )
+
+    # 3) Step numbers without a parts list above them
+    # TODO We should tie together the step number to it's specific parts list.
+    steps: list[Text] = [e for e in texts if e.label == "step_number"]
+    ABOVE_EPS = 2.0
+    for step in steps:
+        sb = step.bbox
+        # Find any labeled parts list above this step
+        above = [pl for pl in parts_lists if pl.bbox.y1 <= sb.y0 + ABOVE_EPS]
+        if not above:
+            logger.warning(
+                "Page %d: step number '%s' at %s has no parts list above it",
+                page_data.page_number,
+                step.text,
+                sb,
+            )

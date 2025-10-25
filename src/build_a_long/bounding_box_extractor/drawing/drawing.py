@@ -58,7 +58,7 @@ def draw_and_save_bboxes(
         draw.rectangle(scaled_bbox, outline=color, width=2)
 
         # Draw the element type text
-        label = element.__class__.__name__
+        label = element.label or element.__class__.__name__
         if isinstance(element, Drawing):
             if element.image_id:
                 label = f"{label} ({element.image_id})"
