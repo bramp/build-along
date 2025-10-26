@@ -13,7 +13,6 @@ from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Image,
     Text,
 )
-from build_a_long.bounding_box_extractor.extractor.hierarchy import ElementTree
 from build_a_long.bounding_box_extractor.extractor.pymupdf_types import (
     BBoxTuple,
     BlockDict,
@@ -31,15 +30,13 @@ class PageData:
 
     Attributes:
         page_number: The page number (1-indexed)
-      elements: Flat list of all elements on the page
-      bbox: The bounding box of the entire page (page coordinate space).
-        hierarchy: Optional tree structure for element containment relationships
+        elements: Flat list of all elements on the page
+        bbox: The bounding box of the entire page (page coordinate space).
     """
 
     page_number: int
     elements: List[Element]
     bbox: BBox
-    hierarchy: ElementTree | None = None
 
 
 def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
@@ -184,7 +181,7 @@ def _extract_page_elements(
         include_types: Set of element types to include
 
     Returns:
-        PageData with all extracted elements and hierarchy
+        PageData with all extracted elements
     """
     logger.info("Processing page %s", page_num)
 
@@ -238,7 +235,7 @@ def extract_bounding_boxes(
         include_types: Set of element types to include ("text", "image", "drawing")
 
     Returns:
-        List of PageData containing all pages with their elements and hierarchies
+        List of PageData containing all pages with their elements
     """
     pages: List[PageData] = []
 
