@@ -198,6 +198,36 @@ Run all tests with Pants:
 pants test ::
 ```
 
+#### Integration Tests and HTTP Caching
+
+Integration tests make real HTTP requests to LEGO.com, but are skipped by default.
+They run in CI and can be enabled locally by setting an environment variable:
+
+```bash
+ENABLE_INTEGRATION_TESTS=true pants test src/build_a_long/downloader::
+```
+
+These tests use VCR.py (via pytest-recording) to record and replay HTTP
+interactions, so we avoid hammering LEGO.com and the tests run fast. Cassettes are
+stored outside the repo in your user cache directory (by default):
+
+- macOS/Linux: "$XDG_CACHE_HOME/build-along/cassettes/downloader" or "~/.cache/build-along/cassettes/downloader"
+
+You can customize behavior with environment variables:
+
+- `CASSETTE_MAX_AGE_DAYS` (default: 14): If a cassette is older than this, it will be
+  deleted before the test runs so it can be re-recorded.
+- `CASSETTE_DIR`: Override the cassette directory used for recording/replay.
+
+To force refresh all cassettes in one go:
+
+```bash
+pants test --pytest-args="--record-mode=rewrite" src/build_a_long/downloader::
+```
+
+In CI, you can cache the cassette directory between runs to avoid re-recording. For
+GitHub Actions, cache the path printed above (e.g., `~/.cache/build-along/cassettes`).
+
 #### Integration Tests
 
 Some tests make real HTTP requests to external services (e.g., LEGO.com) and are skipped by default to avoid hammering their servers during local development. These integration tests run automatically in CI.
@@ -213,6 +243,19 @@ Or for a specific test file:
 ```bash
 ENABLE_INTEGRATION_TESTS=true pants test src/build_a_long/downloader:legocom_integration_test
 ```
+
+HTTP caching (VCR):
+
+- Integration tests record HTTP interactions once and then replay them using VCR.py (via pytest-recording).
+- Cassettes are stored in a persistent user cache directory by default:
+  - macOS/Linux: `~/.cache/build-along/cassettes/downloader`
+  - Or if `XDG_CACHE_HOME` is set: `$XDG_CACHE_HOME/build-along/cassettes/downloader`
+- Cassettes older than 14 days are automatically deleted before the test runs and will be re-recorded.
+- To force-refresh all cassettes:
+  - Delete the cache directory, or
+  - Run: `pants test --pytest-args="--record-mode=rewrite" ::`
+
+Note: We do not commit cassettes to the repo. In CI, you can add a cache step to persist the cassette directory between runs for faster tests and fewer network calls.
 
 ## Contributing
 

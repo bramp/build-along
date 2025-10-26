@@ -3,3 +3,5 @@ beautifulsoup4
 PyMuPDF
 Pillow
 pytest
+pytest-recording
+vcrpy
