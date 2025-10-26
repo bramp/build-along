@@ -1,3 +1,3 @@
-pytest
-pytest-recording
-vcrpy
+pytest~=8.4.0
+pytest-recording~=0.13.0
+vcrpy~=7.0.0
