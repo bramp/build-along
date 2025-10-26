@@ -14,7 +14,7 @@ TODO Simple setup for users (not developers)
 
 ## Developer Setup
 
-### Pants Setup
+### Install dependencies
 
 Pants requires a `pants.lock` file to manage Python dependencies. To generate it for the first time or after updating `requirements.txt`, run:
 
