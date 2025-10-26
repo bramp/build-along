@@ -121,7 +121,7 @@ def analyze_document(pdf_path: Path) -> DocumentAnalysis:
 
     with pymupdf.open(str(pdf_path)) as doc:
         # Extract and classify all pages
-        pages_data = extract_bounding_boxes(doc, start_page=None, end_page=None)
+        pages_data = extract_bounding_boxes(doc, None)
         classify_elements(pages_data)
 
         # Analyze each page

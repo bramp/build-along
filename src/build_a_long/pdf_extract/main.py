@@ -13,7 +13,8 @@ from build_a_long.pdf_extract.extractor import (
 from build_a_long.pdf_extract.classifier import classify_elements
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
-from build_a_long.pdf_extract.parser import parse_page_range
+from build_a_long.pdf_extract.parser import parse_page_ranges
+from build_a_long.pdf_extract.parser.page_ranges import PageRanges
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -122,7 +123,11 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--pages",
         type=str,
-        help='Page range to process (1-indexed), e.g., "5", "5-10", "10-" (from 10 to end), or "-5" (from 1 to 5). Defaults to all pages.',
+        help=(
+            "Pages to process (1-indexed). Accepts single pages and ranges, "
+            "optionally comma-separated. Examples: '5', '5-10', '10-' (from 10 to end), "
+            "'-5' (from 1 to 5), or '10-20,180' for multiple segments. Defaults to all pages."
+        ),
     )
     parser.add_argument(
         "--include-types",
@@ -228,24 +233,28 @@ def main() -> int:
     output_dir = args.output_dir if args.output_dir else pdf_path.parent
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Parse page range
-    start_page = None
-    end_page = None
-    if args.pages:
-        try:
-            start_page, end_page = parse_page_range(args.pages)
-        except ValueError as e:
-            logger.error("Invalid page range: %s", e)
-            return 2
-
     include_types = args.include_types.split(",")
 
     logging.info("Processing PDF: %s", pdf_path)
 
+    # Compute page selection before opening the document. If unbounded (no
+    # --pages), pass None to extractor so it processes all pages.
+    page_ranges = PageRanges.all()
+    page_numbers_for_extractor: List[int] | None = None
+    if args.pages:
+        try:
+            page_ranges = parse_page_ranges(args.pages)
+        except ValueError as e:
+            logger.error("Invalid --pages: %s", e)
+            return 2
+
     # Extract bounding box data from PDF (open document once and reuse)
     with pymupdf.open(str(pdf_path)) as doc:
+        logger.info("Selected pages: %s", page_ranges)
+        page_numbers_for_extractor = list(page_ranges.page_numbers(len(doc)))
+
         pages: List[PageData] = extract_bounding_boxes(
-            doc, start_page, end_page, include_types=include_types
+            doc, page_numbers_for_extractor, include_types=include_types
         )
 
         # Save raw extracted data as JSON if debug flag is set

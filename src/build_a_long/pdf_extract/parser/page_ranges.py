@@ -1,4 +1,91 @@
-from typing import Tuple
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Iterator, List, Tuple
+
+
+@dataclass(frozen=True)
+class PageRange:
+    """A 1-indexed inclusive page range selection.
+
+    Either bound may be None to indicate from start or to end respectively.
+    """
+
+    start: int | None
+    end: int | None
+
+    def __str__(self) -> str:
+        # Single page
+        if self.start is not None and self.end is not None and self.start == self.end:
+            return str(self.start)
+        # Open start
+        if self.start is None and self.end is not None:
+            return f"-{self.end}"
+        # Open end
+        if self.start is not None and self.end is None:
+            return f"{self.start}-"
+        # Explicit range (including potentially invalid where start>end, though parser prevents it)
+        if self.start is not None and self.end is not None:
+            return f"{self.start}-{self.end}"
+        # Fallback (shouldn't happen)
+        return "-"
+
+
+@dataclass(frozen=True)
+class PageRanges:
+    """Collection of PageRange helpers.
+
+    Responsible for converting user-specified 1-indexed ranges into concrete
+    0-indexed page indices for a specific document, including clamping and
+    de-duplication while preserving order.
+    """
+
+    ranges: tuple[PageRange, ...] = ()
+
+    def __str__(self) -> str:
+        if not self.ranges:
+            return "all"
+        return ",".join(str(r) for r in self.ranges)
+
+    @classmethod
+    def all(cls) -> "PageRanges":
+        """Return a PageRanges instance representing all pages.
+
+        Semantically equivalent to an empty ranges tuple in this design.
+        """
+        return cls()
+
+    def page_numbers(self, num_pages: int) -> Iterator[int]:
+        """Yield 1-indexed page numbers expanded from ranges, clamped and deduped.
+
+        Args:
+            num_pages: Total number of pages in the document.
+
+        Yields:
+            1-indexed page numbers in order with de-duplication.
+        """
+        if num_pages <= 0:
+            return
+
+        if not self.ranges:
+            # Default: all pages (yield 1..num_pages)
+            for n in range(1, num_pages + 1):
+                yield n
+            return
+
+        seen: set[int] = set()
+        for rng in self.ranges:
+            first = (rng.start - 1) if rng.start is not None else 0
+            last = (rng.end - 1) if rng.end is not None else (num_pages - 1)
+            # Clamp into valid bounds
+            first = max(0, min(first, num_pages - 1))
+            last = max(0, min(last, num_pages - 1))
+            if first > last:
+                continue
+            for i in range(first, last + 1):
+                if i not in seen:
+                    seen.add(i)
+                    yield i + 1
 
 
 def parse_page_range(page_str: str) -> Tuple[int | None, int | None]:
@@ -19,8 +106,6 @@ def parse_page_range(page_str: str) -> Tuple[int | None, int | None]:
     Raises:
         ValueError: If the page range format is invalid or contains invalid numbers.
     """
-    # TODO in future support accepting lists, e.g "1, 2, 3" or "1-3,5,7-9"
-
     page_str = page_str.strip()
     if not page_str:
         raise ValueError("Page range cannot be empty")
@@ -93,3 +178,19 @@ def parse_page_range(page_str: str) -> Tuple[int | None, int | None]:
             if "invalid literal" in str(e):
                 raise ValueError(f"Invalid page number: '{page_str}'")
             raise
+
+
+def parse_page_ranges(pages_str: str) -> PageRanges:
+    """Parse a comma-separated set of page segments into PageRanges."""
+    if pages_str.strip() == "all":
+        return PageRanges.all()
+
+    segments = [seg.strip() for seg in pages_str.split(",") if seg.strip()]
+    if not segments:
+        raise ValueError("Invalid --pages value: empty after parsing")
+
+    ranges: List[PageRange] = []
+    for seg in segments:
+        start, end = parse_page_range(seg)
+        ranges.append(PageRange(start, end))
+    return PageRanges(tuple(ranges))

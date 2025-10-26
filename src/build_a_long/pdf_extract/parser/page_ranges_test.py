@@ -1,6 +1,10 @@
 import pytest
 
-from build_a_long.pdf_extract.parser.parser import parse_page_range
+from build_a_long.pdf_extract.parser import (
+    parse_page_range,
+    parse_page_ranges,
+    PageRanges,
+)
 
 
 class TestParsePageRange:
@@ -94,3 +98,33 @@ class TestParsePageRange:
             parse_page_range("5.5")
         with pytest.raises(ValueError, match="Invalid end page number"):
             parse_page_range("5-10.5")
+
+
+class TestParsePageRanges:
+    def test_all_keyword(self) -> None:
+        pr = parse_page_ranges("all")
+        assert isinstance(pr, PageRanges)
+        assert str(pr) == "all"
+        # Expands to 1..N
+        assert list(pr.page_numbers(5)) == [1, 2, 3, 4, 5]
+
+    def test_multiple_segments_and_str(self) -> None:
+        pr = parse_page_ranges("10-12,15")
+        assert str(pr) == "10-12,15"
+        # With N=20, expect explicit expansion
+        assert list(pr.page_numbers(20)) == [10, 11, 12, 15]
+
+    def test_overlapping_and_open_bounds(self) -> None:
+        # "-2,2-4" with N=10 should dedup and preserve order across segments
+        pr = parse_page_ranges("-2,2-4")
+        assert list(pr.page_numbers(10)) == [1, 2, 3, 4]
+
+        # Overlapping forward ranges
+        pr2 = parse_page_ranges("10-12,12-15")
+        assert list(pr2.page_numbers(20)) == [10, 11, 12, 13, 14, 15]
+
+    def test_invalid_empty(self) -> None:
+        with pytest.raises(ValueError):
+            parse_page_ranges("")
+        with pytest.raises(ValueError):
+            parse_page_ranges(", , ")
