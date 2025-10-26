@@ -13,7 +13,7 @@ import logging
 from typing import Dict, List, Optional, Sequence
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
-from build_a_long.bounding_box_extractor.extractor.page_elements import Element
+from build_a_long.bounding_box_extractor.extractor.page_elements import PageElement
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +31,11 @@ class ElementTree:
         children_map: Maps element id to list of its children elements
     """
 
-    roots: List[Element] = field(default_factory=list)
-    parent_map: Dict[int, Optional[Element]] = field(default_factory=dict)
-    children_map: Dict[int, List[Element]] = field(default_factory=dict)
+    roots: List[PageElement] = field(default_factory=list)
+    parent_map: Dict[int, Optional[PageElement]] = field(default_factory=dict)
+    children_map: Dict[int, List[PageElement]] = field(default_factory=dict)
 
-    def get_children(self, element: Element) -> List[Element]:
+    def get_children(self, element: PageElement) -> List[PageElement]:
         """Get the children of a given element.
 
         Args:
@@ -46,7 +46,7 @@ class ElementTree:
         """
         return self.children_map.get(id(element), [])
 
-    def get_parent(self, element: Element) -> Optional[Element]:
+    def get_parent(self, element: PageElement) -> Optional[PageElement]:
         """Get the parent of a given element.
 
         Args:
@@ -57,7 +57,7 @@ class ElementTree:
         """
         return self.parent_map.get(id(element))
 
-    def is_root(self, element: Element) -> bool:
+    def is_root(self, element: PageElement) -> bool:
         """Check if an element is a root element.
 
         Args:
@@ -72,7 +72,7 @@ class ElementTree:
 
 
 def build_hierarchy_from_elements(
-    elements: Sequence[Element],
+    elements: Sequence[PageElement],
 ) -> ElementTree:
     """Build a containment-based hierarchy from typed elements.
 
@@ -83,7 +83,7 @@ def build_hierarchy_from_elements(
     Returns:
         ElementTree containing the hierarchy with roots and parent/children mappings.
     """
-    converted: List[Element] = list(elements)
+    converted: List[PageElement] = list(elements)
 
     # TODO Move this to a method on BBox
     def _area(b: BBox) -> float:

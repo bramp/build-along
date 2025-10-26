@@ -73,9 +73,11 @@ def serialize_extracted_data(pages: List[PageData]) -> Dict[str, Any]:
     """
     json_data: Dict[str, Any] = {"pages": []}
     for page_data in pages:
-        json_page: Dict[str, Any] = {"page_number": page_data.page_number}
-        json_page["elements"] = [_element_to_json(e) for e in page_data.elements]
-
+        json_page: Dict[str, Any] = {
+            "page_number": page_data.page_number,
+            "bbox": asdict(page_data.bbox),
+            "elements": [_element_to_json(e) for e in page_data.elements],
+        }
         json_data["pages"].append(json_page)
     return json_data
 
@@ -106,8 +108,11 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
         pdf_path: Original PDF path (used for naming the JSON file)
     """
     for page_data in pages:
-        json_page: Dict[str, Any] = {"page_number": page_data.page_number}
-        json_page["elements"] = [_element_to_json(e) for e in page_data.elements]
+        json_page: Dict[str, Any] = {
+            "page_number": page_data.page_number,
+            "bbox": asdict(page_data.bbox),
+            "elements": [_element_to_json(e) for e in page_data.elements],
+        }
 
         output_json_path = output_dir / (
             pdf_path.stem + f"_page_{page_data.page_number:03d}_raw.json"

@@ -4,8 +4,10 @@ from build_a_long.bounding_box_extractor.extractor.hierarchy import (
 )
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
-    StepNumber,
     Text,
+)
+from build_a_long.bounding_box_extractor.extractor.lego_page_elements import (
+    StepNumber,
 )
 
 

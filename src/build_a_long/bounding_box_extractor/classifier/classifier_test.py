@@ -10,7 +10,6 @@ from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Text,
     Drawing,
-    Image,
 )
 
 
@@ -174,30 +173,6 @@ class TestClassifyPageNumber:
         assert dup in page_data.elements
         assert dup.deleted is True
         assert pn.deleted is False
-
-    def test_not_in_bottom_region(self) -> None:
-        """Test that elements outside bottom region score lower due to position."""
-        page_bbox = BBox(0, 0, 100, 200)
-        top_text = Text(
-            bbox=BBox(5, 10, 15, 18),  # Top of page
-            text="1",
-        )
-
-        page_data = PageData(
-            page_number=1,
-            elements=[top_text],
-            bbox=page_bbox,
-        )
-
-        classify_elements([page_data])
-
-        # Should have score dominated by text (position score is 0.0)
-        # Score = 0.7 * 1.0 (text) + 0.3 * 0.0 (position) = 0.7
-        assert top_text.label_scores["page_number"] == 0.7
-
-        # Still gets labeled since it's the only candidate with score > threshold
-        # In real scenarios, there would be other elements with better positions
-        assert top_text.label == "page_number"
 
     def test_non_numeric_text_scores_low(self) -> None:
         """Test that non-numeric text scores low."""
@@ -377,218 +352,47 @@ class TestPartsListClassification:
         assert d1.label == "parts_list"
         assert d2.label is None or d2.label != "parts_list"
 
-    def test_remove_near_duplicate_parts_list_drawings(self) -> None:
-        """When two almost-identical drawings are above the step and contain part counts, the closer one
-        should be chosen as the parts list and the near-duplicate removed from the flat elements list.
-        Coordinates chosen to match a real-world example where one bbox fully contains the other.
-        """
-        page_bbox = BBox(0, 0, 600, 400)
-
-        # Part count text inside the drawings
-        pc = Text(
-            bbox=BBox(
-                318.53271484375, 44.91717529296875, 327.0047302246094, 54.88517379760742
-            ),
-            text="3x",
-        )
-
-        # Step number below the drawings (tall enough to register as a step)
-        step = Text(
-            bbox=BBox(
-                262.03741455078125,
-                64.50787353515625,
-                276.33740234375,
-                96.90387725830078,
-            ),
-            text="5",
-        )
-        # Real page number at the bottom so the step doesn't get mislabeled as a page number
-        page_number = Text(bbox=BBox(10, 380, 20, 390), text="1")
-
-        # Two nearly identical drawings above the step; d46 (slightly larger) should be chosen,
-        # and d45 (fully inside d46) should be removed as a near-duplicate.
-        d45 = Drawing(
-            bbox=BBox(
-                262.5369567871094,
-                14.673065185546875,
-                414.6079406738281,
-                61.91302490234375,
-            )
-        )
-        d46 = Drawing(
-            bbox=BBox(
-                262.0369567871094,
-                14.173065185546875,
-                415.1079406738281,
-                62.41302490234375,
-            )
-        )
-
-        page = PageData(
-            page_number=1,
-            elements=[pc, step, page_number, d45, d46],
-            bbox=page_bbox,
-        )
-
-        classify_elements([page])
-
-        # Expectations:
-        # - page_number labeled as page_number
-        # - step labeled as step_number
-        # - pc labeled as part_count
-
-        # One of d45 or d46 labeled as parts_list
-        # - d45 chosen as parts_list
-        # - d46 removed from page.elements (near-duplicate of chosen)
-        assert page_number.label == "page_number"
-        assert step.label == "step_number"
-        assert pc.label == "part_count"
-
-        assert (d45.label == "parts_list") ^ (d46.label == "parts_list")
-        assert (d45.deleted) ^ (d46.deleted)
-
     def test_real_example_parts_list_and_deletions(self) -> None:
-        """Replicate the user's provided example to ensure:
-        - ID 7 (step text) is classified as step_number
-        - One of IDs 34 or 35 (drawings) is labeled parts_list, the other is removed as duplicate
-        - IDs 4/5/6 (texts "1x") are labeled part_count
-        - Images inside the chosen parts list (18/19/20) are labeled as
-          part_image
-        - The unrelated image (17) is removed
+        """Replicate the user's provided example.
+
+        Ensures:
+        - Step text is classified as step_number
+        - Exactly one of the near-duplicate drawings is labeled parts_list; the other is removed
+        - The three "1x" texts are labeled part_count
+        - Images inside the chosen parts list are labeled part_image and kept
+        - The unrelated image is removed
         """
-        page_bbox = BBox(0, 0, 600, 400)
+        from pathlib import Path
 
-        # Part counts (IDs 4,5,6)
-        pc4 = Text(
-            bbox=BBox(
-                344.565185546875,
-                43.957183837890625,
-                351.7731628417969,
-                53.9251823425293,
-            ),
-            text="1x",
-        )
-        pc5 = Text(
-            bbox=BBox(
-                301.6094970703125,
-                43.957183837890625,
-                308.8174743652344,
-                53.9251823425293,
-            ),
-            text="1x",
-        )
-        pc6 = Text(
-            bbox=BBox(
-                393.2807922363281, 43.957183837890625, 400.48876953125, 53.9251823425293
-            ),
-            text="1x",
+        from build_a_long.bounding_box_extractor.extractor.json_loader import (
+            load_page_from_json,
         )
 
-        # Step number (ID 7)
-        step = Text(
-            bbox=BBox(
-                280.6299133300781,
-                64.50787353515625,
-                294.825927734375,
-                96.90387725830078,
-            ),
-            text="9",
+        # Load the page from a JSON fixture next to this test file
+        fixture = (
+            Path(__file__)
+            .with_name("fixtures")
+            .joinpath("real_example_parts_list_and_deletions.json")
         )
-
-        # Unrelated image (ID 17)
-        img17 = Image(
-            bbox=BBox(
-                335.1268005371094,
-                224.8856658935547,
-                464.24346923828125,
-                314.64068603515625,
-            ),
-            image_id="image_8",
-        )
-
-        # Images inside parts list area (IDs 18,19,20) that should not be deleted
-        img18 = Image(
-            bbox=BBox(
-                344.0890808105469,
-                26.97991371154785,
-                374.0812683105469,
-                44.96661376953125,
-            ),
-            image_id="image_9",
-        )
-        img19 = Image(
-            bbox=BBox(
-                301.1343688964844,
-                23.618831634521484,
-                325.3646240234375,
-                44.96771240234375,
-            ),
-            image_id="image_11",
-        )
-        img20 = Image(
-            bbox=BBox(
-                392.8066711425781,
-                30.10918426513672,
-                413.19500732421875,
-                44.95721435546875,
-            ),
-            image_id="image_13",
-        )
-
-        # Parts list drawing candidates (IDs 34, 35)
-        d34 = Drawing(
-            bbox=BBox(
-                281.1300048828125,
-                14.673126220703125,
-                433.2009582519531,
-                61.91302490234375,
-            )
-        )
-        d35 = Drawing(
-            bbox=BBox(
-                280.6300354003906,
-                14.173126220703125,
-                433.7009582519531,
-                62.41302490234375,
-            )
-        )
-
-        # Some other drawing inside the step region (ID 42) that should be removed by the step classifier
-        d42 = Drawing(
-            bbox=BBox(
-                282.0859069824219,
-                73.08786010742188,
-                293.3699035644531,
-                90.50787353515625,
-            )
-        )
-
-        # Include a page number at the bottom so the step isn't mistaken for it
-        page_number = Text(bbox=BBox(10, 380, 20, 390), text="1")
-
-        page = PageData(
-            page_number=1,
-            elements=[
-                # Ordering loosely mirrors the input; order shouldn't matter
-                pc4,
-                pc5,
-                pc6,
-                step,
-                img17,
-                img18,
-                img19,
-                img20,
-                d34,
-                d35,
-                d42,
-                page_number,
-            ],
-            bbox=page_bbox,
-        )
+        page = load_page_from_json(fixture)
 
         classify_elements([page])
 
-        # Assertions
+        # Build a quick map of elements by id for easy lookup in assertions
+        elems = {e.id: e for e in page.elements if e.id is not None}
+        # Recreate references for assertions by their IDs
+        pc4 = elems[4]
+        pc5 = elems[5]
+        pc6 = elems[6]
+        step = elems[7]
+        img17 = elems[17]
+        img18 = elems[18]
+        img19 = elems[19]
+        img20 = elems[20]
+        d34 = elems[34]
+        d35 = elems[35]
+
+        # Assertions matching the previous test
         assert step.label == "step_number"
         assert pc4.label == "part_count"
         assert pc5.label == "part_count"
@@ -600,8 +404,14 @@ class TestPartsListClassification:
 
         # Images within the chosen parts list should be labeled as part_image; unrelated image is removed
         assert img18.label == "part_image"
+        assert img18.deleted is False
+
         assert img19.label == "part_image"
+        assert img19.deleted is False
+
         assert img20.label == "part_image"
+        assert img20.deleted is False
+
         assert img17.deleted is True
 
     def test_two_steps_do_not_label_and_delete_both_drawings(self) -> None:

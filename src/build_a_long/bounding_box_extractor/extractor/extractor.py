@@ -3,15 +3,16 @@ from dataclasses import dataclass
 from typing import Any, List, Set
 
 import pymupdf
+from dataclasses_json import dataclass_json
 
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 
 # Note: We intentionally do not build hierarchy here to avoid syncing issues
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
-    Element,
     Image,
     Text,
+    PageElement,
 )
 from build_a_long.bounding_box_extractor.extractor.pymupdf_types import (
     BBoxTuple,
@@ -24,6 +25,7 @@ from build_a_long.bounding_box_extractor.extractor.pymupdf_types import (
 logger = logging.getLogger("extractor")
 
 
+@dataclass_json
 @dataclass
 class PageData:
     """Data extracted from a single PDF page.
@@ -35,11 +37,11 @@ class PageData:
     """
 
     page_number: int
-    elements: List[Element]
+    elements: List[PageElement]
     bbox: BBox
 
 
-def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
+def _extract_text_elements(blocks: List[BlockDict]) -> List[PageElement]:
     """Extract text elements from a page's raw dictionary blocks.
 
     Args:
@@ -48,7 +50,7 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
     Returns:
         List of Text elements
     """
-    elements: List[Element] = []
+    elements: List[PageElement] = []
 
     for b in blocks:
         assert isinstance(b, dict)
@@ -96,7 +98,7 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
     return elements
 
 
-def _extract_image_elements(blocks: List[BlockDict]) -> List[Element]:
+def _extract_image_elements(blocks: List[BlockDict]) -> List[PageElement]:
     """Extract image elements from a page's raw dictionary blocks.
 
     Args:
@@ -105,7 +107,7 @@ def _extract_image_elements(blocks: List[BlockDict]) -> List[Element]:
     Returns:
         List of Image elements
     """
-    elements: List[Element] = []
+    elements: List[PageElement] = []
 
     for b in blocks:
         assert isinstance(b, dict)
@@ -128,7 +130,7 @@ def _extract_image_elements(blocks: List[BlockDict]) -> List[Element]:
     return elements
 
 
-def _extract_drawing_elements(drawings: List[Any]) -> List[Element]:
+def _extract_drawing_elements(drawings: List[Any]) -> List[PageElement]:
     """Extract drawing (vector path) elements from a page.
 
     Args:
@@ -137,7 +139,7 @@ def _extract_drawing_elements(drawings: List[Any]) -> List[Element]:
     Returns:
         List of Drawing elements
     """
-    elements: List[Element] = []
+    elements: List[PageElement] = []
 
     for d in drawings:
         drect = d["rect"]
@@ -193,7 +195,7 @@ def _extract_page_elements(
     assert _warn_unknown_block_types(blocks)
 
     # Extract elements by type
-    typed_elements: List[Element] = []
+    typed_elements: List[PageElement] = []
     if "text" in include_types:
         typed_elements.extend(_extract_text_elements(blocks))
     if "image" in include_types:

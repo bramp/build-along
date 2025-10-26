@@ -215,7 +215,7 @@ class ClassificationOrchestrator:
         """
         hints = ClassificationHints()
 
-        max_iterations = 5
+        max_iterations = 1  # TODO raise this in future
         for i in range(max_iterations):
             result = self.classifier.classify(page_data, hints)
             self.history.append(result)
@@ -240,6 +240,9 @@ class ClassificationOrchestrator:
         """
         Creates new hints to guide the next classification run.
         """
+        # TODO Here, we should look at the font sizes, and use that to help
+        # bias the next run towards more consistent results.
+        # TODO Figure out how to pass the hints between pages (of the book).
         return ClassificationHints()
 
     def _apply_result_to_page(
