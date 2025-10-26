@@ -20,6 +20,9 @@ if TYPE_CHECKING:
 class PageNumberClassifier(LabelClassifier):
     """Classifier for page numbers."""
 
+    outputs = {"page_number"}
+    requires = set()
+
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
 

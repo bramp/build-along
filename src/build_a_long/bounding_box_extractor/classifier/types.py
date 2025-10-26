@@ -3,7 +3,7 @@ Data classes for the classifier.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Tuple
 
 
 @dataclass
@@ -26,6 +26,9 @@ class ClassificationResult:
     scores: Dict[Any, Dict[str, float]] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)
     to_remove: Set[int] = field(default_factory=set)
+    # Persisted relations discovered during classification. For now, we record
+    # part image pairings as (part_count_text, image) tuples.
+    part_image_pairs: List[Tuple[Any, Any]] = field(default_factory=list)
 
 
 @dataclass

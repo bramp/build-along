@@ -15,6 +15,11 @@ if TYPE_CHECKING:
 class LabelClassifier(ABC):
     """Abstract base class for a single label classifier."""
 
+    # Class-level metadata to declare pipeline dependencies. Subclasses should
+    # override these to advertise what labels they produce and require.
+    outputs: set[str] = set()
+    requires: set[str] = set()
+
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         self.config = config
         self.classifier = classifier

@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 class StepNumberClassifier(LabelClassifier):
     """Classifier for step numbers."""
 
+    outputs = {"step_number"}
+    requires = {"page_number"}
+
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
 
