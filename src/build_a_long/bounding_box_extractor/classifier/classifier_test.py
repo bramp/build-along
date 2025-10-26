@@ -342,3 +342,72 @@ class TestPartsListClassification:
         assert step.label == "step_number"
         assert d1.label == "parts_list"
         assert d2.label is None or d2.label != "parts_list"
+
+    def test_remove_near_duplicate_parts_list_drawings(self) -> None:
+        """When two almost-identical drawings are above the step and contain part counts, the closer one
+        should be chosen as the parts list and the near-duplicate removed from the flat elements list.
+        Coordinates chosen to match a real-world example where one bbox fully contains the other.
+        """
+        page_bbox = BBox(0, 0, 600, 400)
+
+        # Part count text inside the drawings
+        pc = Text(
+            bbox=BBox(
+                318.53271484375, 44.91717529296875, 327.0047302246094, 54.88517379760742
+            ),
+            text="3x",
+        )
+
+        # Step number below the drawings (tall enough to register as a step)
+        step = Text(
+            bbox=BBox(
+                262.03741455078125,
+                64.50787353515625,
+                276.33740234375,
+                96.90387725830078,
+            ),
+            text="5",
+        )
+        # Real page number at the bottom so the step doesn't get mislabeled as a page number
+        page_number = Text(bbox=BBox(10, 380, 20, 390), text="1")
+
+        # Two nearly identical drawings above the step; d46 (slightly larger) should be chosen,
+        # and d45 (fully inside d46) should be removed as a near-duplicate.
+        d45 = Drawing(
+            bbox=BBox(
+                262.5369567871094,
+                14.673065185546875,
+                414.6079406738281,
+                61.91302490234375,
+            )
+        )
+        d46 = Drawing(
+            bbox=BBox(
+                262.0369567871094,
+                14.173065185546875,
+                415.1079406738281,
+                62.41302490234375,
+            )
+        )
+
+        page = PageData(
+            page_number=1,
+            elements=[pc, step, page_number, d45, d46],
+            bbox=page_bbox,
+        )
+
+        classify_elements([page])
+
+        # Expectations:
+        # - step labeled as step_number
+        # - pc labeled as part_count
+
+        # One of d45 or d46 labeled as parts_list
+        # - d45 chosen as parts_list
+        # - d46 removed from page.elements (near-duplicate of chosen)
+        assert page_number.label == "page_number"
+        assert step.label == "step_number"
+        assert pc.label == "part_count"
+
+        assert (d45.label == "parts_list") ^ (d46.label == "parts_list")
+        assert (d45 in page.elements) ^ (d46 in page.elements)
