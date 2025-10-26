@@ -11,6 +11,7 @@ from build_a_long.downloader.downloader import (
     PdfEntry,
     read_metadata,
     write_metadata,
+    File,
 )
 from build_a_long.downloader.legocom_test import HTML_WITH_METADATA_AND_PDF
 
@@ -39,7 +40,7 @@ def test_download_skips_if_exists(tmp_path: Path):
 
     mock_client.stream.assert_not_called()
 
-    assert out == dest
+    assert out.path == dest
     assert dest.read_bytes() == b"already"
 
 
@@ -69,8 +70,8 @@ def test_download_writes_and_shows_progress(tmp_path: Path, capsys):
     )
 
     captured = capsys.readouterr()
-    assert out.exists()
-    assert out.read_bytes() == b"abcdef"
+    assert out.path.exists()
+    assert out.path.read_bytes() == b"abcdef"
     # Progress output should include the filename
     assert "file.pdf:" in captured.out
 
@@ -97,21 +98,25 @@ def test_context_manager_creates_and_closes_client():
 
 
 def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
-    # Mock network
     mock_client = _make_mock_httpx_client(HTML_WITH_METADATA_AND_PDF)
 
     # Stub out actual file downloads
     def fake_download(self, url: str, dest_dir: Path, **kwargs):
         dest_dir.mkdir(parents=True, exist_ok=True)
         p = dest_dir / url.split("/")[-1]
-        p.write_bytes(b"dummy")
-        return p
+        content = b"dummy"
+        p.write_bytes(content)
+        return File(path=p, size=len(content), hash="a" * 64)
+
+        downloader = LegoInstructionDownloader(
+            client=mock_client, out_dir=tmp_path, show_progress=False
+        )
+
+    monkeypatch.setattr(LegoInstructionDownloader, "download", fake_download)
 
     downloader = LegoInstructionDownloader(
         client=mock_client, out_dir=tmp_path, show_progress=False
     )
-
-    monkeypatch.setattr(LegoInstructionDownloader, "download", fake_download)
 
     exit_code = downloader.process_set("12345")
     assert exit_code == 0
@@ -131,8 +136,12 @@ def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
     assert len(pdfs) == 2
     assert pdfs[0]["url"] == "/6602000.pdf"
     assert pdfs[0]["preview_url"] == "preview1.png"
+    assert pdfs[0]["filesize"] == 5
+    assert pdfs[0]["filehash"] == "a" * 64
     assert pdfs[1]["url"] == "/6602001.pdf"
     assert pdfs[1]["preview_url"] == "preview2.png"
+    assert pdfs[1]["filesize"] == 5
+    assert pdfs[1]["filehash"] == "a" * 64
 
 
 def test_process_set_uses_existing_metadata_and_skips_fetch(
@@ -153,11 +162,15 @@ def test_process_set_uses_existing_metadata_and_skips_fetch(
                 "url": "https://www.example.com/7000001.pdf",
                 "filename": "7000001.pdf",
                 "preview_url": "preview1.png",
+                "size": 5,
+                "hash": "a" * 64,
             },
             {
                 "url": "https://www.example.com/7000002.pdf",
                 "filename": "7000002.pdf",
                 "preview_url": "preview2.png",
+                "size": 5,
+                "hash": "a" * 64,
             },
         ],
     }
@@ -174,8 +187,9 @@ def test_process_set_uses_existing_metadata_and_skips_fetch(
     def fake_download(self, url: str, dest_dir: Path, **kwargs):
         dest_dir.mkdir(parents=True, exist_ok=True)
         p = dest_dir / url.split("/")[-1]
-        p.write_bytes(b"dummy")
-        return p
+        content = b"dummy"
+        p.write_bytes(content)
+        return File(path=p, size=len(content), hash="a" * 64)
 
     downloader = LegoInstructionDownloader(
         client=mock_client, out_dir=out_dir, show_progress=False
