@@ -1,21 +1,26 @@
-"""Dataclasses for representing LEGO set metadata."""
+"""Dataclasses for representing LEGO set metadata.
+
+This module uses dataclasses-json for (de)serialization so callers can use
+``.to_dict()``, ``.to_json()``, ``from_dict`` and ``from_json`` directly.
+"""
 
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
+from dataclasses_json import DataClassJsonMixin, config
 
 
 @dataclass
-class File:
+class File(DataClassJsonMixin):
     """Represents a downloaded file with its path, size, and hash."""
 
-    path: Path
+    path: Path = field(metadata=config(encoder=str, decoder=Path))
     size: int
     hash: Optional[str]
 
 
 @dataclass
-class DownloadUrl:
+class DownloadUrl(DataClassJsonMixin):
     """Holds the URL and preview URL for a download."""
 
     url: str
@@ -23,7 +28,7 @@ class DownloadUrl:
 
 
 @dataclass
-class PdfEntry:
+class PdfEntry(DataClassJsonMixin):
     """Represents a single instruction PDF file."""
 
     url: str
@@ -34,7 +39,7 @@ class PdfEntry:
 
 
 @dataclass
-class Metadata:
+class Metadata(DataClassJsonMixin):
     """Complete metadata for a LEGO set's instructions."""
 
     set: str

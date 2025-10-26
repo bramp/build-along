@@ -1,6 +1,5 @@
 import argparse
 import json
-from dataclasses import asdict
 import logging
 from pathlib import Path
 from typing import Any, Dict, List
@@ -10,76 +9,15 @@ import pymupdf
 from build_a_long.pdf_extract.extractor import (
     extract_bounding_boxes,
     PageData,
+    ExtractionResult,
 )
 from build_a_long.pdf_extract.classifier import classify_elements
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
-from build_a_long.pdf_extract.extractor.hierarchy import (
-    build_hierarchy_from_elements,
-    ElementTree,
-)
+from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
 from build_a_long.pdf_extract.parser import parse_page_range
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-
-def _assign_element_ids(pages: List[PageData]) -> None:
-    """Assigns a unique, sequential ID to each PageElement across all pages.
-
-    Args:
-        pages: List of PageData containing elements to be assigned IDs.
-    """
-    current_id = 0
-    for page_data in pages:
-        for element in page_data.elements:
-            element.id = current_id
-            current_id += 1
-
-
-def _element_to_json(ele: Any) -> Dict[str, Any]:
-    """Convert a PageElement to a JSON-friendly dict using asdict()."""
-    data = asdict(ele)
-    data["__type__"] = ele.__class__.__name__
-    if ele.id is not None:
-        data["id"] = ele.id
-    return data
-
-
-def _node_to_json(element: Any, tree: ElementTree) -> Dict[str, Any]:
-    """Convert a PageElement with children to JSON recursively.
-
-    Args:
-        element: The element to convert
-        tree: The ElementTree containing hierarchy information
-
-    Returns:
-        Dictionary with element data and its children
-    """
-    children = tree.get_children(element)
-    return {
-        "element": _element_to_json(element),
-        "children": [_node_to_json(c, tree) for c in children],
-    }
-
-
-def serialize_extracted_data(pages: List[PageData]) -> Dict[str, Any]:
-    """Convert extracted data with dataclass elements to JSON-serializable format.
-
-    Args:
-        pages: List of PageData containing all pages
-
-    Returns:
-        JSON-serializable dictionary with type metadata
-    """
-    json_data: Dict[str, Any] = {"pages": []}
-    for page_data in pages:
-        json_page: Dict[str, Any] = {
-            "page_number": page_data.page_number,
-            "bbox": asdict(page_data.bbox),
-            "elements": [_element_to_json(e) for e in page_data.elements],
-        }
-        json_data["pages"].append(json_page)
-    return json_data
 
 
 def save_classified_json(
@@ -92,7 +30,7 @@ def save_classified_json(
         output_dir: Directory where JSON should be saved
         pdf_path: Original PDF path (used for naming the JSON file)
     """
-    json_data = serialize_extracted_data(pages)
+    json_data = ExtractionResult(pages=pages).to_dict()
     output_json_path = output_dir / (pdf_path.stem + ".json")
     with open(output_json_path, "w") as f:
         json.dump(json_data, f, indent=4)
@@ -108,11 +46,7 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
         pdf_path: Original PDF path (used for naming the JSON file)
     """
     for page_data in pages:
-        json_page: Dict[str, Any] = {
-            "page_number": page_data.page_number,
-            "bbox": asdict(page_data.bbox),
-            "elements": [_element_to_json(e) for e in page_data.elements],
-        }
+        json_page: Dict[str, Any] = page_data.to_dict()
 
         output_json_path = output_dir / (
             pdf_path.stem + f"_page_{page_data.page_number:03d}_raw.json"
@@ -145,7 +79,8 @@ def render_annotated_images(
         output_path = output_dir / f"page_{page_num:03d}.png"
         # Build hierarchy on-demand for rendering to avoid sync issues
         hierarchy = build_hierarchy_from_elements(page_data.elements)
-        draw_and_save_bboxes(page, hierarchy, output_path, draw_deleted=draw_deleted)
+        draw_and_save_bboxes(page, hierarchy, output_path,
+                             draw_deleted=draw_deleted)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -196,7 +131,8 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Draw bounding boxes for elements marked as deleted.",
     )
-    parser.set_defaults(summary=True, summary_detailed=False, draw_deleted=False)
+    parser.set_defaults(
+        summary=True, summary_detailed=False, draw_deleted=False)
     return parser.parse_args()
 
 
@@ -234,7 +170,8 @@ def _print_summary(pages: List[PageData], *, detailed: bool = False) -> None:
         else:
             missing_page_numbers.append(page.page_number)
 
-    coverage = (pages_with_page_number / total_pages * 100.0) if total_pages else 0.0
+    coverage = (pages_with_page_number / total_pages *
+                100.0) if total_pages else 0.0
 
     # Human-friendly, single-shot summary
     print("=== Classification summary ===")
@@ -307,7 +244,8 @@ def main() -> int:
 
         # Save results as JSON and render annotated images
         save_classified_json(pages, output_dir, pdf_path)
-        render_annotated_images(doc, pages, output_dir, draw_deleted=args.draw_deleted)
+        render_annotated_images(doc, pages, output_dir,
+                                draw_deleted=args.draw_deleted)
 
     return 0
 

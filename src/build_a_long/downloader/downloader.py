@@ -4,7 +4,6 @@ from typing import Any, Callable, ContextManager, Iterable, List, Optional
 import httpx
 import hashlib
 import json
-from dataclasses import asdict
 
 from build_a_long.downloader.legocom import (
     LEGO_BASE,
@@ -24,7 +23,7 @@ __all__ = [
 
 
 def read_metadata(path: Path) -> Optional[Metadata]:
-    """Read a metadata.json file from disk.
+    """Read a metadata.json file from disk using dataclasses-json.
 
     Args:
         path: Path to the metadata.json file.
@@ -38,33 +37,8 @@ def read_metadata(path: Path) -> Optional[Metadata]:
         if not isinstance(raw, dict):
             print(f"Warning: Metadata at {path} is not a JSON object; ignoring")
             return None
-
-        # Build PdfEntry list
-        pdf_entries: List[PdfEntry] = []
-        for item in raw.get("pdfs", []) or []:
-            if isinstance(item, dict) and item.get("url") and item.get("filename"):
-                pdf_entries.append(
-                    PdfEntry(
-                        url=item["url"],
-                        filename=item["filename"],
-                        preview_url=item.get("preview_url"),
-                        filesize=item.get("filesize"),
-                        filehash=item.get("filehash"),
-                    )
-                )
-
-        meta = Metadata(
-            set=str(raw.get("set", "")),
-            locale=str(raw.get("locale", "en-us")),
-            name=raw.get("name"),
-            theme=raw.get("theme"),
-            age=raw.get("age"),
-            pieces=raw.get("pieces"),
-            year=raw.get("year"),
-            pdfs=pdf_entries,
-        )
-        return meta
-    except (json.JSONDecodeError, OSError) as e:
+        return Metadata.from_dict(raw)
+    except (json.JSONDecodeError, OSError, KeyError, TypeError, ValueError) as e:
         print(f"Warning: Could not read existing metadata ({e}); ignoring")
     return None
 
@@ -84,7 +58,7 @@ def write_metadata(path: Path, data: Metadata) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(path.suffix + ".tmp")
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(asdict(data), f, indent=2, ensure_ascii=False)
+            json.dump(data.to_dict(), f, indent=2, ensure_ascii=False)
         tmp.replace(path)
         print(f"Wrote metadata: {path}")
     except Exception as e:  # pragma: no cover - non-fatal write error

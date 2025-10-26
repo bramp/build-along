@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, List, Set
 
 import pymupdf
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
@@ -25,9 +25,8 @@ from build_a_long.pdf_extract.extractor.pymupdf_types import (
 logger = logging.getLogger("extractor")
 
 
-@dataclass_json
 @dataclass
-class PageData:
+class PageData(DataClassJsonMixin):
     """Data extracted from a single PDF page.
 
     Attributes:
@@ -39,6 +38,18 @@ class PageData:
     page_number: int
     elements: List[PageElement]
     bbox: BBox
+
+
+@dataclass
+class ExtractionResult(DataClassJsonMixin):
+    """Top-level container for extracted PDF data.
+
+    This wraps the pages array and a schema version, making JSON IO trivial
+    and future-proofing the format for additional metadata.
+    """
+
+    pages: List[PageData]
+    schema_version: int = 1
 
 
 def _extract_text_elements(blocks: List[BlockDict]) -> List[PageElement]:
