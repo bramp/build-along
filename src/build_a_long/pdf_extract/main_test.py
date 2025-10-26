@@ -95,6 +95,63 @@ class TestMain:
 
         assert result == 2
 
+    @patch("build_a_long.pdf_extract.main.pymupdf.open")
+    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    @patch("build_a_long.pdf_extract.main.draw_and_save_bboxes")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.mkdir")
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("sys.argv", ["main.py", "/path/to/test.pdf", "--pages", "10-12,15"])
+    def test_main_pages_multiple_segments(
+        self,
+        mock_file_open,
+        mock_mkdir,
+        mock_exists,
+        mock_draw_and_save_bboxes,
+        mock_extract_bounding_boxes,
+        mock_pymupdf_open,
+    ):
+        """--pages supports comma-separated segments and calls extractor once with ranges list."""
+        mock_exists.return_value = True
+
+        # Prepare combined return: pages 10-12 and page 15
+        def _mk_page(n: int) -> PageData:
+            return PageData(page_number=n, elements=[], bbox=BBox(0.0, 0.0, 1.0, 1.0))
+
+        mock_extract_bounding_boxes.return_value = [
+            _mk_page(10),
+            _mk_page(11),
+            _mk_page(12),
+            _mk_page(15),
+        ]
+
+        # Mock the PDF document
+        mock_page = MagicMock()
+        mock_doc = MagicMock()
+        # Set a realistic length so PageRanges.to_page_numbers(len(doc)) expands correctly
+        mock_doc.__len__.return_value = 200
+        mock_doc.__getitem__.return_value = mock_page
+        mock_doc.__enter__.return_value = mock_doc
+        mock_doc.__exit__.return_value = None
+        mock_pymupdf_open.return_value = mock_doc
+
+        # Run main
+        result = main()
+
+        assert result == 0
+
+        # Expect one call to extractor with a list of page numbers
+        assert mock_extract_bounding_boxes.call_count == 1
+        first = mock_extract_bounding_boxes.call_args_list[0]
+        assert first.args[0] == mock_doc
+        pages_arg = first.args[1]
+        assert isinstance(pages_arg, (list, tuple))
+        # For "10-12,15" we should expand to explicit pages
+        assert pages_arg == [10, 11, 12, 15]
+
+        # And drawing is invoked for each resulting page
+        assert mock_draw_and_save_bboxes.call_count == 4
+
 
 def test_save_raw_json_prunes_fields(tmp_path: Path) -> None:
     """save_raw_json should exclude deleted=False, label=None, and empty label_scores."""

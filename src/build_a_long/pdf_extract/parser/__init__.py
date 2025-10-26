@@ -1,3 +1,13 @@
-from .parser import parse_page_range
+from .page_ranges import (
+    PageRange,
+    PageRanges,
+    parse_page_range,
+    parse_page_ranges,
+)
 
-__all__ = ["parse_page_range"]
+__all__ = [
+    "PageRange",
+    "PageRanges",
+    "parse_page_range",
+    "parse_page_ranges",
+]

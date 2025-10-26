@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, List, Set
+from typing import Any, List, Set, Sequence
 
 import pymupdf
 from dataclasses_json import DataClassJsonMixin
@@ -233,18 +233,16 @@ def _extract_page_elements(
 
 def extract_bounding_boxes(
     doc: pymupdf.Document,
-    start_page: int | None = None,
-    end_page: int | None = None,
+    page_numbers: Sequence[int] | None = None,
     include_types: Set[str] = {"text", "image", "drawing"},
 ) -> List[PageData]:
     """
-    Extract bounding boxes for instruction numbers, parts lists, and build steps
-    from a given PDF document using PyMuPDF.
+    Extract bounding boxes for the selected pages of a PDF document.
 
     Args:
         doc: PyMuPDF Document object
-        start_page: First page to process (1-indexed), None for first page
-        end_page: Last page to process (1-indexed, inclusive), None for last page
+        page_numbers: A sequence of 1-indexed page numbers to process. If None or
+            empty, all pages are processed.
         include_types: Set of element types to include ("text", "image", "drawing")
 
     Returns:
@@ -254,25 +252,16 @@ def extract_bounding_boxes(
 
     num_pages = len(doc)
 
-    # Determine page range (convert to 0-indexed)
-    first_page = (start_page - 1) if start_page is not None else 0
-    last_page = (end_page - 1) if end_page is not None else (num_pages - 1)
+    # If not provided, process all pages (1-indexed numbers)
+    if not page_numbers:
+        page_numbers = [i + 1 for i in range(num_pages)]
 
-    # Validate and clamp page range
-    first_page = max(0, min(first_page, num_pages - 1))
-    last_page = max(0, min(last_page, num_pages - 1))
-
-    if first_page > last_page:
-        logger.warning("Invalid page range %s-%s", str(start_page), str(end_page))
-        return []
-
-    logger.info(
-        "Processing pages %s-%s of %s", first_page + 1, last_page + 1, num_pages
-    )
-
-    for page_index in range(first_page, last_page + 1):
+    for page_num in page_numbers:
+        page_index = page_num - 1  # convert to 0-indexed
+        if page_index < 0 or page_index >= num_pages:
+            # Out of bounds; skip defensively
+            continue
         page = doc[page_index]
-        page_num = page_index + 1
 
         page_data = _extract_page_elements(page, page_num, include_types)
         pages.append(page_data)
