@@ -17,24 +17,24 @@ This file outlines the tasks required to build the Lego instructions project.
 - [x] Define a storage location for downloaded PDFs (e.g., a `data/` directory).
 - [x] Don't download a pdf if it already exists locally.
 - [x] Add a progress indicator for downloads.
-- [ ] In the metadata for the pdfs, can you add a hash (if the file is
+- [x] In the metadata for the pdfs, can you add a hash (if the file is
   downloaded and accessable on the disk), the file size in bytes.
 - [ ] In the apollo lego.com metadata, there is a isAdditionalInfoBooklet, and
   sequence field. We should fetch them appropriately.
-- [ ] Fix the integration tests (or figure out a way to run on demand)
+- [x] Fix the integration tests (or figure out a way to run on demand)
 
 ## Phase 3: Bounding Box Extractor
 
-- [ ] Choose a library for PDF processing (e.g., PyMuPDF/fitz) to split PDFs into pages/images.
-- [ ] Research and decide on a strategy for bounding box extraction:
-  - Option A: Inspect PDF object model directly to find bounding boxes of images, text, and shapes. Then use targeted OCR or image analysis.
+- [X] Choose a library for PDF processing (e.g., PyMuPDF/fitz) to split PDFs into pages/images.
+- [X] Research and decide on a strategy for bounding box extraction:
+  - **Option A: Inspect PDF object model directly to find bounding boxes of images, text, and shapes. Then use targeted OCR or image analysis.**
   - Option B: Use a pre-trained object detection model.
   - Option C: Use traditional computer vision techniques with a library like OpenCV.
 - [ ] Implement the logic to identify and extract bounding boxes for:
   - Instruction numbers
   - Parts lists
   - Build steps
-- [ ] Define a data format for storing the bounding box information (e.g., JSON).
+- [X] Define a data format for storing the bounding box information (e.g., JSON).
 - [ ] Implement the script to process a PDF and save the extracted data.
 
 ## Phase 4: Instruction Viewer (Flutter Mobile App)
@@ -46,6 +46,13 @@ This file outlines the tasks required to build the Lego instructions project.
 - [ ] Implement a backend service (e.g., in Python) to serve PDF pages and bounding box data to the Flutter app, or explore porting the logic to Dart.
 - [ ] Implement the logic in the Flutter app to load and display a PDF page.
 - [ ] Implement the pan-and-zoom functionality to focus on the current instruction's bounding box.
+-     [ ] The pan-and-zoom should animate smoothly to the new bounding box when navigating steps.
+-     [ ] A "next" button uses the bounding box data to zoom in on the next instruction.
+- [ ] The PDF is displayed with overlays, that help highlight information on the page.
+- [ ] The app should have a "index" that allows users to select a part and it'll
+  tell them everywhere it appears in the book.
+- [ ] The app should also provide extra information about the parts, such as colors,
+  alternate part numbers, and links to buy them online.
 
 ## Phase 5: Integration and Refinements
 
@@ -56,4 +63,4 @@ This file outlines the tasks required to build the Lego instructions project.
 
 ## Misc
 
-- [ ] pytest is in requirements.txt but should it instead be in requirements-dev.txt?
+- [x] pytest is in requirements.txt but should it instead be in requirements-dev.txt?

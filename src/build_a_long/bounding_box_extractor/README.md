@@ -7,66 +7,74 @@ This module extracts bounding boxes and structural information from LEGO instruc
 ```text
 bounding_box_extractor/
 ├── main.py                 # CLI entry point for the extractor
+├── classifier/             # Element classification submodule
+│   ├── classifier.py      # Main classification logic
+│   ├── page_number_classifier.py # Page number classification logic
+│   └── ...                # Other individual classifiers
 ├── drawing/                # Drawing and visualization submodule
 │   ├── drawing.py         # Functions to draw bounding boxes on PDF pages
 │   └── BUILD              # Pants build configuration
 ├── extractor/              # PDF extraction submodule
 │   ├── bbox.py            # BBox dataclass for bounding box representation
-│   ├── bbox_test.py       # Tests for BBox class
-│   ├── page_elements.py   # Page element type definitions (StepNumber, Drawing, etc.)
-│   ├── page_elements_test.py  # Tests for page elements
+│   ├── page_elements.py   # Raw page element type definitions (Text, Image, etc.)
+│   ├── lego_page_elements.py # Structured LEGO element type definitions (Step, Part, etc.)
 │   ├── hierarchy.py       # Containment hierarchy building logic
-│   ├── hierarchy_test.py  # Tests for hierarchy building
 │   ├── extractor.py       # Core extraction logic using PyMuPDF
-│   ├── extractor_test.py  # Tests for extraction functionality
 │   └── BUILD              # Pants build configuration
 └── parser/                 # Input parsing submodule
     ├── parser.py          # Page range parsing utilities
-    ├── parser_test.py     # Tests for parser functionality
     └── BUILD              # Pants build configuration
 ```
 
 ## Module Organization
 
+The general flow of the bounding box extractor is as follows:
+
+1. **PDF Extraction**: The `extractor` submodule uses PyMuPDF to parse the PDF and extract raw page elements (text blocks, images, drawings) along with their bounding boxes.
+2. **Element Classification**: The `classifier` submodule applies rule-based heuristics to label the raw elements (e.g., identifying page numbers, step numbers, parts lists).
+3. **Output Generation**: The extracted and classified data is output as structured JSON. Optionally
+
 ### `main.py`
 
-Command-line interface for extracting bounding boxes from PDFs. Handles argument parsing and orchestrates the extraction process.
+Command-line interface for extracting bounding boxes from PDFs. Handles argument parsing and orchestrates the extraction and classification process.
 
 ### Submodules
 
-#### `drawing/`
+#### `extractor/` - PDF Extraction
 
-Handles visualization and rendering of extracted bounding boxes:
-
-- Draws bounding boxes on PDF page images
-- Color-codes elements by nesting depth
-- Labels elements with their types
-
-#### `extractor/`
-
-Core PDF extraction functionality and data models:
+Core PDF extraction functionality and data models.
 
 **Data Models:**
 
-- `bbox.py`: Defines the `BBox` dataclass representing a bounding box with coordinates (x0, y0, x1, y1) and spatial relationship methods
-- `page_elements.py`: Defines typed page element classes:
-  - `StepNumber`: Instruction step numbers
-  - `Drawing`: Image blocks
-  - `PathElement`: Vector drawing paths
-  - `Unknown`: Unclassified elements
-- `hierarchy.py`: Builds containment hierarchies from page elements based on spatial relationships
+This project uses a two-stage data model:
+
+1. **Raw Page Elements** (`page_elements.py`): Defines the basic, low-level elements extracted directly from the PDF.
+    - `Text`: A block of text.
+    - `Image`: A raster image.
+    - `Drawing`: A vector graphic.
 
 **Extraction Logic:**
 
-- `extractor.py`: Uses PyMuPDF (fitz) to parse PDF structure, extract text/images/vector graphics, classify elements, and build hierarchical representations
+- `extractor.py`: Uses [PyMuPDF](https://pymupdf.readthedocs.io/en/latest/) to parse the PDF and extract the raw `Text`, `Image`, and `Drawing` elements.
+- `hierarchy.py`: Builds a containment hierarchy from the flat list of raw elements.
+
+#### `classifier/` - Element Classification
+
+Handles the classification of raw page elements. It takes the raw elements from the `extractor` and applies a series of rule-based heuristics to assign labels (e.g., "page_number", "step_number"). This labeling is the first step in transforming the raw data into the structured LEGO elements. See the `classifier/README.md` for more details.
+
+1. **Structured LEGO Elements** (`lego_page_elements.py`): Defines the high-level, domain-specific data model representing the logical structure of a LEGO instruction manual.
+    - `Step`: A single instruction step.
+    - `PartsList`: A list of parts required for a step.
+    - `Part`: A single part in a parts list.
+    - `PageNumber`, `StepNumber`, `PartCount`, etc.
+
+#### `drawing/`
+
+Handles visualization and rendering of extracted bounding boxes.
 
 #### `parser/`
 
-Input parsing utilities:
-
-- Parses page range specifications (e.g., "5", "5-10", "10-", "-5")
-- Validates and normalizes user input
-- Provides flexible page selection for processing
+Input parsing utilities for things like page ranges.
 
 ## Usage
 
@@ -96,6 +104,7 @@ Run specific submodule tests:
 
 ```bash
 pants test src/build_a_long/bounding_box_extractor/extractor:tests
+pants test src/build_a_long/bounding_box_extractor/classifier:tests
 pants test src/build_a_long/bounding_box_extractor/parser:tests
 ```
 
@@ -103,5 +112,5 @@ pants test src/build_a_long/bounding_box_extractor/parser:tests
 
 The extractor produces:
 
-1. **JSON file**: Structured data containing all extracted elements and hierarchies
-2. **PNG images** (if `--output-dir` specified): Visual representation with bounding boxes drawn and labeled
+1. **JSON file**: Structured data containing all extracted and labeled raw elements.
+2. **PNG images** (if `--output-dir` specified): Visual representation with bounding boxes drawn and labeled.
