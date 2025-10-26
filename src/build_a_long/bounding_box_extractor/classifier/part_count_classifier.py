@@ -1,8 +1,21 @@
 """
 Part count classifier.
+
+Purpose
+-------
+Detect part-count text like "2x", "3X", or "5×". We normalize unicode and
+whitespace to tolerate minor OCR/encoding differences.
+
+Debugging
+---------
+Enable DEBUG logs with LOG_LEVEL=DEBUG. Heavier trace can be enabled when
+CLASSIFIER_DEBUG is set to "part_count" or "all".
 """
 
+import logging
 import re
+import unicodedata
+import os
 from typing import TYPE_CHECKING, Any, Dict, Set
 
 from build_a_long.bounding_box_extractor.classifier.label_classifier import (
@@ -21,6 +34,11 @@ class PartCountClassifier(LabelClassifier):
 
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
+        self._logger = logging.getLogger(__name__)
+        self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
+            "part_count",
+            "all",
+        )
 
     def calculate_scores(
         self,
@@ -39,6 +57,13 @@ class PartCountClassifier(LabelClassifier):
                 if element not in scores:
                     scores[element] = {}
                 scores[element]["part_count"] = score
+                if self._debug_enabled and self._logger.isEnabledFor(logging.DEBUG):
+                    self._logger.debug(
+                        "[part_count] match text=%r score=%.2f bbox=%s",
+                        element.text,
+                        score,
+                        element.bbox,
+                    )
 
     def classify(
         self,
@@ -61,7 +86,8 @@ class PartCountClassifier(LabelClassifier):
 
     @staticmethod
     def _score_part_count_text(text: str) -> float:
-        t = text.strip()
+        # Normalize to handle NBSP and composed forms of ×, etc.
+        t = unicodedata.normalize("NFKC", text).replace("\u00a0", " ").strip()
         if re.fullmatch(r"\d{1,3}\s*[x×]", t, flags=re.IGNORECASE):
             return 1.0
         return 0.0
