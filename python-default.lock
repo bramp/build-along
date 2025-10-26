@@ -9,14 +9,14 @@
 //     "CPython==3.14.*"
 //   ],
 //   "generated_with_requirements": [
-//     "Pillow",
-//     "PyMuPDF",
-//     "beautifulsoup4",
+//     "Pillow~=12.0.0",
+//     "PyMuPDF~=1.26.0",
+//     "beautifulsoup4~=4.14.0",
 //     "dataclasses-json>=0.6.0",
-//     "httpx",
-//     "pytest",
-//     "pytest-recording",
-//     "vcrpy"
+//     "httpx~=0.28.0",
+//     "pytest-recording~=0.13.0",
+//     "pytest~=8.4.0",
+//     "vcrpy~=7.0.0"
 //   ],
 //   "manylinux": "manylinux2014",
 //   "requirement_constraints": [],
@@ -1377,14 +1377,14 @@
   "pip_version": "24.2",
   "prefer_older_binary": false,
   "requirements": [
-    "Pillow",
-    "PyMuPDF",
-    "beautifulsoup4",
+    "Pillow~=12.0.0",
+    "PyMuPDF~=1.26.0",
+    "beautifulsoup4~=4.14.0",
     "dataclasses-json>=0.6.0",
-    "httpx",
-    "pytest",
-    "pytest-recording",
-    "vcrpy"
+    "httpx~=0.28.0",
+    "pytest-recording~=0.13.0",
+    "pytest~=8.4.0",
+    "vcrpy~=7.0.0"
   ],
   "requires_python": [
     "CPython==3.14.*"

@@ -1,5 +1,5 @@
-httpx
-beautifulsoup4
-PyMuPDF
-Pillow
+httpx~=0.28.0
+beautifulsoup4~=4.14.0
+PyMuPDF~=1.26.0
+Pillow~=12.0.0
 dataclasses-json>=0.6.0
