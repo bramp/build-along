@@ -1,6 +1,7 @@
 import argparse
 import json
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 from build_a_long.downloader.downloader import LegoInstructionDownloader
@@ -107,8 +108,6 @@ def main() -> int:
                 try:
                     html = downloader.fetch_instructions_page(set_number)
                     meta = build_metadata(html, set_number, args.locale, base=LEGO_BASE)
-                    from dataclasses import asdict
-
                     print(json.dumps(asdict(meta), indent=2, ensure_ascii=False))
                 except Exception as e:
                     print(

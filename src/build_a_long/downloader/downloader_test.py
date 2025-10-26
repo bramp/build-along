@@ -108,10 +108,6 @@ def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
         p.write_bytes(content)
         return File(path=p, size=len(content), hash="a" * 64)
 
-        downloader = LegoInstructionDownloader(
-            client=mock_client, out_dir=tmp_path, show_progress=False
-        )
-
     monkeypatch.setattr(LegoInstructionDownloader, "download", fake_download)
 
     downloader = LegoInstructionDownloader(

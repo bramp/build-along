@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
+import httpx
 
 
 def _default_cassette_dir() -> Path:
@@ -100,8 +101,6 @@ def http_client(vcr):
     The vcr fixture is provided by pytest-recording and will automatically
     record HTTP interactions to cassettes and replay them on subsequent runs.
     """
-    import httpx
-
     # When using VCR, we don't need a real client context manager
     # VCR intercepts at the socket level, so we can use a simple client
     with httpx.Client(follow_redirects=True, timeout=30) as client:

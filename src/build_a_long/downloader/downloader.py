@@ -3,6 +3,8 @@ from typing import Any, Callable, ContextManager, Iterable, List, Optional
 
 import httpx
 import hashlib
+import json
+from dataclasses import asdict
 
 from build_a_long.downloader.legocom import (
     LEGO_BASE,
@@ -30,8 +32,6 @@ def read_metadata(path: Path) -> Optional[Metadata]:
     Returns:
         The parsed Metadata object if successful; otherwise None.
     """
-    import json
-
     try:
         with open(path, "r", encoding="utf-8") as f:
             raw = json.load(f)
@@ -80,9 +80,6 @@ def write_metadata(path: Path, data: Metadata) -> None:
         path: Destination path for metadata.json
         data: The Metadata object to write
     """
-    import json
-    from dataclasses import asdict
-
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(path.suffix + ".tmp")

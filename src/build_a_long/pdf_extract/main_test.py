@@ -6,6 +6,11 @@ from build_a_long.pdf_extract.main import main
 from build_a_long.pdf_extract.extractor.hierarchy import (
     ElementTree,
 )
+from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.page_elements import (
+    Text,
+)
+from build_a_long.pdf_extract.extractor import PageData
 
 
 class TestMain:
@@ -29,11 +34,6 @@ class TestMain:
         mock_exists.return_value = True
 
         # Mock the extractor to return structured data
-        from build_a_long.pdf_extract.extractor.bbox import BBox
-        from build_a_long.pdf_extract.extractor.page_elements import (
-            Text,
-        )
-        from build_a_long.pdf_extract.extractor import PageData
 
         step_element = Text(bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
         page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
