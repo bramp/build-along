@@ -3,7 +3,6 @@ import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List
-
 import pymupdf
 
 from build_a_long.pdf_extract.extractor import (
@@ -45,12 +44,35 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
         output_dir: Directory where JSON should be saved
         pdf_path: Original PDF path (used for naming the JSON file)
     """
+
+    def _prune_element_metadata(page: Dict[str, Any]) -> Dict[str, Any]:
+        """Prune noisy/empty fields from PageData dict in-place (non-recursive).
+
+        Applies to each element in page["elements"] only:
+        - Drop "deleted" when falsy (e.g., False)
+        - Drop "label" when None
+        - Drop "label_scores" when empty ([], {}) or None
+        """
+        elements = page.get("elements", [])
+        if isinstance(elements, list):
+            for ele in elements:
+                if not isinstance(ele, dict):
+                    continue
+                if ("deleted" in ele) and (not bool(ele.get("deleted"))):
+                    del ele["deleted"]
+                if ("label" in ele) and (ele.get("label") is None):
+                    del ele["label"]
+                if "label_scores" in ele:
+                    val = ele.get("label_scores")
+                    if val is None or (isinstance(val, (list, dict)) and len(val) == 0):
+                        del ele["label_scores"]
+        return page
+
     for page_data in pages:
         json_page: Dict[str, Any] = page_data.to_dict()
+        json_page = _prune_element_metadata(json_page)
 
-        output_json_path = output_dir / (
-            pdf_path.stem + f"_page_{page_data.page_number:03d}_raw.json"
-        )
+        output_json_path = output_dir / (f"page_{page_data.page_number:03d}_raw.json")
         with open(output_json_path, "w") as f:
             json.dump(json_page, f, indent=4)
         logger.info(
@@ -79,8 +101,7 @@ def render_annotated_images(
         output_path = output_dir / f"page_{page_num:03d}.png"
         # Build hierarchy on-demand for rendering to avoid sync issues
         hierarchy = build_hierarchy_from_elements(page_data.elements)
-        draw_and_save_bboxes(page, hierarchy, output_path,
-                             draw_deleted=draw_deleted)
+        draw_and_save_bboxes(page, hierarchy, output_path, draw_deleted=draw_deleted)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -131,8 +152,7 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Draw bounding boxes for elements marked as deleted.",
     )
-    parser.set_defaults(
-        summary=True, summary_detailed=False, draw_deleted=False)
+    parser.set_defaults(summary=True, summary_detailed=False, draw_deleted=False)
     return parser.parse_args()
 
 
@@ -170,8 +190,7 @@ def _print_summary(pages: List[PageData], *, detailed: bool = False) -> None:
         else:
             missing_page_numbers.append(page.page_number)
 
-    coverage = (pages_with_page_number / total_pages *
-                100.0) if total_pages else 0.0
+    coverage = (pages_with_page_number / total_pages * 100.0) if total_pages else 0.0
 
     # Human-friendly, single-shot summary
     print("=== Classification summary ===")
@@ -229,14 +248,14 @@ def main() -> int:
             doc, start_page, end_page, include_types=include_types
         )
 
-        # Classify elements to add labels (e.g., page numbers)
-        # This also marks elements as deleted if they're duplicates/shadows
-        classify_elements(pages)
-
         # Save raw extracted data as JSON if debug flag is set
         # The deleted field will be included in the JSON output
         if args.debug_json:
             save_raw_json(pages, output_dir, pdf_path)
+
+        # Classify elements to add labels (e.g., page numbers)
+        # This also marks elements as deleted if they're duplicates/shadows
+        classify_elements(pages)
 
         # Optionally print a concise summary to stdout
         if args.summary:
@@ -244,8 +263,7 @@ def main() -> int:
 
         # Save results as JSON and render annotated images
         save_classified_json(pages, output_dir, pdf_path)
-        render_annotated_images(doc, pages, output_dir,
-                                draw_deleted=args.draw_deleted)
+        render_annotated_images(doc, pages, output_dir, draw_deleted=args.draw_deleted)
 
     return 0
 

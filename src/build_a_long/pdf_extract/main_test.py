@@ -9,8 +9,11 @@ from build_a_long.pdf_extract.extractor.hierarchy import (
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_elements import (
     Text,
+    Image,
 )
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.main import save_raw_json
+import json
 
 
 class TestMain:
@@ -91,3 +94,46 @@ class TestMain:
         result = main()
 
         assert result == 2
+
+
+def test_save_raw_json_prunes_fields(tmp_path: Path) -> None:
+    """save_raw_json should exclude deleted=False, label=None, and empty label_scores."""
+    # Element with defaults that should be pruned
+    text = Text(
+        bbox=BBox(0.0, 0.0, 10.0, 10.0),
+        text="hello",
+    )
+    # Element with explicit values that must be preserved
+    img = Image(
+        bbox=BBox(1.0, 1.0, 5.0, 5.0),
+        image_id="img1",
+        label="page_number",
+        label_scores={"page_number": 0.9},
+        deleted=True,
+    )
+
+    page = PageData(
+        page_number=1, elements=[text, img], bbox=BBox(0.0, 0.0, 100.0, 100.0)
+    )
+
+    pdf_path = tmp_path / "my.pdf"
+    pdf_path.write_bytes(b"")
+
+    save_raw_json([page], tmp_path, pdf_path)
+
+    out = tmp_path / "page_001_raw.json"
+    assert out.exists()
+    data = json.loads(out.read_text())
+
+    assert data["page_number"] == 1
+    assert isinstance(data["elements"], list) and len(data["elements"]) == 2
+
+    e0 = data["elements"][0]
+    assert "deleted" not in e0
+    assert "label" not in e0
+    assert "label_scores" not in e0
+
+    e1 = data["elements"][1]
+    assert e1.get("deleted") is True
+    assert e1.get("label") == "page_number"
+    assert e1.get("label_scores") == {"page_number": 0.9}
