@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Union
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 
 
-@dataclass
+@dataclass(eq=False)
 class PageElement:
     """Base class for anything detected on a page.
 
@@ -35,8 +35,14 @@ class PageElement:
     label: Optional[str] = field(default=None, kw_only=True)
     label_scores: Dict[str, float] = field(default_factory=dict, kw_only=True)
 
+    def __hash__(self):
+        return id(self)
 
-@dataclass
+    def __eq__(self, other):
+        return self is other
+
+
+@dataclass(eq=False)
 class Drawing(PageElement):
     """A vector drawing on the page.
 
@@ -47,7 +53,7 @@ class Drawing(PageElement):
     image_id: Optional[str] = None
 
 
-@dataclass
+@dataclass(eq=False)
 class Text(PageElement):
     """A text element on the page.
 
@@ -59,7 +65,7 @@ class Text(PageElement):
     font_size: Optional[float] = None
 
 
-@dataclass
+@dataclass(eq=False)
 class Image(PageElement):
     """An image element on the page (raster image from PDF).
 
@@ -78,14 +84,14 @@ class Image(PageElement):
 ###
 
 
-@dataclass
+@dataclass(eq=False)
 class StepNumber(PageElement):
     """A step number label, usually a small integer on the page."""
 
     value: int
 
 
-@dataclass
+@dataclass(eq=False)
 class PartCount(PageElement):
     """The visual count label associated with a part entry (e.g., 'x3')."""
 
@@ -96,7 +102,7 @@ class PartCount(PageElement):
             raise ValueError("PartCount.count must be non-negative")
 
 
-@dataclass
+@dataclass(eq=False)
 class Part(PageElement):
     """A single part entry within a parts list.
 
@@ -110,7 +116,7 @@ class Part(PageElement):
     count: PartCount
 
 
-@dataclass
+@dataclass(eq=False)
 class PartsList(PageElement):
     """A container of multiple parts for the page's parts list."""
 
