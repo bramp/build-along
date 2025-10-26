@@ -214,6 +214,7 @@ class ClassificationOrchestrator:
     ) -> PageData:
         """
         Applies the labels from a ClassificationResult to a PageData object.
+        Marks elements for removal as deleted instead of removing them from the list.
         """
         for label, element in result.labeled_elements.items():
             if isinstance(element, list):
@@ -222,19 +223,10 @@ class ClassificationOrchestrator:
             else:
                 element.label = element.label or label
 
+        # Mark elements as deleted instead of removing them
         if result.to_remove:
-            page_data.elements = [
-                e for e in page_data.elements if id(e) not in result.to_remove
-            ]
-
-            def prune_children(container) -> None:
-                kept = [c for c in container.children if id(c) not in result.to_remove]
-                container.children[:] = kept
-                for c in kept:
-                    prune_children(c)
-
-            if page_data.hierarchy is not None:
-                for root in page_data.hierarchy.roots:
-                    prune_children(root)
+            for e in page_data.elements:
+                if id(e) in result.to_remove:
+                    e.deleted = True
 
         return page_data

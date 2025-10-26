@@ -126,7 +126,7 @@ def render_annotated_images(
 
     Args:
         doc: The open PyMuPDF Document
-        pages: List of PageData containing hierarchy information
+        pages: List of PageData containing extracted elements
         output_dir: Directory where PNG images should be saved
     """
     for page_data in pages:
@@ -277,12 +277,14 @@ def main() -> int:
             doc, start_page, end_page, include_types=include_types
         )
 
+        # Classify elements to add labels (e.g., page numbers)
+        # This also marks elements as deleted if they're duplicates/shadows
+        classify_elements(pages)
+
         # Save raw extracted data as JSON if debug flag is set
+        # The deleted field will be included in the JSON output
         if args.debug_json:
             save_raw_json(pages, output_dir, pdf_path)
-
-        # Classify elements to add labels (e.g., page numbers)
-        classify_elements(pages)
 
         # Optionally print a concise summary to stdout
         if args.summary:

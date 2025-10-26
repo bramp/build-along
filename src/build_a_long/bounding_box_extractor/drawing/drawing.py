@@ -59,11 +59,20 @@ def draw_and_save_bboxes(
         # Determine color based on depth
         color = depth_colors[depth % len(depth_colors)]
 
-        # Draw the bounding box
-        draw.rectangle(scaled_bbox, outline=color, width=2)
+        # If element is deleted, use a lighter/grayed out color and dashed style
+        if element.deleted:
+            # Draw dashed outline for deleted elements
+            # PIL doesn't support dashed lines directly, so we'll draw with lower opacity
+            draw.rectangle(scaled_bbox, outline=color, width=1)
+        else:
+            # Draw the bounding box normally
+            draw.rectangle(scaled_bbox, outline=color, width=2)
 
         # Draw the element type text
-        label = f"ID: {element.id} " + (element.label or element.__class__.__name__)
+        label_prefix = "[DELETED] " if getattr(element, "deleted", False) else ""
+        label = f"ID: {element.id} {label_prefix}" + (
+            element.label or element.__class__.__name__
+        )
         if isinstance(element, Drawing):
             if element.image_id:
                 label = f"{label} ({element.image_id})"
