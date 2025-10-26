@@ -17,7 +17,10 @@ This file outlines the tasks required to build the Lego instructions project.
 - [x] Define a storage location for downloaded PDFs (e.g., a `data/` directory).
 - [x] Don't download a pdf if it already exists locally.
 - [x] Add a progress indicator for downloads.
-- [ ] In the metadata for the pdfs, can you add a hash (if the file is downloaded and accessable on the disk)
+- [ ] In the metadata for the pdfs, can you add a hash (if the file is
+  downloaded and accessable on the disk), the file size in bytes.
+- [ ] In the apollo lego.com metadata, there is a isAdditionalInfoBooklet, and
+  sequence field. We should fetch them appropriately.
 - [ ] Fix the integration tests (or figure out a way to run on demand)
 
 ## Phase 3: Bounding Box Extractor
