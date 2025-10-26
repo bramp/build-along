@@ -7,5 +7,20 @@ pex_binary(
 
 python_tests(
     name="tests",
-    sources=["*_test.py"],
+    sources=["*_test.py", "!*_integration_test.py"],
+)
+
+python_tests(
+    name="integration_tests",
+    sources=["*_integration_test.py"],
+    extra_env_vars=["ENABLE_INTEGRATION_TESTS"],
+    dependencies=[
+        "3rdparty#pytest-recording",
+        "3rdparty#vcrpy",
+    ],
+)
+
+python_test_utils(
+    name="test_utils",
+    sources=["conftest.py"],
 )

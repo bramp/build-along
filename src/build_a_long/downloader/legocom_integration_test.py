@@ -3,6 +3,13 @@
 These tests make real HTTP requests to LEGO.com and are skipped by default.
 Run with: ENABLE_INTEGRATION_TESTS=true pants test src/build_a_long/downloader::
 
+HTTP interactions are recorded using VCR.py (pytest-recording) and stored in a
+local cache directory (see conftest; by default: ~/.cache/build-along/cassettes/downloader).
+This means:
+- First run: Makes real HTTP requests and records them
+- Subsequent runs: Replays recorded responses (fast, no network needed)
+- To refresh cassettes: delete the cache dir or run with --record-mode=rewrite
+
 Why integration tests:
 - Verify our parsing works against real HTML (not just test fixtures)
 - Detect when LEGO.com changes their page structure
@@ -42,15 +49,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture
-def http_client():
-    """Provide an HTTP client for making requests."""
-    import httpx
-
-    with httpx.Client(follow_redirects=True, timeout=30) as client:
-        yield client
-
-
+@pytest.mark.vcr()
 def test_fetch_real_set_30708(http_client):
     """Test fetching and parsing a real small set (Millennium Falcon mini-build)."""
     set_number = "30708"
@@ -76,6 +75,7 @@ def test_fetch_real_set_30708(http_client):
     assert meta.year and meta.year >= 2024
 
 
+@pytest.mark.vcr()
 def test_fetch_real_set_75419(http_client):
     """Test fetching and parsing a real large set (Death Star)."""
     set_number = "75419"
@@ -100,6 +100,7 @@ def test_fetch_real_set_75419(http_client):
     assert meta.year and meta.year >= 2024
 
 
+@pytest.mark.vcr()
 def test_json_fields_exist_in_real_pages(http_client):
     """Verify that the JSON fields we rely on still exist in LEGO.com pages.
 
@@ -122,6 +123,7 @@ def test_json_fields_exist_in_real_pages(http_client):
     assert meta.year
 
 
+@pytest.mark.vcr()
 def test_different_locale(http_client):
     """Test that different locales work (German example)."""
     set_number = "30708"
@@ -140,6 +142,7 @@ def test_different_locale(http_client):
     assert meta.theme
 
 
+@pytest.mark.vcr()
 def test_invalid_set_number_handling(http_client):
     """Test that invalid/non-existent set numbers are handled gracefully.
 
