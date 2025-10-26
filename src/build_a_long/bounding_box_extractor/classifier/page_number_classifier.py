@@ -67,12 +67,20 @@ class PageNumberClassifier(LabelClassifier):
         if not page_data.elements:
             return
 
+        page_bbox = page_data.bbox
+        assert page_bbox is not None
+        page_height = page_bbox.y1 - page_bbox.y0
+
         candidates: list[tuple[Text, float, Optional[int]]] = []
         for element in page_data.elements:
             if not isinstance(element, Text):
                 continue
             score = scores.get(element, {}).get("page_number", 0.0)
             if score < self.config.min_confidence_threshold:
+                continue
+            # Require the element to be in the bottom band of the page; otherwise
+            # it is very likely a step number or other numeric text.
+            if self._score_page_number_position(element, page_bbox, page_height) == 0.0:
                 continue
             value = self._extract_page_number_value(element.text)
             candidates.append((element, score, value))

@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw
 
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
-    Element,
+    PageElement,
     Image as ImageElement,
     Text,
 )
@@ -44,7 +44,7 @@ def draw_and_save_bboxes(
     # Colors for different nesting depths (cycles through this list)
     depth_colors = ["red", "green", "blue", "yellow", "purple", "orange"]
 
-    def _draw_element(element: Element, depth: int) -> None:
+    def _draw_element(element: PageElement, depth: int) -> None:
         """Recursively draw an element and its children."""
         bbox = element.bbox
 
@@ -62,6 +62,7 @@ def draw_and_save_bboxes(
         # If element is deleted, use a lighter/grayed out color and dashed style
         if element.deleted:
             # Draw dashed outline for deleted elements
+            # TODO Fix this, as we don't currently draw dashed, OR with lower opacity
             # PIL doesn't support dashed lines directly, so we'll draw with lower opacity
             draw.rectangle(scaled_bbox, outline=color, width=1)
         else:
@@ -69,7 +70,7 @@ def draw_and_save_bboxes(
             draw.rectangle(scaled_bbox, outline=color, width=2)
 
         # Draw the element type text
-        label_prefix = "[DELETED] " if getattr(element, "deleted", False) else ""
+        label_prefix = "[REMOVED] " if element.deleted else ""
         label = f"ID: {element.id} {label_prefix}" + (
             element.label or element.__class__.__name__
         )

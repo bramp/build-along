@@ -2,3 +2,4 @@ httpx
 beautifulsoup4
 PyMuPDF
 Pillow
+dataclasses-json>=0.6.0

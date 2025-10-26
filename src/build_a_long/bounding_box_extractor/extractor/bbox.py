@@ -1,7 +1,38 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Dict, List, Tuple, Union
+from dataclasses_json import dataclass_json
 
 
+def _bbox_encoder(bbox: "BBox") -> Dict[str, float]:
+    """Encode BBox to dict for JSON serialization."""
+    return {"x0": bbox.x0, "y0": bbox.y0, "x1": bbox.x1, "y1": bbox.y1}
+
+
+def _bbox_decoder(value: Union[Dict[str, float], List[float]]) -> "BBox":
+    """Decode BBox from either dict or list format.
+
+    Accepts:
+        - {"x0": ..., "y0": ..., "x1": ..., "y1": ...}
+        - [x0, y0, x1, y1]
+    """
+    if isinstance(value, list):
+        if len(value) != 4:
+            raise ValueError(
+                f"bbox list must have 4 numbers, got {len(value)}: {value}"
+            )
+        return BBox(
+            x0=float(value[0]),
+            y0=float(value[1]),
+            x1=float(value[2]),
+            y1=float(value[3]),
+        )
+    elif isinstance(value, dict):
+        return BBox(x0=value["x0"], y0=value["y0"], x1=value["x1"], y1=value["y1"])
+    else:
+        raise ValueError(f"bbox must be a dict or list, got {type(value)}: {value}")
+
+
+@dataclass_json
 @dataclass(frozen=True)
 class BBox:
     x0: float

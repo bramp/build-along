@@ -31,11 +31,11 @@ class TestMain:
         # Mock the extractor to return structured data
         from build_a_long.bounding_box_extractor.extractor.bbox import BBox
         from build_a_long.bounding_box_extractor.extractor.page_elements import (
-            StepNumber,
+            Text,
         )
         from build_a_long.bounding_box_extractor.extractor import PageData
 
-        step_element = StepNumber(bbox=BBox(10.0, 20.0, 30.0, 40.0), value=1)
+        step_element = Text(bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
         page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
 
         page_data = PageData(

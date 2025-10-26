@@ -1,11 +1,29 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional
 
-from build_a_long.bounding_box_extractor.extractor.page_elements import PageElement
+from dataclasses_json import dataclass_json, config
+
+from build_a_long.bounding_box_extractor.extractor.bbox import BBox, _bbox_decoder
 
 
+@dataclass_json
 @dataclass
-class PageNumber(PageElement):
+class LegoPageElement:
+    """Base class for anything detected on a page.
+
+    Contract:
+    - Every element has exactly one bounding box in page coordinates
+      (same coordinate system produced by the extractor).
+    - Subclasses are small data holders.
+    """
+
+    bbox: BBox = field(metadata=config(decoder=_bbox_decoder))
+    id: Optional[int] = field(default=None, kw_only=True)
+
+
+@dataclass_json
+@dataclass
+class PageNumber(LegoPageElement):
     """The page number, usually a small integer on the page."""
 
     value: int
@@ -15,30 +33,33 @@ class PageNumber(PageElement):
             raise ValueError("PageNumber.value must be non-negative")
 
 
+@dataclass_json
 @dataclass
-class StepNumber(PageElement):
+class StepNumber(LegoPageElement):
     """A step number label."""
 
     value: int
 
     def __post_init__(self) -> None:
-        if self.value < 0:
+        if self.value <= 0:
             raise ValueError("StepNumber.value must be positive")
 
 
+@dataclass_json
 @dataclass
-class PartCount(PageElement):
+class PartCount(LegoPageElement):
     """The visual count label associated with a part entry (e.g., '2x')."""
 
     count: int
 
     def __post_init__(self) -> None:
-        if self.count <= 0:
-            raise ValueError("PartCount.count must be positive")
+        if self.count < 0:
+            raise ValueError("PartCount.count must be non-negative")
 
 
+@dataclass_json
 @dataclass
-class Part(PageElement):
+class Part(LegoPageElement):
     """A single part entry within a parts list."""
 
     name: Optional[str]
@@ -50,8 +71,9 @@ class Part(PageElement):
     count: PartCount
 
 
+@dataclass_json
 @dataclass
-class PartsList(PageElement):
+class PartsList(LegoPageElement):
     """A container of multiple parts for the page's parts list."""
 
     parts: List[Part]
@@ -67,8 +89,9 @@ class PartsList(PageElement):
         return sum(p.count.count for p in self.parts)
 
 
+@dataclass_json
 @dataclass
-class BagNumber(PageElement):
+class BagNumber(LegoPageElement):
     """The bag number, usually a small integer on the page."""
 
     value: int
@@ -78,20 +101,23 @@ class BagNumber(PageElement):
             raise ValueError("BagNumber.value must be positive")
 
 
+@dataclass_json
 @dataclass
-class NewBag(PageElement):
+class NewBag(LegoPageElement):
     """The graphic showing a new bag icon on the page."""
 
     bag: BagNumber
 
 
+@dataclass_json
 @dataclass
-class Diagram(PageElement):
+class Diagram(LegoPageElement):
     """The graphic showing how to complete the step."""
 
 
+@dataclass_json
 @dataclass
-class Step(PageElement):
+class Step(LegoPageElement):
     """A single instruction step on the page."""
 
     step_number: StepNumber

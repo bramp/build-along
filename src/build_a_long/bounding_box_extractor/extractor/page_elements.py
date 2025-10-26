@@ -8,16 +8,21 @@ PartsList -> Part -> PartCount.
 
 These classes are intentionally small, immutable dataclasses with rich type
 hints to keep them easy to test and reason about.
+
+Note: Lego-specific structured elements (StepNumber, PartCount, Part, PartsList, etc.)
+are defined in lego_page_elements.py to keep this module focused on raw extraction.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union
+from typing import Dict, Literal, Optional, Union
 
-from build_a_long.bounding_box_extractor.extractor.bbox import BBox
+from build_a_long.bounding_box_extractor.extractor.bbox import BBox, _bbox_decoder
+from dataclasses_json import dataclass_json, config
 
 
+@dataclass_json
 @dataclass(eq=False)
 class PageElement:
     """Base class for anything detected on a page.
@@ -31,7 +36,7 @@ class PageElement:
     - deleted: True if this element was removed during classification (e.g., duplicate).
     """
 
-    bbox: BBox
+    bbox: BBox = field(metadata=config(decoder=_bbox_decoder))
     id: Optional[int] = field(default=None, kw_only=True)
 
     # Classification fields
@@ -46,6 +51,7 @@ class PageElement:
         return self is other
 
 
+@dataclass_json
 @dataclass(eq=False)
 class Drawing(PageElement):
     """A vector drawing on the page.
@@ -54,9 +60,11 @@ class Drawing(PageElement):
     when/if available.
     """
 
+    _type_: Literal["drawing"] = field(default="drawing", init=False)
     image_id: Optional[str] = None
 
 
+@dataclass_json
 @dataclass(eq=False)
 class Text(PageElement):
     """A text element on the page.
@@ -65,10 +73,12 @@ class Text(PageElement):
     """
 
     text: str
+    _type_: Literal["text"] = field(default="text", init=False)
     font_name: Optional[str] = None
     font_size: Optional[float] = None
 
 
+@dataclass_json
 @dataclass(eq=False)
 class Image(PageElement):
     """An image element on the page (raster image from PDF).
@@ -76,66 +86,10 @@ class Image(PageElement):
     image_id can be used to tie back to a raster extracted by the pipeline.
     """
 
+    _type_: Literal["image"] = field(default="image", init=False)
     image_id: Optional[str] = None
 
 
-# Note: Previously, a synthetic Root element represented the full page bounds.
-# We now model the page bounds on PageData.bbox instead and omit any synthetic root element.
-
-
-###
-### Lego-specific elements ###
-###
-
-
-@dataclass(eq=False)
-class StepNumber(PageElement):
-    """A step number label, usually a small integer on the page."""
-
-    value: int
-
-
-@dataclass(eq=False)
-class PartCount(PageElement):
-    """The visual count label associated with a part entry (e.g., 'x3')."""
-
-    count: int
-
-    def __post_init__(self) -> None:
-        if self.count < 0:
-            raise ValueError("PartCount.count must be non-negative")
-
-
-@dataclass(eq=False)
-class Part(PageElement):
-    """A single part entry within a parts list.
-
-    name/number are optional metadata fields should we later OCR them.
-    The count is modeled as its own element to keep a consistent
-    'one element, one bbox' rule.
-    """
-
-    name: Optional[str]
-    number: Optional[str]
-    count: PartCount
-
-
-@dataclass(eq=False)
-class PartsList(PageElement):
-    """A container of multiple parts for the page's parts list."""
-
-    parts: List[Part]
-
-    @property
-    def total_items(self) -> int:
-        """Total number of individual items accounting for counts.
-
-        Example: if the list contains Part(count=2) and Part(count=5), this
-        returns 7.
-        """
-
-        return sum(p.count.count for p in self.parts)
-
-
 # A helpful alias if callers want to store a heterogeneous collection
-Element = Union[PartsList, Part, PartCount, StepNumber, Drawing, Text, Image]
+# TODO Do we still need this?
+Element = Union[Drawing, Text, Image]

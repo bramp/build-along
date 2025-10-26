@@ -1,6 +1,8 @@
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Drawing,
+)
+from build_a_long.bounding_box_extractor.extractor.lego_page_elements import (
     Part,
     PartCount,
     PartsList,
