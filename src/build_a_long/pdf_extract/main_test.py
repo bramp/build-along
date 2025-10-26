@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import ANY, MagicMock, mock_open, patch
 
 from build_a_long.pdf_extract.main import main
 
@@ -74,16 +74,13 @@ class TestMain:
         assert call_args[0][1] == "w"
 
         # Assert draw_and_save_bboxes was called with correct arguments
-        mock_draw_and_save_bboxes.assert_called_once()
+        mock_draw_and_save_bboxes.assert_called_once_with(
+            mock_page, ANY, ANY, draw_deleted=False
+        )
         draw_call_args = mock_draw_and_save_bboxes.call_args
-        # page: pymupdf.Page, hierarchy: ElementTree, output_path: Path
-        assert draw_call_args[0][0] == mock_page  # page object
-        # hierarchy is now an ElementTree, check that it has roots
-
-        hierarchy = draw_call_args[0][1]
-        assert isinstance(hierarchy, ElementTree)
-        assert isinstance(draw_call_args[0][2], Path)  # output_path
-        assert draw_call_args[0][2].name == "page_001.png"
+        assert isinstance(draw_call_args.args[1], ElementTree)
+        assert isinstance(draw_call_args.args[2], Path)
+        assert draw_call_args.args[2].name == "page_001.png"
 
     @patch("pathlib.Path.exists")
     @patch("sys.argv", ["main.py", "/nonexistent/file.pdf"])

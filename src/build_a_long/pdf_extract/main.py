@@ -125,7 +125,11 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
 
 
 def render_annotated_images(
-    doc: pymupdf.Document, pages: List[PageData], output_dir: Path
+    doc: pymupdf.Document,
+    pages: List[PageData],
+    output_dir: Path,
+    *,
+    draw_deleted: bool = False,
 ) -> None:
     """Render PDF pages with annotated bounding boxes as PNG images.
 
@@ -133,6 +137,7 @@ def render_annotated_images(
         doc: The open PyMuPDF Document
         pages: List of PageData containing extracted elements
         output_dir: Directory where PNG images should be saved
+        draw_deleted: If True, also render elements marked as deleted.
     """
     for page_data in pages:
         page_num = page_data.page_number  # 1-indexed
@@ -140,7 +145,7 @@ def render_annotated_images(
         output_path = output_dir / f"page_{page_num:03d}.png"
         # Build hierarchy on-demand for rendering to avoid sync issues
         hierarchy = build_hierarchy_from_elements(page_data.elements)
-        draw_and_save_bboxes(page, hierarchy, output_path)
+        draw_and_save_bboxes(page, hierarchy, output_path, draw_deleted=draw_deleted)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -186,7 +191,12 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Export raw page elements as a JSON document for debugging.",
     )
-    parser.set_defaults(summary=True, summary_detailed=False)
+    parser.add_argument(
+        "--draw-deleted",
+        action="store_true",
+        help="Draw bounding boxes for elements marked as deleted.",
+    )
+    parser.set_defaults(summary=True, summary_detailed=False, draw_deleted=False)
     return parser.parse_args()
 
 
@@ -297,7 +307,7 @@ def main() -> int:
 
         # Save results as JSON and render annotated images
         save_classified_json(pages, output_dir, pdf_path)
-        render_annotated_images(doc, pages, output_dir)
+        render_annotated_images(doc, pages, output_dir, draw_deleted=args.draw_deleted)
 
     return 0
 

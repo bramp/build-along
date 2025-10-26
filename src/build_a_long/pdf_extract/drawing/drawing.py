@@ -19,6 +19,8 @@ def draw_and_save_bboxes(
     page: pymupdf.Page,
     hierarchy: ElementTree,
     output_path: Path,
+    *,
+    draw_deleted: bool = False,
 ) -> None:
     """
     Draws bounding boxes from a hierarchy on the PDF page image and saves it.
@@ -28,6 +30,7 @@ def draw_and_save_bboxes(
         page: PyMuPDF page to render
         hierarchy: ElementTree containing the element hierarchy
         output_path: Where to save the output image
+        draw_deleted: If True, also render elements marked as deleted.
     """
     image_dpi = 150
 
@@ -46,6 +49,9 @@ def draw_and_save_bboxes(
 
     def _draw_element(element: PageElement, depth: int) -> None:
         """Recursively draw an element and its children."""
+        if element.deleted and not draw_deleted:
+            return
+
         bbox = element.bbox
 
         # Scale the bounding box
