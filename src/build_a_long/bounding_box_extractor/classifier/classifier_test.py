@@ -1,10 +1,10 @@
 """Tests for the element classifier."""
 
-from build_a_long.bounding_box_extractor.classifier.classifier import (
-    _score_page_number_text,
-    _classify_page_number,
-    classify_elements,
+from build_a_long.bounding_box_extractor.classifier.classifier import classify_elements
+from build_a_long.bounding_box_extractor.classifier.page_number_classifier import (
+    PageNumberClassifier,
 )
+from build_a_long.bounding_box_extractor.classifier.types import ClassifierConfig
 from build_a_long.bounding_box_extractor.extractor import PageData
 from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
@@ -18,29 +18,33 @@ class TestScorePageNumberText:
 
     def test_simple_numbers(self) -> None:
         """Test simple numeric page numbers."""
-        assert _score_page_number_text("1") == 1.0
-        assert _score_page_number_text("5") == 1.0
-        assert _score_page_number_text("42") == 1.0
-        assert _score_page_number_text("123") == 1.0
+        pn = PageNumberClassifier(ClassifierConfig(), classifier=None)  # type: ignore[arg-type]
+        assert pn._score_page_number_text("1") == 1.0
+        assert pn._score_page_number_text("5") == 1.0
+        assert pn._score_page_number_text("42") == 1.0
+        assert pn._score_page_number_text("123") == 1.0
 
     def test_leading_zeros(self) -> None:
         """Test page numbers with leading zeros."""
-        assert _score_page_number_text("01") == 0.95
-        assert _score_page_number_text("001") == 0.95
-        assert _score_page_number_text("005") == 0.95
+        pn = PageNumberClassifier(ClassifierConfig(), classifier=None)  # type: ignore[arg-type]
+        assert pn._score_page_number_text("01") == 0.95
+        assert pn._score_page_number_text("001") == 0.95
+        assert pn._score_page_number_text("005") == 0.95
 
     def test_whitespace_handling(self) -> None:
         """Test that whitespace is properly handled."""
-        assert _score_page_number_text("  5  ") == 1.0
-        assert _score_page_number_text("\t42\n") == 1.0
+        pn = PageNumberClassifier(ClassifierConfig(), classifier=None)  # type: ignore[arg-type]
+        assert pn._score_page_number_text("  5  ") == 1.0
+        assert pn._score_page_number_text("\t42\n") == 1.0
 
     def test_non_page_numbers(self) -> None:
         """Test that non-page-number text is rejected."""
-        assert _score_page_number_text("hello") == 0.0
-        assert _score_page_number_text("Step 3") == 0.0
-        assert _score_page_number_text("1234") == 0.0  # Too many digits
-        assert _score_page_number_text("12.5") == 0.0  # Decimal
-        assert _score_page_number_text("") == 0.0
+        pn = PageNumberClassifier(ClassifierConfig(), classifier=None)  # type: ignore[arg-type]
+        assert pn._score_page_number_text("hello") == 0.0
+        assert pn._score_page_number_text("Step 3") == 0.0
+        assert pn._score_page_number_text("1234") == 0.0  # Too many digits
+        assert pn._score_page_number_text("12.5") == 0.0  # Decimal
+        assert pn._score_page_number_text("") == 0.0
 
 
 class TestClassifyPageNumber:
@@ -53,14 +57,8 @@ class TestClassifyPageNumber:
             elements=[],
             bbox=BBox(0, 0, 100, 200),
         )
-        # First calculate scores (would normally be done by classify_elements)
-        from build_a_long.bounding_box_extractor.classifier.classifier import (
-            _calculate_page_number_scores,
-        )
-
-        _calculate_page_number_scores(page_data)
-        _classify_page_number(page_data)
-        # Should not raise any errors
+        # Run end-to-end classification; should not raise any errors
+        classify_elements([page_data])
 
     def test_single_page_number_bottom_left(self) -> None:
         """Test identifying a page number in the bottom-left corner."""
@@ -76,13 +74,7 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        # Calculate scores first
-        from build_a_long.bounding_box_extractor.classifier.classifier import (
-            _calculate_page_number_scores,
-        )
-
-        _calculate_page_number_scores(page_data)
-        _classify_page_number(page_data)
+        classify_elements([page_data])
 
         assert page_number_text.label == "page_number"
         assert "page_number" in page_number_text.label_scores
@@ -102,12 +94,7 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        from build_a_long.bounding_box_extractor.classifier.classifier import (
-            _calculate_page_number_scores,
-        )
-
-        _calculate_page_number_scores(page_data)
-        _classify_page_number(page_data)
+        classify_elements([page_data])
 
         assert page_number_text.label == "page_number"
         assert "page_number" in page_number_text.label_scores
@@ -134,19 +121,13 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        from build_a_long.bounding_box_extractor.classifier.classifier import (
-            _calculate_page_number_scores,
-        )
-
-        _calculate_page_number_scores(page_data)
+        classify_elements([page_data])
 
         # Corner should have higher score
         assert (
             corner_text.label_scores["page_number"]
             > center_text.label_scores["page_number"]
         )
-
-        _classify_page_number(page_data)
         assert corner_text.label == "page_number"
         assert center_text.label is None
 
@@ -163,12 +144,7 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        from build_a_long.bounding_box_extractor.classifier.classifier import (
-            _calculate_page_number_scores,
-        )
-
-        _calculate_page_number_scores(page_data)
-        _classify_page_number(page_data)
+        classify_elements([page_data])
 
         assert txt7.label == "page_number"
         assert txt6.label is None
@@ -189,12 +165,7 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        from build_a_long.bounding_box_extractor.classifier.classifier import (
-            _calculate_page_number_scores,
-        )
-
-        _calculate_page_number_scores(page_data)
-        _classify_page_number(page_data)
+        classify_elements([page_data])
 
         # Page number kept and labeled; duplicate removed from flat list
         assert pn.label == "page_number"
@@ -215,17 +186,12 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        from build_a_long.bounding_box_extractor.classifier.classifier import (
-            _calculate_page_number_scores,
-        )
-
-        _calculate_page_number_scores(page_data)
+        classify_elements([page_data])
 
         # Should have score dominated by text (position score is 0.0)
         # Score = 0.7 * 1.0 (text) + 0.3 * 0.0 (position) = 0.7
         assert top_text.label_scores["page_number"] == 0.7
 
-        _classify_page_number(page_data)
         # Still gets labeled since it's the only candidate with score > threshold
         # In real scenarios, there would be other elements with better positions
         assert top_text.label == "page_number"
@@ -244,16 +210,10 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        from build_a_long.bounding_box_extractor.classifier.classifier import (
-            _calculate_page_number_scores,
-        )
-
-        _calculate_page_number_scores(page_data)
+        classify_elements([page_data])
 
         # Should have low score due to text pattern (position is good but text is bad)
         assert text_element.label_scores["page_number"] < 0.5
-
-        _classify_page_number(page_data)
         assert text_element.label is None
 
 
