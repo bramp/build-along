@@ -65,7 +65,9 @@ def serialize_extracted_data(pages: List[PageData]) -> Dict[str, Any]:
     return json_data
 
 
-def save_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> None:
+def save_classified_json(
+    pages: List[PageData], output_dir: Path, pdf_path: Path
+) -> None:
     """Save extracted data as JSON file.
 
     Args:
@@ -78,6 +80,28 @@ def save_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> None:
     with open(output_json_path, "w") as f:
         json.dump(json_data, f, indent=4)
     logger.info("Saved JSON to %s", output_json_path)
+
+
+def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> None:
+    """Save extracted raw data as JSON files, one per page.
+
+    Args:
+        pages: List of PageData to serialize
+        output_dir: Directory where JSON should be saved
+        pdf_path: Original PDF path (used for naming the JSON file)
+    """
+    for page_data in pages:
+        json_page: Dict[str, Any] = {"page_number": page_data.page_number}
+        json_page["elements"] = [_element_to_json(e) for e in page_data.elements]
+
+        output_json_path = output_dir / (
+            pdf_path.stem + f"_page_{page_data.page_number:03d}_raw.json"
+        )
+        with open(output_json_path, "w") as f:
+            json.dump(json_page, f, indent=4)
+        logger.info(
+            "Saved raw JSON for page %d to %s", page_data.page_number, output_json_path
+        )
 
 
 def render_annotated_images(
@@ -136,6 +160,11 @@ def parse_arguments() -> argparse.Namespace:
         "--summary-detailed",
         action="store_true",
         help="Print a slightly more detailed summary, including pages missing page numbers.",
+    )
+    parser.add_argument(
+        "--debug-json",
+        action="store_true",
+        help="Export raw page elements as a JSON document for debugging.",
     )
     parser.set_defaults(summary=True, summary_detailed=False)
     return parser.parse_args()
@@ -233,6 +262,10 @@ def main() -> int:
             doc, start_page, end_page, include_types=include_types
         )
 
+        # Save raw extracted data as JSON if debug flag is set
+        if args.debug_json:
+            save_raw_json(pages, output_dir, pdf_path)
+
         # Classify elements to add labels (e.g., page numbers)
         classify_elements(pages)
 
@@ -241,7 +274,7 @@ def main() -> int:
             _print_summary(pages, detailed=args.summary_detailed)
 
         # Save results as JSON and render annotated images
-        save_json(pages, output_dir, pdf_path)
+        save_classified_json(pages, output_dir, pdf_path)
         render_annotated_images(doc, pages, output_dir)
 
     return 0
