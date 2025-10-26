@@ -10,6 +10,7 @@ from build_a_long.bounding_box_extractor.extractor.bbox import BBox
 from build_a_long.bounding_box_extractor.extractor.page_elements import (
     Text,
     Drawing,
+    Image,
 )
 
 
@@ -259,6 +260,37 @@ class TestClassifyElements:
         # Should not raise any errors
 
 
+class TestPipelineEnforcement:
+    """Tests to ensure classifier pipeline dependencies are enforced at init time."""
+
+    def test_dependency_violation_raises(self) -> None:
+        from build_a_long.bounding_box_extractor.classifier.classifier import (
+            Classifier,
+        )
+        from build_a_long.bounding_box_extractor.classifier.types import (
+            ClassifierConfig,
+        )
+        from build_a_long.bounding_box_extractor.classifier.step_number_classifier import (
+            StepNumberClassifier,
+        )
+
+        original_requires = StepNumberClassifier.requires
+        try:
+            # Inject an impossible requirement to trigger the enforcement failure.
+            StepNumberClassifier.requires = {"page_number", "__missing_label__"}
+            raised = False
+            try:
+                _ = Classifier(ClassifierConfig())
+            except ValueError as e:  # expected
+                raised = True
+                assert "requires labels not yet produced" in str(e)
+                assert "__missing_label__" in str(e)
+            assert raised, "Expected ValueError due to unmet classifier requirements"
+        finally:
+            # Restore original declaration to avoid impacting other tests
+            StepNumberClassifier.requires = original_requires
+
+
 class TestPartCountClassification:
     """Tests for detecting piece counts like '2x'."""
 
@@ -414,3 +446,198 @@ class TestPartsListClassification:
 
         assert (d45.label == "parts_list") ^ (d46.label == "parts_list")
         assert (d45.deleted) ^ (d46.deleted)
+
+    def test_real_example_parts_list_and_deletions(self) -> None:
+        """Replicate the user's provided example to ensure:
+        - ID 7 (step text) is classified as step_number
+        - One of IDs 34 or 35 (drawings) is labeled parts_list, the other is removed as duplicate
+        - IDs 4/5/6 (texts "1x") are labeled part_count
+        - Images inside the chosen parts list (18/19/20) are labeled as
+          part_image
+        - The unrelated image (17) is removed
+        """
+        page_bbox = BBox(0, 0, 600, 400)
+
+        # Part counts (IDs 4,5,6)
+        pc4 = Text(
+            bbox=BBox(
+                344.565185546875,
+                43.957183837890625,
+                351.7731628417969,
+                53.9251823425293,
+            ),
+            text="1x",
+        )
+        pc5 = Text(
+            bbox=BBox(
+                301.6094970703125,
+                43.957183837890625,
+                308.8174743652344,
+                53.9251823425293,
+            ),
+            text="1x",
+        )
+        pc6 = Text(
+            bbox=BBox(
+                393.2807922363281, 43.957183837890625, 400.48876953125, 53.9251823425293
+            ),
+            text="1x",
+        )
+
+        # Step number (ID 7)
+        step = Text(
+            bbox=BBox(
+                280.6299133300781,
+                64.50787353515625,
+                294.825927734375,
+                96.90387725830078,
+            ),
+            text="9",
+        )
+
+        # Unrelated image (ID 17)
+        img17 = Image(
+            bbox=BBox(
+                335.1268005371094,
+                224.8856658935547,
+                464.24346923828125,
+                314.64068603515625,
+            ),
+            image_id="image_8",
+        )
+
+        # Images inside parts list area (IDs 18,19,20) that should not be deleted
+        img18 = Image(
+            bbox=BBox(
+                344.0890808105469,
+                26.97991371154785,
+                374.0812683105469,
+                44.96661376953125,
+            ),
+            image_id="image_9",
+        )
+        img19 = Image(
+            bbox=BBox(
+                301.1343688964844,
+                23.618831634521484,
+                325.3646240234375,
+                44.96771240234375,
+            ),
+            image_id="image_11",
+        )
+        img20 = Image(
+            bbox=BBox(
+                392.8066711425781,
+                30.10918426513672,
+                413.19500732421875,
+                44.95721435546875,
+            ),
+            image_id="image_13",
+        )
+
+        # Parts list drawing candidates (IDs 34, 35)
+        d34 = Drawing(
+            bbox=BBox(
+                281.1300048828125,
+                14.673126220703125,
+                433.2009582519531,
+                61.91302490234375,
+            )
+        )
+        d35 = Drawing(
+            bbox=BBox(
+                280.6300354003906,
+                14.173126220703125,
+                433.7009582519531,
+                62.41302490234375,
+            )
+        )
+
+        # Some other drawing inside the step region (ID 42) that should be removed by the step classifier
+        d42 = Drawing(
+            bbox=BBox(
+                282.0859069824219,
+                73.08786010742188,
+                293.3699035644531,
+                90.50787353515625,
+            )
+        )
+
+        # Include a page number at the bottom so the step isn't mistaken for it
+        page_number = Text(bbox=BBox(10, 380, 20, 390), text="1")
+
+        page = PageData(
+            page_number=1,
+            elements=[
+                # Ordering loosely mirrors the input; order shouldn't matter
+                pc4,
+                pc5,
+                pc6,
+                step,
+                img17,
+                img18,
+                img19,
+                img20,
+                d34,
+                d35,
+                d42,
+                page_number,
+            ],
+            bbox=page_bbox,
+        )
+
+        classify_elements([page])
+
+        # Assertions
+        assert step.label == "step_number"
+        assert pc4.label == "part_count"
+        assert pc5.label == "part_count"
+        assert pc6.label == "part_count"
+
+        # Exactly one of the drawings is chosen as parts list; the other is removed
+        assert (d34.label == "parts_list") ^ (d35.label == "parts_list")
+        assert (d34.deleted) ^ (d35.deleted)
+
+        # Images within the chosen parts list should be labeled as part_image; unrelated image is removed
+        assert img18.label == "part_image"
+        assert img19.label == "part_image"
+        assert img20.label == "part_image"
+        assert img17.deleted is True
+
+    def test_two_steps_do_not_label_and_delete_both_drawings(self) -> None:
+        """When there are two step numbers and two near-duplicate drawings above them,
+        we should select only one drawing as the parts list across the page, and only
+        the other near-duplicate should be removed. Previously, the second step could
+        select the drawing already scheduled for removal, causing both drawings to be
+        labeled and deleted.
+        """
+        page_bbox = BBox(0, 0, 600, 400)
+
+        # A part count inside the drawings
+        pc = Text(
+            bbox=BBox(320, 45, 330, 55),
+            text="1x",
+        )
+
+        # Two steps below the drawings (both tall enough)
+        step1 = Text(bbox=BBox(260, 70, 276, 96), text="5")
+        step2 = Text(bbox=BBox(300, 70, 316, 96), text="6")
+
+        # Real page number at bottom to avoid confusion
+        page_number = Text(bbox=BBox(10, 380, 20, 390), text="1")
+
+        # Two near-duplicate drawings above the steps
+        d_small = Drawing(bbox=BBox(262.5, 14.7, 414.6, 61.9))
+        d_large = Drawing(bbox=BBox(262.0, 14.2, 415.1, 62.4))
+
+        page = PageData(
+            page_number=2,
+            elements=[pc, step1, step2, page_number, d_small, d_large],
+            bbox=page_bbox,
+        )
+
+        classify_elements([page])
+
+        # Exactly one of the drawings is chosen as parts_list, and exactly one is deleted
+        assert (d_small.label == "parts_list") ^ (d_large.label == "parts_list")
+        assert (d_small.deleted) ^ (d_large.deleted)

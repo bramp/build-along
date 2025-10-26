@@ -3,8 +3,7 @@ Part count classifier.
 
 Purpose
 -------
-Detect part-count text like "2x", "3X", or "5×". We normalize unicode and
-whitespace to tolerate minor OCR/encoding differences.
+Detect part-count text like "2x", "3X", or "5×".
 
 Debugging
 ---------
@@ -14,7 +13,6 @@ CLASSIFIER_DEBUG is set to "part_count" or "all".
 
 import logging
 import re
-import unicodedata
 import os
 from typing import TYPE_CHECKING, Any, Dict, Set
 
@@ -31,6 +29,9 @@ if TYPE_CHECKING:
 
 class PartCountClassifier(LabelClassifier):
     """Classifier for part counts."""
+
+    outputs = {"part_count"}
+    requires = set()
 
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
@@ -86,8 +87,7 @@ class PartCountClassifier(LabelClassifier):
 
     @staticmethod
     def _score_part_count_text(text: str) -> float:
-        # Normalize to handle NBSP and composed forms of ×, etc.
-        t = unicodedata.normalize("NFKC", text).replace("\u00a0", " ").strip()
+        t = text.strip()
         if re.fullmatch(r"\d{1,3}\s*[x×]", t, flags=re.IGNORECASE):
             return 1.0
         return 0.0

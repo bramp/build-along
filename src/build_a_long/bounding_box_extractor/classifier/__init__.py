@@ -8,8 +8,20 @@ configuration based on environment variables:
         handler at this level.
 
 - CLASSIFIER_DEBUG: Topic-specific debug selector. Supported values:
-        "page_number", "part_count", "step_number", "parts_list", or "all".
+        "page_number", "part_count", "step_number", "parts_list", "part_image", or "all".
         Each classifier module checks this to emit richer, structured debug logs.
+
+Classifier pipeline order
+-------------------------
+The classifier pipeline runs in a fixed order, enforced at initialization:
+
+1) PageNumber → "page_number"
+2) PartCount  → "part_count"
+3) StepNumber → "step_number" (uses page number size as context)
+4) PartsList  → "parts_list" (requires step_number and part_count)
+5) PartsImage → "part_image" (requires parts_list and part_count)
+
+Changing the order such that dependencies are not met will raise a ValueError.
 """
 
 from .classifier import classify_elements

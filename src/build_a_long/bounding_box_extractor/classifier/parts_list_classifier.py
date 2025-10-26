@@ -32,7 +32,11 @@ from build_a_long.bounding_box_extractor.classifier.part_count_classifier import
 )
 from build_a_long.bounding_box_extractor.classifier.types import ClassifierConfig
 from build_a_long.bounding_box_extractor.extractor import PageData
-from build_a_long.bounding_box_extractor.extractor.page_elements import Drawing, Text
+from build_a_long.bounding_box_extractor.extractor.page_elements import (
+    Drawing,
+    Text,
+    Image,
+)
 
 if TYPE_CHECKING:
     from build_a_long.bounding_box_extractor.classifier.classifier import Classifier
@@ -40,6 +44,9 @@ if TYPE_CHECKING:
 
 class PartsListClassifier(LabelClassifier):
     """Classifier for parts lists."""
+
+    outputs = {"parts_list"}
+    requires = {"step_number", "part_count"}
 
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
@@ -96,6 +103,11 @@ class PartsListClassifier(LabelClassifier):
             candidates: list[tuple[Drawing, int, float, float]] = []
             for d in drawings:
                 if id(d) in used_drawings:
+                    continue
+                # Skip drawings already scheduled for removal (e.g., marked as near-duplicates
+                # by a previous selection for another step). This prevents double-selecting
+                # two near-identical drawings for multiple steps and then deleting both.
+                if id(d) in to_remove:
                     continue
                 db = d.bbox
                 if db.y1 > sb.y0 + ABOVE_EPS:
@@ -163,7 +175,18 @@ class PartsListClassifier(LabelClassifier):
                     # Unlabeled drawings inside should be eligible for pruning as duplicates/overlays.
                     keep_ids.add(id(ele))
 
+            # Preserve images inside the chosen parts list; actual part-image labeling
+            # is delegated to PartsImageClassifier.
+            for ele in page_data.elements:
+                if isinstance(ele, Image) and ele.bbox.fully_inside(chosen_bbox):
+                    keep_ids.add(id(ele))
+
             self.classifier._remove_child_bboxes(page_data, chosen, to_remove, keep_ids)
             self.classifier._remove_similar_bboxes(
                 page_data, chosen, to_remove, keep_ids
             )
+
+            # Remove images outside the chosen parts list area as unrelated
+            for ele in page_data.elements:
+                if isinstance(ele, Image) and not ele.bbox.fully_inside(chosen_bbox):
+                    to_remove.add(id(ele))

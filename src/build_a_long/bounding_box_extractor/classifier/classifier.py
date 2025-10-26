@@ -1,5 +1,19 @@
 """
 Rule-based classifier for labeling page elements.
+
+Pipeline order and dependencies
+--------------------------------
+Classifiers run in a fixed, enforced order because later stages depend on
+labels produced by earlier stages:
+
+1) PageNumberClassifier → outputs: "page_number"
+2) PartCountClassifier  → outputs: "part_count"
+3) StepNumberClassifier → outputs: "step_number" (uses page_number size as context)
+4) PartsListClassifier  → outputs: "parts_list" (requires step_number and part_count)
+5) PartsImageClassifier → outputs: "part_image" (requires parts_list and part_count)
+
+If the order is changed such that a classifier runs before its requirements
+are available, a ValueError will be raised at initialization time.
 """
 
 import logging
@@ -13,6 +27,9 @@ from build_a_long.bounding_box_extractor.classifier.part_count_classifier import
 )
 from build_a_long.bounding_box_extractor.classifier.parts_list_classifier import (
     PartsListClassifier,
+)
+from build_a_long.bounding_box_extractor.classifier.parts_image_classifier import (
+    PartsImageClassifier,
 )
 from build_a_long.bounding_box_extractor.classifier.step_number_classifier import (
     StepNumberClassifier,
@@ -50,7 +67,19 @@ class Classifier:
             PartCountClassifier(config, self),
             StepNumberClassifier(config, self),
             PartsListClassifier(config, self),
+            PartsImageClassifier(config, self),
         ]
+
+        produced: Set[str] = set()
+        for c in self.classifiers:
+            cls = c.__class__
+            need = getattr(c, "requires", set())
+            if not need.issubset(produced):
+                missing = ", ".join(sorted(need - produced))
+                raise ValueError(
+                    f"Classifier order invalid: {cls.__name__} requires labels not yet produced: {missing}"
+                )
+            produced |= getattr(c, "outputs", set())
 
     def classify(
         self, page_data: PageData, hints: Optional[ClassificationHints] = None
@@ -75,11 +104,15 @@ class Classifier:
 
         warnings = self._log_post_classification_warnings(page_data, labeled_elements)
 
+        # Extract persisted relations from labeled_elements (if any)
+        part_image_pairs = labeled_elements.pop("part_image_pairs", [])
+
         return ClassificationResult(
             scores=scores,
             labeled_elements=labeled_elements,
             to_remove=to_remove,
             warnings=warnings,
+            part_image_pairs=part_image_pairs,
         )
 
     def _remove_child_bboxes(
