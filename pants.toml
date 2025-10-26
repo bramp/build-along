@@ -22,6 +22,13 @@ backend_packages = [
 ]
 pants_ignore = [".vscode/settings.json"]
 
+[ruff]
+# Prefer using Ruff configuration from pyproject.toml.
+config = "pyproject.toml"
+# Since the config is in a standard location, discovery can remain enabled; setting
+# this explicitly documents the intent.
+config_discovery = true
+
 [test]
 # Pass through selected environment variables to tests so sandboxed runs can
 # toggle integration tests and cassette behavior.

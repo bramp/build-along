@@ -30,6 +30,7 @@ Note: These tests may fail if:
 import os
 
 import pytest
+from build_a_long.downloader.metadata import Metadata
 
 from build_a_long.downloader.legocom import (
     build_instructions_url,
@@ -149,8 +150,6 @@ def test_invalid_set_number_handling(http_client):
     Our parsing should not crash regardless of what LEGO.com returns for
     invalid set numbers, even if the page structure is completely different.
     """
-    from build_a_long.downloader.metadata import Metadata
-
     set_number = "99999999"  # Unlikely to exist
     locale = "en-us"
     url = build_instructions_url(set_number, locale)

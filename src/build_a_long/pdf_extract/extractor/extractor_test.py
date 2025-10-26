@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+from typing import Any
 
 from build_a_long.pdf_extract.extractor import (
     extract_bounding_boxes,
@@ -146,8 +147,6 @@ class TestExtractedMethods:
 
     def test_extract_text_elements(self):
         """Test _extract_text_elements extracts text from blocks."""
-        from typing import Any
-
         blocks: list[Any] = [
             {
                 "type": 0,
@@ -180,8 +179,6 @@ class TestExtractedMethods:
 
     def test_extract_image_elements(self):
         """Test _extract_image_elements extracts images from blocks."""
-        from typing import Any
-
         blocks: list[Any] = [
             {
                 "type": 0,  # text block, should be skipped

@@ -1,6 +1,13 @@
 """Tests for the element classifier."""
 
-from build_a_long.pdf_extract.classifier.classifier import classify_elements
+from build_a_long.pdf_extract.classifier.classifier import (
+    classify_elements,
+    Classifier,
+)
+from build_a_long.pdf_extract.classifier.step_number_classifier import (
+    StepNumberClassifier,
+)
+from build_a_long.pdf_extract.classifier.types import ClassifierConfig
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_elements import Text
@@ -50,16 +57,6 @@ class TestPipelineEnforcement:
     """Tests to ensure classifier pipeline dependencies are enforced at init time."""
 
     def test_dependency_violation_raises(self) -> None:
-        from build_a_long.pdf_extract.classifier.classifier import (
-            Classifier,
-        )
-        from build_a_long.pdf_extract.classifier.step_number_classifier import (
-            StepNumberClassifier,
-        )
-        from build_a_long.pdf_extract.classifier.types import (
-            ClassifierConfig,
-        )
-
         original_requires = StepNumberClassifier.requires
         try:
             # Inject an impossible requirement to trigger the enforcement failure.
