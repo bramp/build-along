@@ -167,10 +167,12 @@ class TestClassifyPageNumber:
 
         classify_elements([page_data])
 
-        # Page number kept and labeled; duplicate removed from flat list
+        # Page number kept and labeled; duplicate marked as deleted
         assert pn.label == "page_number"
         assert pn in page_data.elements
-        assert dup not in page_data.elements
+        assert dup in page_data.elements
+        assert dup.deleted is True
+        assert pn.deleted is False
 
     def test_not_in_bottom_region(self) -> None:
         """Test that elements outside bottom region score lower due to position."""
@@ -399,6 +401,7 @@ class TestPartsListClassification:
         classify_elements([page])
 
         # Expectations:
+        # - page_number labeled as page_number
         # - step labeled as step_number
         # - pc labeled as part_count
 
@@ -410,4 +413,4 @@ class TestPartsListClassification:
         assert pc.label == "part_count"
 
         assert (d45.label == "parts_list") ^ (d46.label == "parts_list")
-        assert (d45 in page.elements) ^ (d46 in page.elements)
+        assert (d45.deleted) ^ (d46.deleted)
