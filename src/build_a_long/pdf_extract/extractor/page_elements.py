@@ -19,12 +19,11 @@ from dataclasses import dataclass, field
 from typing import Dict, Literal, Optional, Union
 
 from build_a_long.pdf_extract.extractor.bbox import BBox, _bbox_decoder
-from dataclasses_json import dataclass_json, config
+from dataclasses_json import DataClassJsonMixin, config
 
 
-@dataclass_json
 @dataclass(eq=False)
-class PageElement:
+class PageElement(DataClassJsonMixin):
     """Base class for anything detected on a page.
 
     Contract:
@@ -51,7 +50,6 @@ class PageElement:
         return self is other
 
 
-@dataclass_json
 @dataclass(eq=False)
 class Drawing(PageElement):
     """A vector drawing on the page.
@@ -64,7 +62,6 @@ class Drawing(PageElement):
     image_id: Optional[str] = None
 
 
-@dataclass_json
 @dataclass(eq=False)
 class Text(PageElement):
     """A text element on the page.
@@ -78,7 +75,6 @@ class Text(PageElement):
     font_size: Optional[float] = None
 
 
-@dataclass_json
 @dataclass(eq=False)
 class Image(PageElement):
     """An image element on the page (raster image from PDF).

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union
-from dataclasses_json import dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
 
 def _bbox_encoder(bbox: "BBox") -> Dict[str, float]:
@@ -32,9 +32,8 @@ def _bbox_decoder(value: Union[Dict[str, float], List[float]]) -> "BBox":
         raise ValueError(f"bbox must be a dict or list, got {type(value)}: {value}")
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class BBox:
+class BBox(DataClassJsonMixin):
     x0: float
     y0: float
     x1: float

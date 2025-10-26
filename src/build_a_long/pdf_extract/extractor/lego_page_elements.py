@@ -1,14 +1,13 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from dataclasses_json import dataclass_json, config
+from dataclasses_json import DataClassJsonMixin, config
 
 from build_a_long.pdf_extract.extractor.bbox import BBox, _bbox_decoder
 
 
-@dataclass_json
 @dataclass
-class LegoPageElement:
+class LegoPageElement(DataClassJsonMixin):
     """Base class for anything detected on a page.
 
     Contract:
@@ -21,7 +20,6 @@ class LegoPageElement:
     id: Optional[int] = field(default=None, kw_only=True)
 
 
-@dataclass_json
 @dataclass
 class PageNumber(LegoPageElement):
     """The page number, usually a small integer on the page."""
@@ -33,7 +31,6 @@ class PageNumber(LegoPageElement):
             raise ValueError("PageNumber.value must be non-negative")
 
 
-@dataclass_json
 @dataclass
 class StepNumber(LegoPageElement):
     """A step number label."""
@@ -45,7 +42,6 @@ class StepNumber(LegoPageElement):
             raise ValueError("StepNumber.value must be positive")
 
 
-@dataclass_json
 @dataclass
 class PartCount(LegoPageElement):
     """The visual count label associated with a part entry (e.g., '2x')."""
@@ -57,7 +53,6 @@ class PartCount(LegoPageElement):
             raise ValueError("PartCount.count must be non-negative")
 
 
-@dataclass_json
 @dataclass
 class Part(LegoPageElement):
     """A single part entry within a parts list."""
@@ -71,7 +66,6 @@ class Part(LegoPageElement):
     count: PartCount
 
 
-@dataclass_json
 @dataclass
 class PartsList(LegoPageElement):
     """A container of multiple parts for the page's parts list."""
@@ -89,7 +83,6 @@ class PartsList(LegoPageElement):
         return sum(p.count.count for p in self.parts)
 
 
-@dataclass_json
 @dataclass
 class BagNumber(LegoPageElement):
     """The bag number, usually a small integer on the page."""
@@ -101,7 +94,6 @@ class BagNumber(LegoPageElement):
             raise ValueError("BagNumber.value must be positive")
 
 
-@dataclass_json
 @dataclass
 class NewBag(LegoPageElement):
     """The graphic showing a new bag icon on the page."""
@@ -109,13 +101,11 @@ class NewBag(LegoPageElement):
     bag: BagNumber
 
 
-@dataclass_json
 @dataclass
 class Diagram(LegoPageElement):
     """The graphic showing how to complete the step."""
 
 
-@dataclass_json
 @dataclass
 class Step(LegoPageElement):
     """A single instruction step on the page."""
