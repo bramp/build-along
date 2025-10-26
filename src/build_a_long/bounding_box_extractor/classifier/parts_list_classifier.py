@@ -156,14 +156,11 @@ class PartsListClassifier(LabelClassifier):
             keep_ids: Set[int] = set()
             chosen_bbox = chosen.bbox
             for ele in page_data.elements:
-                if ele.bbox.fully_inside(chosen_bbox) and (
-                    any(
-                        ele in v
-                        for v in labeled_elements.values()
-                        if isinstance(v, list)
-                    )
-                    or isinstance(ele, Drawing)
+                if ele.bbox.fully_inside(chosen_bbox) and any(
+                    ele in v for v in labeled_elements.values() if isinstance(v, list)
                 ):
+                    # Keep labeled children (e.g., part_count texts) inside the chosen parts list.
+                    # Unlabeled drawings inside should be eligible for pruning as duplicates/overlays.
                     keep_ids.add(id(ele))
 
             self.classifier._remove_child_bboxes(page_data, chosen, to_remove, keep_ids)
