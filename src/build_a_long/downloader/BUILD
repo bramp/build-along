@@ -15,8 +15,8 @@ python_tests(
     sources=["*_integration_test.py"],
     extra_env_vars=["ENABLE_INTEGRATION_TESTS"],
     dependencies=[
-        "3rdparty#pytest-recording",
-        "3rdparty#vcrpy",
+        "3rdparty:dev#pytest-recording",
+        "3rdparty:dev#vcrpy",
     ],
 )
 
