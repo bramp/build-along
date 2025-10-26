@@ -31,6 +31,7 @@ class PageElement:
     """
 
     bbox: BBox
+    id: Optional[int] = field(default=None, kw_only=True)
     # Classification fields
     label: Optional[str] = field(default=None, kw_only=True)
     label_scores: Dict[str, float] = field(default_factory=dict, kw_only=True)

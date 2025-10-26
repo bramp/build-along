@@ -23,10 +23,25 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+def _assign_element_ids(pages: List[PageData]) -> None:
+    """Assigns a unique, sequential ID to each PageElement across all pages.
+
+    Args:
+        pages: List of PageData containing elements to be assigned IDs.
+    """
+    current_id = 0
+    for page_data in pages:
+        for element in page_data.elements:
+            element.id = current_id
+            current_id += 1
+
+
 def _element_to_json(ele: Any) -> Dict[str, Any]:
     """Convert a PageElement to a JSON-friendly dict using asdict()."""
     data = asdict(ele)
     data["__type__"] = ele.__class__.__name__
+    if ele.id is not None:
+        data["id"] = ele.id
     return data
 
 
