@@ -68,12 +68,7 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[Element]:
         for line in text_block.get("lines", []):
             for span in line.get("spans", []):
                 sbbox: BBoxTuple = span.get("bbox", (0.0, 0.0, 0.0, 0.0))
-                nbbox = BBox(
-                    x0=float(sbbox[0]),
-                    y0=float(sbbox[1]),
-                    x1=float(sbbox[2]),
-                    y1=float(sbbox[3]),
-                )
+                nbbox = BBox.from_tuple(sbbox)
 
                 text: str = span.get("text", None)
                 if text is None or text == "":
@@ -128,12 +123,7 @@ def _extract_image_elements(blocks: List[BlockDict]) -> List[Element]:
         image_block: ImageBlockDict = b  # type: ignore[assignment]
 
         bbox: BBoxTuple = image_block.get("bbox", (0.0, 0.0, 0.0, 0.0))
-        nbbox = BBox(
-            x0=float(bbox[0]),
-            y0=float(bbox[1]),
-            x1=float(bbox[2]),
-            y1=float(bbox[3]),
-        )
+        nbbox = BBox.from_tuple(bbox)
 
         elements.append(Image(bbox=nbbox, image_id=f"image_{bi}"))
         logger.debug("Found image %s with %s", bi, nbbox)
@@ -154,12 +144,7 @@ def _extract_drawing_elements(drawings: List[Any]) -> List[Element]:
 
     for d in drawings:
         drect = d["rect"]
-        nbbox = BBox(
-            x0=float(drect.x0),
-            y0=float(drect.y0),
-            x1=float(drect.x1),
-            y1=float(drect.y1),
-        )
+        nbbox = BBox.from_tuple((drect.x0, drect.y0, drect.x1, drect.y1))
         elements.append(Drawing(bbox=nbbox))
         logger.debug("Found drawing with %s", nbbox)
 
@@ -221,11 +206,8 @@ def _extract_page_elements(
         typed_elements.extend(_extract_drawing_elements(drawings))
 
     page_rect = page.rect
-    page_bbox = BBox(
-        x0=float(page_rect.x0),
-        y0=float(page_rect.y0),
-        x1=float(page_rect.x1),
-        y1=float(page_rect.y1),
+    page_bbox = BBox.from_tuple(
+        (page_rect.x0, page_rect.y0, page_rect.x1, page_rect.y1)
     )
 
     return PageData(
