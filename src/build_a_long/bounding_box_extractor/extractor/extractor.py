@@ -205,6 +205,10 @@ def _extract_page_elements(
         drawings = page.get_drawings()
         typed_elements.extend(_extract_drawing_elements(drawings))
 
+    # Assign sequential IDs to elements within this page
+    for i, element in enumerate(typed_elements):
+        element.id = i
+
     page_rect = page.rect
     page_bbox = BBox.from_tuple(
         (page_rect.x0, page_rect.y0, page_rect.x1, page_rect.y1)
