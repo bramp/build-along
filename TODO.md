@@ -43,6 +43,10 @@ This file outlines the tasks required to build the Lego instructions project.
 - [ ] Design the UI for the viewer, including:
   - A view to display the PDF page.
   - "Next" and "Back" buttons for navigation.
+- [ ] The app starts with a simple input box to select the set number. Upon submission, it
+  fetches the PDF and bounding box data from the backend.
+  - [ ] Later, the app should display a index, have a search, etc.
+  - [ ] Support scanning Lego QR codes (todo figure out format)
 - [ ] Implement a backend service (e.g., in Python) to serve PDF pages and bounding box data to the Flutter app, or explore porting the logic to Dart.
 - [ ] Implement the logic in the Flutter app to load and display a PDF page.
 - [ ] Implement the pan-and-zoom functionality to focus on the current instruction's bounding box.

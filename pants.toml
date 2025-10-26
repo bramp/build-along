@@ -17,6 +17,7 @@ backend_packages = [
     # Enable this later
     #"pants.backend.python.providers.experimental.pyenv",
 
+    "pants.backend.experimental.javascript.lint.prettier",
     "pants.backend.experimental.tools.yamllint",
 ]
 pants_ignore = [".vscode/settings.json"]

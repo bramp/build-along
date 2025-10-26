@@ -1,0 +1,43 @@
+from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.hierarchy import (
+    build_hierarchy_from_elements,
+)
+from build_a_long.pdf_extract.extractor.page_elements import (
+    Drawing,
+    Text,
+)
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    StepNumber,
+)
+
+
+def test_build_hierarchy_basic_containment():
+    # One big image with a small number inside it
+    elements = [
+        Drawing(bbox=BBox(0, 0, 100, 100), image_id="image_0"),
+        StepNumber(bbox=BBox(10, 10, 20, 20), value=1),
+    ]
+    tree = build_hierarchy_from_elements(elements)
+    assert len(tree.roots) == 1
+    root = tree.roots[0]
+    assert isinstance(root, Drawing)
+    children = tree.get_children(root)
+    assert len(children) == 1
+    assert isinstance(children[0], StepNumber)
+
+
+def test_build_hierarchy_with_children():
+    # Drawing parent with nested text child fully contained
+    elements = [
+        Drawing(bbox=BBox(0, 0, 50, 50), image_id="drawing_0"),
+        Text(bbox=BBox(5, 5, 10, 10), text="x3"),
+    ]
+    tree = build_hierarchy_from_elements(elements)
+    assert len(tree.roots) == 1
+    root = tree.roots[0]
+    assert isinstance(root, Drawing)
+    # The Drawing element should have the text as a child
+    children = tree.get_children(root)
+    assert len(children) == 1
+    assert isinstance(children[0], Text)
+    assert children[0].text == "x3"
