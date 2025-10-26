@@ -1,7 +1,17 @@
 """Dataclasses for representing LEGO set metadata."""
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Optional
+
+
+@dataclass
+class File:
+    """Represents a downloaded file with its path, size, and hash."""
+
+    path: Path
+    size: int
+    hash: Optional[str]
 
 
 @dataclass
@@ -19,6 +29,8 @@ class PdfEntry:
     url: str
     filename: str
     preview_url: Optional[str] = None
+    filesize: Optional[int] = None
+    filehash: Optional[str] = None  # SHA256 hash of the file content
 
 
 @dataclass

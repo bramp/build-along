@@ -2,13 +2,14 @@ from pathlib import Path
 from typing import Any, Callable, ContextManager, Iterable, List, Optional
 
 import httpx
+import hashlib
 
 from build_a_long.downloader.legocom import (
     LEGO_BASE,
     build_instructions_url,
     build_metadata,
 )
-from build_a_long.downloader.metadata import Metadata, PdfEntry, DownloadUrl
+from build_a_long.downloader.metadata import Metadata, PdfEntry, DownloadUrl, File
 
 __all__ = [
     "LegoInstructionDownloader",
@@ -42,7 +43,15 @@ def read_metadata(path: Path) -> Optional[Metadata]:
         pdf_entries: List[PdfEntry] = []
         for item in raw.get("pdfs", []) or []:
             if isinstance(item, dict) and item.get("url") and item.get("filename"):
-                pdf_entries.append(PdfEntry(url=item["url"], filename=item["filename"]))
+                pdf_entries.append(
+                    PdfEntry(
+                        url=item["url"],
+                        filename=item["filename"],
+                        preview_url=item.get("preview_url"),
+                        filesize=item.get("filesize"),
+                        filehash=item.get("filehash"),
+                    )
+                )
 
         meta = Metadata(
             set=str(raw.get("set", "")),
@@ -166,7 +175,7 @@ class LegoInstructionDownloader:
         progress_prefix: str = "",
         stream_fn: Optional[Callable[..., ContextManager[Any]]] = None,
         chunk_iter: Optional[Callable[[Any, int], Iterable[bytes]]] = None,
-    ) -> Path:
+    ) -> File:
         """Download a URL to a directory.
 
         Args:
@@ -177,7 +186,7 @@ class LegoInstructionDownloader:
             chunk_iter: Optional injector to iterate raw chunks (for testing).
 
         Returns:
-            Path to the downloaded file.
+            Path to the downloaded file, its size, and its SHA256 hash.
         """
         dest_dir.mkdir(parents=True, exist_ok=True)
         filename = url.split("/")[-1]
@@ -188,16 +197,16 @@ class LegoInstructionDownloader:
                 print(f"{progress_prefix} [cached]")
             else:
                 print(f"Skip (exists): {dest}")
-            return dest
+
+            return File(path=dest, size=dest.stat().st_size, hash=None)
 
         # Use injected stream_fn for testing, otherwise use client.stream
         if stream_fn is None:
             client = self._get_client()
             stream_fn = client.stream
 
-        stream_ctx = stream_fn("GET", url, follow_redirects=True, timeout=None)
-
-        with stream_ctx as r:
+        file_hash_obj = hashlib.sha256()
+        with stream_fn("GET", url, follow_redirects=True, timeout=None) as r:
             r.raise_for_status()
             total = int(r.headers.get("Content-Length", "0"))
             downloaded = 0
@@ -212,6 +221,7 @@ class LegoInstructionDownloader:
                     if not chunk:
                         continue
                     f.write(chunk)
+                    file_hash_obj.update(chunk)
                     if self.show_progress:
                         downloaded += len(chunk)
                         if total > 0:
@@ -234,7 +244,9 @@ class LegoInstructionDownloader:
                 else:
                     # Clear the progress line
                     print(" " * 60, end="\r")
-        return dest
+        file_size = dest.stat().st_size
+        file_hash = file_hash_obj.hexdigest()
+        return File(path=dest, size=file_size, hash=file_hash)
 
     def process_set(self, set_number: str) -> int:
         """Process and download instruction PDFs for a single LEGO set.
@@ -272,7 +284,8 @@ class LegoInstructionDownloader:
         # Print metadata info
         self._print_metadata_info(set_number, metadata)
 
-        # Write metadata.json alongside downloaded PDFs (only if we fetched it)
+        # Write initial metadata.json alongside downloaded PDFs (only if we fetched it)
+        # Note: this initial write does not yet include filesize/filehash for PDFs.
         if not use_cached:
             write_metadata(meta_path, metadata)
 
@@ -280,7 +293,15 @@ class LegoInstructionDownloader:
         for entry in metadata.pdfs:
             url = entry.url
             progress_prefix = f" - {url}"
-            self.download(url, out_dir, progress_prefix=progress_prefix)
+            downloaded_file = self.download(
+                url, out_dir, progress_prefix=progress_prefix
+            )
+            entry.filesize = downloaded_file.size
+            entry.filehash = downloaded_file.hash
+
+        # After downloads, persist updated filesize/filehash back to metadata.json
+        if not use_cached:
+            write_metadata(meta_path, metadata)
 
         return 0
 
