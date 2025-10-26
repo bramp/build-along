@@ -78,8 +78,15 @@ def draw_and_save_bboxes(
             label = f"{label}: {content}"
 
         # Below bottom-left
-        text_position = (scaled_bbox[0], scaled_bbox[3] + 2)
-        draw.text(text_position, label, fill=color)
+        if depth % 2 == 0:  # Even depth, left align
+            text_position = (scaled_bbox[0], scaled_bbox[3] + 2)
+            draw.text(text_position, label, fill=color)
+        else:  # Odd depth, right align
+            # Calculate text width for right alignment
+            text_bbox = draw.textbbox((0, 0), label)
+            text_width = text_bbox[2] - text_bbox[0]
+            text_position = (scaled_bbox[2] - text_width, scaled_bbox[3] + 2)
+            draw.text(text_position, label, fill=color)
 
         # Recursively draw children using the hierarchy
         children = hierarchy.get_children(element)
