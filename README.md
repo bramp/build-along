@@ -108,30 +108,30 @@ Run with Pants:
 
 ```bash
 # Process all pages (outputs to same directory as PDF)
-pants run src/build_a_long/bounding_box_extractor:main -- path/to/manual.pdf
+pants run src/build_a_long/pdf_extract:main -- path/to/manual.pdf
 
 # Process a single page
-pants run src/build_a_long/bounding_box_extractor:main -- \
+pants run src/build_a_long/pdf_extract:main -- \
   path/to/manual.pdf \
   --pages 1
 
 # Process a range of pages (e.g., pages 5-10)
-pants run src/build_a_long/bounding_box_extractor:main -- \
+pants run src/build_a_long/pdf_extract:main -- \
   path/to/manual.pdf \
   --pages 5-10
 
 # Process from page 10 to end
-pants run src/build_a_long/bounding_box_extractor:main -- \
+pants run src/build_a_long/pdf_extract:main -- \
   path/to/manual.pdf \
   --pages 10-
 
 # Process from start to page 5
-pants run src/build_a_long/bounding_box_extractor:main -- \
+pants run src/build_a_long/pdf_extract:main -- \
   path/to/manual.pdf \
   --pages -5
 
 # Specify custom output directory
-pants run src/build_a_long/bounding_box_extractor:main -- \
+pants run src/build_a_long/pdf_extract:main -- \
   path/to/manual.pdf \
   --pages 5-10 \
   --output-dir output/debug

@@ -8,14 +8,16 @@ __pycache__/
 
 # Pants
 .pants.d/
-.dist/
+dist/
 
 
 # VS Code
 .vscode/
-
-# TODO remove this eventually
-example/
+.env
 
 # macOS
 .DS_Store
+
+# Local copies of collected pdfs.
+data
+sets.txt
