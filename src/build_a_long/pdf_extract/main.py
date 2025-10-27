@@ -73,7 +73,9 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
         json_page: Dict[str, Any] = page_data.to_dict()
         json_page = _prune_element_metadata(json_page)
 
-        output_json_path = output_dir / (f"page_{page_data.page_number:03d}_raw.json")
+        output_json_path = output_dir / (
+            f"{pdf_path.stem}_page_{page_data.page_number:03d}_raw.json"
+        )
         with open(output_json_path, "w") as f:
             json.dump(json_page, f, indent=4)
         logger.info(
