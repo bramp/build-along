@@ -1,13 +1,11 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from dataclasses_json import DataClassJsonMixin, config
-
-from build_a_long.pdf_extract.extractor.bbox import BBox, _bbox_decoder
+from build_a_long.pdf_extract.extractor.bbox import BBox
 
 
 @dataclass
-class LegoPageElement(DataClassJsonMixin):
+class LegoPageElement:
     """Base class for anything detected on a page.
 
     Contract:
@@ -16,7 +14,7 @@ class LegoPageElement(DataClassJsonMixin):
     - Subclasses are small data holders.
     """
 
-    bbox: BBox = field(metadata=config(decoder=_bbox_decoder))
+    bbox: BBox
     id: Optional[int] = field(default=None, kw_only=True)
 
 
@@ -121,3 +119,4 @@ class Step(LegoPageElement):
 # TODO Add a final preview element.
 # TODO Add a "information" element (for facts about the set).
 # TODO Maybe add a progress bar element.
+# TODO Add part number (for use on the parts list page at the back of the book).

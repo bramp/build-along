@@ -16,14 +16,13 @@ are defined in lego_page_elements.py to keep this module focused on raw extracti
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Optional, Union
 
-from build_a_long.pdf_extract.extractor.bbox import BBox, _bbox_decoder
-from dataclasses_json import DataClassJsonMixin, config
+from build_a_long.pdf_extract.extractor.bbox import BBox
 
 
 @dataclass(eq=False)
-class PageElement(DataClassJsonMixin):
+class PageElement:
     """Base class for anything detected on a page.
 
     Contract:
@@ -35,7 +34,7 @@ class PageElement(DataClassJsonMixin):
     - deleted: True if this element was removed during classification (e.g., duplicate).
     """
 
-    bbox: BBox = field(metadata=config(decoder=_bbox_decoder))
+    bbox: BBox
     id: Optional[int] = field(default=None, kw_only=True)
 
     # Classification fields
@@ -58,7 +57,6 @@ class Drawing(PageElement):
     when/if available.
     """
 
-    _type_: Literal["drawing"] = field(default="drawing", init=False)
     image_id: Optional[str] = None
 
 
@@ -70,7 +68,6 @@ class Text(PageElement):
     """
 
     text: str
-    _type_: Literal["text"] = field(default="text", init=False)
     font_name: Optional[str] = None
     font_size: Optional[float] = None
 
@@ -82,10 +79,8 @@ class Image(PageElement):
     image_id can be used to tie back to a raster extracted by the pipeline.
     """
 
-    _type_: Literal["image"] = field(default="image", init=False)
     image_id: Optional[str] = None
 
 
-# A helpful alias if callers want to store a heterogeneous collection
-# TODO Do we still need this?
+# A helpful alias for heterogeneous collections of page elements
 Element = Union[Drawing, Text, Image]

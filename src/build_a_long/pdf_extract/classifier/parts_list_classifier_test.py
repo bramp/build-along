@@ -65,7 +65,7 @@ class TestPartsListClassification:
             .with_name("fixtures")
             .joinpath("real_example_parts_list_and_deletions.json")
         )
-        page = PageData.from_json(fixture.read_text())
+        page: PageData = PageData.from_json(fixture.read_text())  # type: ignore[assignment]
 
         classify_elements([page])
 
