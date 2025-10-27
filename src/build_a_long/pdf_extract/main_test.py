@@ -173,12 +173,12 @@ def test_save_raw_json_prunes_fields(tmp_path: Path) -> None:
         page_number=1, elements=[text, img], bbox=BBox(0.0, 0.0, 100.0, 100.0)
     )
 
-    pdf_path = tmp_path / "my.pdf"
+    pdf_path = tmp_path / "12345.pdf"
     pdf_path.write_bytes(b"")
 
     save_raw_json([page], tmp_path, pdf_path)
 
-    out = tmp_path / "page_001_raw.json"
+    out = tmp_path / "12345_page_001_raw.json"
     assert out.exists()
     data = json.loads(out.read_text())
 

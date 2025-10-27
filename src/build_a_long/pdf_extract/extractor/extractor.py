@@ -1,11 +1,11 @@
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, List, Set, Sequence
 
 import pymupdf
-from dataclasses_json import DataClassJsonMixin
+from dataclasses_json import DataClassJsonMixin, config
 
-from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.bbox import BBox, _bbox_decoder
 
 # Note: We intentionally do not build hierarchy here to avoid syncing issues
 from build_a_long.pdf_extract.extractor.page_elements import (
@@ -13,6 +13,7 @@ from build_a_long.pdf_extract.extractor.page_elements import (
     Image,
     Text,
     PageElement,
+    Element,
 )
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
     BBoxTuple,
@@ -36,8 +37,8 @@ class PageData(DataClassJsonMixin):
     """
 
     page_number: int
-    elements: List[PageElement]
-    bbox: BBox
+    elements: List[Element]
+    bbox: BBox = field(metadata=config(decoder=_bbox_decoder))
 
 
 @dataclass
