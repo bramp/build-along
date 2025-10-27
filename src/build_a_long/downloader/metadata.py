@@ -7,20 +7,23 @@ This module uses dataclasses-json for (de)serialization so callers can use
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
-from dataclasses_json import DataClassJsonMixin, config
+from dataclass_wizard import JSONPyWizard
 
 
 @dataclass
-class File(DataClassJsonMixin):
+class File(JSONPyWizard):
     """Represents a downloaded file with its path, size, and hash."""
 
-    path: Path = field(metadata=config(encoder=str, decoder=Path))
+    class _(JSONPyWizard.Meta):
+        raise_on_unknown_json_key = True
+
+    path: Path
     size: int
     hash: Optional[str]
 
 
 @dataclass
-class DownloadUrl(DataClassJsonMixin):
+class DownloadUrl(JSONPyWizard):
     """Holds the URL and preview URL for a download."""
 
     url: str
@@ -28,7 +31,7 @@ class DownloadUrl(DataClassJsonMixin):
 
 
 @dataclass
-class PdfEntry(DataClassJsonMixin):
+class PdfEntry(JSONPyWizard):
     """Represents a single instruction PDF file."""
 
     url: str
@@ -39,7 +42,7 @@ class PdfEntry(DataClassJsonMixin):
 
 
 @dataclass
-class Metadata(DataClassJsonMixin):
+class Metadata(JSONPyWizard):
     """Complete metadata for a LEGO set's instructions."""
 
     set: str

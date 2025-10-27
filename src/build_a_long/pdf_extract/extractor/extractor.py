@@ -1,18 +1,17 @@
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, List, Set, Sequence
 
 import pymupdf
-from dataclasses_json import DataClassJsonMixin, config
+from dataclass_wizard import JSONPyWizard
 
-from build_a_long.pdf_extract.extractor.bbox import BBox, _bbox_decoder
+from build_a_long.pdf_extract.extractor.bbox import BBox
 
 # Note: We intentionally do not build hierarchy here to avoid syncing issues
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
     Image,
     Text,
-    PageElement,
     Element,
 )
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
@@ -27,33 +26,42 @@ logger = logging.getLogger("extractor")
 
 
 @dataclass
-class PageData(DataClassJsonMixin):
+class PageData(JSONPyWizard):
     """Data extracted from a single PDF page.
 
     Attributes:
         page_number: The page number (1-indexed)
-        elements: Flat list of all elements on the page
         bbox: The bounding box of the entire page (page coordinate space).
+        elements: Flat list of all elements on the page
     """
 
+    class _(JSONPyWizard.Meta):
+        # Enable auto-tagging for polymorphic Union types
+        auto_assign_tags = True
+        # Do not raise on unknown JSON keys to avoid conflicts with tag keys on
+        # nested elements
+        # TODO Change this to true.
+        raise_on_unknown_json_key = False
+
     page_number: int
+    bbox: BBox
     elements: List[Element]
-    bbox: BBox = field(metadata=config(decoder=_bbox_decoder))
 
 
 @dataclass
-class ExtractionResult(DataClassJsonMixin):
-    """Top-level container for extracted PDF data.
+class ExtractionResult(JSONPyWizard):
+    """Top-level container for extracted PDF data."""
 
-    This wraps the pages array and a schema version, making JSON IO trivial
-    and future-proofing the format for additional metadata.
-    """
+    class _(JSONPyWizard.Meta):
+        auto_assign_tags = True
+        # Do not raise on unknown JSON keys
+        # TODO Change this to true.
+        raise_on_unknown_json_key = False
 
     pages: List[PageData]
-    schema_version: int = 1
 
 
-def _extract_text_elements(blocks: List[BlockDict]) -> List[PageElement]:
+def _extract_text_elements(blocks: List[BlockDict]) -> List[Text]:
     """Extract text elements from a page's raw dictionary blocks.
 
     Args:
@@ -62,7 +70,7 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[PageElement]:
     Returns:
         List of Text elements
     """
-    elements: List[PageElement] = []
+    elements: List[Text] = []
 
     for b in blocks:
         assert isinstance(b, dict)
@@ -110,7 +118,7 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[PageElement]:
     return elements
 
 
-def _extract_image_elements(blocks: List[BlockDict]) -> List[PageElement]:
+def _extract_image_elements(blocks: List[BlockDict]) -> List[Image]:
     """Extract image elements from a page's raw dictionary blocks.
 
     Args:
@@ -119,7 +127,7 @@ def _extract_image_elements(blocks: List[BlockDict]) -> List[PageElement]:
     Returns:
         List of Image elements
     """
-    elements: List[PageElement] = []
+    elements: List[Image] = []
 
     for b in blocks:
         assert isinstance(b, dict)
@@ -142,7 +150,7 @@ def _extract_image_elements(blocks: List[BlockDict]) -> List[PageElement]:
     return elements
 
 
-def _extract_drawing_elements(drawings: List[Any]) -> List[PageElement]:
+def _extract_drawing_elements(drawings: List[Any]) -> List[Drawing]:
     """Extract drawing (vector path) elements from a page.
 
     Args:
@@ -151,7 +159,7 @@ def _extract_drawing_elements(drawings: List[Any]) -> List[PageElement]:
     Returns:
         List of Drawing elements
     """
-    elements: List[PageElement] = []
+    elements: List[Drawing] = []
 
     for d in drawings:
         drect = d["rect"]
@@ -207,7 +215,7 @@ def _extract_page_elements(
     assert _warn_unknown_block_types(blocks)
 
     # Extract elements by type
-    typed_elements: List[PageElement] = []
+    typed_elements: List[Element] = []
     if "text" in include_types:
         typed_elements.extend(_extract_text_elements(blocks))
     if "image" in include_types:
