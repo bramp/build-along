@@ -13,7 +13,9 @@ from build_a_long.pdf_extract.extractor import (
 )
 from build_a_long.pdf_extract.classifier import classify_elements
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
-from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
+from build_a_long.pdf_extract.extractor.hierarchy import (
+    build_hierarchy_from_elements,
+)
 from build_a_long.pdf_extract.parser import parse_page_ranges
 from build_a_long.pdf_extract.parser.page_ranges import PageRanges
 
@@ -80,7 +82,9 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
         with open(output_json_path, "w") as f:
             json.dump(json_page, f, indent=4)
         logger.info(
-            "Saved raw JSON for page %d to %s", page_data.page_number, output_json_path
+            "Saved raw JSON for page %d to %s",
+            page_data.page_number,
+            output_json_path,
         )
 
 

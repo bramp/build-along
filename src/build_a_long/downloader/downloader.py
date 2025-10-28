@@ -10,7 +10,12 @@ from build_a_long.downloader.legocom import (
     build_instructions_url,
     build_metadata,
 )
-from build_a_long.downloader.metadata import Metadata, PdfEntry, DownloadUrl, File
+from build_a_long.downloader.metadata import (
+    Metadata,
+    PdfEntry,
+    DownloadUrl,
+    File,
+)
 
 __all__ = [
     "LegoInstructionDownloader",
@@ -38,7 +43,13 @@ def read_metadata(path: Path) -> Optional[Metadata]:
             print(f"Warning: Metadata at {path} is not a JSON object; ignoring")
             return None
         return Metadata.from_dict(raw)
-    except (json.JSONDecodeError, OSError, KeyError, TypeError, ValueError) as e:
+    except (
+        json.JSONDecodeError,
+        OSError,
+        KeyError,
+        TypeError,
+        ValueError,
+    ) as e:
         print(f"Warning: Could not read existing metadata ({e}); ignoring")
     return None
 
@@ -205,7 +216,11 @@ class LegoInstructionDownloader:
                                         flush=True,
                                     )
                                 else:
-                                    print(f"  {filename}: {pct}%", end="\r", flush=True)
+                                    print(
+                                        f"  {filename}: {pct}%",
+                                        end="\r",
+                                        flush=True,
+                                    )
                                 last_pct = pct
             if self.show_progress:
                 if progress_prefix:

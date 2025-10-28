@@ -226,8 +226,7 @@ def print_detailed_report(analysis: GlobalAnalysis, max_docs: int = 10) -> None:
         for doc in docs_with_issues[:max_docs]:
             print(f"\n{doc.pdf_path.parent.name}/{doc.pdf_path.name}:")
             print(
-                f"  Coverage: {doc.pages_with_page_number}/{doc.total_pages} "
-                f"({doc.page_number_coverage:.1f}%)"
+                f"  Coverage: {doc.pages_with_page_number}/{doc.total_pages} ({doc.page_number_coverage:.1f}%)"
             )
 
             # Show pages without page numbers

@@ -102,6 +102,8 @@ class PageNumberClassifier(LabelClassifier):
         self.classifier._remove_similar_bboxes(page_data, best_candidate, to_remove)
 
     def _score_page_number_text(self, text: str) -> float:
+        # TODO The score should increase if the text matches the actual page we
+        # are on.
         text = text.strip()
         if re.match(r"^0+\d{1,3}$", text):
             return 0.95
@@ -112,6 +114,9 @@ class PageNumberClassifier(LabelClassifier):
     def _score_page_number_position(
         self, element: Text, page_bbox, page_height: float
     ) -> float:
+        # TODO Take the hint, and increase score if near expected position (of
+        # expected size).
+
         bottom_threshold = page_bbox.y1 - (page_height * 0.1)
         element_center_y = (element.bbox.y0 + element.bbox.y1) / 2
 
