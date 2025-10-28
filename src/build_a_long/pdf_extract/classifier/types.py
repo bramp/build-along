@@ -3,7 +3,18 @@ Data classes for the classifier.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Tuple
+
+
+@dataclass
+class RemovalReason:
+    """Tracks why an element was removed during classification."""
+
+    reason_type: str
+    """Type of removal: 'child_bbox' or 'similar_bbox'"""
+
+    target_element: Any
+    """The element that caused this removal"""
 
 
 @dataclass
@@ -25,7 +36,8 @@ class ClassificationResult:
     labeled_elements: Dict[str, Any] = field(default_factory=dict)
     scores: Dict[Any, Dict[str, float]] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)
-    to_remove: Set[int] = field(default_factory=set)
+    to_remove: Dict[int, RemovalReason] = field(default_factory=dict)
+    """Maps element IDs to the reason they were removed"""
     # Persisted relations discovered during classification. For now, we record
     # part image pairings as (part_count_text, image) tuples.
     part_image_pairs: List[Tuple[Any, Any]] = field(default_factory=list)

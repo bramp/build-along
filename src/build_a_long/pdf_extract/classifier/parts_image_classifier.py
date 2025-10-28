@@ -30,7 +30,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Set, Tuple
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
-from build_a_long.pdf_extract.classifier.types import ClassifierConfig
+from build_a_long.pdf_extract.classifier.types import (
+    ClassifierConfig,
+    RemovalReason,
+)
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import (
     Image,
@@ -133,7 +136,7 @@ class PartsImageClassifier(LabelClassifier):
         page_data: PageData,
         scores: Dict[Any, Dict[str, float]],
         labeled_elements: Dict[str, Any],
-        to_remove: Set[int],
+        to_remove: Dict[int, RemovalReason],
     ) -> None:
         part_counts: List[Text] = labeled_elements.get("part_count", [])
         parts_lists: List[Drawing] = labeled_elements.get("parts_list", [])
