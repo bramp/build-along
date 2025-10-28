@@ -41,6 +41,8 @@ from build_a_long.pdf_extract.extractor.page_elements import (
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classifier import Classifier
 
+log = logging.getLogger(__name__)
+
 
 class PartsListClassifier(LabelClassifier):
     """Classifier for parts lists."""
@@ -50,8 +52,6 @@ class PartsListClassifier(LabelClassifier):
 
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
-        # Module-level logger and debug toggle
-        self._logger = logging.getLogger(__name__)
         self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
             "parts_list",
             "all",
@@ -65,8 +65,8 @@ class PartsListClassifier(LabelClassifier):
     ) -> None:
         # Currently score-free: selection occurs in classify().
         # Kept for interface consistency and future heuristics.
-        if self._debug_enabled and self._logger.isEnabledFor(logging.DEBUG):
-            self._logger.debug(
+        if self._debug_enabled:
+            log.debug(
                 "[parts_list] page=%s elements=%d",
                 page_data.page_number,
                 len(page_data.elements),
@@ -111,8 +111,8 @@ class PartsListClassifier(LabelClassifier):
                     continue
                 db = d.bbox
                 if db.y1 > sb.y0 + ABOVE_EPS:
-                    if self._debug_enabled and self._logger.isEnabledFor(logging.DEBUG):
-                        self._logger.debug(
+                    if self._debug_enabled:
+                        log.debug(
                             "[parts_list] reject d=%s: not above step sb=%s (db.y1=%s, sb.y0=%s, eps=%s)",
                             db,
                             sb,
@@ -132,8 +132,8 @@ class PartsListClassifier(LabelClassifier):
                     )
                 ]
                 if not contained:
-                    if self._debug_enabled and self._logger.isEnabledFor(logging.DEBUG):
-                        self._logger.debug(
+                    if self._debug_enabled:
+                        log.debug(
                             "[parts_list] reject d=%s: contains no part_count texts",
                             db,
                         )
@@ -144,8 +144,8 @@ class PartsListClassifier(LabelClassifier):
                 candidates.append((d, count, proximity, area))
 
             if not candidates:
-                if self._debug_enabled and self._logger.isEnabledFor(logging.DEBUG):
-                    self._logger.debug(
+                if self._debug_enabled:
+                    log.debug(
                         "[parts_list] no candidates for step sb=%s (drawings=%d)",
                         sb,
                         len(drawings),
@@ -157,8 +157,8 @@ class PartsListClassifier(LabelClassifier):
             labeled_elements["parts_list"].append(chosen)
             used_drawings.add(id(chosen))
 
-            if self._debug_enabled and self._logger.isEnabledFor(logging.DEBUG):
-                self._logger.debug(
+            if self._debug_enabled:
+                log.debug(
                     "[parts_list] choose d=%s for step sb=%s (candidates=%d)",
                     chosen.bbox,
                     sb,

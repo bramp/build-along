@@ -41,6 +41,8 @@ from build_a_long.pdf_extract.extractor.page_elements import (
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classifier import Classifier
 
+log = logging.getLogger(__name__)
+
 
 class PartsImageClassifier(LabelClassifier):
     """Classifier for part images paired with part count texts."""
@@ -50,7 +52,6 @@ class PartsImageClassifier(LabelClassifier):
 
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
-        self._logger = logging.getLogger(__name__)
         self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
             "part_image",
             "all",
@@ -134,14 +135,10 @@ class PartsImageClassifier(LabelClassifier):
             labeled_elements["part_image_pairs"].append((pc, img))
 
         # Optionally, warn if unmatched counts/images exist (debug only)
-        if self._debug_enabled and self._logger.isEnabledFor(logging.DEBUG):
+        if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
             unmatched_c = [pc for pc in part_counts if id(pc) not in matched_counts]
             unmatched_i = [im for im in images if id(im) not in matched_images]
             if unmatched_c:
-                self._logger.debug(
-                    "[part_image] unmatched part_counts: %d", len(unmatched_c)
-                )
+                log.debug("[part_image] unmatched part_counts: %d", len(unmatched_c))
             if unmatched_i:
-                self._logger.debug(
-                    "[part_image] unmatched images: %d", len(unmatched_i)
-                )
+                log.debug("[part_image] unmatched images: %d", len(unmatched_i))

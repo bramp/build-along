@@ -26,6 +26,8 @@ from build_a_long.pdf_extract.extractor.page_elements import Text
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classifier import Classifier
 
+log = logging.getLogger(__name__)
+
 
 class PartCountClassifier(LabelClassifier):
     """Classifier for part counts."""
@@ -35,7 +37,6 @@ class PartCountClassifier(LabelClassifier):
 
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
-        self._logger = logging.getLogger(__name__)
         self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
             "part_count",
             "all",
@@ -58,8 +59,8 @@ class PartCountClassifier(LabelClassifier):
                 if element not in scores:
                     scores[element] = {}
                 scores[element]["part_count"] = score
-                if self._debug_enabled and self._logger.isEnabledFor(logging.DEBUG):
-                    self._logger.debug(
+                if self._debug_enabled:
+                    log.debug(
                         "[part_count] match text=%r score=%.2f bbox=%s",
                         element.text,
                         score,
