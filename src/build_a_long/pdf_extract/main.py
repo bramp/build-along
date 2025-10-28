@@ -1,4 +1,5 @@
 import argparse
+from collections import defaultdict
 import json
 import logging
 from pathlib import Path
@@ -218,6 +219,17 @@ def _print_summary(pages: List[PageData], *, detailed: bool = False) -> None:
         print(f"Pages missing page number: {sample}{more}")
 
 
+def _print_label_counts(page: PageData) -> None:
+    label_counts = defaultdict(int)
+    for e in page.elements:
+        label = e.label if e.label else "<unknown>"
+        label_counts[label] += 1
+
+    # TODO The following logging shows "defaultdict(<class 'int'>,..." figure
+    # out how to avoid that.
+    logger.info(f"Page {page.page_number} Label counts: {label_counts}")
+
+
 def main() -> int:
     """Main entry point for the bounding box extractor CLI.
 
@@ -267,6 +279,9 @@ def main() -> int:
         # Classify elements to add labels (e.g., page numbers)
         # This also marks elements as deleted if they're duplicates/shadows
         classify_elements(pages)
+
+        for page in pages:
+            _print_label_counts(page)
 
         # Optionally print a concise summary to stdout
         if args.summary:

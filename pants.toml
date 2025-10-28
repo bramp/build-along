@@ -25,9 +25,6 @@ pants_ignore = [".vscode/settings.json"]
 [ruff]
 # Prefer using Ruff configuration from pyproject.toml.
 config = "pyproject.toml"
-# Since the config is in a standard location, discovery can remain enabled; setting
-# this explicitly documents the intent.
-config_discovery = true
 
 [test]
 # Pass through selected environment variables to tests so sandboxed runs can
@@ -35,22 +32,20 @@ config_discovery = true
 extra_env_vars = ["ENABLE_INTEGRATION_TESTS", "CASSETTE_DIR", "XDG_CACHE_HOME"]
 
 [pytest]
-# Ensure pytest plugins that are auto-discovered (like pytest-recording) are available
-# in the Pytest runner environment, even if not explicitly imported by tests.
-requirements = [
-    "pytest>=8.4.2",
-    "pytest-cov>=7.0.0",
-    "pytest-recording>=0.13.4",
-    "vcrpy>=7.0.0",
-]
+config = "pyproject.toml"
+install_from_resolve = "python-default"
+args = ["--no-header", "-rs"]
 
 [python]
 interpreter_constraints = ["==3.14.*"]
 enable_resolves = true
-resolves = { python-default = "python-default.lock" }
+
+[python.resolves]
+python-default = "python-default.lock"
 
 [python-infer]
 unowned_dependency_behavior = "error"
+
 
 [source]
 root_patterns = ["/src/", "/tests/"]
