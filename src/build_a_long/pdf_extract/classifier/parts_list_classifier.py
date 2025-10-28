@@ -22,7 +22,7 @@ Set environment variables to aid investigation without code changes:
 
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, Set
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -72,6 +72,68 @@ class PartsListClassifier(LabelClassifier):
                 len(page_data.elements),
             )
 
+    def _find_best_parts_list(
+        self, candidates: list[tuple[Drawing, int, float, float]]
+    ) -> Optional[Drawing]:
+        if not candidates:
+            return None
+        candidates.sort(key=lambda x: x[2])
+        return candidates[0][0]
+
+    def _score_candidate(
+        self, drawing: Drawing, texts: list[Text], labeled_elements: Dict[str, Any], sb
+    ) -> tuple[int, float, float]:
+        db = drawing.bbox
+        contained = [
+            t
+            for t in texts
+            if t.bbox.fully_inside(db)
+            and (
+                t in labeled_elements.get("part_count", [])
+                or PartCountClassifier._score_part_count_text(t.text) >= 0.9
+            )
+        ]
+        if not contained:
+            if self._debug_enabled:
+                log.debug(
+                    "[parts_list] reject d=%s: contains no part_count texts",
+                    db,
+                )
+            return 0, 0.0, 0.0
+
+        count = len(contained)
+        proximity = max(0.0, sb.y0 - db.y1)
+        area = db.area()
+        return count, proximity, area
+
+    def _get_candidate_drawings(
+        self,
+        step: Text,
+        drawings: list[Drawing],
+        used_drawings: set[int],
+        to_remove: set[int],
+    ) -> list[Drawing]:
+        ABOVE_EPS = 2.0
+        sb = step.bbox
+        candidates = []
+        for d in drawings:
+            if id(d) in used_drawings or id(d) in to_remove:
+                continue
+            db = d.bbox
+            if db.y1 > sb.y0 + ABOVE_EPS:
+                if self._debug_enabled:
+                    log.debug(
+                        "[parts_list] reject d=%s: not above step sb=%s (db.y1=%s, sb.y0=%s, eps=%s)",
+                        db,
+                        sb,
+                        db.y1,
+                        sb.y0,
+                        ABOVE_EPS,
+                    )
+                continue
+            candidates.append(d)
+        return candidates
+
     def classify(
         self,
         page_data: PageData,
@@ -93,95 +155,53 @@ class PartsListClassifier(LabelClassifier):
         if not drawings:
             return
 
-        ABOVE_EPS = 2.0
         used_drawings: set[int] = set()
         if "parts_list" not in labeled_elements:
             labeled_elements["parts_list"] = []
 
         for step in steps:
             sb = step.bbox
-            candidates: list[tuple[Drawing, int, float, float]] = []
-            for d in drawings:
-                if id(d) in used_drawings:
-                    continue
-                # Skip drawings already scheduled for removal (e.g., marked as near-duplicates
-                # by a previous selection for another step). This prevents double-selecting
-                # two near-identical drawings for multiple steps and then deleting both.
-                if id(d) in to_remove:
-                    continue
-                db = d.bbox
-                if db.y1 > sb.y0 + ABOVE_EPS:
-                    if self._debug_enabled:
-                        log.debug(
-                            "[parts_list] reject d=%s: not above step sb=%s (db.y1=%s, sb.y0=%s, eps=%s)",
-                            db,
-                            sb,
-                            db.y1,
-                            sb.y0,
-                            ABOVE_EPS,
-                        )
-                    continue
+            candidate_drawings = self._get_candidate_drawings(
+                step, drawings, used_drawings, to_remove
+            )
 
-                contained = [
-                    t
-                    for t in texts
-                    if t.bbox.fully_inside(db)
-                    and (
-                        t in labeled_elements.get("part_count", [])
-                        or PartCountClassifier._score_part_count_text(t.text) >= 0.9
-                    )
-                ]
-                if not contained:
-                    if self._debug_enabled:
-                        log.debug(
-                            "[parts_list] reject d=%s: contains no part_count texts",
-                            db,
-                        )
-                    continue
-                count = len(contained)
-                proximity = max(0.0, sb.y0 - db.y1)
-                area = db.area()
-                candidates.append((d, count, proximity, area))
+            scored_candidates = []
+            for d in candidate_drawings:
+                score = self._score_candidate(d, texts, labeled_elements, sb)
+                if score[0] > 0:
+                    scored_candidates.append((d, score[0], score[1], score[2]))
 
-            if not candidates:
+            chosen = self._find_best_parts_list(scored_candidates)
+
+            if chosen:
+                labeled_elements["parts_list"].append(chosen)
+                used_drawings.add(id(chosen))
+
                 if self._debug_enabled:
                     log.debug(
-                        "[parts_list] no candidates for step sb=%s (drawings=%d)",
+                        "[parts_list] choose d=%s for step sb=%s (candidates=%d)",
+                        chosen.bbox,
                         sb,
-                        len(drawings),
+                        len(scored_candidates),
                     )
-                continue
 
-            candidates.sort(key=lambda x: x[2])
-            chosen, _, _, _ = candidates[0]
-            labeled_elements["parts_list"].append(chosen)
-            used_drawings.add(id(chosen))
+                keep_ids: Set[int] = set()
+                chosen_bbox = chosen.bbox
+                for ele in page_data.elements:
+                    if ele.bbox.fully_inside(chosen_bbox) and any(
+                        ele in v
+                        for v in labeled_elements.values()
+                        if isinstance(v, list)
+                    ):
+                        keep_ids.add(id(ele))
 
-            if self._debug_enabled:
-                log.debug(
-                    "[parts_list] choose d=%s for step sb=%s (candidates=%d)",
-                    chosen.bbox,
-                    sb,
-                    len(candidates),
+                for ele in page_data.elements:
+                    if isinstance(ele, Image) and ele.bbox.fully_inside(chosen_bbox):
+                        keep_ids.add(id(ele))
+
+                self.classifier._remove_child_bboxes(
+                    page_data, chosen, to_remove, keep_ids
                 )
-
-            keep_ids: Set[int] = set()
-            chosen_bbox = chosen.bbox
-            for ele in page_data.elements:
-                if ele.bbox.fully_inside(chosen_bbox) and any(
-                    ele in v for v in labeled_elements.values() if isinstance(v, list)
-                ):
-                    # Keep labeled children (e.g., part_count texts) inside the chosen parts list.
-                    # Unlabeled drawings inside should be eligible for pruning as duplicates/overlays.
-                    keep_ids.add(id(ele))
-
-            # Preserve images inside the chosen parts list; actual part-image labeling
-            # is delegated to PartsImageClassifier.
-            for ele in page_data.elements:
-                if isinstance(ele, Image) and ele.bbox.fully_inside(chosen_bbox):
-                    keep_ids.add(id(ele))
-
-            self.classifier._remove_child_bboxes(page_data, chosen, to_remove, keep_ids)
-            self.classifier._remove_similar_bboxes(
-                page_data, chosen, to_remove, keep_ids
-            )
+                self.classifier._remove_similar_bboxes(
+                    page_data, chosen, to_remove, keep_ids
+                )
