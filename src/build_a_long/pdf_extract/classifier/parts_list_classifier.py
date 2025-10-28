@@ -203,8 +203,8 @@ class PartsListClassifier(LabelClassifier):
                         keep_ids.add(id(ele))
 
                 self.classifier._remove_child_bboxes(
-                    page_data, chosen, to_remove, keep_ids
+                    page_data, chosen, to_remove, keep_ids=keep_ids
                 )
                 self.classifier._remove_similar_bboxes(
-                    page_data, chosen, to_remove, keep_ids
+                    page_data, chosen, to_remove, keep_ids=keep_ids
                 )
