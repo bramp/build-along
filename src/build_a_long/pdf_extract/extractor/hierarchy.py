@@ -45,6 +45,23 @@ class ElementTree:
         """
         return self.children_map.get(id(element), [])
 
+    def get_descendants(self, element: PageElement) -> List[PageElement]:
+        """Get all descendants of a given element (children, grandchildren, etc.).
+
+        Args:
+            element: The element to get descendants for
+
+        Returns:
+            List of all descendant elements (empty list if no descendants)
+        """
+        descendants: List[PageElement] = []
+        children = self.get_children(element)
+        for child in children:
+            descendants.append(child)
+            # Recursively add all descendants of this child
+            descendants.extend(self.get_descendants(child))
+        return descendants
+
     def get_parent(self, element: PageElement) -> Optional[PageElement]:
         """Get the parent of a given element.
 
