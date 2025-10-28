@@ -9,6 +9,12 @@ class BBox:
     x1: float
     y1: float
 
+    def __post_init__(self):
+        if self.x0 > self.x1:
+            raise ValueError(f"x0 ({self.x0}) must not be greater than x1 ({self.x1})")
+        if self.y0 > self.y1:
+            raise ValueError(f"y0 ({self.y0}) must not be greater than y1 ({self.y1})")
+
     def __str__(self) -> str:
         """Return a compact string representation of the bounding box."""
         return f"({self.x0:.1f},{self.y0:.1f},{self.x1:.1f},{self.y1:.1f})"
@@ -83,7 +89,7 @@ class BBox:
 
     def area(self) -> float:
         """Return the area of this bounding box (non-negative)."""
-        return abs(self.x1 - self.x0) * abs(self.y1 - self.y0)
+        return (self.x1 - self.x0) * (self.y1 - self.y0)
 
     def intersection_area(self, other: "BBox") -> float:
         """Return the area of intersection between this bbox and another."""

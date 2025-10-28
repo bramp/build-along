@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 import logging
 from typing import Dict, List, Optional, Sequence
 
-from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_elements import PageElement
 
 logger = logging.getLogger(__name__)
@@ -85,12 +84,8 @@ def build_hierarchy_from_elements(
     """
     converted: List[PageElement] = list(elements)
 
-    # TODO Move this to a method on BBox
-    def _area(b: BBox) -> float:
-        return max(0.0, (b.x1 - b.x0)) * max(0.0, (b.y1 - b.y0))
-
     # Sort indices by area ascending to assign children first
-    idxs = sorted(range(len(converted)), key=lambda i: _area(converted[i].bbox))
+    idxs = sorted(range(len(converted)), key=lambda i: converted[i].bbox.area())
 
     # Prepare parent mapping: each index maps to parent index or None
     parent: List[Optional[int]] = [None] * len(converted)
@@ -103,7 +98,7 @@ def build_hierarchy_from_elements(
             if i == j:
                 continue
             if bbox_i.fully_inside(candidate.bbox):
-                area = _area(candidate.bbox)
+                area = candidate.bbox.area()
                 if area < best_parent_area:
                     best_parent = j
                     best_parent_area = area
