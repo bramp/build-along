@@ -4,7 +4,11 @@ import json
 
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_elements import Drawing, Image, Text
+from build_a_long.pdf_extract.extractor.page_elements import (
+    Drawing,
+    Image,
+    Text,
+)
 
 
 class TestPageDataJsonSerialization:
@@ -130,7 +134,12 @@ class TestPageDataJsonSerialization:
                     {
                         "__tag__": "Text",
                         "id": 1,
-                        "bbox": {"x0": 316.19, "y0": 58.86, "x1": 325.07, "y1": 68.82},
+                        "bbox": {
+                            "x0": 316.19,
+                            "y0": 58.86,
+                            "x1": 325.07,
+                            "y1": 68.82,
+                        },
                         "text": "2x",
                         "font_name": "CeraPro-Light",
                         "font_size": 8.0,
@@ -144,7 +153,12 @@ class TestPageDataJsonSerialization:
                     {
                         "__tag__": "Drawing",
                         "id": 3,
-                        "bbox": {"x0": 16.0, "y0": 39.0, "x1": 253.0, "y1": 254.0},
+                        "bbox": {
+                            "x0": 16.0,
+                            "y0": 39.0,
+                            "x1": 253.0,
+                            "y1": 254.0,
+                        },
                     },
                 ],
             }
@@ -181,7 +195,12 @@ class TestPageDataJsonSerialization:
                 "elements": [
                     {
                         "__tag__": "Text",
-                        "bbox": {"x0": 10.0, "y0": 10.0, "x1": 50.0, "y1": 30.0},
+                        "bbox": {
+                            "x0": 10.0,
+                            "y0": 10.0,
+                            "x1": 50.0,
+                            "y1": 30.0,
+                        },
                         "text": "Dict bbox",
                     }
                 ],

@@ -5,4 +5,9 @@ from .extractor import (
 )
 from build_a_long.pdf_extract.parser.page_ranges import PageRange
 
-__all__ = ["extract_bounding_boxes", "PageData", "ExtractionResult", "PageRange"]
+__all__ = [
+    "extract_bounding_boxes",
+    "PageData",
+    "ExtractionResult",
+    "PageRange",
+]
