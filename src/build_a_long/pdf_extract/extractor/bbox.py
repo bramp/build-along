@@ -9,6 +9,10 @@ class BBox:
     x1: float
     y1: float
 
+    def __str__(self) -> str:
+        """Return a compact string representation of the bounding box."""
+        return f"({self.x0:.1f},{self.y0:.1f},{self.x1:.1f},{self.y1:.1f})"
+
     @classmethod
     def from_tuple(cls, bbox_tuple: Tuple[float, float, float, float]) -> "BBox":
         """Create a BBox from a tuple of four floats (x0, y0, x1, y1)."""
