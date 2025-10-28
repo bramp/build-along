@@ -66,6 +66,68 @@ class PartsImageClassifier(LabelClassifier):
         # Score-free: selection occurs in classify().
         return
 
+    def _match_and_label_parts(
+        self,
+        edges: List[Tuple[float, Text, Image]],
+        part_counts: List[Text],
+        images: List[Image],
+        labeled_elements: Dict[str, Any],
+    ):
+        edges.sort(key=lambda t: t[0])
+        matched_counts: Set[int] = set()
+        matched_images: Set[int] = set()
+
+        if "part_image" not in labeled_elements:
+            labeled_elements["part_image"] = []
+        if "part_image_pairs" not in labeled_elements:
+            labeled_elements["part_image_pairs"] = []
+
+        for _, pc, img in edges:
+            if id(pc) in matched_counts or id(img) in matched_images:
+                continue
+            matched_counts.add(id(pc))
+            matched_images.add(id(img))
+            img.label = img.label or "part_image"
+            if img not in labeled_elements["part_image"]:
+                labeled_elements["part_image"].append(img)
+            labeled_elements["part_image_pairs"].append((pc, img))
+
+        if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
+            unmatched_c = [pc for pc in part_counts if id(pc) not in matched_counts]
+            unmatched_i = [im for im in images if id(im) not in matched_images]
+            if unmatched_c:
+                log.debug("[part_image] unmatched part_counts: %d", len(unmatched_c))
+            if unmatched_i:
+                log.debug("[part_image] unmatched images: %d", len(unmatched_i))
+
+    def _build_candidate_edges(
+        self, part_counts: List[Text], images: List[Image], page_width: float
+    ) -> List[Tuple[float, Text, Image]]:
+        VERT_EPS = 2.0  # allow minor overlap/touching
+        ALIGN_EPS = max(2.0, 0.02 * page_width)
+
+        edges: List[Tuple[float, Text, Image]] = []
+        for pc in part_counts:
+            cb = pc.bbox
+            for img in images:
+                ib = img.bbox
+                if ib.y1 <= cb.y0 + VERT_EPS and abs(ib.x0 - cb.x0) <= ALIGN_EPS:
+                    distance = max(0.0, cb.y0 - ib.y1)
+                    edges.append((distance, pc, img))
+        return edges
+
+    def _get_images_in_parts_lists(
+        self, page_data: PageData, parts_lists: List[Drawing]
+    ) -> List[Image]:
+        def inside_any_parts_list(img: Image) -> bool:
+            return any(img.bbox.fully_inside(pl.bbox) for pl in parts_lists)
+
+        return [
+            e
+            for e in page_data.elements
+            if isinstance(e, Image) and inside_any_parts_list(e)
+        ]
+
     def classify(
         self,
         page_data: PageData,
@@ -78,67 +140,16 @@ class PartsImageClassifier(LabelClassifier):
         if not part_counts or not parts_lists:
             return
 
-        # Reduce search space to images inside any parts_list bbox
-        def inside_any_parts_list(img: Image) -> bool:
-            return any(img.bbox.fully_inside(pl.bbox) for pl in parts_lists)
-
-        images: List[Image] = [
-            e
-            for e in page_data.elements
-            if isinstance(e, Image) and inside_any_parts_list(e)
-        ]
+        images = self._get_images_in_parts_lists(page_data, parts_lists)
         if not images:
             return
 
-        # Tolerances
-        VERT_EPS = 2.0  # allow minor overlap/touching
         page_width = (
             (page_data.bbox.x1 - page_data.bbox.x0) if page_data.bbox else 100.0
         )
-        ALIGN_EPS = max(2.0, 0.02 * page_width)
 
-        # Build candidate edges: (distance, count, image)
-        edges: List[Tuple[float, Text, Image]] = []
-        for pc in part_counts:
-            cb = pc.bbox
-            for img in images:
-                ib = img.bbox
-                # Must be above (or touching slightly) and roughly left-aligned
-                if ib.y1 <= cb.y0 + VERT_EPS and abs(ib.x0 - cb.x0) <= ALIGN_EPS:
-                    distance = max(0.0, cb.y0 - ib.y1)
-                    edges.append((distance, pc, img))
-
+        edges = self._build_candidate_edges(part_counts, images, page_width)
         if not edges:
             return
 
-        # Greedy bipartite matching by smallest vertical gap first
-        edges.sort(key=lambda t: t[0])
-        matched_counts: Set[int] = set()
-        matched_images: Set[int] = set()
-
-        if "part_image" not in labeled_elements:
-            labeled_elements["part_image"] = []
-        # Collect persisted pairs here; the Orchestrator will read this key when building the result
-        if "part_image_pairs" not in labeled_elements:
-            labeled_elements["part_image_pairs"] = []
-
-        for _, pc, img in edges:
-            if id(pc) in matched_counts or id(img) in matched_images:
-                continue
-            matched_counts.add(id(pc))
-            matched_images.add(id(img))
-            # Apply label to image
-            img.label = img.label or "part_image"
-            if img not in labeled_elements["part_image"]:
-                labeled_elements["part_image"].append(img)
-            # Persist the pairing for downstream consumers
-            labeled_elements["part_image_pairs"].append((pc, img))
-
-        # Optionally, warn if unmatched counts/images exist (debug only)
-        if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
-            unmatched_c = [pc for pc in part_counts if id(pc) not in matched_counts]
-            unmatched_i = [im for im in images if id(im) not in matched_images]
-            if unmatched_c:
-                log.debug("[part_image] unmatched part_counts: %d", len(unmatched_c))
-            if unmatched_i:
-                log.debug("[part_image] unmatched images: %d", len(unmatched_i))
+        self._match_and_label_parts(edges, part_counts, images, labeled_elements)
