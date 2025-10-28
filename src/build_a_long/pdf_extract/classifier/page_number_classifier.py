@@ -26,6 +26,18 @@ class PageNumberClassifier(LabelClassifier):
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
 
+    def _calculate_element_score(self, element: Text, page_bbox) -> float:
+        page_height = page_bbox.y1 - page_bbox.y0
+        text_score = self._score_page_number_text(element.text)
+        position_score = self._score_page_number_position(
+            element, page_bbox, page_height
+        )
+
+        return (
+            self.config.page_number_text_weight * text_score
+            + self.config.page_number_position_weight * position_score
+        )
+
     def calculate_scores(
         self,
         page_data: PageData,
@@ -37,25 +49,26 @@ class PageNumberClassifier(LabelClassifier):
 
         page_bbox = page_data.bbox
         assert page_bbox is not None
-        page_height = page_bbox.y1 - page_bbox.y0
 
         for element in page_data.elements:
             if not isinstance(element, Text):
                 continue
 
-            text_score = self._score_page_number_text(element.text)
-            position_score = self._score_page_number_position(
-                element, page_bbox, page_height
-            )
-
-            final_score = (
-                self.config.page_number_text_weight * text_score
-                + self.config.page_number_position_weight * position_score
-            )
+            final_score = self._calculate_element_score(element, page_bbox)
 
             if element not in scores:
                 scores[element] = {}
             scores[element]["page_number"] = final_score
+
+    def _find_best_candidate(
+        self, candidates: list[tuple[Text, float, Optional[int]]], page_number: int
+    ) -> Optional[tuple[Text, float, Optional[int]]]:
+        matching = [c for c in candidates if c[2] == page_number]
+        if matching:
+            return max(matching, key=lambda c: c[1])
+        if candidates:
+            return max(candidates, key=lambda c: c[1])
+        return None
 
     def classify(
         self,
@@ -85,12 +98,7 @@ class PageNumberClassifier(LabelClassifier):
             value = self._extract_page_number_value(element.text)
             candidates.append((element, score, value))
 
-        matching = [c for c in candidates if c[2] == page_data.page_number]
-        chosen: Optional[tuple[Text, float, Optional[int]]] = None
-        if matching:
-            chosen = max(matching, key=lambda c: c[1])
-        elif candidates:
-            chosen = max(candidates, key=lambda c: c[1])
+        chosen = self._find_best_candidate(candidates, page_data.page_number)
 
         if chosen is None:
             return
@@ -111,19 +119,14 @@ class PageNumberClassifier(LabelClassifier):
             return 1.0
         return 0.0
 
-    def _score_page_number_position(
-        self, element: Text, page_bbox, page_height: float
-    ) -> float:
-        # TODO Take the hint, and increase score if near expected position (of
-        # expected size).
-
+    def _is_in_bottom_band(self, element: Text, page_bbox, page_height: float) -> bool:
         bottom_threshold = page_bbox.y1 - (page_height * 0.1)
         element_center_y = (element.bbox.y0 + element.bbox.y1) / 2
+        return element_center_y >= bottom_threshold
 
-        if element_center_y < bottom_threshold:
-            return 0.0
-
+    def _calculate_position_score(self, element: Text, page_bbox) -> float:
         element_center_x = (element.bbox.x0 + element.bbox.x1) / 2
+        element_center_y = (element.bbox.y0 + element.bbox.y1) / 2
         dist_bottom_left = math.sqrt(
             (element_center_x - page_bbox.x0) ** 2
             + (element_center_y - page_bbox.y1) ** 2
@@ -133,8 +136,18 @@ class PageNumberClassifier(LabelClassifier):
             + (element_center_y - page_bbox.y1) ** 2
         )
         min_dist = min(dist_bottom_left, dist_bottom_right)
-        position_score = math.exp(-min_dist / self.config.page_number_position_scale)
-        return position_score
+        return math.exp(-min_dist / self.config.page_number_position_scale)
+
+    def _score_page_number_position(
+        self, element: Text, page_bbox, page_height: float
+    ) -> float:
+        # TODO Take the hint, and increase score if near expected position (of
+        # expected size).
+
+        if not self._is_in_bottom_band(element, page_bbox, page_height):
+            return 0.0
+
+        return self._calculate_position_score(element, page_bbox)
 
     def _extract_page_number_value(self, text: str) -> Optional[int]:
         t = text.strip()
