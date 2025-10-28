@@ -38,8 +38,8 @@ This project uses `pants` as a build tool. For more information, see the [Pants 
 These guidelines are for the AI agent interacting with this repository:
 
 - **Commit Workflow**: After each logical and stable set of changes, the agent should prompt the user to commit.
-- **Git Add Specificity**: When staging changes, the agent must use `git add <file>` for specific files and avoid `git add .`.
-- **Pre-commit Hooks**: Before committing, the agent must run `pre-commit run --all-files` and then stage any resulting changes from the hooks.
+- **Git Add Specificity**: When staging changes, the agent must use `git add
+  <file>` for specific files and avoid `git add .`, `git add -a` and `git add -A`.
 - **Process Management**: The agent must avoid running interactive or long-running server processes in the foreground (e.g., `npm start`). For UI testing, rely on non-interactive commands like `npm run build` for verification.
 - **File Deprecation**: When deprecating files, the agent must first read their content and migrate any necessary code or functionality before deleting them to prevent data loss.
 - **Commit Frequency**: The agent should aim for small, regular git commits.

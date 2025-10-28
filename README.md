@@ -60,12 +60,6 @@ pip install pre-commit
 pre-commit install
 ```
 
-And to run them
-
-```shell
-pre-commit run --all-files
-```
-
 ### Downloader CLI
 
 Download LEGO building instruction PDFs for a given set number by scraping the official instructions page.
@@ -207,7 +201,7 @@ pants test --output=all src/build_a_long/...
 or with debug logging:
 
 ```bash
-pants test --output=all src/build_a_long/... --log-cli-level=DEBUG
+pants test --output=all src/build_a_long/... -- --log-cli-level=DEBUG
 ```
 
 #### Integration Tests and HTTP Caching
