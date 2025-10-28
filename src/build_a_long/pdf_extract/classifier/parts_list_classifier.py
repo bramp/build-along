@@ -30,7 +30,10 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.part_count_classifier import (
     PartCountClassifier,
 )
-from build_a_long.pdf_extract.classifier.types import ClassifierConfig
+from build_a_long.pdf_extract.classifier.types import (
+    ClassifierConfig,
+    RemovalReason,
+)
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
@@ -111,7 +114,7 @@ class PartsListClassifier(LabelClassifier):
         step: Text,
         drawings: list[Drawing],
         used_drawings: set[int],
-        to_remove: set[int],
+        to_remove: Dict[int, RemovalReason],
     ) -> list[Drawing]:
         ABOVE_EPS = 2.0
         sb = step.bbox
@@ -139,7 +142,7 @@ class PartsListClassifier(LabelClassifier):
         page_data: PageData,
         scores: Dict[Any, Dict[str, float]],
         labeled_elements: Dict[str, Any],
-        to_remove: Set[int],
+        to_remove: Dict[int, RemovalReason],
     ) -> None:
         steps = labeled_elements.get("step_number", [])
         if not steps:

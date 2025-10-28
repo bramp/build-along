@@ -38,6 +38,7 @@ from build_a_long.pdf_extract.classifier.types import (
     ClassifierConfig,
     ClassificationHints,
     ClassificationResult,
+    RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
 
@@ -90,7 +91,7 @@ class Classifier:
         """
         scores = {}
         labeled_elements = {}
-        to_remove = set()
+        to_remove = {}
 
         for classifier in self.classifiers:
             classifier.calculate_scores(page_data, scores, labeled_elements)
@@ -119,7 +120,7 @@ class Classifier:
         self,
         page_data: PageData,
         target,
-        to_remove_ids: Set[int],
+        to_remove_ids: Dict[int, RemovalReason],
         keep_ids: Optional[Set[int]] = None,
     ) -> None:
         if keep_ids is None:
@@ -132,13 +133,15 @@ class Classifier:
                 continue
             b = ele.bbox
             if b.fully_inside(target_bbox):
-                to_remove_ids.add(id(ele))
+                to_remove_ids[id(ele)] = RemovalReason(
+                    reason_type="child_bbox", target_element=target
+                )
 
     def _remove_similar_bboxes(
         self,
         page_data: PageData,
         target,
-        to_remove_ids: Set[int],
+        to_remove_ids: Dict[int, RemovalReason],
         keep_ids: Optional[Set[int]] = None,
     ) -> None:
         if keep_ids is None:
@@ -159,7 +162,9 @@ class Classifier:
             b = ele.bbox
             iou = target_bbox.iou(b)
             if iou >= IOU_THRESHOLD:
-                to_remove_ids.add(id(ele))
+                to_remove_ids[id(ele)] = RemovalReason(
+                    reason_type="similar_bbox", target_element=target
+                )
                 continue
 
             cx, cy = b.center()
@@ -169,7 +174,9 @@ class Classifier:
                     target_area > 0
                     and abs(area - target_area) / target_area <= AREA_TOL
                 ):
-                    to_remove_ids.add(id(ele))
+                    to_remove_ids[id(ele)] = RemovalReason(
+                        reason_type="similar_bbox", target_element=target
+                    )
 
     def _log_post_classification_warnings(
         self, page_data: PageData, labeled_elements: Dict[str, Any]

@@ -3,9 +3,12 @@ Base class for label classifiers.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, Set
+from typing import TYPE_CHECKING, Any, Dict
 
-from build_a_long.pdf_extract.classifier.types import ClassifierConfig
+from build_a_long.pdf_extract.classifier.types import (
+    ClassifierConfig,
+    RemovalReason,
+)
 from build_a_long.pdf_extract.extractor import PageData
 
 if TYPE_CHECKING:
@@ -40,7 +43,7 @@ class LabelClassifier(ABC):
         page_data: PageData,
         scores: Dict[Any, Dict[str, float]],
         labeled_elements: Dict[str, Any],
-        to_remove: Set[int],
+        to_remove: Dict[int, RemovalReason],
     ) -> None:
         """Classify the elements for the label."""
         pass
