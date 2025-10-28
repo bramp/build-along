@@ -198,6 +198,18 @@ Run all tests with Pants:
 pants test ::
 ```
 
+or print detailed output:
+
+```bash
+pants test --output=all src/build_a_long/...
+```
+
+or with debug logging:
+
+```bash
+pants test --output=all src/build_a_long/... --log-cli-level=DEBUG
+```
+
 #### Integration Tests and HTTP Caching
 
 Integration tests make real HTTP requests to LEGO.com, but are skipped by default.
