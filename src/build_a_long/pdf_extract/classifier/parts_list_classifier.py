@@ -185,8 +185,3 @@ class PartsListClassifier(LabelClassifier):
             self.classifier._remove_similar_bboxes(
                 page_data, chosen, to_remove, keep_ids
             )
-
-            # Remove images outside the chosen parts list area as unrelated
-            for ele in page_data.elements:
-                if isinstance(ele, Image) and not ele.bbox.fully_inside(chosen_bbox):
-                    to_remove.add(id(ele))
