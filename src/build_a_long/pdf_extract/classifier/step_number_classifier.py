@@ -28,6 +28,19 @@ class StepNumberClassifier(LabelClassifier):
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
 
+    def _score_step_number_size(
+        self, element: Text, page_num_height: Optional[float]
+    ) -> float:
+        if not page_num_height or page_num_height <= 0.0:
+            return 0.0
+
+        h = max(0.0, element.bbox.y1 - element.bbox.y0)
+        if h <= page_num_height * 1.1:
+            return 0.0
+
+        ratio_over = (h / page_num_height) - 1.0
+        return max(0.0, min(1.0, ratio_over / 0.5))
+
     def calculate_scores(
         self,
         page_data: PageData,
@@ -44,24 +57,32 @@ class StepNumberClassifier(LabelClassifier):
                 0.0, page_number_element.bbox.y1 - page_number_element.bbox.y0
             )
 
+        # Get page bbox and height for bottom band check
+        page_bbox = page_data.bbox
+        assert page_bbox is not None
+        page_height = page_bbox.y1 - page_bbox.y0
+
         for element in page_data.elements:
             if not isinstance(element, Text):
                 continue
+
+            # Skip elements in the bottom 10% of the page where page numbers typically appear
+            element_center_y = (element.bbox.y0 + element.bbox.y1) / 2
+            bottom_threshold = page_bbox.y1 - (page_height * 0.1)
+            if element_center_y >= bottom_threshold:
+                continue
+
             text_score = self._score_step_number_text(element.text)
             if text_score == 0.0:
                 continue
 
-            size_score = 0.0
-            if page_num_height and page_num_height > 0.0:
-                h = max(0.0, element.bbox.y1 - element.bbox.y0)
-                if h <= page_num_height * 1.1:
-                    final = 0.0
-                    if element not in scores:
-                        scores[element] = {}
-                    scores[element]["step_number"] = final
-                    continue
-                ratio_over = (h / page_num_height) - 1.0
-                size_score = max(0.0, min(1.0, ratio_over / 0.5))
+            size_score = self._score_step_number_size(element, page_num_height)
+
+            # If we have a page number for size comparison, require the element to be
+            # taller than the page number (size_score > 0). This prevents small
+            # numeric text from being classified as step numbers.
+            if page_num_height and size_score == 0.0:
+                continue
 
             final = (
                 self.config.step_number_text_weight * text_score
@@ -81,9 +102,17 @@ class StepNumberClassifier(LabelClassifier):
         if "step_number" not in labeled_elements:
             labeled_elements["step_number"] = []
 
+        # Get the page number element to avoid classifying it as a step number
+        page_number_element = labeled_elements.get("page_number")
+
         for element in page_data.elements:
             if not isinstance(element, Text):
                 continue
+
+            # Skip if this element is already labeled as the page number
+            if element is page_number_element:
+                continue
+
             score = scores.get(element, {}).get("step_number", 0.0)
             if score >= self.config.min_confidence_threshold:
                 labeled_elements["step_number"].append(element)

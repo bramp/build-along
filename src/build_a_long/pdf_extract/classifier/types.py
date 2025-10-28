@@ -17,16 +17,24 @@ class RemovalReason:
     """The element that caused this removal"""
 
 
-@dataclass
+@dataclass(frozen=True)
 class ClassifierConfig:
     """Configuration for the classifier."""
 
     min_confidence_threshold: float = 0.5
+
     page_number_text_weight: float = 0.7
     page_number_position_weight: float = 0.3
     page_number_position_scale: float = 50.0
+    page_number_page_value_weight: float = 1.0
+
     step_number_text_weight: float = 0.8
     step_number_size_weight: float = 0.2
+
+    def __post_init__(self) -> None:
+        for weight in self.__dict__.values():
+            if weight < 0:
+                raise ValueError("All weights must be greater than or equal to 0.")
 
 
 @dataclass
