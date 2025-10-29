@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Set
+from typing import Any, Dict, List, Set
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -41,9 +41,6 @@ from build_a_long.pdf_extract.extractor.page_elements import (
     Image,
     Text,
 )
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.classifier import Classifier
 
 log = logging.getLogger(__name__)
 
@@ -72,10 +69,8 @@ class PartsImageClassifier(LabelClassifier):
     outputs = {"part_image"}
     requires = {"parts_list", "part_count"}
 
-    def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
+    def __init__(self, config: ClassifierConfig, classifier):
         super().__init__(config, classifier)
-        # Store detailed scores for internal use
-        self._detail_scores: Dict[Any, _PartImageScore] = {}
         self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
             "part_image",
             "all",
@@ -84,7 +79,7 @@ class PartsImageClassifier(LabelClassifier):
     def calculate_scores(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
+        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[str, Any],
     ) -> None:
         """Calculate scores for part image pairings.
@@ -92,8 +87,6 @@ class PartsImageClassifier(LabelClassifier):
         Scores are based on vertical distance and horizontal alignment between
         part count texts and images within parts lists.
         """
-        # Clear previous detail scores for this page
-        self._detail_scores.clear()
 
         part_counts: List[Text] = labeled_elements.get("part_count", [])
         parts_lists: List[Drawing] = labeled_elements.get("parts_list", [])
@@ -108,16 +101,14 @@ class PartsImageClassifier(LabelClassifier):
             (page_data.bbox.x1 - page_data.bbox.x0) if page_data.bbox else 100.0
         )
 
-        # Build candidate pairings and store them in _detail_scores
-        self._build_candidate_edges(part_counts, images, page_width)
+        # Initialize scores dict for this classifier
+        if "part_image" not in scores:
+            scores["part_image"] = {}
 
-        # Store placeholder scores in the scores dict for consistency
-        # (part_image doesn't use traditional per-element scoring)
-        for score in self._detail_scores.values():
-            if score.image not in scores:
-                scores[score.image] = {}
-            # Use negative distance as score (smaller distance = better = higher score)
-            scores[score.image]["part_image"] = -score.distance
+        # Build candidate pairings and store them in scores dict
+        self._build_candidate_edges(
+            part_counts, images, page_width, scores["part_image"]
+        )
 
     def _match_and_label_parts(
         self,
@@ -157,7 +148,11 @@ class PartsImageClassifier(LabelClassifier):
                 log.debug("[part_image] unmatched images: %d", len(unmatched_i))
 
     def _build_candidate_edges(
-        self, part_counts: List[Text], images: List[Image], page_width: float
+        self,
+        part_counts: List[Text],
+        images: List[Image],
+        page_width: float,
+        part_image_scores: Dict[Any, Any],
     ) -> List[_PartImageScore]:
         """Build candidate pairings between part counts and images.
 
@@ -179,8 +174,9 @@ class PartsImageClassifier(LabelClassifier):
                         image=img,
                     )
                     edges.append(score)
-                    # Store in detail scores (using a tuple key since multiple pairings)
-                    self._detail_scores[(pc, img)] = score
+                    # Store in scores dict (using a tuple key since multiple pairings)
+                    key = (pc, img)
+                    part_image_scores[key] = score
         return edges
 
     def _get_images_in_parts_lists(
@@ -198,7 +194,7 @@ class PartsImageClassifier(LabelClassifier):
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
+        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[str, Any],
         to_remove: Dict[int, RemovalReason],
     ) -> None:
@@ -211,8 +207,16 @@ class PartsImageClassifier(LabelClassifier):
         if not images:
             return
 
-        # Use pre-computed scores from _detail_scores (populated in calculate_scores)
-        edges = list(self._detail_scores.values())
+        # Retrieve pre-computed scores from scores dict (populated in calculate_scores)
+        part_image_scores = scores.get("part_image", {})
+        edges = []
+        for pc in part_counts:
+            for img in images:
+                key = (pc, img)
+                score_obj = part_image_scores.get(key)
+                if isinstance(score_obj, _PartImageScore):
+                    edges.append(score_obj)
+
         if not edges:
             return
 

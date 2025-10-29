@@ -4,7 +4,7 @@ Step number classifier.
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import Any, Dict, Optional
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -15,9 +15,6 @@ from build_a_long.pdf_extract.classifier.types import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import Text
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.classifier import Classifier
 
 
 @dataclass
@@ -48,11 +45,6 @@ class StepNumberClassifier(LabelClassifier):
     outputs = {"step_number"}
     requires = {"page_number"}
 
-    def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
-        super().__init__(config, classifier)
-        # Store detailed scores for internal use
-        self._detail_scores: Dict[Any, _StepNumberScore] = {}
-
     def _score_step_number_size(
         self, element: Text, page_num_height: Optional[float]
     ) -> float:
@@ -74,14 +66,11 @@ class StepNumberClassifier(LabelClassifier):
     def calculate_scores(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
+        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[str, Any],
     ) -> None:
         if not page_data.elements:
             return
-
-        # Clear previous detail scores for this page
-        self._detail_scores.clear()
 
         page_num_height: Optional[float] = None
         page_number_element = labeled_elements.get("page_number")
@@ -94,6 +83,10 @@ class StepNumberClassifier(LabelClassifier):
         page_bbox = page_data.bbox
         assert page_bbox is not None
         page_height = page_bbox.y1 - page_bbox.y0
+
+        # Initialize scores dict for this classifier
+        if "step_number" not in scores:
+            scores["step_number"] = {}
 
         for element in page_data.elements:
             if not isinstance(element, Text):
@@ -117,25 +110,18 @@ class StepNumberClassifier(LabelClassifier):
             if page_num_height and size_score == 0.0:
                 continue
 
-            # Store detailed score
+            # Store detailed score object
             detail_score = _StepNumberScore(
                 text_score=text_score,
                 size_score=size_score,
             )
-            self._detail_scores[element] = detail_score
 
-            # Calculate combined score
-            final = detail_score.combined_score(self.config)
-
-            if element not in scores:
-                scores[element] = {}
-
-            scores[element]["step_number"] = final
+            scores["step_number"][element] = detail_score
 
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
+        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[str, Any],
         to_remove: Dict[int, RemovalReason],
     ) -> None:
@@ -145,6 +131,9 @@ class StepNumberClassifier(LabelClassifier):
         # Get the page number element to avoid classifying it as a step number
         page_number_element = labeled_elements.get("page_number")
 
+        # Get pre-calculated scores for this classifier
+        step_number_scores = scores.get("step_number", {})
+
         for element in page_data.elements:
             if not isinstance(element, Text):
                 continue
@@ -153,8 +142,13 @@ class StepNumberClassifier(LabelClassifier):
             if element is page_number_element:
                 continue
 
-            score = scores.get(element, {}).get("step_number", 0.0)
-            if score >= self.config.min_confidence_threshold:
+            # Get the score object and compute combined score
+            score_obj = step_number_scores.get(element)
+            if not isinstance(score_obj, _StepNumberScore):
+                continue
+
+            combined_score = score_obj.combined_score(self.config)
+            if combined_score >= self.config.min_confidence_threshold:
                 labeled_elements["step_number"].append(element)
                 self.classifier._remove_child_bboxes(page_data, element, to_remove)
                 self.classifier._remove_similar_bboxes(page_data, element, to_remove)
