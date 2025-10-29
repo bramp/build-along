@@ -1,7 +1,7 @@
 """Tests for the element classifier."""
 
 from build_a_long.pdf_extract.classifier.classifier import (
-    classify_elements,
+    classify_pages,
     Classifier,
 )
 from build_a_long.pdf_extract.classifier.step_number_classifier import (
@@ -33,7 +33,7 @@ class TestClassifyElements:
             )
             pages.append(page_data)
 
-        results = classify_elements(pages)
+        results = classify_pages(pages)
 
         # Verify all pages have their page numbers labeled
         assert len(results) == 3
@@ -55,7 +55,7 @@ class TestClassifyElements:
 
     def test_empty_pages_list(self) -> None:
         """Test with an empty list of pages."""
-        results = classify_elements([])
+        results = classify_pages([])
         assert len(results) == 0
         # Should not raise any errors
 
