@@ -16,7 +16,7 @@ are defined in lego_page_elements.py to keep this module focused on raw extracti
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
@@ -30,7 +30,6 @@ class PageElement:
       (same coordinate system produced by the extractor).
     - Subclasses are small data holders.
     - label: The assigned classification label (e.g., 'page_number', 'step_number').
-    - label_scores: Probability scores (0.0 to 1.0) for each potential label.
     - deleted: True if this element was removed during classification (e.g., duplicate).
     """
 
@@ -39,7 +38,6 @@ class PageElement:
 
     # Classification fields
     label: Optional[str] = field(default=None, kw_only=True)
-    label_scores: Dict[str, float] = field(default_factory=dict, kw_only=True)
     deleted: bool = field(default=False, kw_only=True)
 
     def __hash__(self):

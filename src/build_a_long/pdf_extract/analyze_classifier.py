@@ -15,6 +15,10 @@ from typing import Dict, List
 import pymupdf
 
 from build_a_long.pdf_extract.classifier import classify_elements
+from build_a_long.pdf_extract.classifier.types import (
+    ClassificationResult,
+    ClassifierConfig,
+)
 from build_a_long.pdf_extract.extractor import (
     PageData,
     extract_bounding_boxes,
@@ -71,11 +75,12 @@ class GlobalAnalysis:
         return (self.total_pages_with_page_number / self.total_pages) * 100
 
 
-def analyze_page(page_data: PageData) -> PageAnalysis:
+def analyze_page(page_data: PageData, result: ClassificationResult) -> PageAnalysis:
     """Analyze classification results for a single page.
 
     Args:
         page_data: The page data with classified elements
+        result: The classification result containing scores
 
     Returns:
         Analysis results for the page
@@ -92,11 +97,20 @@ def analyze_page(page_data: PageData) -> PageAnalysis:
 
     has_page_number = page_number_element is not None
     page_number_text = page_number_element.text if page_number_element else None
-    page_number_score = (
-        page_number_element.label_scores.get("page_number")
-        if page_number_element
-        else None
-    )
+
+    # Get score from ClassificationResult instead of element.label_scores
+    page_number_score = None
+    if page_number_element and "page_number" in result.scores:
+        page_number_scores = result.scores["page_number"]
+        if page_number_element in page_number_scores:
+            score_obj = page_number_scores[page_number_element]
+            # Convert score object to float if it has a combined_score method
+            if hasattr(score_obj, "combined_score"):
+                # We need the config to compute the score
+                config = ClassifierConfig()
+                page_number_score = score_obj.combined_score(config)
+            elif isinstance(score_obj, (int, float)):
+                page_number_score = float(score_obj)
 
     return PageAnalysis(
         page_number=page_data.page_number,
@@ -122,10 +136,13 @@ def analyze_document(pdf_path: Path) -> DocumentAnalysis:
     with pymupdf.open(str(pdf_path)) as doc:
         # Extract and classify all pages
         pages_data = extract_bounding_boxes(doc, None)
-        classify_elements(pages_data)
+        results = classify_elements(pages_data)
 
         # Analyze each page
-        page_analyses = [analyze_page(page_data) for page_data in pages_data]
+        page_analyses = [
+            analyze_page(page_data, result)
+            for page_data, result in zip(pages_data, results)
+        ]
 
         pages_with_page_number = sum(
             1 for pa in page_analyses if pa.has_page_number_label

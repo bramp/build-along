@@ -55,7 +55,6 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
         Applies to each element in page["elements"] only:
         - Drop "deleted" when falsy (e.g., False)
         - Drop "label" when None
-        - Drop "label_scores" when empty ([], {}) or None
         """
         elements = page.get("elements", [])
         if isinstance(elements, list):
@@ -66,10 +65,6 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
                     del ele["deleted"]
                 if ("label" in ele) and (ele.get("label") is None):
                     del ele["label"]
-                if "label_scores" in ele:
-                    val = ele.get("label_scores")
-                    if val is None or (isinstance(val, (list, dict)) and len(val) == 0):
-                        del ele["label_scores"]
         return page
 
     for page_data in pages:
