@@ -99,9 +99,31 @@ class Classifier:
 
         # Persist computed scores onto elements so tests and tooling can introspect
         # per-element label confidence (e.g., 'page_number').
-        for element, label_scores in scores.items():
-            if hasattr(element, "label_scores") and isinstance(label_scores, dict):
-                element.label_scores.update(label_scores)
+        # The scores dict is now structured as scores[classifier_name][element] = score_obj
+        # We need to iterate and convert score objects to floats where applicable.
+        for label, element_scores in scores.items():
+            if not isinstance(element_scores, dict):
+                continue
+
+            # Find the classifier that created these scores
+            classifier_config = None
+            for classifier in self.classifiers:
+                if label in classifier.outputs:
+                    classifier_config = classifier.config
+                    break
+
+            for element, score_value in element_scores.items():
+                # Only persist scores on elements that have label_scores attribute
+                if not hasattr(element, "label_scores"):
+                    continue
+
+                # Convert score object to float if it has a combined_score method
+                if hasattr(score_value, "combined_score") and classifier_config:
+                    float_score = score_value.combined_score(classifier_config)
+                    element.label_scores[label] = float_score
+                elif isinstance(score_value, (int, float)):
+                    element.label_scores[label] = float(score_value)
+                # Skip other types (like _PartsListScore, _PartImageScore which don't convert to floats)
 
         warnings = self._log_post_classification_warnings(page_data, labeled_elements)
 

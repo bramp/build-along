@@ -5,7 +5,7 @@ Page number classifier.
 import math
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import Any, Dict, Optional
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -16,9 +16,6 @@ from build_a_long.pdf_extract.classifier.types import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import Text
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.classifier import Classifier
 
 
 @dataclass
@@ -59,15 +56,10 @@ class PageNumberClassifier(LabelClassifier):
     outputs = {"page_number"}
     requires = set()
 
-    def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
-        super().__init__(config, classifier)
-        # Store detailed scores for internal use
-        self._detail_scores: Dict[Any, _PageNumberScore] = {}
-
     def calculate_scores(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
+        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[str, Any],
     ) -> None:
         if not page_data.elements:
@@ -79,10 +71,9 @@ class PageNumberClassifier(LabelClassifier):
         # TODO add height to bbox and use it here.
         page_height = page_bbox.y1 - page_bbox.y0
 
-        # Clear previous detail scores for this page
-        # TODO We need to store this somewhere else. The PageNumberClassifier is
-        # meant to be stateless.
-        self._detail_scores.clear()
+        # Initialize scores dict for this classifier
+        if "page_number" not in scores:
+            scores["page_number"] = {}
 
         for element in page_data.elements:
             if not isinstance(element, Text):
@@ -104,27 +95,13 @@ class PageNumberClassifier(LabelClassifier):
                 page_value_score=page_value_score,
             )
 
-            # Store detailed score for use in classify()
-            self._detail_scores[element] = page_score
-
-            # TODO Store page_score under scores[element]["page_number"] instead
-            # of storing the combined score.
-
-            # Calculate combined score for this element
-            combined = page_score.combined_score(
-                self.config,
-            )
-
-            if element not in scores:
-                scores[element] = {}
-
-            # Store the combined score
-            scores[element]["page_number"] = combined
+            # Store the score object directly in the scores dict
+            scores["page_number"][element] = page_score
 
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
+        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[str, Any],
         to_remove: Dict[int, RemovalReason],
     ) -> None:
@@ -135,13 +112,21 @@ class PageNumberClassifier(LabelClassifier):
         assert page_bbox is not None
         page_height = page_bbox.y1 - page_bbox.y0
 
+        # Get pre-calculated scores for this classifier
+        page_number_scores = scores.get("page_number", {})
+
         # Build list of candidates from pre-calculated scores
         candidates: list[tuple[Text, float]] = []
         for element in page_data.elements:
             if not isinstance(element, Text):
                 continue
 
-            combined_score = scores.get(element, {}).get("page_number", 0.0)
+            # Get the score object and compute combined score
+            score_obj = page_number_scores.get(element)
+            if not isinstance(score_obj, _PageNumberScore):
+                continue
+
+            combined_score = score_obj.combined_score(self.config)
             if combined_score < self.config.min_confidence_threshold:
                 continue
 

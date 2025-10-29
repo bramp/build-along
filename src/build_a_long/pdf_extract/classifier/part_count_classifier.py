@@ -15,7 +15,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict
+from typing import Any, Dict
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -26,9 +26,6 @@ from build_a_long.pdf_extract.classifier.types import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import Text
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.classifier import Classifier
 
 log = logging.getLogger(__name__)
 
@@ -54,10 +51,8 @@ class PartCountClassifier(LabelClassifier):
     outputs = {"part_count"}
     requires = set()
 
-    def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
+    def __init__(self, config: ClassifierConfig, classifier):
         super().__init__(config, classifier)
-        # Store detailed scores for internal use
-        self._detail_scores: Dict[Any, _PartCountScore] = {}
         self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
             "part_count",
             "all",
@@ -66,14 +61,15 @@ class PartCountClassifier(LabelClassifier):
     def calculate_scores(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
+        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[str, Any],
     ) -> None:
         if not page_data.elements:
             return
 
-        # Clear previous detail scores for this page
-        self._detail_scores.clear()
+        # Initialize scores dict for this classifier
+        if "part_count" not in scores:
+            scores["part_count"] = {}
 
         for element in page_data.elements:
             if not isinstance(element, Text):
@@ -83,40 +79,42 @@ class PartCountClassifier(LabelClassifier):
             if text_score == 0.0:
                 continue
 
-            # Store detailed score
+            # Store detailed score object
             detail_score = _PartCountScore(text_score=text_score)
-            self._detail_scores[element] = detail_score
-
-            # Calculate combined score
-            final = detail_score.combined_score(self.config)
-
-            if element not in scores:
-                scores[element] = {}
-            scores[element]["part_count"] = final
+            scores["part_count"][element] = detail_score
 
             if self._debug_enabled:
                 log.debug(
                     "[part_count] match text=%r score=%.2f bbox=%s",
                     element.text,
-                    final,
+                    text_score,
                     element.bbox,
                 )
 
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
+        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[str, Any],
         to_remove: Dict[int, RemovalReason],
     ) -> None:
         if "part_count" not in labeled_elements:
             labeled_elements["part_count"] = []
 
+        # Get pre-calculated scores for this classifier
+        part_count_scores = scores.get("part_count", {})
+
         for element in page_data.elements:
             if not isinstance(element, Text):
                 continue
-            score = scores.get(element, {}).get("part_count", 0.0)
-            if score >= self.config.min_confidence_threshold:
+
+            # Get the score object and compute combined score
+            score_obj = part_count_scores.get(element)
+            if not isinstance(score_obj, _PartCountScore):
+                continue
+
+            combined_score = score_obj.combined_score(self.config)
+            if combined_score >= self.config.min_confidence_threshold:
                 labeled_elements["part_count"].append(element)
                 self.classifier._remove_child_bboxes(page_data, element, to_remove)
                 self.classifier._remove_similar_bboxes(page_data, element, to_remove)

@@ -31,7 +31,7 @@ class LabelClassifier(ABC):
     def calculate_scores(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
+        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[str, Any],
     ) -> None:
         """Calculate the scores for the label."""
@@ -41,7 +41,7 @@ class LabelClassifier(ABC):
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
+        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[str, Any],
         to_remove: Dict[int, RemovalReason],
     ) -> None:

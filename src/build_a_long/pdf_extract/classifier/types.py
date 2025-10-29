@@ -42,7 +42,7 @@ class ClassificationResult:
     """Represents the outcome of a single classification run."""
 
     labeled_elements: Dict[str, Any] = field(default_factory=dict)
-    scores: Dict[Any, Dict[str, float]] = field(default_factory=dict)
+    scores: Dict[str, Dict[Any, Any]] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)
     to_remove: Dict[int, RemovalReason] = field(default_factory=dict)
     """Maps element IDs to the reason they were removed"""
