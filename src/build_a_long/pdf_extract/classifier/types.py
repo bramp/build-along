@@ -3,9 +3,13 @@ Data classes for the classifier.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from build_a_long.pdf_extract.extractor.page_elements import Element
+
+
+# Score key can be either a single Element or a tuple of Elements (for pairings)
+ScoreKey = Union[Element, Tuple[Element, ...]]
 
 
 @dataclass
@@ -45,7 +49,15 @@ class ClassificationResult:
 
     labeled_elements: Dict[Element, str] = field(default_factory=dict)
     """Maps elements to their assigned labels (e.g., element -> 'page_number')"""
-    scores: Dict[str, Dict[Any, Any]] = field(default_factory=dict)
+    scores: Dict[str, Dict[ScoreKey, Any]] = field(default_factory=dict)
+    """Maps label name to a dict of score keys to score objects.
+    
+    Score keys can be either:
+    - A single Element (for most classifiers)
+    - A tuple of Elements (for pairings, e.g., part_image uses (part_count, image))
+    
+    Score values are classifier-specific dataclasses (e.g., _PageNumberScore).
+    """
     warnings: List[str] = field(default_factory=list)
     to_remove: Dict[int, RemovalReason] = field(default_factory=dict)
     """Maps element IDs to the reason they were removed"""

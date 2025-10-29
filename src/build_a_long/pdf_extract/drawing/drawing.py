@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw
 from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
-    PageElement,
+    Element,
     Image as ImageElement,
     Text,
 )
@@ -50,7 +50,7 @@ def draw_and_save_bboxes(
     # Colors for different nesting depths (cycles through this list)
     depth_colors = ["red", "green", "blue", "yellow", "purple", "orange"]
 
-    def _draw_element(element: PageElement, depth: int) -> None:
+    def _draw_element(element: Element, depth: int) -> None:
         """Recursively draw an element and its children."""
         if element.deleted and not draw_deleted:
             return

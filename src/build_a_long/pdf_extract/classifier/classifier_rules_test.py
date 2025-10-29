@@ -20,7 +20,7 @@ import pytest
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_elements import Element, PageElement, Text
+from build_a_long.pdf_extract.extractor.page_elements import Element, Text
 
 log = logging.getLogger(__name__)
 
@@ -88,9 +88,7 @@ class ClassifiedPage:
         """Get all non-deleted step_number elements."""
         return self.elements_by_label("step_number")
 
-    def children_of(
-        self, parent: PageElement, label: str | None = None
-    ) -> List[PageElement]:
+    def children_of(self, parent: Element, label: str | None = None) -> List[Element]:
         """Return all non-deleted elements spatially contained within a parent element.
 
         Note: This uses bbox containment, not ElementTree hierarchy, because the hierarchy
@@ -103,7 +101,7 @@ class ClassifiedPage:
             label: Optional label filter (e.g., "part_image")
 
         Returns:
-            List of non-deleted PageElements matching the label (if specified) that
+            List of non-deleted Elements matching the label (if specified) that
             are fully contained within the parent's bbox
         """
         # Use spatial containment, not hierarchy
