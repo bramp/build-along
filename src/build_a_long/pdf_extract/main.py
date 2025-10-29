@@ -12,6 +12,7 @@ from build_a_long.pdf_extract.extractor import (
     ExtractionResult,
 )
 from build_a_long.pdf_extract.classifier import classify_elements
+from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
 from build_a_long.pdf_extract.extractor.hierarchy import (
     build_hierarchy_from_elements,
@@ -24,12 +25,16 @@ logger = logging.getLogger(__name__)
 
 
 def save_classified_json(
-    pages: List[PageData], output_dir: Path, pdf_path: Path
+    pages: List[PageData],
+    results: List[ClassificationResult],
+    output_dir: Path,
+    pdf_path: Path,
 ) -> None:
     """Save extracted data as JSON file.
 
     Args:
         pages: List of PageData to serialize
+        results: List of ClassificationResult (one per page) - not currently serialized
         output_dir: Directory where JSON should be saved
         pdf_path: Original PDF path (used for naming the JSON file)
     """
@@ -86,6 +91,7 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
 def render_annotated_images(
     doc: pymupdf.Document,
     pages: List[PageData],
+    results: List[ClassificationResult],
     output_dir: Path,
     *,
     draw_deleted: bool = False,
@@ -95,16 +101,21 @@ def render_annotated_images(
     Args:
         doc: The open PyMuPDF Document
         pages: List of PageData containing extracted elements
+        results: List of ClassificationResult with labels for elements
         output_dir: Directory where PNG images should be saved
         draw_deleted: If True, also render elements marked as deleted.
     """
-    for page_data in pages:
+    for page_data, result in zip(pages, results):
         page_num = page_data.page_number  # 1-indexed
         page = doc[page_num - 1]  # 0-indexed
         output_path = output_dir / f"page_{page_num:03d}.png"
         # Build hierarchy on-demand for rendering to avoid sync issues
+        # TODO Consider removing this, and maybe moving it into draw_and_save.
+        # OR maybe we just get rid of the hierarchy entirely?
         hierarchy = build_hierarchy_from_elements(page_data.elements)
-        draw_and_save_bboxes(page, hierarchy, output_path, draw_deleted=draw_deleted)
+        draw_and_save_bboxes(
+            page, hierarchy, result, output_path, draw_deleted=draw_deleted
+        )
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -163,13 +174,13 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _print_summary(pages: List[PageData], *, detailed: bool = False) -> None:
-    """Print a concise classification summary for the processed pages.
-
-    Args:
-        pages: The processed pages with extracted elements and labels applied.
-        detailed: If True, include a short list of pages missing page numbers.
-    """
+def _print_summary(
+    pages: List[PageData],
+    results: List["ClassificationResult"],
+    *,
+    detailed: bool = False,
+) -> None:
+    """Print a human-readable summary of classification results to stdout."""
     total_pages = len(pages)
     total_elements = 0
     elements_by_type: Dict[str, int] = {}
@@ -178,7 +189,7 @@ def _print_summary(pages: List[PageData], *, detailed: bool = False) -> None:
     pages_with_page_number = 0
     missing_page_numbers: List[int] = []
 
-    for page in pages:
+    for page, result in zip(pages, results):
         total_elements += len(page.elements)
         # Tally element types and labels
         has_page_number = False
@@ -186,8 +197,8 @@ def _print_summary(pages: List[PageData], *, detailed: bool = False) -> None:
             t = ele.__class__.__name__.lower()
             elements_by_type[t] = elements_by_type.get(t, 0) + 1
 
-            if getattr(ele, "label", None):
-                label = str(ele.label)
+            label = result.get_label(ele)
+            if label:
                 labeled_counts[label] = labeled_counts.get(label, 0) + 1
                 if label == "page_number":
                     has_page_number = True
@@ -218,10 +229,10 @@ def _print_summary(pages: List[PageData], *, detailed: bool = False) -> None:
         print(f"Pages missing page number: {sample}{more}")
 
 
-def _print_label_counts(page: PageData) -> None:
+def _print_label_counts(page: PageData, result: ClassificationResult) -> None:
     label_counts = defaultdict(int)
     for e in page.elements:
-        label = e.label if e.label else "<unknown>"
+        label = result.get_label(e) or "<unknown>"
         label_counts[label] += 1
 
     # TODO The following logging shows "defaultdict(<class 'int'>,..." figure
@@ -277,18 +288,21 @@ def main() -> int:
 
         # Classify elements to add labels (e.g., page numbers)
         # This also marks elements as deleted if they're duplicates/shadows
-        classify_elements(pages)
+        # Returns classification results with labels for each page
+        results = classify_elements(pages)
 
-        for page in pages:
-            _print_label_counts(page)
+        for page, result in zip(pages, results):
+            _print_label_counts(page, result)
 
         # Optionally print a concise summary to stdout
         if args.summary:
-            _print_summary(pages, detailed=args.summary_detailed)
+            _print_summary(pages, results, detailed=args.summary_detailed)
 
         # Save results as JSON and render annotated images
-        save_classified_json(pages, output_dir, pdf_path)
-        render_annotated_images(doc, pages, output_dir, draw_deleted=args.draw_deleted)
+        save_classified_json(pages, results, output_dir, pdf_path)
+        render_annotated_images(
+            doc, pages, results, output_dir, draw_deleted=args.draw_deleted
+        )
 
     return 0
 

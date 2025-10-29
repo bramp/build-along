@@ -17,7 +17,7 @@ are available, a ValueError will be raised at initialization time.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from build_a_long.pdf_extract.classifier.page_number_classifier import (
     PageNumberClassifier,
@@ -41,8 +41,12 @@ from build_a_long.pdf_extract.classifier.types import (
     RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.page_elements import Element, Text
 
 logger = logging.getLogger(__name__)
+
+# TODO Rename this to classify_pages and create a new classify_page. Then any
+# caller that is currently using classify_elements([single_page]) can be updated to use classify_page.
 
 
 def classify_elements(pages: List[PageData]) -> List[ClassificationResult]:
@@ -181,14 +185,25 @@ class Classifier:
                     )
 
     def _log_post_classification_warnings(
-        self, page_data: PageData, labeled_elements: Dict[str, Any]
+        self, page_data: PageData, labeled_elements: Dict[Element, str]
     ) -> List[str]:
         warnings = []
-        if "page_number" not in labeled_elements:
+
+        # Check if there's a page number
+        has_page_number = any(
+            label == "page_number" for label in labeled_elements.values()
+        )
+        if not has_page_number:
             warnings.append(f"Page {page_data.page_number}: missing page number")
 
-        parts_lists = labeled_elements.get("parts_list", [])
-        part_counts = labeled_elements.get("part_count", [])
+        # Get elements by label
+        parts_lists = [
+            e for e, label in labeled_elements.items() if label == "parts_list"
+        ]
+        part_counts = [
+            e for e, label in labeled_elements.items() if label == "part_count"
+        ]
+
         for pl in parts_lists:
             inside_counts = [t for t in part_counts if t.bbox.fully_inside(pl.bbox)]
             if not inside_counts:
@@ -196,7 +211,11 @@ class Classifier:
                     f"Page {page_data.page_number}: parts list at {pl.bbox} contains no part counts"
                 )
 
-        steps = labeled_elements.get("step_number", [])
+        steps: list[Text] = [
+            e
+            for e, label in labeled_elements.items()
+            if label == "step_number" and isinstance(e, Text)
+        ]
         ABOVE_EPS = 2.0
         for step in steps:
             sb = step.bbox
@@ -264,16 +283,14 @@ class ClassificationOrchestrator:
         self, page_data: PageData, result: ClassificationResult
     ) -> PageData:
         """
-        Applies the labels from a ClassificationResult to a PageData object.
-        Marks elements for removal as deleted instead of removing them from the list.
-        """
-        for label, element in result.labeled_elements.items():
-            if isinstance(element, list):
-                for e in element:
-                    e.label = e.label or label
-            else:
-                element.label = element.label or label
+        Applies classification results to a PageData object.
 
+        Note: Labels are NOT stored on elements anymore - they're only in
+        ClassificationResult.labeled_elements. Use result.get_label(element)
+        to retrieve an element's label.
+
+        Marks elements for removal as deleted.
+        """
         # Mark elements as deleted instead of removing them
         if result.to_remove:
             for e in page_data.elements:

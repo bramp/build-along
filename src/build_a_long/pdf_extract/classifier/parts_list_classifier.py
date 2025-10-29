@@ -23,7 +23,7 @@ Set environment variables to aid investigation without code changes:
 import logging
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set
+from typing import Any, Dict, Optional, Set
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -33,15 +33,13 @@ from build_a_long.pdf_extract.classifier.types import (
     RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
     Element,
     Image,
     Text,
 )
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.classifier import Classifier
 
 log = logging.getLogger(__name__)
 
@@ -77,10 +75,8 @@ class PartsListClassifier(LabelClassifier):
     outputs = {"parts_list"}
     requires = {"step_number", "part_count"}
 
-    def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
+    def __init__(self, config: ClassifierConfig, classifier):
         super().__init__(config, classifier)
-        # Store detailed scores for internal use
-        self._detail_scores: Dict[Any, _PartsListScore] = {}
         self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
             "parts_list",
             "all",
@@ -89,22 +85,27 @@ class PartsListClassifier(LabelClassifier):
     def calculate_scores(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
-        labeled_elements: Dict[str, Any],
+        scores: Dict[str, Dict[Any, Any]],
+        labeled_elements: Dict[Element, str],
     ) -> None:
         """Calculate scores for potential parts list drawings.
 
         Scores drawings based on their proximity to step numbers and the number
         of part count texts they contain.
         """
-        # Clear previous detail scores for this page
-        self._detail_scores.clear()
 
-        steps = labeled_elements.get("step_number", [])
+        # Get elements with specific labels
+        steps: list[Text] = []
+        for element, label in labeled_elements.items():
+            if label == "step_number" and isinstance(element, Text):
+                steps.append(element)
         if not steps:
             return
 
-        part_counts = labeled_elements.get("part_count", [])
+        part_counts: list[Element] = []
+        for element, label in labeled_elements.items():
+            if label == "part_count":
+                part_counts.append(element)
         if not part_counts:
             return
 
@@ -123,6 +124,10 @@ class PartsListClassifier(LabelClassifier):
                 len(drawings),
             )
 
+        # Initialize scores dict for this classifier
+        if "parts_list" not in scores:
+            scores["parts_list"] = {}
+
         # Score each drawing relative to each step
         for step in steps:
             sb = step.bbox
@@ -133,14 +138,8 @@ class PartsListClassifier(LabelClassifier):
                     drawing, part_counts, labeled_elements, sb
                 )
                 if score_obj is not None:
-                    # We don't have a single numeric score for parts_list in the traditional sense.
-                    # The score object contains multiple factors for sorting.
-                    # Store a placeholder score in the scores dict for consistency.
-                    if drawing not in scores:
-                        scores[drawing] = {}
-                    # Use the negative of part_count_count as a simple numeric score
-                    # (negative because more part counts = better = higher "confidence")
-                    scores[drawing]["parts_list"] = float(score_obj.part_count_count)
+                    # Store the score object in the scores dict
+                    scores["parts_list"][drawing] = score_obj
 
     def _find_best_parts_list(
         self, candidates: list[tuple[Drawing, _PartsListScore]]
@@ -156,8 +155,8 @@ class PartsListClassifier(LabelClassifier):
         self,
         drawing: Drawing,
         part_counts: list[Element],
-        labeled_elements: Dict[str, Any],
-        sb,
+        labeled_elements: Dict[Element, str],
+        sb: BBox,
     ) -> Optional[_PartsListScore]:
         """Score a candidate drawing for parts list classification.
 
@@ -187,9 +186,6 @@ class PartsListClassifier(LabelClassifier):
             proximity=proximity,
             area=area,
         )
-
-        # Store detailed score
-        self._detail_scores[drawing] = score
 
         return score
 
@@ -225,11 +221,15 @@ class PartsListClassifier(LabelClassifier):
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[Any, Dict[str, float]],
-        labeled_elements: Dict[str, Any],
+        scores: Dict[str, Dict[Any, Any]],
+        labeled_elements: Dict[Element, str],
         to_remove: Dict[int, RemovalReason],
     ) -> None:
-        steps = labeled_elements.get("step_number", [])
+        # Get elements with step_number label
+        steps: list[Text] = []
+        for element, label in labeled_elements.items():
+            if label == "step_number" and isinstance(element, Text):
+                steps.append(element)
         if not steps:
             return
 
@@ -240,24 +240,26 @@ class PartsListClassifier(LabelClassifier):
             return
 
         used_drawings: set[int] = set()
-        if "parts_list" not in labeled_elements:
-            labeled_elements["parts_list"] = []
+
+        # Get pre-calculated scores for this classifier
+        parts_list_scores: Dict[Element, Any] = scores.get("parts_list", {})
 
         for step in steps:
             candidate_drawings = self._get_candidate_drawings(
                 step, drawings, used_drawings, to_remove
             )
 
-            # Get scored candidates from _detail_scores (populated in calculate_scores)
+            # Get scored candidates from scores dict (populated in calculate_scores)
             scored_candidates = []
             for d in candidate_drawings:
-                if d in self._detail_scores:
-                    scored_candidates.append((d, self._detail_scores[d]))
+                score_obj = parts_list_scores.get(d)
+                if isinstance(score_obj, _PartsListScore):
+                    scored_candidates.append((d, score_obj))
 
             chosen = self._find_best_parts_list(scored_candidates)
 
             if chosen:
-                labeled_elements["parts_list"].append(chosen)
+                labeled_elements[chosen] = "parts_list"
                 used_drawings.add(id(chosen))
 
                 if self._debug_enabled:
@@ -271,10 +273,9 @@ class PartsListClassifier(LabelClassifier):
                 keep_ids: Set[int] = set()
                 chosen_bbox = chosen.bbox
                 for ele in page_data.elements:
-                    if ele.bbox.fully_inside(chosen_bbox) and any(
-                        ele in v
-                        for v in labeled_elements.values()
-                        if isinstance(v, list)
+                    if (
+                        ele.bbox.fully_inside(chosen_bbox)
+                        and labeled_elements.get(ele) is not None
                     ):
                         keep_ids.add(id(ele))
 

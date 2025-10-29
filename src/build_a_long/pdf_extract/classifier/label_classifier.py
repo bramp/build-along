@@ -10,6 +10,7 @@ from build_a_long.pdf_extract.classifier.types import (
     RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.page_elements import Element
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classifier import Classifier
@@ -32,7 +33,7 @@ class LabelClassifier(ABC):
         self,
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[str, Any],
+        labeled_elements: Dict[Element, str],
     ) -> None:
         """Calculate the scores for the label."""
         pass
@@ -42,7 +43,7 @@ class LabelClassifier(ABC):
         self,
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[str, Any],
+        labeled_elements: Dict[Element, str],
         to_remove: Dict[int, RemovalReason],
     ) -> None:
         """Classify the elements for the label."""

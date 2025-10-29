@@ -247,7 +247,7 @@ class TestPageDataJsonSerialization:
         assert raised is True
 
     def test_from_json_preserves_optional_fields(self) -> None:
-        """Optional fields like id, label, deleted should be preserved."""
+        """Optional fields like id, deleted should be preserved."""
         json_str = json.dumps(
             {
                 "page_number": 7,
@@ -258,7 +258,7 @@ class TestPageDataJsonSerialization:
                         "bbox": {"x0": 10, "y0": 10, "x1": 50, "y1": 30},
                         "text": "Labeled",
                         "id": 123,
-                        "label": "page_number",
+                        "label": "page_number",  # Should be ignored (no longer in PageElement)
                         "deleted": False,
                     },
                     {
@@ -276,7 +276,7 @@ class TestPageDataJsonSerialization:
         assert len(page.elements) == 2
         elem0 = page.elements[0]
         assert elem0.id == 123
-        assert elem0.label == "page_number"
+        # label field was removed from PageElement, so it won't be preserved
         assert elem0.deleted is False
 
         # Second element marked as deleted

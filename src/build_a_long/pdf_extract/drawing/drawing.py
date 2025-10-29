@@ -4,6 +4,7 @@ from pathlib import Path
 import pymupdf
 from PIL import Image, ImageDraw
 
+from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
     PageElement,
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 def draw_and_save_bboxes(
     page: pymupdf.Page,
     hierarchy: ElementTree,
+    result: ClassificationResult,
     output_path: Path,
     *,
     draw_deleted: bool = False,
@@ -29,6 +31,7 @@ def draw_and_save_bboxes(
     Args:
         page: PyMuPDF page to render
         hierarchy: ElementTree containing the element hierarchy
+        result: ClassificationResult containing labels for elements
         output_path: Where to save the output image
         draw_deleted: If True, also render elements marked as deleted.
     """
@@ -77,8 +80,9 @@ def draw_and_save_bboxes(
 
         # Draw the element type text
         label_prefix = "[REMOVED] " if element.deleted else ""
+        element_label = result.get_label(element)  # type: ignore[arg-type]
         label = f"ID: {element.id} {label_prefix}" + (
-            element.label or element.__class__.__name__
+            element_label or element.__class__.__name__
         )
         if isinstance(element, Drawing):
             if element.image_id:

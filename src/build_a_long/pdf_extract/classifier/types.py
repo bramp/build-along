@@ -5,6 +5,8 @@ Data classes for the classifier.
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Tuple
 
+from build_a_long.pdf_extract.extractor.page_elements import Element
+
 
 @dataclass
 class RemovalReason:
@@ -41,7 +43,8 @@ class ClassifierConfig:
 class ClassificationResult:
     """Represents the outcome of a single classification run."""
 
-    labeled_elements: Dict[str, Any] = field(default_factory=dict)
+    labeled_elements: Dict[Element, str] = field(default_factory=dict)
+    """Maps elements to their assigned labels (e.g., element -> 'page_number')"""
     scores: Dict[str, Dict[Any, Any]] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)
     to_remove: Dict[int, RemovalReason] = field(default_factory=dict)
@@ -49,6 +52,28 @@ class ClassificationResult:
     # Persisted relations discovered during classification. For now, we record
     # part image pairings as (part_count_text, image) tuples.
     part_image_pairs: List[Tuple[Any, Any]] = field(default_factory=list)
+
+    def get_label(self, element: Element) -> str | None:
+        """Get the label for an element from this classification result.
+
+        Args:
+            element: The element to get the label for
+
+        Returns:
+            The label string if found, None otherwise
+        """
+        return self.labeled_elements.get(element)
+
+    def get_elements_by_label(self, label: str) -> List[Element]:
+        """Get all elements with the given label.
+
+        Args:
+            label: The label to search for
+
+        Returns:
+            List of elements with that label
+        """
+        return [elem for elem, lbl in self.labeled_elements.items() if lbl == label]
 
 
 @dataclass

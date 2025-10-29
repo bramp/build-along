@@ -24,8 +24,8 @@ class TestStepNumberClassification:
             bbox=page_bbox,
         )
 
-        classify_elements([page])
+        results = classify_elements([page])
 
-        assert pn.label == "page_number"
-        assert big_step.label == "step_number"
-        assert small_step.label is None
+        assert results[0].get_label(pn) == "page_number"
+        assert results[0].get_label(big_step) == "step_number"
+        assert results[0].get_label(small_step) is None

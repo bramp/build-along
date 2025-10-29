@@ -21,9 +21,9 @@ class TestPartCountClassification:
             elements=[t1, t2, t3, t4],
             bbox=page_bbox,
         )
-        classify_elements([page])
+        results = classify_elements([page])
 
-        assert t1.label == "part_count"
-        assert t2.label == "part_count"
-        assert t3.label == "part_count"
-        assert t4.label is None
+        assert results[0].get_label(t1) == "part_count"
+        assert results[0].get_label(t2) == "part_count"
+        assert results[0].get_label(t3) == "part_count"
+        assert results[0].get_label(t4) is None

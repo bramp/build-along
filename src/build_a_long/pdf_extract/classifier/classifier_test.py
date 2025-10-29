@@ -41,7 +41,7 @@ class TestClassifyElements:
             labeled_elements = [
                 e
                 for e in page_data.elements
-                if isinstance(e, Text) and e.label == "page_number"
+                if isinstance(e, Text) and result.get_label(e) == "page_number"
             ]
             assert len(labeled_elements) == 1
             # Check that scores were calculated

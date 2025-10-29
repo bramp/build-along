@@ -29,7 +29,6 @@ class PageElement:
     - Every element has exactly one bounding box in page coordinates
       (same coordinate system produced by the extractor).
     - Subclasses are small data holders.
-    - label: The assigned classification label (e.g., 'page_number', 'step_number').
     - deleted: True if this element was removed during classification (e.g., duplicate).
     """
 
@@ -37,7 +36,6 @@ class PageElement:
     id: Optional[int] = field(default=None, kw_only=True)
 
     # Classification fields
-    label: Optional[str] = field(default=None, kw_only=True)
     deleted: bool = field(default=False, kw_only=True)
 
     def __hash__(self):

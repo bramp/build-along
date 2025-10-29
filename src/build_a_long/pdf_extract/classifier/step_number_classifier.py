@@ -67,17 +67,17 @@ class StepNumberClassifier(LabelClassifier):
         self,
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[str, Any],
+        labeled_elements: Dict[Any, str],
     ) -> None:
         if not page_data.elements:
             return
 
         page_num_height: Optional[float] = None
-        page_number_element = labeled_elements.get("page_number")
-        if page_number_element:
-            page_num_height = max(
-                0.0, page_number_element.bbox.y1 - page_number_element.bbox.y0
-            )
+        # Find the page_number element to use for size comparison
+        for element in page_data.elements:
+            if labeled_elements.get(element) == "page_number":
+                page_num_height = max(0.0, element.bbox.y1 - element.bbox.y0)
+                break
 
         # Get page bbox and height for bottom band check
         page_bbox = page_data.bbox
@@ -122,14 +122,15 @@ class StepNumberClassifier(LabelClassifier):
         self,
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[str, Any],
+        labeled_elements: Dict[Any, str],
         to_remove: Dict[int, RemovalReason],
     ) -> None:
-        if "step_number" not in labeled_elements:
-            labeled_elements["step_number"] = []
-
-        # Get the page number element to avoid classifying it as a step number
-        page_number_element = labeled_elements.get("page_number")
+        # Find the page number element to avoid classifying it as a step number
+        page_number_element = None
+        for element in page_data.elements:
+            if labeled_elements.get(element) == "page_number":
+                page_number_element = element
+                break
 
         # Get pre-calculated scores for this classifier
         step_number_scores = scores.get("step_number", {})
@@ -149,7 +150,7 @@ class StepNumberClassifier(LabelClassifier):
 
             combined_score = score_obj.combined_score(self.config)
             if combined_score >= self.config.min_confidence_threshold:
-                labeled_elements["step_number"].append(element)
+                labeled_elements[element] = "step_number"
                 self.classifier._remove_child_bboxes(page_data, element, to_remove)
                 self.classifier._remove_similar_bboxes(page_data, element, to_remove)
 
