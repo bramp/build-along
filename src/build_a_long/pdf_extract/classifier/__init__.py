@@ -24,9 +24,9 @@ The classifier pipeline runs in a fixed order, enforced at initialization:
 Changing the order such that dependencies are not met will raise a ValueError.
 """
 
-from .classifier import classify_elements
+from .classifier import classify_elements, classify_pages
 
-__all__ = ["classify_elements"]
+__all__ = ["classify_elements", "classify_pages"]
 
 import logging
 import os

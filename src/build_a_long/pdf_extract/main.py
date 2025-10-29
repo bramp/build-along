@@ -11,7 +11,7 @@ from build_a_long.pdf_extract.extractor import (
     PageData,
     ExtractionResult,
 )
-from build_a_long.pdf_extract.classifier import classify_elements
+from build_a_long.pdf_extract.classifier import classify_pages
 from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
 from build_a_long.pdf_extract.extractor.hierarchy import (
@@ -289,7 +289,7 @@ def main() -> int:
         # Classify elements to add labels (e.g., page numbers)
         # This also marks elements as deleted if they're duplicates/shadows
         # Returns classification results with labels for each page
-        results = classify_elements(pages)
+        results = classify_pages(pages)
 
         for page, result in zip(pages, results):
             _print_label_counts(page, result)
