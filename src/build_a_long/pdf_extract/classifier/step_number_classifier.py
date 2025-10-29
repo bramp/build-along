@@ -3,6 +3,7 @@ Step number classifier.
 """
 
 import re
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
@@ -19,6 +20,28 @@ if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classifier import Classifier
 
 
+@dataclass
+class _StepNumberScore:
+    """Internal score representation for step number classification."""
+
+    text_score: float
+    """Score based on how well the text matches step number patterns (0.0-1.0)."""
+
+    size_score: float
+    """Score based on element height relative to page number height (0.0-1.0)."""
+
+    def combined_score(self, config: ClassifierConfig) -> float:
+        """Calculate final weighted score from components."""
+        # Sum the weighted components
+        score = (
+            config.step_number_text_weight * self.text_score
+            + config.step_number_size_weight * self.size_score
+        )
+        # Normalize by the sum of weights to keep score in [0, 1]
+        total_weight = config.step_number_text_weight + config.step_number_size_weight
+        return score / total_weight if total_weight > 0 else 0.0
+
+
 class StepNumberClassifier(LabelClassifier):
     """Classifier for step numbers."""
 
@@ -27,10 +50,17 @@ class StepNumberClassifier(LabelClassifier):
 
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
+        # Store detailed scores for internal use
+        self._detail_scores: Dict[Any, _StepNumberScore] = {}
 
     def _score_step_number_size(
         self, element: Text, page_num_height: Optional[float]
     ) -> float:
+        """Score based on element height relative to page number height.
+
+        Returns 0.0 if element is not significantly taller than page number,
+        scaling up to 1.0 as element gets taller.
+        """
         if not page_num_height or page_num_height <= 0.0:
             return 0.0
 
@@ -49,6 +79,9 @@ class StepNumberClassifier(LabelClassifier):
     ) -> None:
         if not page_data.elements:
             return
+
+        # Clear previous detail scores for this page
+        self._detail_scores.clear()
 
         page_num_height: Optional[float] = None
         page_number_element = labeled_elements.get("page_number")
@@ -84,12 +117,19 @@ class StepNumberClassifier(LabelClassifier):
             if page_num_height and size_score == 0.0:
                 continue
 
-            final = (
-                self.config.step_number_text_weight * text_score
-                + self.config.step_number_size_weight * size_score
+            # Store detailed score
+            detail_score = _StepNumberScore(
+                text_score=text_score,
+                size_score=size_score,
             )
+            self._detail_scores[element] = detail_score
+
+            # Calculate combined score
+            final = detail_score.combined_score(self.config)
+
             if element not in scores:
                 scores[element] = {}
+
             scores[element]["step_number"] = final
 
     def classify(

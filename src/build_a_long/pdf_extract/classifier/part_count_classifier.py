@@ -12,8 +12,9 @@ CLASSIFIER_DEBUG is set to "part_count" or "all".
 """
 
 import logging
-import re
 import os
+import re
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
@@ -32,6 +33,21 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+@dataclass
+class _PartCountScore:
+    """Internal score representation for part count classification."""
+
+    text_score: float
+    """Score based on how well the text matches part count patterns (0.0-1.0)."""
+
+    def combined_score(self, config: ClassifierConfig) -> float:
+        """Calculate final weighted score from components.
+
+        For part count, we only have text_score, so just return it directly.
+        """
+        return self.text_score
+
+
 class PartCountClassifier(LabelClassifier):
     """Classifier for part counts."""
 
@@ -40,6 +56,8 @@ class PartCountClassifier(LabelClassifier):
 
     def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
         super().__init__(config, classifier)
+        # Store detailed scores for internal use
+        self._detail_scores: Dict[Any, _PartCountScore] = {}
         self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
             "part_count",
             "all",
@@ -54,21 +72,35 @@ class PartCountClassifier(LabelClassifier):
         if not page_data.elements:
             return
 
+        # Clear previous detail scores for this page
+        self._detail_scores.clear()
+
         for element in page_data.elements:
             if not isinstance(element, Text):
                 continue
-            score = PartCountClassifier._score_part_count_text(element.text)
-            if score > 0.0:
-                if element not in scores:
-                    scores[element] = {}
-                scores[element]["part_count"] = score
-                if self._debug_enabled:
-                    log.debug(
-                        "[part_count] match text=%r score=%.2f bbox=%s",
-                        element.text,
-                        score,
-                        element.bbox,
-                    )
+
+            text_score = PartCountClassifier._score_part_count_text(element.text)
+            if text_score == 0.0:
+                continue
+
+            # Store detailed score
+            detail_score = _PartCountScore(text_score=text_score)
+            self._detail_scores[element] = detail_score
+
+            # Calculate combined score
+            final = detail_score.combined_score(self.config)
+
+            if element not in scores:
+                scores[element] = {}
+            scores[element]["part_count"] = final
+
+            if self._debug_enabled:
+                log.debug(
+                    "[part_count] match text=%r score=%.2f bbox=%s",
+                    element.text,
+                    final,
+                    element.bbox,
+                )
 
     def classify(
         self,

@@ -50,7 +50,7 @@ class _PageNumberScore:
             + config.page_number_position_weight
             + config.page_number_page_value_weight
         )
-        return score / total_weight
+        return score / total_weight if total_weight > 0 else 0.0
 
 
 class PageNumberClassifier(LabelClassifier):
