@@ -45,14 +45,22 @@ from build_a_long.pdf_extract.extractor import PageData
 logger = logging.getLogger(__name__)
 
 
-def classify_elements(pages: List[PageData]) -> None:
-    """Classify and label elements across all pages using rule-based heuristics."""
+def classify_elements(pages: List[PageData]) -> List[ClassificationResult]:
+    """Classify and label elements across all pages using rule-based heuristics.
+
+    Returns:
+        List of ClassificationResult objects, one per page.
+    """
     config = ClassifierConfig()
     classifier = Classifier(config)
     orchestrator = ClassificationOrchestrator(classifier)
 
+    results = []
     for page_data in pages:
-        orchestrator.process_page(page_data)
+        result = orchestrator.process_page(page_data)
+        results.append(result)
+
+    return results
 
 
 class Classifier:
@@ -96,34 +104,6 @@ class Classifier:
         for classifier in self.classifiers:
             classifier.calculate_scores(page_data, scores, labeled_elements)
             classifier.classify(page_data, scores, labeled_elements, to_remove)
-
-        # Persist computed scores onto elements so tests and tooling can introspect
-        # per-element label confidence (e.g., 'page_number').
-        # The scores dict is now structured as scores[classifier_name][element] = score_obj
-        # We need to iterate and convert score objects to floats where applicable.
-        for label, element_scores in scores.items():
-            if not isinstance(element_scores, dict):
-                continue
-
-            # Find the classifier that created these scores
-            classifier_config = None
-            for classifier in self.classifiers:
-                if label in classifier.outputs:
-                    classifier_config = classifier.config
-                    break
-
-            for element, score_value in element_scores.items():
-                # Only persist scores on elements that have label_scores attribute
-                if not hasattr(element, "label_scores"):
-                    continue
-
-                # Convert score object to float if it has a combined_score method
-                if hasattr(score_value, "combined_score") and classifier_config:
-                    float_score = score_value.combined_score(classifier_config)
-                    element.label_scores[label] = float_score
-                elif isinstance(score_value, (int, float)):
-                    element.label_scores[label] = float(score_value)
-                # Skip other types (like _PartsListScore, _PartImageScore which don't convert to floats)
 
         warnings = self._log_post_classification_warnings(page_data, labeled_elements)
 
@@ -238,9 +218,12 @@ class ClassificationOrchestrator:
         self.classifier = classifier
         self.history: List[ClassificationResult] = []
 
-    def process_page(self, page_data: PageData) -> PageData:
+    def process_page(self, page_data: PageData) -> ClassificationResult:
         """
         Orchestrates the classification of a single page, with backtracking.
+
+        Returns:
+            The final ClassificationResult after applying labels to page_data.
         """
         hints = ClassificationHints()
 
@@ -251,11 +234,14 @@ class ClassificationOrchestrator:
 
             inconsistencies = self._analyze_for_inconsistencies(result)
             if not inconsistencies:
-                return self._apply_result_to_page(page_data, result)
+                self._apply_result_to_page(page_data, result)
+                return result
 
             hints = self._generate_new_hints(result, inconsistencies)
 
-        return self._apply_result_to_page(page_data, self.history[-1])
+        final_result = self.history[-1]
+        self._apply_result_to_page(page_data, final_result)
+        return final_result
 
     def _analyze_for_inconsistencies(self, result: ClassificationResult) -> List[str]:
         """

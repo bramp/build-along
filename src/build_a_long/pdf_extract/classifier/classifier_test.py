@@ -33,10 +33,11 @@ class TestClassifyElements:
             )
             pages.append(page_data)
 
-        classify_elements(pages)
+        results = classify_elements(pages)
 
-        # Verify all pages have their page numbers labeled and scored
-        for page_data in pages:
+        # Verify all pages have their page numbers labeled
+        assert len(results) == 3
+        for i, (page_data, result) in enumerate(zip(pages, results)):
             labeled_elements = [
                 e
                 for e in page_data.elements
@@ -44,12 +45,18 @@ class TestClassifyElements:
             ]
             assert len(labeled_elements) == 1
             # Check that scores were calculated
-            assert "page_number" in labeled_elements[0].label_scores
-            assert labeled_elements[0].label_scores["page_number"] > 0.5
+            assert "page_number" in result.scores
+            page_number_scores = result.scores["page_number"]
+            assert labeled_elements[0] in page_number_scores
+            score = page_number_scores[labeled_elements[0]].combined_score(
+                ClassifierConfig()
+            )
+            assert score > 0.5
 
     def test_empty_pages_list(self) -> None:
         """Test with an empty list of pages."""
-        classify_elements([])
+        results = classify_elements([])
+        assert len(results) == 0
         # Should not raise any errors
 
 

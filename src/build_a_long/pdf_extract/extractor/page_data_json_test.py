@@ -260,7 +260,6 @@ class TestPageDataJsonSerialization:
                         "id": 123,
                         "label": "page_number",
                         "deleted": False,
-                        "label_scores": {"page_number": 0.95},
                     },
                     {
                         "__tag__": "Image",
@@ -279,7 +278,6 @@ class TestPageDataJsonSerialization:
         assert elem0.id == 123
         assert elem0.label == "page_number"
         assert elem0.deleted is False
-        assert elem0.label_scores == {"page_number": 0.95}
 
         # Second element marked as deleted
         elem1 = page.elements[1]

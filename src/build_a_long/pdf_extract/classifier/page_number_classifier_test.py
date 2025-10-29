@@ -74,11 +74,16 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        classify_elements([page_data])
+        results = classify_elements([page_data])
 
         assert page_number_text.label == "page_number"
-        assert "page_number" in page_number_text.label_scores
-        assert page_number_text.label_scores["page_number"] > 0.5
+        # Check scores from ClassificationResult
+        assert len(results) == 1
+        assert "page_number" in results[0].scores
+        page_number_scores = results[0].scores["page_number"]
+        assert page_number_text in page_number_scores
+        score = page_number_scores[page_number_text].combined_score(ClassifierConfig())
+        assert score > 0.5
 
     def test_single_page_number_bottom_right(self) -> None:
         """Test identifying a page number in the bottom-right corner."""
@@ -94,10 +99,12 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        classify_elements([page_data])
+        results = classify_elements([page_data])
 
         assert page_number_text.label == "page_number"
-        assert "page_number" in page_number_text.label_scores
+        # Check scores from ClassificationResult
+        assert "page_number" in results[0].scores
+        assert page_number_text in results[0].scores["page_number"]
 
     def test_multiple_candidates_prefer_corners(self) -> None:
         """Test that corner elements score higher than center ones."""
@@ -121,15 +128,21 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        classify_elements([page_data])
+        results = classify_elements([page_data])
 
-        # Corner should have higher score
-        assert (
-            corner_text.label_scores["page_number"]
-            > center_text.label_scores["page_number"]
-        )
+        # Corner should have higher score and be labeled
         assert corner_text.label == "page_number"
         assert center_text.label is None
+
+        # Check scores from ClassificationResult
+        page_number_scores = results[0].scores["page_number"]
+        corner_score = page_number_scores[corner_text].combined_score(
+            ClassifierConfig()
+        )
+        center_score = page_number_scores[center_text].combined_score(
+            ClassifierConfig()
+        )
+        assert corner_score > center_score
 
     def test_prefer_numeric_match_to_page_index(self) -> None:
         """Prefer element whose numeric value equals PageData.page_number."""
@@ -186,8 +199,12 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        classify_elements([page_data])
+        results = classify_elements([page_data])
 
-        # Should have low score due to text pattern (position is good but text is bad)
-        assert text_element.label_scores["page_number"] < 0.5
+        # Should not be labeled due to text pattern (position is good but text is bad)
         assert text_element.label is None
+
+        # Check that score is low from ClassificationResult
+        page_number_scores = results[0].scores["page_number"]
+        score = page_number_scores[text_element].combined_score(ClassifierConfig())
+        assert score < 0.5
