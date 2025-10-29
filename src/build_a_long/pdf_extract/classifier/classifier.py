@@ -45,12 +45,28 @@ from build_a_long.pdf_extract.extractor.page_elements import Element, Text
 
 logger = logging.getLogger(__name__)
 
-# TODO Rename this to classify_pages and create a new classify_page. Then any
-# caller that is currently using classify_elements([single_page]) can be updated to use classify_page.
+
+def classify_elements(page: PageData) -> ClassificationResult:
+    """Classify and label elements on a single page using rule-based heuristics.
+
+    Args:
+        page: A single PageData object to classify.
+
+    Returns:
+        A ClassificationResult object containing the classification results.
+    """
+    config = ClassifierConfig()
+    classifier = Classifier(config)
+    orchestrator = ClassificationOrchestrator(classifier)
+
+    return orchestrator.process_page(page)
 
 
-def classify_elements(pages: List[PageData]) -> List[ClassificationResult]:
-    """Classify and label elements across all pages using rule-based heuristics.
+def classify_pages(pages: List[PageData]) -> List[ClassificationResult]:
+    """Classify and label elements across multiple pages using rule-based heuristics.
+
+    Args:
+        pages: A list of PageData objects to classify.
 
     Returns:
         List of ClassificationResult objects, one per page.

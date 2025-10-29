@@ -58,7 +58,7 @@ class TestClassifyPageNumber:
             bbox=BBox(0, 0, 100, 200),
         )
         # Run end-to-end classification; should not raise any errors
-        classify_elements([page_data])
+        classify_elements(page_data)
 
     def test_single_page_number_bottom_left(self) -> None:
         """Test identifying a page number in the bottom-left corner."""
@@ -74,13 +74,12 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        results = classify_elements([page_data])
+        results = classify_elements(page_data)
 
-        assert results[0].get_label(page_number_text) == "page_number"
+        assert results.get_label(page_number_text) == "page_number"
         # Check scores from ClassificationResult
-        assert len(results) == 1
-        assert "page_number" in results[0].scores
-        page_number_scores = results[0].scores["page_number"]
+        assert "page_number" in results.scores
+        page_number_scores = results.scores["page_number"]
         assert page_number_text in page_number_scores
         score = page_number_scores[page_number_text].combined_score(ClassifierConfig())
         assert score > 0.5
@@ -99,12 +98,12 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        results = classify_elements([page_data])
+        result = classify_elements(page_data)
 
-        assert results[0].get_label(page_number_text) == "page_number"
+        assert result.get_label(page_number_text) == "page_number"
         # Check scores from ClassificationResult
-        assert "page_number" in results[0].scores
-        assert page_number_text in results[0].scores["page_number"]
+        assert "page_number" in result.scores
+        assert page_number_text in result.scores["page_number"]
 
     def test_multiple_candidates_prefer_corners(self) -> None:
         """Test that corner elements score higher than center ones."""
@@ -128,14 +127,14 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        results = classify_elements([page_data])
+        result = classify_elements(page_data)
 
         # Corner should have higher score and be labeled
-        assert results[0].get_label(corner_text) == "page_number"
-        assert results[0].get_label(center_text) is None
+        assert result.get_label(corner_text) == "page_number"
+        assert result.get_label(center_text) is None
 
         # Check scores from ClassificationResult
-        page_number_scores = results[0].scores["page_number"]
+        page_number_scores = result.scores["page_number"]
         corner_score = page_number_scores[corner_text].combined_score(
             ClassifierConfig()
         )
@@ -157,10 +156,10 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        results = classify_elements([page_data])
+        result = classify_elements(page_data)
 
-        assert results[0].get_label(txt7) == "page_number"
-        assert results[0].get_label(txt6) is None
+        assert result.get_label(txt7) == "page_number"
+        assert result.get_label(txt6) is None
 
     def test_remove_near_duplicate_bboxes(self) -> None:
         """After choosing page number, remove nearly identical shadow/duplicate elements."""
@@ -176,10 +175,10 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        results = classify_elements([page_data])
+        result = classify_elements(page_data)
 
         # Page number kept and labeled; duplicate marked as deleted
-        assert results[0].get_label(pn) == "page_number"
+        assert result.get_label(pn) == "page_number"
         assert pn in page_data.elements
         assert dup in page_data.elements
         assert dup.deleted is True
@@ -199,12 +198,12 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
-        results = classify_elements([page_data])
+        result = classify_elements(page_data)
 
         # Should not be labeled due to text pattern (position is good but text is bad)
-        assert results[0].get_label(text_element) is None
+        assert result.get_label(text_element) is None
 
         # Check that score is low from ClassificationResult
-        page_number_scores = results[0].scores["page_number"]
+        page_number_scores = result.scores["page_number"]
         score = page_number_scores[text_element].combined_score(ClassifierConfig())
         assert score < 0.5

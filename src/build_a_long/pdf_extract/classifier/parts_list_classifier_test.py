@@ -39,14 +39,14 @@ class TestPartsListClassification:
             bbox=page_bbox,
         )
 
-        results = classify_elements([page])
+        result = classify_elements(page)
 
         # Part counts should be labeled, step labeled, and d1 chosen as parts list
-        assert results[0].get_label(pc1) == "part_count"
-        assert results[0].get_label(pc2) == "part_count"
-        assert results[0].get_label(step) == "step_number"
-        assert results[0].get_label(d1) == "parts_list"
-        d2_label = results[0].get_label(d2)
+        assert result.get_label(pc1) == "part_count"
+        assert result.get_label(pc2) == "part_count"
+        assert result.get_label(step) == "step_number"
+        assert result.get_label(d1) == "parts_list"
+        d2_label = result.get_label(d2)
         assert d2_label is None or d2_label != "parts_list"
 
     @pytest.mark.skip(reason="Re-enable, once we fix the classifer rules.")
@@ -68,7 +68,7 @@ class TestPartsListClassification:
         )
         page: PageData = PageData.from_json(fixture.read_text())  # type: ignore[assignment]
 
-        results = classify_elements([page])
+        result = classify_elements(page)
 
         # Build a quick map of elements by id for easy lookup in assertions
         elems = {e.id: e for e in page.elements if e.id is not None}
@@ -85,25 +85,25 @@ class TestPartsListClassification:
         d35 = elems[35]
 
         # Assertions matching the previous test
-        assert results[0].get_label(step) == "step_number"
-        assert results[0].get_label(pc4) == "part_count"
-        assert results[0].get_label(pc5) == "part_count"
-        assert results[0].get_label(pc6) == "part_count"
+        assert result.get_label(step) == "step_number"
+        assert result.get_label(pc4) == "part_count"
+        assert result.get_label(pc5) == "part_count"
+        assert result.get_label(pc6) == "part_count"
 
         # Exactly one of the drawings is chosen as parts list; the other is removed
-        d34_label = results[0].get_label(d34)
-        d35_label = results[0].get_label(d35)
+        d34_label = result.get_label(d34)
+        d35_label = result.get_label(d35)
         assert (d34_label == "parts_list") ^ (d35_label == "parts_list")
         assert (d34.deleted) ^ (d35.deleted)
 
         # Images within the chosen parts list should be labeled as part_image; unrelated image is removed
-        assert results[0].get_label(img18) == "part_image"
+        assert result.get_label(img18) == "part_image"
         assert img18.deleted is False
 
-        assert results[0].get_label(img19) == "part_image"
+        assert result.get_label(img19) == "part_image"
         assert img19.deleted is False
 
-        assert results[0].get_label(img20) == "part_image"
+        assert result.get_label(img20) == "part_image"
         assert img20.deleted is False
 
         assert img17.deleted is True
@@ -140,10 +140,10 @@ class TestPartsListClassification:
             bbox=page_bbox,
         )
 
-        results = classify_elements([page])
+        result = classify_elements(page)
 
         # Exactly one of the drawings is chosen as parts_list, and exactly one is deleted
-        d_small_label = results[0].get_label(d_small)
-        d_large_label = results[0].get_label(d_large)
+        d_small_label = result.get_label(d_small)
+        d_large_label = result.get_label(d_large)
         assert (d_small_label == "parts_list") ^ (d_large_label == "parts_list")
         assert (d_small.deleted) ^ (d_large.deleted)

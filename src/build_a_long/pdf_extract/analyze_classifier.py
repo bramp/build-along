@@ -14,7 +14,7 @@ from typing import Dict, List
 
 import pymupdf
 
-from build_a_long.pdf_extract.classifier import classify_elements
+from build_a_long.pdf_extract.classifier import classify_pages
 from build_a_long.pdf_extract.classifier.types import (
     ClassificationResult,
     ClassifierConfig,
@@ -136,7 +136,7 @@ def analyze_document(pdf_path: Path) -> DocumentAnalysis:
     with pymupdf.open(str(pdf_path)) as doc:
         # Extract and classify all pages
         pages_data = extract_bounding_boxes(doc, None)
-        results = classify_elements(pages_data)
+        results = classify_pages(pages_data)
 
         # Analyze each page
         page_analyses = [
