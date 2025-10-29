@@ -60,7 +60,7 @@ class PageNumberClassifier(LabelClassifier):
         self,
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[str, Any],
+        labeled_elements: Dict[Any, str],
     ) -> None:
         if not page_data.elements:
             return
@@ -102,7 +102,7 @@ class PageNumberClassifier(LabelClassifier):
         self,
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[str, Any],
+        labeled_elements: Dict[Any, str],
         to_remove: Dict[int, RemovalReason],
     ) -> None:
         if not page_data.elements:
@@ -142,7 +142,7 @@ class PageNumberClassifier(LabelClassifier):
 
         best_candidate, _ = max(candidates, key=lambda c: c[1])
 
-        labeled_elements["page_number"] = best_candidate
+        labeled_elements[best_candidate] = "page_number"
 
         self.classifier._remove_child_bboxes(page_data, best_candidate, to_remove)
         self.classifier._remove_similar_bboxes(page_data, best_candidate, to_remove)

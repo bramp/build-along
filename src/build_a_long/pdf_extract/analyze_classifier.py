@@ -91,7 +91,7 @@ def analyze_page(page_data: PageData, result: ClassificationResult) -> PageAnaly
     # Find page number element
     page_number_element = None
     for element in page_data.elements:
-        if isinstance(element, Text) and element.label == "page_number":
+        if isinstance(element, Text) and result.get_label(element) == "page_number":
             page_number_element = element
             break
 

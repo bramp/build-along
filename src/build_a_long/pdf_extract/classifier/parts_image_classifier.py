@@ -38,6 +38,7 @@ from build_a_long.pdf_extract.classifier.types import (
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
+    Element,
     Image,
     Text,
 )
@@ -80,7 +81,7 @@ class PartsImageClassifier(LabelClassifier):
         self,
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[str, Any],
+        labeled_elements: Dict[Element, str],
     ) -> None:
         """Calculate scores for part image pairings.
 
@@ -88,8 +89,16 @@ class PartsImageClassifier(LabelClassifier):
         part count texts and images within parts lists.
         """
 
-        part_counts: List[Text] = labeled_elements.get("part_count", [])
-        parts_lists: List[Drawing] = labeled_elements.get("parts_list", [])
+        part_counts: List[Text] = [
+            e
+            for e, label in labeled_elements.items()
+            if label == "part_count" and isinstance(e, Text)
+        ]
+        parts_lists: List[Drawing] = [
+            e
+            for e, label in labeled_elements.items()
+            if label == "parts_list" and isinstance(e, Drawing)
+        ]
         if not part_counts or not parts_lists:
             return
 
@@ -115,17 +124,15 @@ class PartsImageClassifier(LabelClassifier):
         edges: List[_PartImageScore],
         part_counts: List[Text],
         images: List[Image],
-        labeled_elements: Dict[str, Any],
+        labeled_elements: Dict[Element, str],
     ):
         """Match part counts with images using greedy matching based on distance."""
         edges.sort(key=lambda score: score.sort_key())
         matched_counts: Set[int] = set()
         matched_images: Set[int] = set()
 
-        if "part_image" not in labeled_elements:
-            labeled_elements["part_image"] = []
-        if "part_image_pairs" not in labeled_elements:
-            labeled_elements["part_image_pairs"] = []
+        # Track pairs for later use (stored separately from labeled_elements)
+        part_image_pairs = []
 
         for score in edges:
             pc = score.part_count
@@ -134,10 +141,10 @@ class PartsImageClassifier(LabelClassifier):
                 continue
             matched_counts.add(id(pc))
             matched_images.add(id(img))
-            img.label = img.label or "part_image"
-            if img not in labeled_elements["part_image"]:
-                labeled_elements["part_image"].append(img)
-            labeled_elements["part_image_pairs"].append((pc, img))
+            # Label the image as part_image (only once per image)
+            if labeled_elements.get(img) != "part_image":
+                labeled_elements[img] = "part_image"
+            part_image_pairs.append((pc, img))
 
         if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
             unmatched_c = [pc for pc in part_counts if id(pc) not in matched_counts]
@@ -195,11 +202,19 @@ class PartsImageClassifier(LabelClassifier):
         self,
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[str, Any],
+        labeled_elements: Dict[Element, str],
         to_remove: Dict[int, RemovalReason],
     ) -> None:
-        part_counts: List[Text] = labeled_elements.get("part_count", [])
-        parts_lists: List[Drawing] = labeled_elements.get("parts_list", [])
+        part_counts: List[Text] = [
+            e
+            for e, label in labeled_elements.items()
+            if label == "part_count" and isinstance(e, Text)
+        ]
+        parts_lists: List[Drawing] = [
+            e
+            for e, label in labeled_elements.items()
+            if label == "parts_list" and isinstance(e, Drawing)
+        ]
         if not part_counts or not parts_lists:
             return
 
@@ -208,7 +223,7 @@ class PartsImageClassifier(LabelClassifier):
             return
 
         # Retrieve pre-computed scores from scores dict (populated in calculate_scores)
-        part_image_scores = scores.get("part_image", {})
+        part_image_scores: Dict[Any, Any] = scores.get("part_image", {})
         edges = []
         for pc in part_counts:
             for img in images:
