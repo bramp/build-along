@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict
 from build_a_long.pdf_extract.classifier.types import (
     ClassifierConfig,
     RemovalReason,
+    ScoreKey,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import Element
@@ -32,7 +33,7 @@ class LabelClassifier(ABC):
     def calculate_scores(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
+        scores: Dict[str, Dict[ScoreKey, Any]],
         labeled_elements: Dict[Element, str],
     ) -> None:
         """Calculate the scores for the label."""
@@ -42,7 +43,7 @@ class LabelClassifier(ABC):
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
+        scores: Dict[str, Dict[ScoreKey, Any]],
         labeled_elements: Dict[Element, str],
         to_remove: Dict[int, RemovalReason],
     ) -> None:

@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 import logging
 from typing import Dict, List, Optional, Sequence
 
-from build_a_long.pdf_extract.extractor.page_elements import PageElement
+from build_a_long.pdf_extract.extractor.page_elements import Element
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +30,11 @@ class ElementTree:
         children_map: Maps element id to list of its children elements
     """
 
-    roots: List[PageElement] = field(default_factory=list)
-    parent_map: Dict[int, Optional[PageElement]] = field(default_factory=dict)
-    children_map: Dict[int, List[PageElement]] = field(default_factory=dict)
+    roots: List[Element] = field(default_factory=list)
+    parent_map: Dict[int, Optional[Element]] = field(default_factory=dict)
+    children_map: Dict[int, List[Element]] = field(default_factory=dict)
 
-    def get_children(self, element: PageElement) -> List[PageElement]:
+    def get_children(self, element: Element) -> List[Element]:
         """Get the children of a given element.
 
         Args:
@@ -45,7 +45,7 @@ class ElementTree:
         """
         return self.children_map.get(id(element), [])
 
-    def get_descendants(self, element: PageElement) -> List[PageElement]:
+    def get_descendants(self, element: Element) -> List[Element]:
         """Get all descendants of a given element (children, grandchildren, etc.).
 
         Args:
@@ -54,7 +54,7 @@ class ElementTree:
         Returns:
             List of all descendant elements (empty list if no descendants)
         """
-        descendants: List[PageElement] = []
+        descendants: List[Element] = []
         children = self.get_children(element)
         for child in children:
             descendants.append(child)
@@ -62,7 +62,7 @@ class ElementTree:
             descendants.extend(self.get_descendants(child))
         return descendants
 
-    def get_parent(self, element: PageElement) -> Optional[PageElement]:
+    def get_parent(self, element: Element) -> Optional[Element]:
         """Get the parent of a given element.
 
         Args:
@@ -73,7 +73,7 @@ class ElementTree:
         """
         return self.parent_map.get(id(element))
 
-    def is_root(self, element: PageElement) -> bool:
+    def is_root(self, element: Element) -> bool:
         """Check if an element is a root element.
 
         Args:
@@ -88,7 +88,7 @@ class ElementTree:
 
 
 def build_hierarchy_from_elements(
-    elements: Sequence[PageElement],
+    elements: Sequence[Element],
 ) -> ElementTree:
     """Build a containment-based hierarchy from typed elements.
 
@@ -99,7 +99,7 @@ def build_hierarchy_from_elements(
     Returns:
         ElementTree containing the hierarchy with roots and parent/children mappings.
     """
-    converted: List[PageElement] = list(elements)
+    converted: List[Element] = list(elements)
 
     # Sort indices by area ascending to assign children first
     idxs = sorted(range(len(converted)), key=lambda i: converted[i].bbox.area())
