@@ -258,7 +258,7 @@ class ClassificationOrchestrator:
         Orchestrates the classification of a single page, with backtracking.
 
         Returns:
-            The final ClassificationResult after applying labels to page_data.
+            The final ClassificationResult containing labels and removal info.
         """
         hints = ClassificationHints()
 
@@ -269,13 +269,11 @@ class ClassificationOrchestrator:
 
             inconsistencies = self._analyze_for_inconsistencies(result)
             if not inconsistencies:
-                self._apply_result_to_page(page_data, result)
                 return result
 
             hints = self._generate_new_hints(result, inconsistencies)
 
         final_result = self.history[-1]
-        self._apply_result_to_page(page_data, final_result)
         return final_result
 
     def _analyze_for_inconsistencies(self, result: ClassificationResult) -> List[str]:
@@ -294,23 +292,3 @@ class ClassificationOrchestrator:
         # bias the next run towards more consistent results.
         # TODO Figure out how to pass the hints between pages (of the book).
         return ClassificationHints()
-
-    def _apply_result_to_page(
-        self, page_data: PageData, result: ClassificationResult
-    ) -> PageData:
-        """
-        Applies classification results to a PageData object.
-
-        Note: Labels are NOT stored on elements anymore - they're only in
-        ClassificationResult.labeled_elements. Use result.get_label(element)
-        to retrieve an element's label.
-
-        Marks elements for removal as deleted.
-        """
-        # Mark elements as deleted instead of removing them
-        if result.to_remove:
-            for e in page_data.elements:
-                if id(e) in result.to_remove:
-                    e.deleted = True
-
-        return page_data

@@ -68,7 +68,8 @@ class ClassifiedPage:
                 self._cache[cache_key] = [
                     e
                     for e in self.page.elements
-                    if self.result.get_label(e) == label and e.deleted is False
+                    if self.result.get_label(e) == label
+                    and id(e) not in self.result.to_remove
                 ]
         return self._cache[cache_key]
 
@@ -107,7 +108,7 @@ class ClassifiedPage:
         # Use spatial containment, not hierarchy
         result = []
         for elem in self.page.elements:
-            if elem.deleted:
+            if id(elem) in self.result.to_remove:
                 continue
             if label is not None and self.result.get_label(elem) != label:
                 continue
@@ -139,7 +140,7 @@ def _parts_lists(page: PageData, result: ClassificationResult) -> List[Element]:
     return [
         e
         for e in page.elements
-        if result.get_label(e) == "parts_list" and e.deleted is False
+        if result.get_label(e) == "parts_list" and id(e) not in result.to_remove
     ]
 
 
@@ -150,7 +151,7 @@ def _part_images(page: PageData, result: ClassificationResult) -> List[Element]:
     return [
         e
         for e in page.elements
-        if result.get_label(e) == "part_image" and e.deleted is False
+        if result.get_label(e) == "part_image" and id(e) not in result.to_remove
     ]
 
 
@@ -161,7 +162,7 @@ def _part_counts(page: PageData, result: ClassificationResult) -> List[Element]:
     return [
         e
         for e in page.elements
-        if result.get_label(e) == "part_count" and e.deleted is False
+        if result.get_label(e) == "part_count" and id(e) not in result.to_remove
     ]
 
 
@@ -218,7 +219,7 @@ class TestClassifierRules:
                 f"  WARNING: {deleted_count} part_images are DELETED on this page"
             )
             for img in all_part_images:
-                if img.deleted:
+                if id(img) in result.to_remove:
                     # Check if it's inside any parts_list
                     inside_any = any(
                         img.bbox.fully_inside(pl.bbox) for pl in parts_lists
@@ -256,7 +257,9 @@ class TestClassifierRules:
                 )
 
             # Log deleted part_images if any
-            deleted_images = [img for img in all_part_images_inside if img.deleted]
+            deleted_images = [
+                img for img in all_part_images_inside if id(img) in result.to_remove
+            ]
             if deleted_images:
                 log.warning(
                     f"  WARNING: {len(deleted_images)} part_images DELETED inside parts_list {parts_list.id}:"
@@ -368,7 +371,7 @@ class TestClassifierRules:
         # Find all elements that are both labeled and deleted
         labeled_and_deleted = []
         for elem in page.elements:
-            if result.get_label(elem) is not None and elem.deleted:
+            if result.get_label(elem) is not None and id(elem) in result.to_remove:
                 labeled_and_deleted.append(elem)
 
         if labeled_and_deleted:

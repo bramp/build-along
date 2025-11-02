@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, List, Set, Sequence
 
 import pymupdf
@@ -224,9 +224,11 @@ def _extract_page_elements(
         drawings = page.get_drawings()
         typed_elements.extend(_extract_drawing_elements(drawings))
 
-    # Assign sequential IDs to elements within this page
+    # Assign sequential IDs to elements within this page. PageElement dataclasses
+    # are frozen, so we create new instances with the assigned id using
+    # dataclasses.replace.
     for i, element in enumerate(typed_elements):
-        element.id = i
+        typed_elements[i] = replace(element, id=i)
 
     page_rect = page.rect
     page_bbox = BBox.from_tuple(
