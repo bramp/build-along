@@ -19,23 +19,23 @@ logger = logging.getLogger(__name__)
 def _draw_dashed_rectangle(
     draw: ImageDraw.ImageDraw,
     bbox: tuple[float, float, float, float],
-    fill: str,
-    width: int,
+    outline: str | None = None,
+    width: int = 0,
     dash_length: int = 5,
 ) -> None:
     x0, y0, x1, y1 = bbox
     # Top edge
     for i in range(int(x0), int(x1), dash_length * 2):
-        draw.line([(i, y0), (min(i + dash_length, x1), y0)], fill=fill, width=width)
+        draw.line([(i, y0), (min(i + dash_length, x1), y0)], fill=outline, width=width)
     # Bottom edge
     for i in range(int(x0), int(x1), dash_length * 2):
-        draw.line([(i, y1), (min(i + dash_length, x1), y1)], fill=fill, width=width)
+        draw.line([(i, y1), (min(i + dash_length, x1), y1)], fill=outline, width=width)
     # Left edge
     for i in range(int(y0), int(y1), dash_length * 2):
-        draw.line([(x0, i), (x0, min(i + dash_length, y1))], fill=fill, width=width)
+        draw.line([(x0, i), (x0, min(i + dash_length, y1))], fill=outline, width=width)
     # Right edge
     for i in range(int(y0), int(y1), dash_length * 2):
-        draw.line([(x1, i), (x1, min(i + dash_length, y1))], fill=fill, width=width)
+        draw.line([(x1, i), (x1, min(i + dash_length, y1))], fill=outline, width=width)
 
 
 def draw_and_save_bboxes(
@@ -94,12 +94,10 @@ def draw_and_save_bboxes(
         # If element is removed (in to_remove), use a lighter/grayed out color and dashed style
         if element_removed:
             # Draw dashed outline for removed elements
-            # TODO Fix this, as we don't currently draw dashed, OR with lower opacity
-            # PIL doesn't support dashed lines directly, so we'll draw with lower opacity
-            draw.rectangle(scaled_bbox, outline=color, width=1)
+            _draw_dashed_rectangle(draw, scaled_bbox, outline=color, width=2)
         else:
             # Draw the bounding box normally
-            draw.rectangle(scaled_bbox, outline=color, width=2)
+            draw.rectangle(scaled_bbox, outline=color, width=1)
 
         # Draw the element type text
         label_prefix = "[REMOVED] " if element_removed else ""

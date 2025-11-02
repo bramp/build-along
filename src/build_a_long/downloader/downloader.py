@@ -76,9 +76,6 @@ def write_metadata(path: Path, data: Metadata) -> None:
         print(f"Warning: Failed to write metadata.json: {e}")
 
 
-# TODO Rename to Downloader
-
-
 class LegoInstructionDownloader:
     """Downloader for LEGO instruction PDFs with shared HTTP client and configuration.
 
