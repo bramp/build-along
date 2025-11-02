@@ -4,10 +4,9 @@ from unittest.mock import ANY, MagicMock, mock_open, patch
 from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import ElementTree
-from build_a_long.pdf_extract.extractor.page_elements import Image, Text
+from build_a_long.pdf_extract.extractor.page_elements import Text
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.main import main, save_raw_json
-import json
+from build_a_long.pdf_extract.main import main
 
 
 class TestMain:
@@ -204,42 +203,3 @@ class TestMain:
         assert isinstance(draw_call_args.args[1], ElementTree)
         assert isinstance(draw_call_args.args[2], ClassificationResult)
         assert isinstance(draw_call_args.args[3], Path)
-
-
-def test_save_raw_json_prunes_fields(tmp_path: Path) -> None:
-    """save_raw_json should exclude deleted=False."""
-    # Element with defaults that should be pruned
-    text = Text(
-        bbox=BBox(0.0, 0.0, 10.0, 10.0),
-        text="hello",
-    )
-    # Element with explicit values that must be preserved
-    img = Image(
-        bbox=BBox(1.0, 1.0, 5.0, 5.0),
-        image_id="img1",
-        deleted=True,
-    )
-
-    page = PageData(
-        page_number=1, elements=[text, img], bbox=BBox(0.0, 0.0, 100.0, 100.0)
-    )
-
-    pdf_path = tmp_path / "12345.pdf"
-    pdf_path.write_bytes(b"")
-
-    save_raw_json([page], tmp_path, pdf_path)
-
-    out = tmp_path / "12345_page_001_raw.json"
-    assert out.exists()
-    data = json.loads(out.read_text())
-
-    assert data["page_number"] == 1
-    assert isinstance(data["elements"], list) and len(data["elements"]) == 2
-
-    e0 = data["elements"][0]
-    assert "deleted" not in e0
-    assert "label" not in e0
-
-    e1 = data["elements"][1]
-    assert e1.get("deleted") is True
-    assert "label" not in e1

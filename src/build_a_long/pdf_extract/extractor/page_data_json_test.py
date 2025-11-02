@@ -246,43 +246,6 @@ class TestPageDataJsonSerialization:
             raised = True
         assert raised is True
 
-    def test_from_json_preserves_optional_fields(self) -> None:
-        """Optional fields like id, deleted should be preserved."""
-        json_str = json.dumps(
-            {
-                "page_number": 7,
-                "bbox": {"x0": 0, "y0": 0, "x1": 100, "y1": 200},
-                "elements": [
-                    {
-                        "__tag__": "Text",
-                        "bbox": {"x0": 10, "y0": 10, "x1": 50, "y1": 30},
-                        "text": "Labeled",
-                        "id": 123,
-                        "label": "page_number",  # Should be ignored (no longer in PageElement)
-                        "deleted": False,
-                    },
-                    {
-                        "__tag__": "Image",
-                        "bbox": {"x0": 10, "y0": 40, "x1": 50, "y1": 80},
-                        "image_id": "img_deleted",
-                        "deleted": True,
-                    },
-                ],
-            }
-        )
-
-        page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
-
-        assert len(page.elements) == 2
-        elem0 = page.elements[0]
-        assert elem0.id == 123
-        # label field was removed from PageElement, so it won't be preserved
-        assert elem0.deleted is False
-
-        # Second element marked as deleted
-        elem1 = page.elements[1]
-        assert elem1.deleted is True
-
     def test_round_trip_serialization(self) -> None:
         """Verify to_json() and from_json() round-trip correctly."""
         original = PageData(

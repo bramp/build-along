@@ -16,6 +16,28 @@ from build_a_long.pdf_extract.extractor.hierarchy import ElementTree
 logger = logging.getLogger(__name__)
 
 
+def _draw_dashed_rectangle(
+    draw: ImageDraw.ImageDraw,
+    bbox: tuple[float, float, float, float],
+    fill: str,
+    width: int,
+    dash_length: int = 5,
+) -> None:
+    x0, y0, x1, y1 = bbox
+    # Top edge
+    for i in range(int(x0), int(x1), dash_length * 2):
+        draw.line([(i, y0), (min(i + dash_length, x1), y0)], fill=fill, width=width)
+    # Bottom edge
+    for i in range(int(x0), int(x1), dash_length * 2):
+        draw.line([(i, y1), (min(i + dash_length, x1), y1)], fill=fill, width=width)
+    # Left edge
+    for i in range(int(y0), int(y1), dash_length * 2):
+        draw.line([(x0, i), (x0, min(i + dash_length, y1))], fill=fill, width=width)
+    # Right edge
+    for i in range(int(y0), int(y1), dash_length * 2):
+        draw.line([(x1, i), (x1, min(i + dash_length, y1))], fill=fill, width=width)
+
+
 def draw_and_save_bboxes(
     page: pymupdf.Page,
     hierarchy: ElementTree,
@@ -52,7 +74,8 @@ def draw_and_save_bboxes(
 
     def _draw_element(element: Element, depth: int) -> None:
         """Recursively draw an element and its children."""
-        if element.deleted and not draw_deleted:
+        element_removed = id(element) in result.to_remove
+        if element_removed and not draw_deleted:
             return
 
         bbox = element.bbox
@@ -68,9 +91,9 @@ def draw_and_save_bboxes(
         # Determine color based on depth
         color = depth_colors[depth % len(depth_colors)]
 
-        # If element is deleted, use a lighter/grayed out color and dashed style
-        if element.deleted:
-            # Draw dashed outline for deleted elements
+        # If element is removed (in to_remove), use a lighter/grayed out color and dashed style
+        if element_removed:
+            # Draw dashed outline for removed elements
             # TODO Fix this, as we don't currently draw dashed, OR with lower opacity
             # PIL doesn't support dashed lines directly, so we'll draw with lower opacity
             draw.rectangle(scaled_bbox, outline=color, width=1)
@@ -79,7 +102,7 @@ def draw_and_save_bboxes(
             draw.rectangle(scaled_bbox, outline=color, width=2)
 
         # Draw the element type text
-        label_prefix = "[REMOVED] " if element.deleted else ""
+        label_prefix = "[REMOVED] " if element_removed else ""
         element_label = result.get_label(element)  # type: ignore[arg-type]
         label = f"ID: {element.id} {label_prefix}" + (
             element_label or element.__class__.__name__

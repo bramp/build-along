@@ -177,12 +177,12 @@ class TestClassifyPageNumber:
 
         result = classify_elements(page_data)
 
-        # Page number kept and labeled; duplicate marked as deleted
+        # Page number kept and labeled; duplicate marked for removal
         assert result.get_label(pn) == "page_number"
         assert pn in page_data.elements
         assert dup in page_data.elements
-        assert dup.deleted is True
-        assert pn.deleted is False
+        assert id(dup) in result.to_remove
+        assert id(pn) not in result.to_remove
 
     def test_non_numeric_text_scores_low(self) -> None:
         """Test that non-numeric text scores low."""

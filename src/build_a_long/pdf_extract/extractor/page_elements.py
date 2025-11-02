@@ -21,7 +21,7 @@ from typing import Optional, Union
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
 
-@dataclass(eq=False)
+@dataclass(eq=False, frozen=True)
 class PageElement:
     """Base class for anything detected on a page.
 
@@ -35,8 +35,9 @@ class PageElement:
     bbox: BBox
     id: Optional[int] = field(default=None, kw_only=True)
 
-    # Classification fields
-    deleted: bool = field(default=False, kw_only=True)
+    # Note: PageElement instances are immutable (frozen dataclass). Deletion
+    # state is not stored on the element itself any more; callers should
+    # consult ClassificationResult.to_remove (mapping of element id -> reason).
 
     def __hash__(self):
         return id(self)
@@ -45,7 +46,7 @@ class PageElement:
         return self is other
 
 
-@dataclass(eq=False)
+@dataclass(eq=False, frozen=True)
 class Drawing(PageElement):
     """A vector drawing on the page.
 
@@ -56,7 +57,7 @@ class Drawing(PageElement):
     image_id: Optional[str] = None
 
 
-@dataclass(eq=False)
+@dataclass(eq=False, frozen=True)
 class Text(PageElement):
     """A text element on the page.
 
@@ -68,7 +69,7 @@ class Text(PageElement):
     font_size: Optional[float] = None
 
 
-@dataclass(eq=False)
+@dataclass(eq=False, frozen=True)
 class Image(PageElement):
     """An image element on the page (raster image from PDF).
 

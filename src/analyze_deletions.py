@@ -10,7 +10,8 @@ assert isinstance(page_data, PageData), "Expected single PageData, got list"
 page: PageData = page_data
 
 print(f"Page has {len(page.elements)} elements before classification")
-print(f"Deleted elements before: {sum(1 for e in page.elements if e.deleted)}")
+# Before classification, no elements are deleted
+print("Deleted elements before: 0")
 
 # Classify the page
 result = classify_elements(page)
@@ -19,11 +20,10 @@ print(f"\nPage has {len(page.elements)} elements after classification")
 labeled_count = sum(
     1 for e in page.elements if result.get_label(e) is not None)
 print(f"Labeled elements after: {labeled_count}")
-print(f"Deleted elements after: {sum(1 for e in page.elements if e.deleted)}")
+print(f"Deleted elements after: {sum(1 for e in page.elements if id(e) in result.to_remove)}")
 
 # Find deleted labeled elements
-deleted_labeled = [
-    e for e in page.elements if e.deleted and result.get_label(e) is not None]
+deleted_labeled = [e for e in page.elements if id(e) in result.to_remove and result.get_label(e) is not None]
 
 print(f'\n{"="*60}')
 print(f'Found {len(deleted_labeled)} deleted labeled elements:')
@@ -37,8 +37,7 @@ for elem in deleted_labeled:
 print(f'\n{"="*60}')
 print('Checking for duplicates at same location:')
 print(f'{"="*60}')
-labeled = [e for e in page.elements if result.get_label(
-    e) is not None and not e.deleted]
+labeled = [e for e in page.elements if result.get_label(e) is not None and id(e) not in result.to_remove]
 for del_elem in deleted_labeled:
     del_bbox = del_elem.bbox
     del_label = result.get_label(del_elem)
