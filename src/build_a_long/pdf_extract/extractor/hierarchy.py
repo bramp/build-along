@@ -28,11 +28,13 @@ class ElementTree:
         roots: Top-level elements with no parent
         parent_map: Maps element id to its parent element (None for roots)
         children_map: Maps element id to list of its children elements
+        depth_map: Maps element id to its nesting depth (0 for roots)
     """
 
     roots: List[Element] = field(default_factory=list)
     parent_map: Dict[int, Optional[Element]] = field(default_factory=dict)
     children_map: Dict[int, List[Element]] = field(default_factory=dict)
+    depth_map: Dict[int, int] = field(default_factory=dict)
 
     def get_children(self, element: Element) -> List[Element]:
         """Get the children of a given element.
@@ -72,6 +74,17 @@ class ElementTree:
             Parent element or None if this is a root element
         """
         return self.parent_map.get(id(element))
+
+    def get_depth(self, element: Element) -> int:
+        """Get the nesting depth of an element.
+
+        Args:
+            element: The element to get depth for
+
+        Returns:
+            Nesting depth (0 for root elements, 1 for their children, etc.)
+        """
+        return self.depth_map.get(id(element), 0)
 
     def is_root(self, element: Element) -> bool:
         """Check if an element is a root element.
@@ -142,5 +155,15 @@ def build_hierarchy_from_elements(
             tree.parent_map[id(element)] = None
 
         tree.children_map[id(element)] = [converted[cidx] for cidx in children_lists[i]]
+
+    # Calculate depths by walking from roots - O(n)
+    def _calculate_depth(element: Element, depth: int) -> None:
+        """Recursively calculate and store depth for element and its descendants."""
+        tree.depth_map[id(element)] = depth
+        for child in tree.children_map.get(id(element), []):
+            _calculate_depth(child, depth + 1)
+
+    for root in tree.roots:
+        _calculate_depth(root, 0)
 
     return tree

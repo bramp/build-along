@@ -11,7 +11,7 @@ from build_a_long.pdf_extract.extractor.page_elements import (
     Image as ImageElement,
     Text,
 )
-from build_a_long.pdf_extract.extractor.hierarchy import ElementTree
+from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
 
 logger = logging.getLogger(__name__)
 
@@ -40,19 +40,19 @@ def _draw_dashed_rectangle(
 
 def draw_and_save_bboxes(
     page: pymupdf.Page,
-    hierarchy: ElementTree,
+    elements: list[Element],
     result: ClassificationResult,
     output_path: Path,
     *,
     draw_deleted: bool = False,
 ) -> None:
     """
-    Draws bounding boxes from a hierarchy on the PDF page image and saves it.
-    Colors are based on nesting depth, and element types are labeled.
+    Draws bounding boxes from elements on the PDF page image and saves it.
+    Colors are based on nesting depth (calculated via bbox containment).
 
     Args:
         page: PyMuPDF page to render
-        hierarchy: ElementTree containing the element hierarchy
+        elements: List of elements to draw
         result: ClassificationResult containing labels for elements
         output_path: Where to save the output image
         draw_deleted: If True, also render elements marked as deleted.
@@ -72,11 +72,14 @@ def draw_and_save_bboxes(
     # Colors for different nesting depths (cycles through this list)
     depth_colors = ["red", "green", "blue", "yellow", "purple", "orange"]
 
-    def _draw_element(element: Element, depth: int) -> None:
-        """Recursively draw an element and its children."""
+    # Build hierarchy once to efficiently calculate depths - O(n log n)
+    hierarchy = build_hierarchy_from_elements(elements)
+
+    # Draw all elements
+    for element in elements:
         element_removed = id(element) in result.to_remove
         if element_removed and not draw_deleted:
-            return
+            continue
 
         bbox = element.bbox
 
@@ -87,6 +90,9 @@ def draw_and_save_bboxes(
             bbox.x1 * scale_x,
             bbox.y1 * scale_y,
         )
+
+        # Get pre-calculated depth - O(1)
+        depth = hierarchy.get_depth(element)
 
         # Determine color based on depth
         color = depth_colors[depth % len(depth_colors)]
@@ -128,15 +134,6 @@ def draw_and_save_bboxes(
             text_width = text_bbox[2] - text_bbox[0]
             text_position = (scaled_bbox[2] - text_width, scaled_bbox[3] + 2)
             draw.text(text_position, label, fill=color)
-
-        # Recursively draw children using the hierarchy
-        children = hierarchy.get_children(element)
-        for child in children:
-            _draw_element(child, depth + 1)
-
-    # Start traversal from root elements
-    for root_element in hierarchy.roots:
-        _draw_element(root_element, 0)
 
     img.save(output_path)
     logger.info("Saved image with bboxes to %s", output_path)

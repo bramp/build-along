@@ -24,6 +24,9 @@ def test_build_hierarchy_basic_containment():
     children = tree.get_children(root)
     assert len(children) == 1
     assert isinstance(children[0], StepNumber)
+    # Test depth calculation
+    assert tree.get_depth(root) == 0
+    assert tree.get_depth(children[0]) == 1
 
 
 def test_build_hierarchy_with_children():
@@ -41,3 +44,23 @@ def test_build_hierarchy_with_children():
     assert len(children) == 1
     assert isinstance(children[0], Text)
     assert children[0].text == "x3"
+    # Test depth calculation
+    assert tree.get_depth(root) == 0
+    assert tree.get_depth(children[0]) == 1
+
+
+def test_build_hierarchy_depth_calculation():
+    # Test multi-level nesting: outer -> middle -> inner
+    outer = Drawing(bbox=BBox(0, 0, 100, 100), image_id="outer")
+    middle = Drawing(bbox=BBox(10, 10, 90, 90), image_id="middle")
+    inner = Text(bbox=BBox(20, 20, 30, 30), text="inner")
+    sibling = Text(bbox=BBox(50, 50, 60, 60), text="sibling")
+
+    elements = [outer, middle, inner, sibling]
+    tree = build_hierarchy_from_elements(elements)
+
+    # Verify depths
+    assert tree.get_depth(outer) == 0
+    assert tree.get_depth(middle) == 1
+    assert tree.get_depth(inner) == 2
+    assert tree.get_depth(sibling) == 2  # sibling to inner, both inside middle

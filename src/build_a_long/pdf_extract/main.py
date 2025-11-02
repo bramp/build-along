@@ -14,9 +14,6 @@ from build_a_long.pdf_extract.extractor import (
 from build_a_long.pdf_extract.classifier import classify_pages
 from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
-from build_a_long.pdf_extract.extractor.hierarchy import (
-    build_hierarchy_from_elements,
-)
 from build_a_long.pdf_extract.parser import parse_page_ranges
 from build_a_long.pdf_extract.parser.page_ranges import PageRanges
 
@@ -109,12 +106,8 @@ def render_annotated_images(
         page_num = page_data.page_number  # 1-indexed
         page = doc[page_num - 1]  # 0-indexed
         output_path = output_dir / f"page_{page_num:03d}.png"
-        # Build hierarchy on-demand for rendering to avoid sync issues
-        # TODO Consider removing this, and maybe moving it into draw_and_save.
-        # OR maybe we just get rid of the hierarchy entirely?
-        hierarchy = build_hierarchy_from_elements(page_data.elements)
         draw_and_save_bboxes(
-            page, hierarchy, result, output_path, draw_deleted=draw_deleted
+            page, page_data.elements, result, output_path, draw_deleted=draw_deleted
         )
 
 
