@@ -119,11 +119,11 @@ class Classifier:
         """
         scores = {}
         labeled_elements = {}
-        to_remove = {}
+        removal_reasons = {}
 
         for classifier in self.classifiers:
             classifier.calculate_scores(page_data, scores, labeled_elements)
-            classifier.classify(page_data, scores, labeled_elements, to_remove)
+            classifier.classify(page_data, scores, labeled_elements, removal_reasons)
 
         warnings = self._log_post_classification_warnings(page_data, labeled_elements)
 
@@ -131,9 +131,9 @@ class Classifier:
         part_image_pairs = labeled_elements.pop("part_image_pairs", [])
 
         return ClassificationResult(
-            scores=scores,
-            labeled_elements=labeled_elements,
-            to_remove=to_remove,
+            _scores=scores,
+            _labeled_elements=labeled_elements,
+            _removal_reasons=removal_reasons,
             warnings=warnings,
             part_image_pairs=part_image_pairs,
         )
@@ -142,7 +142,7 @@ class Classifier:
         self,
         page_data: PageData,
         target,
-        to_remove_ids: Dict[int, RemovalReason],
+        removal_reasons: Dict[int, RemovalReason],
         keep_ids: Optional[Set[int]] = None,
     ) -> None:
         if keep_ids is None:
@@ -155,7 +155,7 @@ class Classifier:
                 continue
             b = ele.bbox
             if b.fully_inside(target_bbox):
-                to_remove_ids[id(ele)] = RemovalReason(
+                removal_reasons[id(ele)] = RemovalReason(
                     reason_type="child_bbox", target_element=target
                 )
 
@@ -163,7 +163,7 @@ class Classifier:
         self,
         page_data: PageData,
         target,
-        to_remove_ids: Dict[int, RemovalReason],
+        removal_reasons: Dict[int, RemovalReason],
         keep_ids: Optional[Set[int]] = None,
     ) -> None:
         if keep_ids is None:
@@ -184,7 +184,7 @@ class Classifier:
             b = ele.bbox
             iou = target_bbox.iou(b)
             if iou >= IOU_THRESHOLD:
-                to_remove_ids[id(ele)] = RemovalReason(
+                removal_reasons[id(ele)] = RemovalReason(
                     reason_type="similar_bbox", target_element=target
                 )
                 continue
@@ -196,7 +196,7 @@ class Classifier:
                     target_area > 0
                     and abs(area - target_area) / target_area <= AREA_TOL
                 ):
-                    to_remove_ids[id(ele)] = RemovalReason(
+                    removal_reasons[id(ele)] = RemovalReason(
                         reason_type="similar_bbox", target_element=target
                     )
 

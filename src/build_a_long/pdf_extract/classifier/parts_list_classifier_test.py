@@ -94,19 +94,19 @@ class TestPartsListClassification:
         d34_label = result.get_label(d34)
         d35_label = result.get_label(d35)
         assert (d34_label == "parts_list") ^ (d35_label == "parts_list")
-        assert (id(d34) in result.to_remove) ^ (id(d35) in result.to_remove)
+        assert result.is_removed(d34) ^ result.is_removed(d35)
 
         # Images within the chosen parts list should be labeled as part_image; unrelated image is removed
         assert result.get_label(img18) == "part_image"
-        assert id(img18) not in result.to_remove
+        assert not result.is_removed(img18)
 
         assert result.get_label(img19) == "part_image"
-        assert id(img19) not in result.to_remove
+        assert not result.is_removed(img19)
 
         assert result.get_label(img20) == "part_image"
-        assert id(img20) not in result.to_remove
+        assert not result.is_removed(img20)
 
-        assert id(img17) in result.to_remove
+        assert result.is_removed(img17)
 
     def test_two_steps_do_not_label_and_delete_both_drawings(self) -> None:
         """When there are two step numbers and two near-duplicate drawings above them,
@@ -146,4 +146,4 @@ class TestPartsListClassification:
         d_small_label = result.get_label(d_small)
         d_large_label = result.get_label(d_large)
         assert (d_small_label == "parts_list") ^ (d_large_label == "parts_list")
-        assert (id(d_small) in result.to_remove) ^ (id(d_large) in result.to_remove)
+        assert result.is_removed(d_small) ^ result.is_removed(d_large)

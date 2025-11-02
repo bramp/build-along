@@ -203,7 +203,7 @@ class PartsImageClassifier(LabelClassifier):
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Element, str],
-        to_remove: Dict[int, RemovalReason],
+        removal_reasons: Dict[int, RemovalReason],
     ) -> None:
         part_counts: List[Text] = [
             e

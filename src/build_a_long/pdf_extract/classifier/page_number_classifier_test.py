@@ -78,8 +78,8 @@ class TestClassifyPageNumber:
 
         assert results.get_label(page_number_text) == "page_number"
         # Check scores from ClassificationResult
-        assert "page_number" in results.scores
-        page_number_scores = results.scores["page_number"]
+        assert results.has_label("page_number")
+        page_number_scores = results.get_scores_for_label("page_number")
         assert page_number_text in page_number_scores
         score = page_number_scores[page_number_text].combined_score(ClassifierConfig())
         assert score > 0.5
@@ -102,8 +102,9 @@ class TestClassifyPageNumber:
 
         assert result.get_label(page_number_text) == "page_number"
         # Check scores from ClassificationResult
-        assert "page_number" in result.scores
-        assert page_number_text in result.scores["page_number"]
+        assert result.has_label("page_number")
+        page_number_scores = result.get_scores_for_label("page_number")
+        assert page_number_text in page_number_scores
 
     def test_multiple_candidates_prefer_corners(self) -> None:
         """Test that corner elements score higher than center ones."""
@@ -134,7 +135,7 @@ class TestClassifyPageNumber:
         assert result.get_label(center_text) is None
 
         # Check scores from ClassificationResult
-        page_number_scores = result.scores["page_number"]
+        page_number_scores = result.get_scores_for_label("page_number")
         corner_score = page_number_scores[corner_text].combined_score(
             ClassifierConfig()
         )
@@ -181,8 +182,8 @@ class TestClassifyPageNumber:
         assert result.get_label(pn) == "page_number"
         assert pn in page_data.elements
         assert dup in page_data.elements
-        assert id(dup) in result.to_remove
-        assert id(pn) not in result.to_remove
+        assert result.is_removed(dup)
+        assert not result.is_removed(pn)
 
     def test_non_numeric_text_scores_low(self) -> None:
         """Test that non-numeric text scores low."""
@@ -204,6 +205,6 @@ class TestClassifyPageNumber:
         assert result.get_label(text_element) is None
 
         # Check that score is low from ClassificationResult
-        page_number_scores = result.scores["page_number"]
+        page_number_scores = result.get_scores_for_label("page_number")
         score = page_number_scores[text_element].combined_score(ClassifierConfig())
         assert score < 0.5

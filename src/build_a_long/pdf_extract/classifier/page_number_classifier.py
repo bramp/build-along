@@ -103,7 +103,7 @@ class PageNumberClassifier(LabelClassifier):
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
-        to_remove: Dict[int, RemovalReason],
+        removal_reasons: Dict[int, RemovalReason],
     ) -> None:
         if not page_data.elements:
             return
@@ -144,8 +144,10 @@ class PageNumberClassifier(LabelClassifier):
 
         labeled_elements[best_candidate] = "page_number"
 
-        self.classifier._remove_child_bboxes(page_data, best_candidate, to_remove)
-        self.classifier._remove_similar_bboxes(page_data, best_candidate, to_remove)
+        self.classifier._remove_child_bboxes(page_data, best_candidate, removal_reasons)
+        self.classifier._remove_similar_bboxes(
+            page_data, best_candidate, removal_reasons
+        )
 
     def _score_page_number_text(self, text: str) -> float:
         # TODO The score should increase if the text matches the actual page we

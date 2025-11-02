@@ -45,7 +45,7 @@ class LabelClassifier(ABC):
         page_data: PageData,
         scores: Dict[str, Dict[ScoreKey, Any]],
         labeled_elements: Dict[Element, str],
-        to_remove: Dict[int, RemovalReason],
+        removal_reasons: Dict[int, RemovalReason],
     ) -> None:
         """Classify the elements for the label."""
         pass

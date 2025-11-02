@@ -123,7 +123,7 @@ class StepNumberClassifier(LabelClassifier):
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
-        to_remove: Dict[int, RemovalReason],
+        removal_reasons: Dict[int, RemovalReason],
     ) -> None:
         # Find the page number element to avoid classifying it as a step number
         page_number_element = None
@@ -151,8 +151,12 @@ class StepNumberClassifier(LabelClassifier):
             combined_score = score_obj.combined_score(self.config)
             if combined_score >= self.config.min_confidence_threshold:
                 labeled_elements[element] = "step_number"
-                self.classifier._remove_child_bboxes(page_data, element, to_remove)
-                self.classifier._remove_similar_bboxes(page_data, element, to_remove)
+                self.classifier._remove_child_bboxes(
+                    page_data, element, removal_reasons
+                )
+                self.classifier._remove_similar_bboxes(
+                    page_data, element, removal_reasons
+                )
 
     def _score_step_number_text(self, text: str) -> float:
         t = text.strip()
