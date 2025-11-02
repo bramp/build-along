@@ -96,7 +96,7 @@ class PartCountClassifier(LabelClassifier):
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
-        to_remove: Dict[int, RemovalReason],
+        removal_reasons: Dict[int, RemovalReason],
     ) -> None:
         # Get pre-calculated scores for this classifier
         part_count_scores = scores.get("part_count", {})
@@ -113,8 +113,12 @@ class PartCountClassifier(LabelClassifier):
             combined_score = score_obj.combined_score(self.config)
             if combined_score >= self.config.min_confidence_threshold:
                 labeled_elements[element] = "part_count"
-                self.classifier._remove_child_bboxes(page_data, element, to_remove)
-                self.classifier._remove_similar_bboxes(page_data, element, to_remove)
+                self.classifier._remove_child_bboxes(
+                    page_data, element, removal_reasons
+                )
+                self.classifier._remove_similar_bboxes(
+                    page_data, element, removal_reasons
+                )
 
     @staticmethod
     def _score_part_count_text(text: str) -> float:

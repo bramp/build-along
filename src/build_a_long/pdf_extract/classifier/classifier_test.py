@@ -45,8 +45,8 @@ class TestClassifyElements:
             ]
             assert len(labeled_elements) == 1
             # Check that scores were calculated
-            assert "page_number" in result.scores
-            page_number_scores = result.scores["page_number"]
+            assert result.has_label("page_number")
+            page_number_scores = result.get_scores_for_label("page_number")
             assert labeled_elements[0] in page_number_scores
             score = page_number_scores[labeled_elements[0]].combined_score(
                 ClassifierConfig()

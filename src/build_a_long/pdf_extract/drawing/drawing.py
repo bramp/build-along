@@ -77,7 +77,7 @@ def draw_and_save_bboxes(
 
     # Draw all elements
     for element in elements:
-        element_removed = id(element) in result.to_remove
+        element_removed = result.is_removed(element)
         if element_removed and not draw_deleted:
             continue
 

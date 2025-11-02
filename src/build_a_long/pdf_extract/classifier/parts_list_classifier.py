@@ -194,14 +194,14 @@ class PartsListClassifier(LabelClassifier):
         step: Text,
         drawings: list[Drawing],
         used_drawings: set[int],
-        to_remove: Dict[int, RemovalReason],
+        removal_reasons: Dict[int, RemovalReason],
     ) -> list[Drawing]:
         """Get candidate drawings above the given step number."""
         ABOVE_EPS = 2.0
         sb = step.bbox
         candidates = []
         for d in drawings:
-            if id(d) in used_drawings or id(d) in to_remove:
+            if id(d) in used_drawings or id(d) in removal_reasons:
                 continue
             db = d.bbox
             if db.y1 > sb.y0 + ABOVE_EPS:
@@ -223,7 +223,7 @@ class PartsListClassifier(LabelClassifier):
         page_data: PageData,
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Element, str],
-        to_remove: Dict[int, RemovalReason],
+        removal_reasons: Dict[int, RemovalReason],
     ) -> None:
         # Get elements with step_number label
         steps: list[Text] = []
@@ -246,7 +246,7 @@ class PartsListClassifier(LabelClassifier):
 
         for step in steps:
             candidate_drawings = self._get_candidate_drawings(
-                step, drawings, used_drawings, to_remove
+                step, drawings, used_drawings, removal_reasons
             )
 
             # Get scored candidates from scores dict (populated in calculate_scores)
@@ -284,8 +284,8 @@ class PartsListClassifier(LabelClassifier):
                         keep_ids.add(id(ele))
 
                 self.classifier._remove_child_bboxes(
-                    page_data, chosen, to_remove, keep_ids=keep_ids
+                    page_data, chosen, removal_reasons, keep_ids=keep_ids
                 )
                 self.classifier._remove_similar_bboxes(
-                    page_data, chosen, to_remove, keep_ids=keep_ids
+                    page_data, chosen, removal_reasons, keep_ids=keep_ids
                 )

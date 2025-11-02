@@ -100,8 +100,8 @@ def analyze_page(page_data: PageData, result: ClassificationResult) -> PageAnaly
 
     # Get score from ClassificationResult instead of element.label_scores
     page_number_score = None
-    if page_number_element and "page_number" in result.scores:
-        page_number_scores = result.scores["page_number"]
+    if page_number_element and result.has_label("page_number"):
+        page_number_scores = result.get_scores_for_label("page_number")
         if page_number_element in page_number_scores:
             score_obj = page_number_scores[page_number_element]
             # Convert score object to float if it has a combined_score method

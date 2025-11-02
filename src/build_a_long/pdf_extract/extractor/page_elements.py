@@ -35,10 +35,6 @@ class PageElement:
     bbox: BBox
     id: Optional[int] = field(default=None, kw_only=True)
 
-    # Note: PageElement instances are immutable (frozen dataclass). Deletion
-    # state is not stored on the element itself any more; callers should
-    # consult ClassificationResult.to_remove (mapping of element id -> reason).
-
     def __hash__(self):
         return id(self)
 

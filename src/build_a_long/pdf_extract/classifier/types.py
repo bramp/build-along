@@ -45,11 +45,17 @@ class ClassifierConfig:
 
 @dataclass
 class ClassificationResult:
-    """Represents the outcome of a single classification run."""
+    """Represents the outcome of a single classification run.
 
-    labeled_elements: Dict[Element, str] = field(default_factory=dict)
+    This class encapsulates the results of element classification, including
+    labels, scores, and removal information. External code should use the
+    accessor methods rather than accessing internal fields directly to maintain
+    encapsulation.
+    """
+
+    _labeled_elements: Dict[Element, str] = field(default_factory=dict)
     """Maps elements to their assigned labels (e.g., element -> 'page_number')"""
-    scores: Dict[str, Dict[ScoreKey, Any]] = field(default_factory=dict)
+    _scores: Dict[str, Dict[ScoreKey, Any]] = field(default_factory=dict)
     """Maps label name to a dict of score keys to score objects.
     
     Score keys can be either:
@@ -59,8 +65,9 @@ class ClassificationResult:
     Score values are classifier-specific dataclasses (e.g., _PageNumberScore).
     """
     warnings: List[str] = field(default_factory=list)
-    to_remove: Dict[int, RemovalReason] = field(default_factory=dict)
+    _removal_reasons: Dict[int, RemovalReason] = field(default_factory=dict)
     """Maps element IDs to the reason they were removed"""
+
     # Persisted relations discovered during classification. For now, we record
     # part image pairings as (part_count_text, image) tuples.
     part_image_pairs: List[Tuple[Any, Any]] = field(default_factory=list)
@@ -74,7 +81,7 @@ class ClassificationResult:
         Returns:
             The label string if found, None otherwise
         """
-        return self.labeled_elements.get(element)
+        return self._labeled_elements.get(element)
 
     def get_elements_by_label(self, label: str) -> List[Element]:
         """Get all elements with the given label.
@@ -85,7 +92,53 @@ class ClassificationResult:
         Returns:
             List of elements with that label
         """
-        return [elem for elem, lbl in self.labeled_elements.items() if lbl == label]
+        return [elem for elem, lbl in self._labeled_elements.items() if lbl == label]
+
+    def is_removed(self, element: Element) -> bool:
+        """Check if an element has been marked for removal.
+
+        Args:
+            element: The element to check
+
+        Returns:
+            True if the element is marked for removal, False otherwise
+        """
+        return id(element) in self._removal_reasons
+
+    def get_removal_reason(self, element: Element) -> RemovalReason | None:
+        """Get the reason why an element was removed.
+
+        Args:
+            element: The element to get the removal reason for
+
+        Returns:
+            The RemovalReason if the element was removed, None otherwise
+        """
+        return self._removal_reasons.get(id(element))
+
+    def get_scores_for_label(self, label: str) -> Dict[ScoreKey, Any]:
+        """Get all scores for a specific label.
+
+        Args:
+            label: The label to get scores for
+
+        Returns:
+            Dictionary mapping score keys to score objects for that label
+        """
+        return self._scores.get(label, {})
+
+    def has_label(self, label: str) -> bool:
+        """Check if any elements have been assigned the given label.
+
+        Args:
+            label: The label to check for
+
+        Returns:
+            True if at least one element has this label, False otherwise
+        """
+        return label in self._scores or any(
+            lbl == label for lbl in self._labeled_elements.values()
+        )
 
 
 @dataclass
