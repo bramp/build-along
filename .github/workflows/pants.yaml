@@ -58,8 +58,17 @@ jobs:
                   named-caches-hash: ${{ hashFiles('python-default.lock') }}
                   cache-lmdb-store: true
 
+            - name: Install
+              run: |
+                  pip install coveralls
+
             - name: Testing
               run: |
                   pants test ::
               env:
                   ENABLE_INTEGRATION_TESTS: "true"
+
+            - name: Send to Coveralls
+              uses: coverallsapp/github-action@v2
+              with:
+                  file: dist/coverage/coverage.xml
