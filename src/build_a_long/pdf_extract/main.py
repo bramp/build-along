@@ -12,6 +12,7 @@ from build_a_long.pdf_extract.extractor import (
     ExtractionResult,
 )
 from build_a_long.pdf_extract.classifier import classify_pages
+from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
 from build_a_long.pdf_extract.parser import parse_page_ranges
@@ -233,6 +234,58 @@ def _print_label_counts(page: PageData, result: ClassificationResult) -> None:
     logger.info(f"Page {page.page_number} Label counts: {label_counts}")
 
 
+def _build_page_hierarchy(
+    pages: List[PageData], results: List[ClassificationResult]
+) -> None:
+    """Build LEGO page hierarchy from classification results and log the structure.
+
+    Args:
+        pages: List of PageData containing extracted elements
+        results: List of ClassificationResult with labels and relationships
+    """
+    logger.info("Building LEGO page hierarchy...")
+
+    for page_data, result in zip(pages, results):
+        page = build_page(page_data, result)
+
+        # Log structured information about the page
+        logger.info("Page %d:", page_data.page_number)
+
+        if page.page_number:
+            logger.info("  ✓ Page Number: %d", page.page_number.value)
+
+        if page.steps:
+            logger.info("  ✓ Steps: %d", len(page.steps))
+            for step in page.steps:
+                parts_count = len(step.parts_list.parts)
+                if parts_count > 0:
+                    logger.info(
+                        "    - Step %d (%d parts)",
+                        step.step_number.value,
+                        parts_count,
+                    )
+                else:
+                    logger.info("    - Step %d", step.step_number.value)
+
+        if page.parts_lists:
+            logger.info("  ✓ Standalone Parts Lists: %d", len(page.parts_lists))
+            for pl in page.parts_lists:
+                total_items = sum(p.count.count for p in pl.parts)
+                logger.info(
+                    "    - %d part types, %d total items",
+                    len(pl.parts),
+                    total_items,
+                )
+
+        if page.warnings:
+            logger.warning("  ⚠ Warnings: %d", len(page.warnings))
+            for warning in page.warnings:
+                logger.warning("    - %s", warning)
+
+        if page.unprocessed_elements:
+            logger.info("  ℹ Unprocessed elements: %d", len(page.unprocessed_elements))
+
+
 def main() -> int:
     """Main entry point for the bounding box extractor CLI.
 
@@ -286,6 +339,9 @@ def main() -> int:
 
         for page, result in zip(pages, results):
             _print_label_counts(page, result)
+
+        # Build structured LEGO page hierarchy from classification results
+        _build_page_hierarchy(pages, results)
 
         # Optionally print a concise summary to stdout
         if args.summary:
