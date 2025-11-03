@@ -1,6 +1,15 @@
-# LEGO Instruction Classifier & Page Builder
+# LEGO Instruction Classifier
 
-This module provides a complete pipeline for extracting, classifying, and structuring LEGO instruction PDF pages. It transforms raw PDF elements into a structured hierarchy of LEGO-specific components.
+This module provides classification and structured page building for LEGO instruction PDFs. It applies rule-based heuristics to label extracted PDF elements and constructs a hierarchical representation of LEGO-specific components.
+
+## Overview
+
+The classifier transforms flat lists of extracted PDF elements into labeled, structured LEGO instruction pages through two stages:
+
+1. **Classification** - Labels elements using rule-based heuristics (e.g., "page_number", "step_number", "part_count")
+2. **Page Building** - Constructs hierarchical `Page` objects from the labeled elements
+
+See the [parent README](../README.md) for overall pipeline architecture.
 
 ## Quick Start
 
@@ -31,59 +40,6 @@ for page_data, result in zip(pages, results):
             print(f"    {part.count.count}x")
 ```
 
-## Architecture Overview
-
-The processing pipeline has three stages:
-
-```text
-┌───────────┐
-│    PDF    │
-└─────┬─────┘
-      │
-      ▼
-┌─────────────────────┐
-│    EXTRACTOR        │  Extracts raw elements
-│  (pymupdf-based)    │  - Text, Image, Drawing
-└──────────┬──────────┘  - BBox for each
-           │
-           ▼
-┌─────────────────────┐
-│     PageData        │  Flat list of elements
-│  - Text, Image,     │  with bounding boxes
-│    Drawing          │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│   CLASSIFIER        │  Applies heuristics
-│  (rule-based)       │  to label elements
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│ ClassificationResult│  Labeled elements
-│  - page_number      │  with relationships
-│  - step_number      │
-│  - parts_list       │
-│  - part_count       │
-│  - part_image       │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│ LEGO PAGE BUILDER   │  Builds structured
-│  (lego_page_builder)│  hierarchy
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│        Page         │  Structured LEGO
-│  - PageNumber       │  elements
-│  - Step[]           │
-│  - PartsList[]      │
-└─────────────────────┘
-```
-
 ## Classification Pipeline
 
 The classifier runs in a fixed order, with later stages depending on earlier ones:
@@ -107,6 +63,7 @@ The classifier runs in a fixed order, with later stages depending on earlier one
 5. **PartsImageClassifier** - Associates part counts with their corresponding images
    - Outputs: `"part_image"`
    - Requires: `"parts_list"`, `"part_count"`
+
 
 ## Classifier Details
 
@@ -166,27 +123,11 @@ The classifier runs in a fixed order, with later stages depending on earlier one
 
 **Label**: `"part_image"`
 
-## Example
-
-```python
-from build_a_long.pdf_extract.classifier import classify_elements
-from build_a_long.pdf_extract.extractor import extract_bounding_boxes
-
-pages = extract_bounding_boxes(doc, start_page, end_page)
-classify_elements(pages)
-
-# After classification, elements will have labels
-for page in pages:
-    for element in page.elements:
-        if element.label:
-            print(f"Found {element.label}: {getattr(element, 'text', 'Image/Drawing')}")
-```
-
-## Architecture
+## Implementation Architecture
 
 The classifier is architected as a pipeline of independent classifier modules managed by an orchestrator.
 
-```
+```text
 classifier/
 ├── __init__.py                 # Public API and logging setup
 ├── BUILD                       # Pants build configuration
@@ -198,6 +139,7 @@ classifier/
 ├── parts_image_classifier.py   # Part image classification logic
 ├── parts_list_classifier.py    # Parts list classification logic
 ├── step_number_classifier.py   # Step number classification logic
+├── lego_page_builder.py        # Hierarchy builder
 └── types.py                    # Shared data types
 ```
 
@@ -219,15 +161,6 @@ To add a new classifier:
 5. Instantiate the new classifier in the `Classifier.__init__` method in `classifier.py`, ensuring it is added in an order that respects its dependencies.
 6. Write comprehensive unit tests.
 7. Update this README.
-
-## Integration
-
-The classifier is automatically integrated into the main bounding box extraction pipeline:
-
-1. `extract_bounding_boxes()` extracts all elements from the PDF.
-2. `classify_elements()` labels the elements in-place.
-3. Results can be saved to JSON with labels included.
-4. Annotated images can be rendered showing the classifications.
 
 ## Page Builder
 
@@ -366,45 +299,20 @@ The page builder is under active development. Current limitations:
    - Progress bars
    - Information callouts
 
-## Project Structure
-
-```text
-classifier/
-├── __init__.py                    # Public API
-├── classifier.py                  # Classification orchestrator
-├── classifier_test.py             # Unit tests
-├── lego_page_builder.py           # Hierarchy builder
-├── lego_page_builder_test.py      # Hierarchy tests
-├── example_hierarchy.py           # Complete working example
-├── label_classifier.py            # Abstract base class
-├── page_number_classifier.py      # Page number classification
-├── part_count_classifier.py       # Part count classification
-├── parts_image_classifier.py      # Part image classification
-├── parts_list_classifier.py       # Parts list classification
-├── step_number_classifier.py      # Step number classification
-└── types.py                       # Shared data types
-```
-
 ## Testing
 
 Run all tests:
 
 ```bash
-./pants test src/build_a_long/pdf_extract/classifier::
+pants test src/build_a_long/pdf_extract/classifier::
 ```
 
 Run specific tests:
 
 ```bash
-./pants test src/build_a_long/pdf_extract/classifier/lego_page_builder_test.py
-./pants test src/build_a_long/pdf_extract/classifier/classifier_test.py
+pants test src/build_a_long/pdf_extract/classifier/lego_page_builder_test.py
+pants test src/build_a_long/pdf_extract/classifier/classifier_test.py
 ```
-
-## See Also
-
-- `example_hierarchy.py` - Complete working example showing the full pipeline
-- `lego_page_elements.py` - Definitions of all LEGO-specific element types
-- `types.py` - Classification result types
 
 ## Design Principles
 

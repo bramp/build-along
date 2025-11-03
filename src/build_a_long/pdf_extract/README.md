@@ -1,78 +1,188 @@
-# Bounding Box Extractor
+# PDF Extract Pipeline
 
-This module extracts bounding boxes and structural information from LEGO instruction PDFs.
+This module provides a complete pipeline for extracting, classifying, and structuring LEGO instruction PDF pages. It transforms raw PDF files into structured hierarchies of LEGO-specific components.
+
+## Architecture Overview
+
+The processing pipeline has three main stages:
+
+```text
+┌───────────┐
+│    PDF    │
+└─────┬─────┘
+      │
+      ▼
+┌─────────────────────┐
+│    EXTRACTOR        │  Extracts raw elements
+│  (pymupdf-based)    │  - Text, Image, Drawing
+└──────────┬──────────┘  - BBox for each
+           │
+           ▼
+┌─────────────────────┐
+│     PageData        │  Flat list of elements
+│  - Text, Image,     │  with bounding boxes
+│    Drawing          │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│   CLASSIFIER        │  Applies heuristics
+│  (rule-based)       │  to label elements
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ ClassificationResult│  Labeled elements
+│  - page_number      │  with relationships
+│  - step_number      │
+│  - parts_list       │
+│  - part_count       │
+│  - part_image       │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ LEGO PAGE BUILDER   │  Builds structured
+│  (lego_page_builder)│  hierarchy
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│        Page         │  Structured LEGO
+│  - PageNumber       │  elements
+│  - Step[]           │
+│  - PartsList[]      │
+└─────────────────────┘
+```
+
+## Quick Start
+
+```python
+import pymupdf
+from build_a_long.pdf_extract.classifier import classify_pages
+from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
+from build_a_long.pdf_extract.extractor import extract_bounding_boxes
+
+# 1. Extract elements from PDF
+with pymupdf.open("instructions.pdf") as doc:
+    pages = extract_bounding_boxes(doc, None)
+
+# 2. Classify elements
+results = classify_pages(pages)
+
+# 3. Build structured hierarchy
+for page_data, result in zip(pages, results):
+    page = build_page(page_data, result)
+    
+    # Access structured LEGO elements
+    if page.page_number:
+        print(f"Page {page.page_number.value}")
+    
+    for step in page.steps:
+        print(f"  Step {step.step_number.value}")
+        for part in step.parts_list.parts:
+            print(f"    {part.count.count}x")
+```
 
 ## Directory Structure
 
 ```text
 pdf_extract/
 ├── main.py                 # CLI entry point for the extractor
+├── analyze_classifier.py   # Classifier analysis tool
+├── ANALYZE_CLASSIFIER.md   # Classifier analysis documentation
 ├── classifier/             # Element classification submodule
 │   ├── classifier.py      # Main classification logic
-│   ├── page_number_classifier.py # Page number classification logic
-│   └── ...                # Other individual classifiers
+│   ├── lego_page_builder.py # Structured hierarchy builder
+│   ├── page_number_classifier.py # Individual classifiers
+│   ├── step_number_classifier.py
+│   ├── part_count_classifier.py
+│   ├── parts_list_classifier.py
+│   ├── parts_image_classifier.py
+│   └── README.md          # Classifier implementation details
 ├── drawing/                # Drawing and visualization submodule
-│   ├── drawing.py         # Functions to draw bounding boxes on PDF pages
-│   └── BUILD              # Pants build configuration
+│   └── drawing.py         # Functions to draw bounding boxes on PDF pages
 ├── extractor/              # PDF extraction submodule
 │   ├── bbox.py            # BBox dataclass for bounding box representation
 │   ├── page_elements.py   # Raw page element type definitions (Text, Image, etc.)
 │   ├── lego_page_elements.py # Structured LEGO element type definitions (Step, Part, etc.)
 │   ├── hierarchy.py       # Containment hierarchy building logic
-│   ├── extractor.py       # Core extraction logic using PyMuPDF
-│   └── BUILD              # Pants build configuration
+│   └── extractor.py       # Core extraction logic using PyMuPDF
 └── parser/                 # Input parsing submodule
-    ├── parser.py          # Page range parsing utilities
-    └── BUILD              # Pants build configuration
+    └── parser.py          # Page range parsing utilities
 ```
 
-## Module Organization
+## Data Models
 
-The general flow of the bounding box extractor is as follows:
+This project uses a two-stage data model to represent the transformation from raw PDF data to structured LEGO instructions:
+
+### 1. Raw Page Elements (`extractor/page_elements.py`)
+
+Defines the basic, low-level elements extracted directly from the PDF:
+
+- `Text`: A block of text with font, size, and position
+- `Image`: A raster image with dimensions
+- `Drawing`: A vector graphic region
+
+These elements are flat and unstructured, representing the PDF's raw content.
+
+### 2. Structured LEGO Elements (`extractor/lego_page_elements.py`)
+
+Defines the high-level, domain-specific data model representing the logical structure of a LEGO instruction manual:
+
+- `Page`: Top-level container for a single page
+- `PageNumber`: The page number
+- `Step`: A single instruction step
+- `StepNumber`: The step number
+- `PartsList`: A collection of parts required for a step
+- `Part`: A single part with count, image, and optional name/number
+- `PartCount`: The quantity of a part (e.g., "2x")
+- `Diagram`: An illustration showing how to assemble parts
+
+### Pipeline Flow
 
 1. **PDF Extraction**: The `extractor` submodule uses PyMuPDF to parse the PDF and extract raw page elements (text blocks, images, drawings) along with their bounding boxes.
 2. **Element Classification**: The `classifier` submodule applies rule-based heuristics to label the raw elements (e.g., identifying page numbers, step numbers, parts lists).
-3. **Output Generation**: The extracted and classified data is output as structured JSON. Optionally
+3. **Hierarchy Building**: The `lego_page_builder` constructs structured `Page` objects from the classified elements, establishing parent-child relationships.
+4. **Output Generation**: The extracted and classified data is output as structured JSON. Optionally, annotated PNG images can be generated showing the bounding boxes.
+
+## Submodules
 
 ### `main.py`
 
 Command-line interface for extracting bounding boxes from PDFs. Handles argument parsing and orchestrates the extraction and classification process.
 
-### Submodules
+### `extractor/` - PDF Extraction
 
-#### `extractor/` - PDF Extraction
+Core PDF extraction functionality using [PyMuPDF](https://pymupdf.readthedocs.io/en/latest/).
 
-Core PDF extraction functionality and data models.
+**Key files:**
 
-**Data Models:**
+- `extractor.py`: Main extraction logic
+- `page_elements.py`: Raw element type definitions
+- `lego_page_elements.py`: Structured element type definitions
+- `bbox.py`: Bounding box utilities
+- `hierarchy.py`: Containment hierarchy building
 
-This project uses a two-stage data model:
+### `classifier/` - Element Classification
 
-1. **Raw Page Elements** (`page_elements.py`): Defines the basic, low-level elements extracted directly from the PDF.
-    - `Text`: A block of text.
-    - `Image`: A raster image.
-    - `Drawing`: A vector graphic.
+Applies rule-based heuristics to identify and label LEGO-specific elements. The classifier runs multiple passes in a specific order, with later passes depending on earlier classifications.
 
-**Extraction Logic:**
+**Classification Pipeline:**
 
-- `extractor.py`: Uses [PyMuPDF](https://pymupdf.readthedocs.io/en/latest/) to parse the PDF and extract the raw `Text`, `Image`, and `Drawing` elements.
-- `hierarchy.py`: Builds a containment hierarchy from the flat list of raw elements.
+1. **PageNumberClassifier** - Identifies page numbers
+2. **PartCountClassifier** - Detects part-count text (e.g., "2x", "3X")
+3. **StepNumberClassifier** - Identifies step numbers
+4. **PartsListClassifier** - Identifies the drawing region for the parts list
+5. **PartsImageClassifier** - Associates part counts with their images
 
-#### `classifier/` - Element Classification
+See [`classifier/README.md`](classifier/README.md) for detailed classifier implementation information.
 
-Handles the classification of raw page elements. It takes the raw elements from the `extractor` and applies a series of rule-based heuristics to assign labels (e.g., "page_number", "step_number"). This labeling is the first step in transforming the raw data into the structured LEGO elements. See the `classifier/README.md` for more details.
+### `drawing/` - Visualization
 
-1. **Structured LEGO Elements** (`lego_page_elements.py`): Defines the high-level, domain-specific data model representing the logical structure of a LEGO instruction manual.
-    - `Step`: A single instruction step.
-    - `PartsList`: A list of parts required for a step.
-    - `Part`: A single part in a parts list.
-    - `PageNumber`, `StepNumber`, `PartCount`, etc.
+Handles rendering of extracted bounding boxes onto PDF pages for debugging and visualization.
 
-#### `drawing/`
-
-Handles visualization and rendering of extracted bounding boxes.
-
-#### `parser/`
+### `parser/` - Input Parsing
 
 Input parsing utilities for things like page ranges.
 
@@ -114,3 +224,22 @@ The extractor produces:
 
 1. **JSON file**: Structured data containing all extracted and labeled raw elements.
 2. **PNG images** (if `--output-dir` specified): Visual representation with bounding boxes drawn and labeled.
+
+## Classifier Analysis Tool
+
+The `analyze_classifier.py` tool helps evaluate classifier performance across multiple PDF files. See [ANALYZE_CLASSIFIER.md](ANALYZE_CLASSIFIER.md) for detailed usage information.
+
+**Quick usage:**
+
+```bash
+# Analyze all PDFs in the data directory
+pants run src/build_a_long/pdf_extract:analyze_classifier
+
+# Analyze with detailed per-document report
+pants run src/build_a_long/pdf_extract:analyze_classifier -- --detailed
+
+# Test with limited PDFs
+pants run src/build_a_long/pdf_extract:analyze_classifier -- --max-pdfs 10
+```
+
+The tool provides coverage statistics, showing how many pages have page numbers successfully identified and highlighting problematic documents.
