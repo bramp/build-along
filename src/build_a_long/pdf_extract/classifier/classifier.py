@@ -120,21 +120,31 @@ class Classifier:
         scores = {}
         labeled_elements = {}
         removal_reasons = {}
+        constructed_elements = {}
+        candidates = {}
 
         for classifier in self.classifiers:
             classifier.calculate_scores(page_data, scores, labeled_elements)
-            classifier.classify(page_data, scores, labeled_elements, removal_reasons)
+            classifier.classify(
+                page_data,
+                scores,
+                labeled_elements,
+                removal_reasons,
+                hints,
+                constructed_elements,
+                candidates,
+            )
 
         warnings = self._log_post_classification_warnings(page_data, labeled_elements)
 
-        # Extract persisted relations from labeled_elements (if any)
-        part_image_pairs = labeled_elements.pop("part_image_pairs", [])
+        # Extract persisted relations from scores dict (stored by PartsImageClassifier)
+        part_image_pairs = scores.get("part_image_pairs", {}).get("pairs", [])
 
         return ClassificationResult(
-            _scores=scores,
-            _labeled_elements=labeled_elements,
             _removal_reasons=removal_reasons,
             warnings=warnings,
+            constructed_elements=constructed_elements,
+            candidates=candidates,
             part_image_pairs=part_image_pairs,
         )
 

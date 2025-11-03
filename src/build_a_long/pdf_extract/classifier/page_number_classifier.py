@@ -5,17 +5,23 @@ Page number classifier.
 import math
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
+from build_a_long.pdf_extract.classifier.text_extractors import (
+    extract_page_number_value,
+)
 from build_a_long.pdf_extract.classifier.types import (
+    Candidate,
+    ClassificationHints,
     ClassifierConfig,
     RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.lego_page_elements import PageNumber
+from build_a_long.pdf_extract.extractor.page_elements import Element, Text
 
 
 @dataclass
@@ -104,19 +110,63 @@ class PageNumberClassifier(LabelClassifier):
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
         removal_reasons: Dict[int, RemovalReason],
+        hints: "Optional[ClassificationHints]" = None,
+        constructed_elements: "Optional[Dict[Element, Any]]" = None,
+        candidates: "Optional[Dict[str, List[Candidate]]]" = None,
     ) -> None:
         if not page_data.elements:
             return
 
+        if constructed_elements is None:
+            constructed_elements = {}
+        if candidates is None:
+            candidates = {}
+
+        # Build candidate list from scored elements
+        candidate_list = self._build_candidates(page_data, scores)
+
+        # Apply hints to filter candidates
+        candidate_list = self._apply_hints(candidate_list, hints)
+
+        if not candidate_list:
+            return
+
+        # Select the winner
+        winner = self._select_winner(candidate_list)
+        if not winner:
+            # All candidates failed to construct - store for diagnostics
+            candidates["page_number"] = candidate_list
+            return
+
+        # Store results
+        labeled_elements[winner.source_element] = "page_number"
+        assert isinstance(winner.constructed, PageNumber)
+        constructed_elements[winner.source_element] = winner.constructed
+        candidates["page_number"] = candidate_list
+
+        # Cleanup: remove child/similar bboxes
+        self.classifier._remove_child_bboxes(
+            page_data, winner.source_element, removal_reasons
+        )
+        self.classifier._remove_similar_bboxes(
+            page_data, winner.source_element, removal_reasons
+        )
+
+    def _build_candidates(
+        self, page_data: PageData, scores: Dict[str, Dict[Any, Any]]
+    ) -> "List[Candidate]":
+        """Build list of all candidate page numbers from scored elements.
+
+        Returns:
+            List of Candidate objects, including those that failed to construct.
+        """
         page_bbox = page_data.bbox
         assert page_bbox is not None
         page_height = page_bbox.y1 - page_bbox.y0
 
-        # Get pre-calculated scores for this classifier
         page_number_scores = scores.get("page_number", {})
+        candidate_list: "List[Candidate]" = []
 
-        # Build list of candidates from pre-calculated scores
-        candidates: list[tuple[Text, float]] = []
         for element in page_data.elements:
             if not isinstance(element, Text):
                 continue
@@ -127,27 +177,99 @@ class PageNumberClassifier(LabelClassifier):
                 continue
 
             combined_score = score_obj.combined_score(self.config)
-            if combined_score < self.config.min_confidence_threshold:
+
+            # Still create candidates for low-scoring elements (for debugging/testing)
+            # but they won't be selected as winners
+            meets_threshold = combined_score >= self.config.min_confidence_threshold
+
+            # Require the element to be in the bottom band of the page
+            position_score = self._score_page_number_position(
+                element, page_bbox, page_height
+            )
+            in_position = position_score > 0.0
+
+            # Skip if both conditions fail
+            if not meets_threshold and not in_position:
                 continue
 
-            # Require the element to be in the bottom band of the page; otherwise
-            # it is very likely a step number or other numeric text.
-            if self._score_page_number_position(element, page_bbox, page_height) == 0.0:
-                continue
+            # Try to construct the LegoElement (parse the text)
+            value = extract_page_number_value(element.text)
+            constructed_elem = None
+            failure_reason = None
 
-            candidates.append((element, combined_score))
+            if value is not None:
+                constructed_elem = PageNumber(
+                    value=value, bbox=element.bbox, id=element.id
+                )
+            else:
+                failure_reason = (
+                    f"Could not parse page number from text: '{element.text}'"
+                )
 
-        if not candidates:
-            return
+            # Store candidate even if construction failed (for debugging)
+            # Winner will be selected later by _select_winner()
+            candidate_list.append(
+                Candidate(
+                    source_element=element,
+                    label="page_number",
+                    score=combined_score,
+                    score_details=score_obj,
+                    constructed=constructed_elem,
+                    failure_reason=failure_reason,
+                    is_winner=False,  # Will be set by _select_winner
+                )
+            )
 
-        best_candidate, _ = max(candidates, key=lambda c: c[1])
+        return candidate_list
 
-        labeled_elements[best_candidate] = "page_number"
+    def _apply_hints(
+        self,
+        candidate_list: "List[Candidate]",
+        hints: "Optional[ClassificationHints]",
+    ) -> "List[Candidate]":
+        """Apply hints to filter candidate list.
 
-        self.classifier._remove_child_bboxes(page_data, best_candidate, removal_reasons)
-        self.classifier._remove_similar_bboxes(
-            page_data, best_candidate, removal_reasons
-        )
+        Args:
+            candidate_list: List of candidates to filter
+            hints: Optional classification hints with element constraints
+
+        Returns:
+            Filtered list of candidates that match hint constraints.
+        """
+        if not hints or not hints.element_constraints:
+            return candidate_list
+
+        # Filter: keep only candidates that match constraints
+        return [
+            c
+            for c in candidate_list
+            if id(c.source_element) not in hints.element_constraints
+            or hints.element_constraints[id(c.source_element)] == "page_number"
+        ]
+
+    def _select_winner(
+        self, candidate_list: "List[Candidate]"
+    ) -> "Optional[Candidate]":
+        """Select the best candidate from the list.
+
+        Only considers candidates that successfully constructed a PageNumber.
+        Selects the highest scoring candidate and marks it as winner.
+
+        Args:
+            candidate_list: List of candidates to choose from
+
+        Returns:
+            The winning candidate, or None if no valid candidates exist.
+        """
+        # Choose best candidate that successfully constructed
+        valid_candidates = [c for c in candidate_list if c.constructed is not None]
+        if not valid_candidates:
+            return None
+
+        # Sort by score and pick winner
+        best = max(valid_candidates, key=lambda c: c.score)
+        best.is_winner = True
+        return best
 
     def _score_page_number_text(self, text: str) -> float:
         # TODO The score should increase if the text matches the actual page we
@@ -159,20 +281,10 @@ class PageNumberClassifier(LabelClassifier):
             return 1.0
         return 0.0
 
-    def _extract_page_number_value(self, text: str) -> Optional[int]:
-        t = text.strip()
-        m = re.match(r"^0*(\d{1,3})$", t)
-        if m:
-            return int(m.group(1))
-        m = re.match(r"^(?:page|p\.?)\s*0*(\d{1,3})$", t, re.IGNORECASE)
-        if m:
-            return int(m.group(1))
-        return None
-
     def _score_page_number(self, text: str, page_number: int) -> float:
         """Score how well the text matches the expected page number."""
 
-        value = self._extract_page_number_value(text)
+        value = extract_page_number_value(text)
         if value is None:
             # Can't extract text.
             return 0.0

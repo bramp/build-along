@@ -23,12 +23,20 @@ Set environment variables to aid investigation without code changes:
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+
+if TYPE_CHECKING:
+    from build_a_long.pdf_extract.classifier.types import (
+        Candidate,
+        ClassificationHints,
+    )
+    from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.types import (
+    Candidate,
     ClassifierConfig,
     RemovalReason,
 )
@@ -224,7 +232,13 @@ class PartsListClassifier(LabelClassifier):
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Element, str],
         removal_reasons: Dict[int, RemovalReason],
+        hints: Optional["ClassificationHints"] = None,
+        constructed_elements: Optional[Dict[Element, "LegoPageElement"]] = None,
+        candidates: Optional[Dict[str, List["Candidate"]]] = None,
     ) -> None:
+        if candidates is None:
+            candidates = {}
+
         # Get elements with step_number label
         steps: list[Text] = []
         for element, label in labeled_elements.items():
@@ -240,6 +254,7 @@ class PartsListClassifier(LabelClassifier):
             return
 
         used_drawings: set[int] = set()
+        candidate_list: "List[Candidate]" = []
 
         # Get pre-calculated scores for this classifier
         parts_list_scores: Dict[Element, Any] = scores.get("parts_list", {})
@@ -259,6 +274,18 @@ class PartsListClassifier(LabelClassifier):
             chosen = self._find_best_parts_list(scored_candidates)
 
             if chosen:
+                # Create candidate for the chosen drawing
+                candidate = Candidate(
+                    source_element=chosen,
+                    label="parts_list",
+                    score=1.0,  # Parts list uses ranking rather than scores
+                    score_details=parts_list_scores.get(chosen),
+                    constructed=None,  # PartsList construction requires part pairing, done in builder
+                    failure_reason=None,
+                    is_winner=True,
+                )
+                candidate_list.append(candidate)
+
                 labeled_elements[chosen] = "parts_list"
                 used_drawings.add(id(chosen))
 
@@ -289,3 +316,6 @@ class PartsListClassifier(LabelClassifier):
                 self.classifier._remove_similar_bboxes(
                     page_data, chosen, removal_reasons, keep_ids=keep_ids
                 )
+
+        # Store all candidates
+        candidates["parts_list"] = candidate_list

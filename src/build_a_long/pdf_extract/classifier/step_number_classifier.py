@@ -2,18 +2,30 @@
 Step number classifier.
 """
 
-import re
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from build_a_long.pdf_extract.classifier.types import (
+        Candidate,
+        ClassificationHints,
+    )
+    from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
+    from build_a_long.pdf_extract.extractor.page_elements import Element
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
+from build_a_long.pdf_extract.classifier.text_extractors import (
+    extract_step_number_value,
+)
 from build_a_long.pdf_extract.classifier.types import (
+    Candidate,
     ClassifierConfig,
     RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.lego_page_elements import StepNumber
 from build_a_long.pdf_extract.extractor.page_elements import Text
 
 
@@ -124,7 +136,13 @@ class StepNumberClassifier(LabelClassifier):
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
         removal_reasons: Dict[int, RemovalReason],
+        hints: Optional["ClassificationHints"] = None,
+        constructed_elements: Optional[Dict["Element", "LegoPageElement"]] = None,
+        candidates: Optional[Dict[str, List["Candidate"]]] = None,
     ) -> None:
+        if candidates is None:
+            candidates = {}
+
         # Find the page number element to avoid classifying it as a step number
         page_number_element = None
         for element in page_data.elements:
@@ -134,6 +152,7 @@ class StepNumberClassifier(LabelClassifier):
 
         # Get pre-calculated scores for this classifier
         step_number_scores = scores.get("step_number", {})
+        candidate_list: "List[Candidate]" = []
 
         for element in page_data.elements:
             if not isinstance(element, Text):
@@ -149,8 +168,42 @@ class StepNumberClassifier(LabelClassifier):
                 continue
 
             combined_score = score_obj.combined_score(self.config)
-            if combined_score >= self.config.min_confidence_threshold:
+            if combined_score < self.config.min_confidence_threshold:
+                continue
+
+            # Try to construct (parse step number value)
+            value = extract_step_number_value(element.text)
+            constructed_elem = None
+            failure_reason = None
+
+            if value is not None:
+                constructed_elem = StepNumber(
+                    value=value,
+                    bbox=element.bbox,
+                    id=element.id,
+                )
+            else:
+                failure_reason = (
+                    f"Could not parse step number from text: '{element.text}'"
+                )
+
+            # Create candidate
+            candidate = Candidate(
+                source_element=element,
+                label="step_number",
+                score=combined_score,
+                score_details=score_obj,
+                constructed=constructed_elem,
+                failure_reason=failure_reason,
+                is_winner=(value is not None),  # Winner if parsing succeeded
+            )
+            candidate_list.append(candidate)
+
+            # If it's a winner, mark it in labeled_elements for backward compatibility
+            if candidate.is_winner:
                 labeled_elements[element] = "step_number"
+                if constructed_elements is not None and constructed_elem is not None:
+                    constructed_elements[element] = constructed_elem
                 self.classifier._remove_child_bboxes(
                     page_data, element, removal_reasons
                 )
@@ -158,8 +211,16 @@ class StepNumberClassifier(LabelClassifier):
                     page_data, element, removal_reasons
                 )
 
+        # Store all candidates
+        candidates["step_number"] = candidate_list
+
     def _score_step_number_text(self, text: str) -> float:
-        t = text.strip()
-        if re.fullmatch(r"[1-9]\d{0,3}", t):
+        """Score text based on how well it matches step number patterns.
+
+        Returns:
+            1.0 if text matches step number pattern, 0.0 otherwise
+        """
+        # Use the extraction function to validate format
+        if extract_step_number_value(text) is not None:
             return 1.0
         return 0.0

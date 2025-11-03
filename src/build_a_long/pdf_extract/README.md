@@ -26,24 +26,25 @@ The processing pipeline has three main stages:
            │
            ▼
 ┌─────────────────────┐
-│   CLASSIFIER        │  Applies heuristics
-│  (rule-based)       │  to label elements
+│   CLASSIFIER        │  Scores elements,
+│  (rule-based)       │  constructs LegoElements,
+│                     │  selects best candidates
 └──────────┬──────────┘
            │
            ▼
 ┌─────────────────────┐
-│ ClassificationResult│  Labeled elements
-│  - page_number      │  with relationships
-│  - step_number      │
-│  - parts_list       │
-│  - part_count       │
-│  - part_image       │
+│ ClassificationResult│  Pre-constructed elements
+│  - labeled_elements │  + Labels
+│  - constructed_     │  + All candidates
+│    elements         │  + Decision trail
+│  - candidates       │
 └──────────┬──────────┘
            │
            ▼
 ┌─────────────────────┐
-│ LEGO PAGE BUILDER   │  Builds structured
-│  (lego_page_builder)│  hierarchy
+│ LEGO PAGE BUILDER   │  Assembles using
+│  (lego_page_builder)│  pre-constructed
+│                     │  elements
 └──────────┬──────────┘
            │
            ▼
@@ -54,6 +55,8 @@ The processing pipeline has three main stages:
 │  - PartsList[]      │
 └─────────────────────┘
 ```
+
+**Key Difference**: The classifier now **constructs** `LegoPageElement` objects during classification (single parse), and the builder **reuses** these pre-constructed objects instead of re-parsing. This guarantees consistency and preserves all decision context.
 
 ## Quick Start
 
@@ -142,8 +145,8 @@ Defines the high-level, domain-specific data model representing the logical stru
 ### Pipeline Flow
 
 1. **PDF Extraction**: The `extractor` submodule uses PyMuPDF to parse the PDF and extract raw page elements (text blocks, images, drawings) along with their bounding boxes.
-2. **Element Classification**: The `classifier` submodule applies rule-based heuristics to label the raw elements (e.g., identifying page numbers, step numbers, parts lists).
-3. **Hierarchy Building**: The `lego_page_builder` constructs structured `Page` objects from the classified elements, establishing parent-child relationships.
+2. **Element Classification**: The `classifier` submodule applies rule-based heuristics to score elements, **construct** `LegoPageElement` objects for valid candidates, and select the best match. All candidates and decision context are preserved.
+3. **Hierarchy Building**: The `lego_page_builder` uses the **pre-constructed elements** from classification to assemble structured `Page` objects, establishing parent-child relationships. No re-parsing occurs.
 4. **Output Generation**: The extracted and classified data is output as structured JSON. Optionally, annotated PNG images can be generated showing the bounding boxes.
 
 ## Submodules
