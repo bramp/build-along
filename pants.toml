@@ -36,6 +36,11 @@ config = "pyproject.toml"
 install_from_resolve = "python-default"
 args = ["--no-header", "-rs"]
 
+[coverage-py]
+report = "xml"
+global_report = true
+output_dir = "dist/coverage"
+
 [python]
 interpreter_constraints = ["==3.14.*"]
 enable_resolves = true
