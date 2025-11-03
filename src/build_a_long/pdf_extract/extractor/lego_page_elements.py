@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.extractor import PageData
 
 
 @dataclass
@@ -113,6 +114,36 @@ class Step(LegoPageElement):
     diagram: Diagram  # TODO maybe this should be a list?
 
     # TODO add other interesting callouts (such as rotate the element)
+
+
+@dataclass
+class Page(LegoPageElement):
+    """A complete page of LEGO instructions.
+
+    This is the top-level element that contains all other elements on a page.
+    It represents the structured, hierarchical view of the page after classification
+    and hierarchy building.
+
+    Attributes:
+        page_number: The page number element, if found
+        steps: List of Step elements on the page
+        parts_lists: List of standalone PartsList elements (not within a Step)
+        warnings: List of warnings generated during hierarchy building
+        unprocessed_elements: Raw elements that were classified but couldn't be converted
+    """
+
+    page_data: PageData
+
+    page_number: Optional[PageNumber] = None
+    steps: List[Step] = field(default_factory=list)
+    parts_lists: List[PartsList] = field(default_factory=list)
+
+    # Metadata about the conversion process
+    warnings: List[str] = field(default_factory=list)
+    # Keep reference to raw elements that weren't converted (for debugging/analysis)
+    unprocessed_elements: List = field(
+        default_factory=list
+    )  # List[Element] but avoiding import
 
 
 # TODO Add sub-assembly (or sub-step) element.

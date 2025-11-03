@@ -30,7 +30,7 @@ class PageData(JSONPyWizard):
     """Data extracted from a single PDF page.
 
     Attributes:
-        page_number: The page number (1-indexed)
+        page_number: The page number (1-indexed) from the PDF metadata.
         bbox: The bounding box of the entire page (page coordinate space).
         elements: Flat list of all elements on the page
     """
