@@ -1,10 +1,10 @@
 """
-Build a Page (LegoPageElement) from ClassificationResult.
+Build a hierarchy of LegoPageElement from ClassificationResult.
 
 This module bridges the gap between the flat list of classified PageElements
-and the structured Page hierarchy. It takes the labels and relationships
-discovered during classification and constructs a complete LEGO-specific
-Page element with all its structured components.
+and the structured hierarchy of LegoPageElements. It takes the labels and
+relationships discovered during classification and constructs the appropriate
+Lego-specific hierarchy.
 """
 
 from __future__ import annotations
@@ -36,11 +36,11 @@ from build_a_long.pdf_extract.extractor.page_elements import Element, Text
 logger = logging.getLogger(__name__)
 
 
-class LegoPageBuilder:
-    """Builds a Page (LegoPageElement) from classification results.
+class HierarchyBuilder:
+    """Builds a hierarchy of LegoPageElements from classification results.
 
     This class takes the flat list of classified elements and constructs
-    a complete structured Page using LEGO-specific types.
+    a hierarchical representation using Lego-specific types.
     """
 
     def __init__(self, page_data: PageData, result: ClassificationResult):
@@ -62,7 +62,7 @@ class LegoPageBuilder:
         self.converted: Set[int] = set()
 
     def build(self) -> Page:
-        """Build the Page with all structured LEGO elements.
+        """Build the hierarchy of LegoPageElements.
 
         Returns:
             Page containing the structured elements
@@ -81,8 +81,8 @@ class LegoPageBuilder:
 
         # Use the page's bbox from the original page data
         return Page(
-            bbox=self.page_data.bbox,
             page_data=self.page_data,
+            bbox=self.page_data.bbox,
             page_number=page_number,
             steps=steps,
             parts_lists=parts_lists,
@@ -338,14 +338,14 @@ class LegoPageBuilder:
             self.unprocessed.append(element)
 
 
-def build_page(
+def build_hierarchy(
     page_data: PageData,
     result: ClassificationResult,
 ) -> Page:
-    """Build a Page (LegoPageElement) from classification results.
+    """Build a hierarchy of LegoPageElements from classification results.
 
     This is the main entry point for converting classified page elements
-    into a structured LEGO-specific Page.
+    into a structured Lego-specific hierarchy.
 
     Args:
         page_data: The page data containing all elements
@@ -358,11 +358,11 @@ def build_page(
         >>> pages = extract_bounding_boxes(doc, None)
         >>> results = classify_pages(pages)
         >>> for page_data, result in zip(pages, results):
-        ...     page = build_page(page_data, result)
+        ...     page = build_hierarchy(page_data, result)
         ...     if page.page_number:
         ...         print(f"Page {page.page_number.value}")
         ...     for step in page.steps:
         ...         print(f"  Step {step.step_number.value}")
     """
-    builder = LegoPageBuilder(page_data, result)
+    builder = HierarchyBuilder(page_data, result)
     return builder.build()

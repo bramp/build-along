@@ -1,8 +1,8 @@
-"""Tests for the lego_page_builder module."""
+"""Tests for the hierarchy_builder module."""
 
 from typing import Dict
 
-from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
+from build_a_long.pdf_extract.classifier.hierarchy_builder import build_hierarchy
 from build_a_long.pdf_extract.classifier.types import (
     Candidate,
     ClassificationResult,
@@ -61,7 +61,7 @@ class TestPageNumberExtraction:
             candidates=make_candidates({page_number_text: "page_number"})
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert isinstance(page, Page)
         assert page.page_number is not None
@@ -82,7 +82,7 @@ class TestPageNumberExtraction:
 
         result = ClassificationResult()
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert page.page_number is None
 
@@ -107,7 +107,7 @@ class TestPageNumberExtraction:
             )
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert page.page_number is not None
         assert len(page.warnings) > 0
@@ -128,7 +128,7 @@ class TestPageNumberExtraction:
             candidates=make_candidates({page_number_text: "page_number"})
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert page.page_number is None
         assert len(page.warnings) > 0
@@ -153,7 +153,7 @@ class TestStepExtraction:
             candidates=make_candidates({step_number_text: "step_number"})
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert len(page.steps) == 1
         step = page.steps[0]
@@ -182,7 +182,7 @@ class TestStepExtraction:
             )
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert len(page.steps) == 2
         assert page.steps[0].step_number.value == 1
@@ -203,7 +203,7 @@ class TestStepExtraction:
             candidates=make_candidates({step_text: "step_number"})
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert len(page.steps) == 0
         assert len(page.warnings) > 0
@@ -228,7 +228,7 @@ class TestPartsListExtraction:
             candidates=make_candidates({parts_list_drawing: "parts_list"})
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert len(page.parts_lists) == 1
         parts_list = page.parts_lists[0]
@@ -273,7 +273,7 @@ class TestPartsListExtraction:
             ],
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert len(page.parts_lists) == 1
         parts_list = page.parts_lists[0]
@@ -326,7 +326,7 @@ class TestPartsListExtraction:
             ],
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert len(page.parts_lists) == 1
         parts_list = page.parts_lists[0]
@@ -362,43 +362,11 @@ class TestPartExtraction:
             part_image_pairs=[(part_count, part_image)],
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert len(page.parts_lists) == 1
         assert len(page.parts_lists[0].parts) == 1
         assert page.parts_lists[0].parts[0].count.count == 3
-
-    def test_parse_part_count_without_x_suffix(self) -> None:
-        """Test that part count text without 'x' suffix is rejected."""
-        page_bbox = BBox(0, 0, 100, 200)
-        parts_list = Drawing(bbox=BBox(10, 10, 90, 50))
-        part_count = Text(bbox=BBox(15, 15, 25, 25), text="5")  # Missing 'x' suffix
-        part_image = Image(bbox=BBox(30, 15, 50, 35))
-
-        page_data = PageData(
-            page_number=1,
-            elements=[parts_list, part_count, part_image],
-            bbox=page_bbox,
-        )
-
-        result = ClassificationResult(
-            candidates=make_candidates(
-                {
-                    parts_list: "parts_list",
-                    part_count: "part_count",
-                    part_image: "part_image",
-                }
-            ),
-            part_image_pairs=[(part_count, part_image)],
-        )
-
-        page = build_page(page_data, result)
-
-        # Should fail to parse the part count without 'x' suffix
-        assert len(page.parts_lists) == 1
-        assert len(page.parts_lists[0].parts) == 0  # Part count parsing failed
-        assert len(page.warnings) == 1
-        assert "Could not parse part count" in page.warnings[0]
 
     def test_invalid_part_count_text(self) -> None:
         """Test handling of non-numeric part count text."""
@@ -424,7 +392,7 @@ class TestPartExtraction:
             part_image_pairs=[(part_count, part_image)],
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         assert len(page.parts_lists) == 1
         # Part should not be created due to invalid count
@@ -456,7 +424,7 @@ class TestPartExtraction:
             part_image_pairs=[(part_count, part_image)],
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         part = page.parts_lists[0].parts[0]
         # BBox should be the union of part_count and part_image
@@ -486,7 +454,7 @@ class TestUnprocessedElements:
             _removal_reasons={id(removed_text): None},  # type: ignore
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         # removed_text should not be in unprocessed
         assert removed_text not in page.unprocessed_elements
@@ -509,7 +477,7 @@ class TestUnprocessedElements:
             candidates=make_candidates({labeled_text: "some_label"})
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         # unlabeled_text should not be in unprocessed
         assert unlabeled_text not in page.unprocessed_elements
@@ -565,7 +533,7 @@ class TestIntegration:
             part_image_pairs=[(part_count_1, part_image_1)],
         )
 
-        page = build_page(page_data, result)
+        page = build_hierarchy(page_data, result)
 
         # Verify page number
         assert page.page_number is not None

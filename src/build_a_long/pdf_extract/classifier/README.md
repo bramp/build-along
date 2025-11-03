@@ -4,10 +4,12 @@ This module provides classification and structured page building for LEGO instru
 
 ## Overview
 
-The classifier transforms flat lists of extracted PDF elements into labeled, structured LEGO instruction pages through two stages:
+The classifier transforms flat lists of extracted PDF elements into labeled, structured LEGO instruction pages using a **candidate-based architecture**:
 
-1. **Classification** - Labels elements using rule-based heuristics (e.g., "page_number", "step_number", "part_count")
-2. **Page Building** - Constructs hierarchical `Page` objects from the labeled elements
+1. **Classification** - Scores elements, constructs `LegoPageElement` objects, and selects the best candidates
+2. **Page Building** - Uses pre-constructed elements to assemble hierarchical `Page` objects
+
+This single-parse approach guarantees consistency between classification and construction, enables re-evaluation, and provides rich debugging information.
 
 See the [parent README](../README.md) for overall pipeline architecture.
 
@@ -63,6 +65,98 @@ The classifier runs in a fixed order, with later stages depending on earlier one
 5. **PartsImageClassifier** - Associates part counts with their corresponding images
    - Outputs: `"part_image"`
    - Requires: `"parts_list"`, `"part_count"`
+
+## Candidate-Based Architecture
+
+### Why Candidates?
+
+The classifier uses a **candidate-based architecture** where classifiers construct `LegoPageElement` objects during classification rather than deferring to the builder phase. This solves several problems:
+
+**Before (Two-Phase)**:
+
+- Classification: Score and label elements
+- Building: Parse labeled elements to construct objects
+- **Problem**: Information lost, inconsistent parsing, no re-evaluation
+
+**After (Single-Phase with Candidates)**:
+
+- Classification: Score, construct, and store all candidates
+- Building: Use pre-constructed objects directly
+- **Benefit**: Consistency guaranteed, full decision trail, re-evaluation enabled
+
+### Core Types
+
+#### Candidate
+
+Represents a potential classification decision with complete metadata:
+
+```python
+@dataclass
+class Candidate:
+    source_element: Element                    # PDF element being classified
+    label: str                                 # Classification label
+    score: float                               # Confidence score (0.0-1.0)
+    score_details: Any                         # Detailed score breakdown
+    constructed: Optional[LegoPageElement]     # Constructed element (or None if failed)
+    failure_reason: Optional[str]              # Why construction failed
+    is_winner: bool = False                    # Whether selected as best
+```
+
+#### ClassificationResult
+
+Enhanced to preserve all classification decisions:
+
+```python
+@dataclass
+class ClassificationResult:
+    labeled_elements: Dict[Element, str]                 # Element → label
+    removal_reasons: Dict[int, RemovalReason]            # Element → removal reason
+    constructed_elements: Dict[Element, LegoPageElement] # NEW: Pre-constructed objects
+    candidates: Dict[str, List[Candidate]]               # NEW: All candidates by label
+```
+
+**Key Methods**:
+
+- `get_best_candidate(label)`: Get the winning candidate for a label
+- `get_alternative_candidates(label)`: Get non-winning candidates for debugging
+
+### Implementation Pattern
+
+Each classifier follows this pattern:
+
+```python
+def classify(self, page_data, scores, labeled_elements, removal_reasons,
+             hints=None, constructed_elements=None, candidates=None):
+    # 1. Build candidates from scored elements
+    candidate_list = self._build_candidates(page_data, scores)
+    
+    # 2. Apply hints to filter/re-rank
+    candidate_list = self._apply_hints(candidate_list, hints)
+    
+    # 3. Select the winner
+    winner = self._select_winner(candidate_list)
+    
+    # 4. Store results
+    if winner:
+        labeled_elements[winner.source_element] = self.label
+        constructed_elements[winner.source_element] = winner.constructed
+        candidates[self.label] = candidate_list
+```
+
+See `PageNumberClassifier` for a complete reference implementation.
+
+### Benefits
+
+1. **Consistency**: Parse once during classification → builders use pre-constructed objects
+2. **Debugging**: All candidates preserved with scores, failures, alternatives
+3. **Re-evaluation**: Can try second-best candidate if first fails downstream
+4. **Hints**: External code can guide classification (e.g., user corrections)
+5. **Type Safety**: Constructed elements have known, validated types
+
+### Migration Status
+
+✅ **Complete**: `PageNumberClassifier` - Full candidate implementation  
+⏳ **Pending**: Other classifiers have compatible signatures, need candidate implementation
 
 
 ## Classifier Details
@@ -129,18 +223,22 @@ The classifier is architected as a pipeline of independent classifier modules ma
 
 ```text
 classifier/
-├── __init__.py                 # Public API and logging setup
-├── BUILD                       # Pants build configuration
-├── classifier.py               # Main classification orchestrator
-├── classifier_test.py          # Unit tests
-├── label_classifier.py         # Abstract base class for classifiers
-├── page_number_classifier.py   # Page number classification logic
-├── part_count_classifier.py    # Part count classification logic
-├── parts_image_classifier.py   # Part image classification logic
-├── parts_list_classifier.py    # Parts list classification logic
-├── step_number_classifier.py   # Step number classification logic
-├── lego_page_builder.py        # Hierarchy builder
-└── types.py                    # Shared data types
+├── __init__.py                      # Public API and logging setup
+├── BUILD                            # Pants build configuration
+├── README.md                        # This file
+├── TEXT_EXTRACTION_REFACTORING.md   # Text extraction refactoring details
+├── classifier.py                    # Main classification orchestrator
+├── classifier_test.py               # Unit tests
+├── label_classifier.py              # Abstract base class for classifiers
+├── page_number_classifier.py        # Page number classification logic
+├── part_count_classifier.py         # Part count classification logic
+├── parts_image_classifier.py        # Part image classification logic
+├── parts_list_classifier.py         # Parts list classification logic
+├── step_number_classifier.py        # Step number classification logic
+├── text_extractors.py               # Shared text parsing functions
+├── lego_page_builder.py             # Hierarchy builder
+├── hierarchy_builder.py             # Alternative hierarchy builder
+└── types.py                         # Shared data types
 ```
 
 ### Key Components
@@ -152,21 +250,43 @@ classifier/
 
 ## Adding New Classifiers
 
-To add a new classifier:
+To add a new classifier following the candidate-based pattern:
 
-1. Create a new file (e.g., `my_new_classifier.py`).
-2. Implement a class that inherits from `LabelClassifier`.
-3. Define the `outputs` and `requires` class attributes to declare its position in the pipeline.
-4. Implement the `calculate_scores` and `classify` methods.
-5. Instantiate the new classifier in the `Classifier.__init__` method in `classifier.py`, ensuring it is added in an order that respects its dependencies.
-6. Write comprehensive unit tests.
-7. Update this README.
+1. **Create a new file** (e.g., `my_new_classifier.py`)
+2. **Inherit from `LabelClassifier`**
+3. **Define class attributes**:
+   - `outputs`: Set of labels this classifier produces
+   - `requires`: Set of labels this classifier depends on
+4. **Implement `calculate_scores`**: Score all elements and store in `scores` dict
+5. **Implement `classify`** following the pattern:
+   - `_build_candidates()`: Convert scored elements to Candidate objects with constructed LegoElements
+   - `_apply_hints()`: Filter candidates based on hints
+   - `_select_winner()`: Choose the best candidate
+   - Store winner in `labeled_elements`, `constructed_elements`, and `candidates`
+6. **Add to pipeline**: Instantiate in `Classifier.__init__` in dependency order
+7. **Write tests**: Unit tests for scoring, construction, and edge cases
+8. **Update documentation**: Add classifier details to this README
+
+See `PageNumberClassifier` for a complete reference implementation of the candidate pattern.
 
 ## Page Builder
 
-After classification, the `lego_page_builder` module constructs a structured hierarchy of LEGO-specific elements from the flat list of classified elements. It returns a `Page` object (a `LegoPageElement`) that represents the complete structured view of the page.
+After classification, the `lego_page_builder` module constructs a structured hierarchy of LEGO-specific elements. With the candidate-based architecture, builders can use pre-constructed `LegoPageElement` objects from `ClassificationResult.constructed_elements`, eliminating duplicate parsing and guaranteeing consistency.
+
+The builder returns a `Page` object (a `LegoPageElement`) that represents the complete structured view of the page.
 
 ### Transformations
+
+```python
+# Classifiers construct elements during classification
+Text("5") + scores → Candidate(constructed=PageNumber(value=5))
+
+# Builders use pre-constructed elements
+result.constructed_elements[text_element]  →  PageNumber(value=5)
+page.page_number = result.constructed_elements[text_element]
+```
+
+Traditional transformations (still supported for backwards compatibility):
 
 ```python
 # Text with page_number label becomes PageNumber
@@ -299,6 +419,35 @@ The page builder is under active development. Current limitations:
    - Progress bars
    - Information callouts
 
+## Current Migration Status
+
+The candidate-based architecture is being rolled out incrementally:
+
+### ✅ Completed
+
+- **Core Infrastructure**:
+  - `types.py`: `Candidate` dataclass and enhanced `ClassificationResult`
+  - `classifier.py`: Creates and passes `constructed_elements` and `candidates` dicts
+  - `label_classifier.py`: Updated abstract `classify()` signature
+  - `text_extractors.py`: Shared text parsing functions
+
+- **Classifiers**:
+  - `page_number_classifier.py`: Full candidate implementation with `_build_candidates()`, `_apply_hints()`, `_select_winner()`
+
+### ⏳ In Progress
+
+- **Classifiers** (signatures updated, need candidate implementation):
+  - `part_count_classifier.py`
+  - `step_number_classifier.py`
+  - `parts_list_classifier.py`
+  - `parts_image_classifier.py`
+
+- **Builders** (need to use `constructed_elements`):
+  - `lego_page_builder.py`
+  - `hierarchy_builder.py`
+
+Once migration is complete, all classifiers will construct elements immediately and all builders will use pre-constructed objects exclusively.
+
 ## Testing
 
 Run all tests:
@@ -317,8 +466,11 @@ pants test src/build_a_long/pdf_extract/classifier/classifier_test.py
 ## Design Principles
 
 - **Rule-based** - Uses deterministic heuristics rather than ML models
-- **In-place modification** - Labels are added to existing `Element` objects
-- **Extensible** - Pipeline architecture makes it easy to add new classification rules
-- **Testable** - Each classifier is independently testable
+- **Single Parse** - Text parsed once during classification, not again during building
+- **Candidate Preservation** - All candidates stored, not just winners (enables debugging and re-evaluation)
+- **Type Safety** - Constructed elements have known, validated types
+- **Extensible** - Pipeline architecture and hints enable easy addition of new rules
+- **Testable** - Each classifier is independently testable with clear inputs/outputs
 - **Dependency-aware** - Pipeline enforces execution order based on declared dependencies
 - **Non-fatal errors** - Parsing errors produce warnings instead of failing
+- **Auditable** - Full decision trail with scores, alternatives, and failure reasons
