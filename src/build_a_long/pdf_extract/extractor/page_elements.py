@@ -52,6 +52,11 @@ class Drawing(PageElement):
 
     image_id: Optional[str] = None
 
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        image_str = f", image_id={self.image_id}" if self.image_id else ""
+        return f"Drawing(bbox={str(self.bbox)}{image_str})"
+
 
 @dataclass(eq=False, frozen=True)
 class Text(PageElement):
@@ -64,6 +69,11 @@ class Text(PageElement):
     font_name: Optional[str] = None
     font_size: Optional[float] = None
 
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        text_preview = self.text[:30] + "..." if len(self.text) > 30 else self.text
+        return f'Text(bbox={str(self.bbox)}, text="{text_preview}")'
+
 
 @dataclass(eq=False, frozen=True)
 class Image(PageElement):
@@ -73,6 +83,11 @@ class Image(PageElement):
     """
 
     image_id: Optional[str] = None
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        image_str = f", image_id={self.image_id}" if self.image_id else ""
+        return f"Image(bbox={str(self.bbox)}{image_str})"
 
 
 # A helpful alias for heterogeneous collections of page elements
