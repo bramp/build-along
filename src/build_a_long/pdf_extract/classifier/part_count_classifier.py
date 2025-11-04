@@ -65,6 +65,7 @@ class PartCountClassifier(LabelClassifier):
 
     def __init__(self, config: ClassifierConfig, classifier):
         super().__init__(config, classifier)
+        # Can the following go into the parent, and use "outputs" as identifier?
         self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
             "part_count",
             "all",
@@ -80,6 +81,7 @@ class PartCountClassifier(LabelClassifier):
             return
 
         # Initialize scores dict for this classifier
+        # TODO Do we need to do this? or should scores already have it?
         if "part_count" not in scores:
             scores["part_count"] = {}
 
@@ -88,8 +90,6 @@ class PartCountClassifier(LabelClassifier):
                 continue
 
             text_score = PartCountClassifier._score_part_count_text(element.text)
-            if text_score == 0.0:
-                continue
 
             # Store detailed score object
             detail_score = _PartCountScore(text_score=text_score)
@@ -109,28 +109,22 @@ class PartCountClassifier(LabelClassifier):
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
         removal_reasons: Dict[int, RemovalReason],
-        hints: Optional["ClassificationHints"] = None,
-        constructed_elements: Optional[Dict["Element", "LegoPageElement"]] = None,
-        candidates: Optional[Dict[str, List["Candidate"]]] = None,
+        hints: Optional["ClassificationHints"],
+        constructed_elements: Dict["Element", "LegoPageElement"],
+        candidates: Dict[str, List["Candidate"]],
     ) -> None:
-        if candidates is None:
-            candidates = {}
-
         # Get pre-calculated scores for this classifier
         part_count_scores = scores.get("part_count", {})
         candidate_list: "List[Candidate]" = []
 
         for element in page_data.elements:
+            # TODO Support non-text elements - such as images of text.
             if not isinstance(element, Text):
                 continue
 
             # Get the score object and compute combined score
-            score_obj = part_count_scores.get(element)
-            if not isinstance(score_obj, _PartCountScore):
-                continue
-
-            combined_score = score_obj.combined_score(self.config)
-            if combined_score < self.config.min_confidence_threshold:
+            score = part_count_scores.get(element)
+            if not isinstance(score, _PartCountScore):
                 continue
 
             # Try to construct (parse part count value)
@@ -153,8 +147,8 @@ class PartCountClassifier(LabelClassifier):
             candidate = Candidate(
                 source_element=element,
                 label="part_count",
-                score=combined_score,
-                score_details=score_obj,
+                score=score.combined_score(self.config),
+                score_details=score,
                 constructed=constructed_elem,
                 failure_reason=failure_reason,
                 is_winner=(value is not None),  # Winner if parsing succeeded

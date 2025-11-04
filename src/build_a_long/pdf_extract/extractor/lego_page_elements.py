@@ -47,6 +47,8 @@ class PartCount(LegoPageElement):
 
     count: int
 
+    # TODO We may wish to add the part this count refers to.
+
     def __post_init__(self) -> None:
         if self.count < 0:
             raise ValueError("PartCount.count must be non-negative")

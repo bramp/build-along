@@ -136,13 +136,10 @@ class StepNumberClassifier(LabelClassifier):
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
         removal_reasons: Dict[int, RemovalReason],
-        hints: Optional["ClassificationHints"] = None,
-        constructed_elements: Optional[Dict["Element", "LegoPageElement"]] = None,
-        candidates: Optional[Dict[str, List["Candidate"]]] = None,
+        hints: Optional["ClassificationHints"],
+        constructed_elements: Dict["Element", "LegoPageElement"],
+        candidates: Dict[str, List["Candidate"]],
     ) -> None:
-        if candidates is None:
-            candidates = {}
-
         # Find the page number element to avoid classifying it as a step number
         page_number_element = None
         for element in page_data.elements:

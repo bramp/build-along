@@ -258,9 +258,9 @@ class PartsImageClassifier(LabelClassifier):
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Element, str],
         removal_reasons: Dict[int, RemovalReason],
-        hints: Optional["ClassificationHints"] = None,
-        constructed_elements: Optional[Dict[Element, "LegoPageElement"]] = None,
-        candidates: Optional[Dict[str, List["Candidate"]]] = None,
+        hints: Optional["ClassificationHints"],
+        constructed_elements: Dict[Element, "LegoPageElement"],
+        candidates: Dict[str, List["Candidate"]],
     ) -> None:
         part_counts: List[Text] = [
             e
