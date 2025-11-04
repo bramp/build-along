@@ -13,7 +13,6 @@ Real fixture(s) live under this package's fixtures/ directory.
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import pytest
 
@@ -43,11 +42,11 @@ class ClassifiedPage:
         """
         self.page = page
         self.result = result
-        self._cache: Dict[str, List[Element]] = {}
+        self._cache: dict[str, list[Element]] = {}
 
     def elements_by_label(
         self, label: str, include_deleted: bool = False
-    ) -> List[Element]:
+    ) -> list[Element]:
         """Get all elements with the given label.
 
         Args:
@@ -72,23 +71,23 @@ class ClassifiedPage:
                 ]
         return self._cache[cache_key]
 
-    def parts_lists(self) -> List[Element]:
+    def parts_lists(self) -> list[Element]:
         """Get all non-deleted parts_list elements."""
         return self.elements_by_label("parts_list")
 
-    def part_images(self) -> List[Element]:
+    def part_images(self) -> list[Element]:
         """Get all non-deleted part_image elements."""
         return self.elements_by_label("part_image")
 
-    def part_counts(self) -> List[Element]:
+    def part_counts(self) -> list[Element]:
         """Get all non-deleted part_count elements."""
         return self.elements_by_label("part_count")
 
-    def step_numbers(self) -> List[Element]:
+    def step_numbers(self) -> list[Element]:
         """Get all non-deleted step_number elements."""
         return self.elements_by_label("step_number")
 
-    def children_of(self, parent: Element, label: str | None = None) -> List[Element]:
+    def children_of(self, parent: Element, label: str | None = None) -> list[Element]:
         """Return all non-deleted elements spatially contained within a parent element.
 
         Note: This uses bbox containment, not ElementTree hierarchy, because the hierarchy
@@ -115,7 +114,7 @@ class ClassifiedPage:
                 result.append(elem)
         return result
 
-    def print_summary(self, logger: Optional[logging.Logger] = None) -> None:
+    def print_summary(self, logger: logging.Logger | None = None) -> None:
         """Log a summary of labeled elements.
 
         Args:
@@ -135,7 +134,7 @@ class ClassifiedPage:
 # TODO Replace this with just results.get_elements_by_label()
 
 
-def _parts_lists(page: PageData, result: ClassificationResult) -> List[Element]:
+def _parts_lists(page: PageData, result: ClassificationResult) -> list[Element]:
     return [
         e
         for e in page.elements
@@ -146,7 +145,7 @@ def _parts_lists(page: PageData, result: ClassificationResult) -> List[Element]:
 # TODO Replace this with just results.get_elements_by_label()
 
 
-def _part_images(page: PageData, result: ClassificationResult) -> List[Element]:
+def _part_images(page: PageData, result: ClassificationResult) -> list[Element]:
     return [
         e
         for e in page.elements
@@ -157,7 +156,7 @@ def _part_images(page: PageData, result: ClassificationResult) -> List[Element]:
 # TODO Replace this with just results.get_elements_by_label()
 
 
-def _part_counts(page: PageData, result: ClassificationResult) -> List[Element]:
+def _part_counts(page: PageData, result: ClassificationResult) -> list[Element]:
     return [
         e
         for e in page.elements

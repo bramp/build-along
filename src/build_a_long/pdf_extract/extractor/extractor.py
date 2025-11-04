@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
-from typing import Any, List, Sequence, Set
+from typing import Any
 
 import pymupdf
 from dataclass_wizard import JSONPyWizard
@@ -45,7 +46,7 @@ class PageData(JSONPyWizard):
 
     page_number: int
     bbox: BBox
-    elements: List[Element]
+    elements: list[Element]
 
 
 @dataclass
@@ -58,10 +59,10 @@ class ExtractionResult(JSONPyWizard):
         # TODO Change this to true.
         raise_on_unknown_json_key = False
 
-    pages: List[PageData]
+    pages: list[PageData]
 
 
-def _extract_text_elements(blocks: List[BlockDict]) -> List[Text]:
+def _extract_text_elements(blocks: list[BlockDict]) -> list[Text]:
     """Extract text elements from a page's raw dictionary blocks.
 
     Args:
@@ -70,7 +71,7 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[Text]:
     Returns:
         List of Text elements
     """
-    elements: List[Text] = []
+    elements: list[Text] = []
 
     for b in blocks:
         assert isinstance(b, dict)
@@ -118,7 +119,7 @@ def _extract_text_elements(blocks: List[BlockDict]) -> List[Text]:
     return elements
 
 
-def _extract_image_elements(blocks: List[BlockDict]) -> List[Image]:
+def _extract_image_elements(blocks: list[BlockDict]) -> list[Image]:
     """Extract image elements from a page's raw dictionary blocks.
 
     Args:
@@ -127,7 +128,7 @@ def _extract_image_elements(blocks: List[BlockDict]) -> List[Image]:
     Returns:
         List of Image elements
     """
-    elements: List[Image] = []
+    elements: list[Image] = []
 
     for b in blocks:
         assert isinstance(b, dict)
@@ -150,7 +151,7 @@ def _extract_image_elements(blocks: List[BlockDict]) -> List[Image]:
     return elements
 
 
-def _extract_drawing_elements(drawings: List[Any]) -> List[Drawing]:
+def _extract_drawing_elements(drawings: list[Any]) -> list[Drawing]:
     """Extract drawing (vector path) elements from a page.
 
     Args:
@@ -159,7 +160,7 @@ def _extract_drawing_elements(drawings: List[Any]) -> List[Drawing]:
     Returns:
         List of Drawing elements
     """
-    elements: List[Drawing] = []
+    elements: list[Drawing] = []
 
     for d in drawings:
         drect = d["rect"]
@@ -170,7 +171,7 @@ def _extract_drawing_elements(drawings: List[Any]) -> List[Drawing]:
     return elements
 
 
-def _warn_unknown_block_types(blocks: List[Any]) -> bool:
+def _warn_unknown_block_types(blocks: list[Any]) -> bool:
     """Log warnings for blocks with unsupported types.
 
     Args:
@@ -193,7 +194,7 @@ def _warn_unknown_block_types(blocks: List[Any]) -> bool:
 
 
 def _extract_page_elements(
-    page: pymupdf.Page, page_num: int, include_types: Set[str]
+    page: pymupdf.Page, page_num: int, include_types: set[str]
 ) -> PageData:
     """Extract all elements from a single page.
 
@@ -215,7 +216,7 @@ def _extract_page_elements(
     assert _warn_unknown_block_types(blocks)
 
     # Extract elements by type
-    typed_elements: List[Element] = []
+    typed_elements: list[Element] = []
     if "text" in include_types:
         typed_elements.extend(_extract_text_elements(blocks))
     if "image" in include_types:
@@ -245,8 +246,8 @@ def _extract_page_elements(
 def extract_bounding_boxes(
     doc: pymupdf.Document,
     page_numbers: Sequence[int] | None = None,
-    include_types: Set[str] = {"text", "image", "drawing"},
-) -> List[PageData]:
+    include_types: set[str] = {"text", "image", "drawing"},
+) -> list[PageData]:
     """
     Extract bounding boxes for the selected pages of a PDF document.
 
@@ -259,7 +260,7 @@ def extract_bounding_boxes(
     Returns:
         List of PageData containing all pages with their elements
     """
-    pages: List[PageData] = []
+    pages: list[PageData] = []
 
     num_pages = len(doc)
 

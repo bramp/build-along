@@ -26,8 +26,8 @@ Set environment variables to aid investigation without code changes:
 
 import logging
 import os
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional, Sequence
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
@@ -193,7 +193,7 @@ class StepClassifier(LabelClassifier):
 
     def _find_associated_parts_list(
         self, step_num: StepNumber, parts_lists: Sequence[PartsList]
-    ) -> Optional[PartsList]:
+    ) -> PartsList | None:
         """Find the parts list associated with a step number.
 
         The parts list is typically above the step number. We look for parts lists
@@ -240,7 +240,7 @@ class StepClassifier(LabelClassifier):
     def _identify_diagram_region(
         self,
         step_num: StepNumber,
-        parts_list: Optional[PartsList],
+        parts_list: PartsList | None,
         page_data: PageData,
     ) -> BBox:
         """Identify the diagram region for a step.
@@ -283,7 +283,7 @@ class StepClassifier(LabelClassifier):
     def _compute_step_bbox(
         self,
         step_num: StepNumber,
-        parts_list: Optional[PartsList],
+        parts_list: PartsList | None,
         diagram: Diagram,
     ) -> BBox:
         """Compute the overall bounding box for the Step.
@@ -313,7 +313,7 @@ class StepClassifier(LabelClassifier):
         self,
         page_data: PageData,
         result: ClassificationResult,
-        hints: Optional[ClassificationHints],
+        hints: ClassificationHints | None,
     ) -> None:
         """Classify Step candidates and mark winners.
 

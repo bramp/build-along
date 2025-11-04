@@ -26,7 +26,6 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import List, Optional, Set
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
@@ -78,9 +77,9 @@ class PartsImageClassifier(LabelClassifier):
             "all",
         )
         # TODO This should be stateless.
-        self._part_image_pairs: List[tuple[Text, Image]] = []
+        self._part_image_pairs: list[tuple[Text, Image]] = []
 
-    def get_part_image_pairs(self) -> List[tuple[Text, Image]]:
+    def get_part_image_pairs(self) -> list[tuple[Text, Image]]:
         """Return the list of (part_count, image) pairs created during classification."""
         return self._part_image_pairs
 
@@ -98,12 +97,12 @@ class PartsImageClassifier(LabelClassifier):
         self._part_image_pairs = []
 
         labeled_elements = result.get_labeled_elements()
-        part_counts: List[Text] = [
+        part_counts: list[Text] = [
             e
             for e, label in labeled_elements.items()
             if label == "part_count" and isinstance(e, Text)
         ]
-        parts_lists: List[Drawing] = [
+        parts_lists: list[Drawing] = [
             e
             for e, label in labeled_elements.items()
             if label == "parts_list" and isinstance(e, Drawing)
@@ -122,9 +121,9 @@ class PartsImageClassifier(LabelClassifier):
 
     def _match_and_label_parts(
         self,
-        edges: List[_PartImageScore],
-        part_counts: List[Text],
-        images: List[Image],
+        edges: list[_PartImageScore],
+        part_counts: list[Text],
+        images: list[Image],
         result: ClassificationResult,
     ):
         """Match part counts with images using greedy matching based on distance.
@@ -132,8 +131,8 @@ class PartsImageClassifier(LabelClassifier):
         Stores the matched pairs in self._part_image_pairs for later retrieval.
         """
         edges.sort(key=lambda score: score.sort_key())
-        matched_counts: Set[int] = set()
-        matched_images: Set[int] = set()
+        matched_counts: set[int] = set()
+        matched_images: set[int] = set()
 
         # Track pairs for later use
         self._part_image_pairs = []
@@ -175,10 +174,10 @@ class PartsImageClassifier(LabelClassifier):
 
     def _build_candidate_edges(
         self,
-        part_counts: List[Text],
-        images: List[Image],
+        part_counts: list[Text],
+        images: list[Image],
         page_width: float,
-    ) -> List[_PartImageScore]:
+    ) -> list[_PartImageScore]:
         """Build candidate pairings between part counts and images.
 
         Returns a list of score objects representing valid pairings.
@@ -186,7 +185,7 @@ class PartsImageClassifier(LabelClassifier):
         VERT_EPS = 2.0  # allow minor overlap/touching
         ALIGN_EPS = max(2.0, 0.02 * page_width)
 
-        edges: List[_PartImageScore] = []
+        edges: list[_PartImageScore] = []
         for pc in part_counts:
             cb = pc.bbox
             for img in images:
@@ -202,8 +201,8 @@ class PartsImageClassifier(LabelClassifier):
         return edges
 
     def _get_images_in_parts_lists(
-        self, page_data: PageData, parts_lists: List[Drawing]
-    ) -> List[Image]:
+        self, page_data: PageData, parts_lists: list[Drawing]
+    ) -> list[Image]:
         def inside_any_parts_list(img: Image) -> bool:
             return any(img.bbox.fully_inside(pl.bbox) for pl in parts_lists)
 
@@ -217,15 +216,15 @@ class PartsImageClassifier(LabelClassifier):
         self,
         page_data: PageData,
         result: ClassificationResult,
-        hints: Optional[ClassificationHints],
+        hints: ClassificationHints | None,
     ) -> None:
         labeled_elements = result.get_labeled_elements()
-        part_counts: List[Text] = [
+        part_counts: list[Text] = [
             e
             for e, label in labeled_elements.items()
             if label == "part_count" and isinstance(e, Text)
         ]
-        parts_lists: List[Drawing] = [
+        parts_lists: list[Drawing] = [
             e
             for e, label in labeled_elements.items()
             if label == "parts_list" and isinstance(e, Drawing)

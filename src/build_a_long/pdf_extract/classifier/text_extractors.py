@@ -16,10 +16,9 @@ Design Principles
 """
 
 import re
-from typing import Optional
 
 
-def extract_page_number_value(text: str) -> Optional[int]:
+def extract_page_number_value(text: str) -> int | None:
     """Extract numeric page number value from text.
 
     Handles various formats:
@@ -60,7 +59,7 @@ def extract_page_number_value(text: str) -> Optional[int]:
     return None
 
 
-def extract_step_number_value(text: str) -> Optional[int]:
+def extract_step_number_value(text: str) -> int | None:
     """Extract numeric step number value from text.
 
     Handles plain numeric text representing step numbers (1-9999).
@@ -92,7 +91,7 @@ def extract_step_number_value(text: str) -> Optional[int]:
     return None
 
 
-def extract_part_count_value(text: str) -> Optional[int]:
+def extract_part_count_value(text: str) -> int | None:
     """Extract numeric part count value from text.
 
     Handles part count formats like "2x", "3X", "5×", etc.

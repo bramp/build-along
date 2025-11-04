@@ -3,7 +3,7 @@
 See https://pymupdf.readthedocs.io/en/latest/textpage.html#page-dictionary
 """
 
-from typing import List, NotRequired, TypedDict
+from typing import NotRequired, TypedDict
 
 # Type alias for bounding box coordinates (x0, y0, x1, y1)
 BBoxTuple = tuple[float, float, float, float]
@@ -20,13 +20,13 @@ class SpanDict(TypedDict):
 
     bbox: BBoxTuple
     text: str
-    chars: List[CharDict]
+    chars: list[CharDict]
 
 
 class LineDict(TypedDict):
     """Type definition for a text line in PyMuPDF rawdict."""
 
-    spans: List[SpanDict]
+    spans: list[SpanDict]
 
 
 class BlockDict(TypedDict):
@@ -52,4 +52,4 @@ class ImageBlockDict(BlockDict):
 class RawDict(TypedDict):
     """Type definition for PyMuPDF page.get_text('rawdict') return value."""
 
-    blocks: List[BlockDict | TextBlockDict | ImageBlockDict]
+    blocks: list[BlockDict | TextBlockDict | ImageBlockDict]

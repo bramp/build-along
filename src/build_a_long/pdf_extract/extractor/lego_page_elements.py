@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from dataclass_wizard import JSONPyWizard
 
@@ -84,13 +83,13 @@ class Part(LegoPageElement):
     """A single part entry within a parts list."""
 
     count: PartCount = field(kw_only=True)
-    diagram: Optional[Drawing] = field(
+    diagram: Drawing | None = field(
         default=None, kw_only=True
     )  # TODO Make this required
 
     # Name and Number are not directly extracted, but may be filled in later
-    name: Optional[str] = field(default=None, kw_only=True)
-    number: Optional[str] = field(default=None, kw_only=True)
+    name: str | None = field(default=None, kw_only=True)
+    number: str | None = field(default=None, kw_only=True)
 
     # TODO maybe add color?
     # TODO Some parts have a "shiny" highlight - maybe reference that image
@@ -106,7 +105,7 @@ class Part(LegoPageElement):
 class PartsList(LegoPageElement):
     """A container of multiple parts for the page's parts list."""
 
-    parts: List[Part] = field(kw_only=True)
+    parts: list[Part] = field(kw_only=True)
 
     @property
     def total_items(self) -> int:
@@ -193,14 +192,14 @@ class Page(LegoPageElement):
 
     page_data: PageData = field(kw_only=True)
 
-    page_number: Optional[PageNumber] = field(default=None, kw_only=True)
-    steps: List[Step] = field(default_factory=list, kw_only=True)
-    parts_lists: List[PartsList] = field(default_factory=list, kw_only=True)
+    page_number: PageNumber | None = field(default=None, kw_only=True)
+    steps: list[Step] = field(default_factory=list, kw_only=True)
+    parts_lists: list[PartsList] = field(default_factory=list, kw_only=True)
 
     # Metadata about the conversion process
-    warnings: List[str] = field(default_factory=list, kw_only=True)
+    warnings: list[str] = field(default_factory=list, kw_only=True)
     # Keep reference to raw elements that weren't converted (for debugging/analysis)
-    unprocessed_elements: List = field(
+    unprocessed_elements: list = field(
         default_factory=list, kw_only=True
     )  # List[Element] but avoiding import
 

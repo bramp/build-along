@@ -3,7 +3,7 @@ import json
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pymupdf
 
@@ -28,8 +28,8 @@ logger = logging.getLogger(__name__)
 
 
 def save_classified_json(
-    pages: List[PageData],
-    results: List[ClassificationResult],
+    pages: list[PageData],
+    results: list[ClassificationResult],
     output_dir: Path,
     pdf_path: Path,
 ) -> None:
@@ -48,7 +48,7 @@ def save_classified_json(
     logger.info("Saved JSON to %s", output_json_path)
 
 
-def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> None:
+def save_raw_json(pages: list[PageData], output_dir: Path, pdf_path: Path) -> None:
     """Save extracted raw data as JSON files, one per page.
 
     Args:
@@ -57,7 +57,7 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
         pdf_path: Original PDF path (used for naming the JSON file)
     """
 
-    def _prune_element_metadata(page: Dict[str, Any]) -> Dict[str, Any]:
+    def _prune_element_metadata(page: dict[str, Any]) -> dict[str, Any]:
         """Prune noisy/empty fields from PageData dict in-place (non-recursive).
 
         Applies to each element in page["elements"] only:
@@ -76,7 +76,7 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
         return page
 
     for page_data in pages:
-        json_page: Dict[str, Any] = page_data.to_dict()
+        json_page: dict[str, Any] = page_data.to_dict()
         json_page = _prune_element_metadata(json_page)
 
         output_json_path = output_dir / (
@@ -93,8 +93,8 @@ def save_raw_json(pages: List[PageData], output_dir: Path, pdf_path: Path) -> No
 
 def render_annotated_images(
     doc: pymupdf.Document,
-    pages: List[PageData],
-    results: List[ClassificationResult],
+    pages: list[PageData],
+    results: list[ClassificationResult],
     output_dir: Path,
     *,
     draw_deleted: bool = False,
@@ -108,7 +108,7 @@ def render_annotated_images(
         output_dir: Directory where PNG images should be saved
         draw_deleted: If True, also render elements marked as deleted.
     """
-    for page_data, result in zip(pages, results):
+    for page_data, result in zip(pages, results, strict=True):
         page_num = page_data.page_number  # 1-indexed
         page = doc[page_num - 1]  # 0-indexed
         output_path = output_dir / f"page_{page_num:03d}.png"
@@ -179,21 +179,21 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def _print_summary(
-    pages: List[PageData],
-    results: List["ClassificationResult"],
+    pages: list[PageData],
+    results: list[ClassificationResult],
     *,
     detailed: bool = False,
 ) -> None:
     """Print a human-readable summary of classification results to stdout."""
     total_pages = len(pages)
     total_elements = 0
-    elements_by_type: Dict[str, int] = {}
-    labeled_counts: Dict[str, int] = {}
+    elements_by_type: dict[str, int] = {}
+    labeled_counts: dict[str, int] = {}
 
     pages_with_page_number = 0
-    missing_page_numbers: List[int] = []
+    missing_page_numbers: list[int] = []
 
-    for page, result in zip(pages, results):
+    for page, result in zip(pages, results, strict=True):
         total_elements += len(page.elements)
         # Tally element types and labels
         has_page_number = False
@@ -260,7 +260,7 @@ def _print_classification_debug(page: PageData, result: ClassificationResult) ->
     # Get all winning candidates organized by element
     all_candidates = result.get_all_candidates()
     # element.id -> list of winning labels
-    element_to_labels: Dict[int, List[str]] = {}
+    element_to_labels: dict[int, list[str]] = {}
 
     for label, candidates in all_candidates.items():
         for candidate in candidates:
@@ -413,7 +413,7 @@ def _print_page_hierarchy(page_data: PageData, page: Page) -> None:
 
 
 def _build_page_hierarchy(
-    pages: List[PageData], results: List[ClassificationResult]
+    pages: list[PageData], results: list[ClassificationResult]
 ) -> None:
     """Build LEGO page hierarchy from classification results and log the structure.
 
@@ -423,7 +423,7 @@ def _build_page_hierarchy(
     """
     print("Building LEGO page hierarchy...")
 
-    for page_data, result in zip(pages, results):
+    for page_data, result in zip(pages, results, strict=True):
         page = build_page(page_data, result)
         _print_page_hierarchy(page_data, page)
 
@@ -452,7 +452,7 @@ def main() -> int:
     # Compute page selection before opening the document. If unbounded (no
     # --pages), pass None to extractor so it processes all pages.
     page_ranges = PageRanges.all()
-    page_numbers_for_extractor: List[int] | None = None
+    page_numbers_for_extractor: list[int] | None = None
     if args.pages:
         try:
             page_ranges = parse_page_ranges(args.pages)
@@ -465,7 +465,7 @@ def main() -> int:
         logger.info("Selected pages: %s", page_ranges)
         page_numbers_for_extractor = list(page_ranges.page_numbers(len(doc)))
 
-        pages: List[PageData] = extract_bounding_boxes(
+        pages: list[PageData] = extract_bounding_boxes(
             doc, page_numbers_for_extractor, include_types=include_types
         )
 
@@ -479,7 +479,7 @@ def main() -> int:
         # Returns classification results with labels for each page
         results = classify_pages(pages)
 
-        for page, result in zip(pages, results):
+        for page, result in zip(pages, results, strict=True):
             _print_label_counts(page, result)
             if args.debug_classification:
                 _print_classification_debug(page, result)

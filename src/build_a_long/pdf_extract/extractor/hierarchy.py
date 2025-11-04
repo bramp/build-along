@@ -9,8 +9,8 @@ ancestor for each child.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence
 
 from build_a_long.pdf_extract.extractor.page_elements import Element
 
@@ -31,12 +31,12 @@ class ElementTree:
         depth_map: Maps element id to its nesting depth (0 for roots)
     """
 
-    roots: List[Element] = field(default_factory=list)
-    parent_map: Dict[int, Optional[Element]] = field(default_factory=dict)
-    children_map: Dict[int, List[Element]] = field(default_factory=dict)
-    depth_map: Dict[int, int] = field(default_factory=dict)
+    roots: list[Element] = field(default_factory=list)
+    parent_map: dict[int, Element | None] = field(default_factory=dict)
+    children_map: dict[int, list[Element]] = field(default_factory=dict)
+    depth_map: dict[int, int] = field(default_factory=dict)
 
-    def get_children(self, element: Element) -> List[Element]:
+    def get_children(self, element: Element) -> list[Element]:
         """Get the children of a given element.
 
         Args:
@@ -47,7 +47,7 @@ class ElementTree:
         """
         return self.children_map.get(id(element), [])
 
-    def get_descendants(self, element: Element) -> List[Element]:
+    def get_descendants(self, element: Element) -> list[Element]:
         """Get all descendants of a given element (children, grandchildren, etc.).
 
         Args:
@@ -56,7 +56,7 @@ class ElementTree:
         Returns:
             List of all descendant elements (empty list if no descendants)
         """
-        descendants: List[Element] = []
+        descendants: list[Element] = []
         children = self.get_children(element)
         for child in children:
             descendants.append(child)
@@ -64,7 +64,7 @@ class ElementTree:
             descendants.extend(self.get_descendants(child))
         return descendants
 
-    def get_parent(self, element: Element) -> Optional[Element]:
+    def get_parent(self, element: Element) -> Element | None:
         """Get the parent of a given element.
 
         Args:
@@ -112,17 +112,17 @@ def build_hierarchy_from_elements(
     Returns:
         ElementTree containing the hierarchy with roots and parent/children mappings.
     """
-    converted: List[Element] = list(elements)
+    converted: list[Element] = list(elements)
 
     # Sort indices by area ascending to assign children first
     idxs = sorted(range(len(converted)), key=lambda i: converted[i].bbox.area)
 
     # Prepare parent mapping: each index maps to parent index or None
-    parent: List[Optional[int]] = [None] * len(converted)
+    parent: list[int | None] = [None] * len(converted)
 
     for i in idxs:  # small to large
         bbox_i = converted[i].bbox
-        best_parent: Optional[int] = None
+        best_parent: int | None = None
         best_parent_area: float = float("inf")
         for j, candidate in enumerate(converted):
             if i == j:
@@ -135,8 +135,8 @@ def build_hierarchy_from_elements(
         parent[i] = best_parent
 
     # Build children arrays
-    children_lists: List[List[int]] = [[] for _ in converted]
-    roots: List[int] = []
+    children_lists: list[list[int]] = [[] for _ in converted]
+    roots: list[int] = []
     for i, p in enumerate(parent):
         if p is None:
             roots.append(i)

@@ -3,7 +3,7 @@ Base class for label classifiers.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationHints,
@@ -58,7 +58,7 @@ class LabelClassifier(ABC):
         self,
         page_data: PageData,
         result: ClassificationResult,
-        hints: "Optional[ClassificationHints]",
+        hints: ClassificationHints | None,
     ) -> None:
         """Classify the elements for the label by selecting winners.
 

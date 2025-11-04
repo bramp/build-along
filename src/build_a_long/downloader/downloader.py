@@ -1,7 +1,8 @@
 import hashlib
 import json
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Callable, ContextManager, Iterable, List, Optional
+from typing import Any, ContextManager
 
 import httpx
 
@@ -27,7 +28,7 @@ __all__ = [
 ]
 
 
-def read_metadata(path: Path) -> Optional[Metadata]:
+def read_metadata(path: Path) -> Metadata | None:
     """Read a metadata.json file from disk using dataclasses-json.
 
     Args:
@@ -37,7 +38,7 @@ def read_metadata(path: Path) -> Optional[Metadata]:
         The parsed Metadata object if successful; otherwise None.
     """
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             raw = json.load(f)
         if not isinstance(raw, dict):
             print(f"Warning: Metadata at {path} is not a JSON object; ignoring")
@@ -86,10 +87,10 @@ class LegoInstructionDownloader:
     def __init__(
         self,
         locale: str = "en-us",
-        out_dir: Optional[Path] = None,
+        out_dir: Path | None = None,
         overwrite: bool = False,
         show_progress: bool = True,
-        client: Optional[httpx.Client] = None,
+        client: httpx.Client | None = None,
     ):
         """Initialize the downloader.
 
@@ -152,8 +153,8 @@ class LegoInstructionDownloader:
         dest_dir: Path,
         *,
         progress_prefix: str = "",
-        stream_fn: Optional[Callable[..., ContextManager[Any]]] = None,
-        chunk_iter: Optional[Callable[[Any, int], Iterable[bytes]]] = None,
+        stream_fn: Callable[..., ContextManager[Any]] | None = None,
+        chunk_iter: Callable[[Any, int], Iterable[bytes]] | None = None,
     ) -> File:
         """Download a URL to a directory.
 
@@ -244,7 +245,7 @@ class LegoInstructionDownloader:
         meta_path = out_dir / "metadata.json"
 
         # Try to load existing metadata first (if allowed)
-        existing_meta: Optional[Metadata] = None
+        existing_meta: Metadata | None = None
         if meta_path.exists() and not self.overwrite:
             existing_meta = read_metadata(meta_path)
 
@@ -316,7 +317,7 @@ class LegoInstructionDownloader:
 
         print(" - ".join(parts) + ":")
 
-    def process_sets(self, set_numbers: List[str]) -> int:
+    def process_sets(self, set_numbers: list[str]) -> int:
         """Process multiple LEGO sets.
 
         Args:

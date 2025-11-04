@@ -15,7 +15,7 @@ both correctness of output and adherence to fundamental rules.
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 def _serialize_classification_result(
     page: PageData, result: ClassificationResult
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Serialize classification results to a JSON-serializable dict.
 
     Note: We can't use result.to_dict() directly because:
@@ -51,7 +51,7 @@ def _serialize_classification_result(
         - removed_elements: Dict mapping element IDs to removal reasons
         - warnings: List of warning messages
     """
-    serialized: Dict[str, Any] = {
+    serialized: dict[str, Any] = {
         "labeled_elements": {},
         "constructed_elements": {},
         "removed_elements": {},
@@ -86,15 +86,15 @@ def _serialize_classification_result(
 
 
 def _compare_classification_results(
-    actual: Dict[str, Any],
-    expected: Dict[str, Any],
+    actual: dict[str, Any],
+    expected: dict[str, Any],
     fixture_name: str,
-) -> List[str]:
+) -> list[str]:
     """Compare actual and expected classification results.
 
     Returns a list of error messages (empty list if they match).
     """
-    errors: List[str] = []
+    errors: list[str] = []
 
     # Compare labeled elements
     actual_labels = actual.get("labeled_elements", {})
@@ -155,12 +155,12 @@ def _compare_classification_results(
 
 def _run_invariant_checks(
     page: PageData, result: ClassificationResult, fixture_name: str
-) -> List[str]:
+) -> list[str]:
     """Run all invariant checks from classifier_rules_test.
 
     Returns a list of error messages (empty list if all checks pass).
     """
-    errors: List[str] = []
+    errors: list[str] = []
     classified = ClassifiedPage(page, result)
 
     parts_lists = classified.parts_lists()

@@ -1,7 +1,5 @@
 """Tests for the hierarchy_builder module."""
 
-from typing import Dict
-
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -24,9 +22,9 @@ from build_a_long.pdf_extract.extractor.page_elements import (
 )
 
 
-def make_candidates(labeled_elements: Dict[Element, str]) -> Dict[str, list[Candidate]]:
+def make_candidates(labeled_elements: dict[Element, str]) -> dict[str, list[Candidate]]:
     """Helper to convert old _labeled_elements format to new candidates format."""
-    candidates: Dict[str, list[Candidate]] = {}
+    candidates: dict[str, list[Candidate]] = {}
     for element, label in labeled_elements.items():
         if label not in candidates:
             candidates[label] = []
