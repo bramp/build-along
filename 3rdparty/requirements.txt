@@ -1,3 +1,6 @@
+# After changing this file, please run
+# $ pants generate-lockfiles
+
 httpx~=0.28.1
 beautifulsoup4~=4.14.2
 PyMuPDF~=1.26.5

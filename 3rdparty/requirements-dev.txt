@@ -1,3 +1,6 @@
+# After changing this file, please run
+# $ pants generate-lockfiles
+
 pytest~=8.4.2
 pytest-cov~=7.0.0
 pytest-recording~=0.13.4
