@@ -14,8 +14,8 @@ import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import pytest
 import httpx
+import pytest
 
 
 def _default_cassette_dir() -> Path:

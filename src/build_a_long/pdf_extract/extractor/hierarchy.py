@@ -8,8 +8,8 @@ ancestor for each child.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import logging
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence
 
 from build_a_long.pdf_extract.extractor.page_elements import Element

@@ -15,7 +15,7 @@ from typing import Dict, List
 import pymupdf
 
 from build_a_long.pdf_extract.classifier import classify_pages
-from build_a_long.pdf_extract.classifier.types import (
+from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
 )

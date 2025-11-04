@@ -5,7 +5,7 @@ Base class for label classifiers.
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
 
-from build_a_long.pdf_extract.classifier.types import (
+from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationHints,
     ClassificationResult,
     ClassifierConfig,

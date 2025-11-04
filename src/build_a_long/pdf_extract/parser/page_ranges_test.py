@@ -1,9 +1,9 @@
 import pytest
 
 from build_a_long.pdf_extract.parser import (
+    PageRanges,
     parse_page_range,
     parse_page_ranges,
-    PageRanges,
 )
 
 

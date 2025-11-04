@@ -20,29 +20,29 @@ are available, a ValueError will be raised at initialization time.
 import logging
 from typing import List, Optional, Set
 
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationHints,
+    ClassificationResult,
+    ClassifierConfig,
+    RemovalReason,
+)
 from build_a_long.pdf_extract.classifier.page_number_classifier import (
     PageNumberClassifier,
 )
 from build_a_long.pdf_extract.classifier.part_count_classifier import (
     PartCountClassifier,
 )
-from build_a_long.pdf_extract.classifier.parts_list_classifier import (
-    PartsListClassifier,
-)
 from build_a_long.pdf_extract.classifier.parts_image_classifier import (
     PartsImageClassifier,
 )
-from build_a_long.pdf_extract.classifier.step_number_classifier import (
-    StepNumberClassifier,
+from build_a_long.pdf_extract.classifier.parts_list_classifier import (
+    PartsListClassifier,
 )
 from build_a_long.pdf_extract.classifier.step_classifier import (
     StepClassifier,
 )
-from build_a_long.pdf_extract.classifier.types import (
-    ClassifierConfig,
-    ClassificationHints,
-    ClassificationResult,
-    RemovalReason,
+from build_a_long.pdf_extract.classifier.step_number_classifier import (
+    StepNumberClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import Text

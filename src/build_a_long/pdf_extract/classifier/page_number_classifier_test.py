@@ -1,10 +1,10 @@
 """Tests for the page number classifier."""
 
+from build_a_long.pdf_extract.classifier.classification_result import ClassifierConfig
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.classifier.page_number_classifier import (
     PageNumberClassifier,
 )
-from build_a_long.pdf_extract.classifier.types import ClassifierConfig
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_elements import (

@@ -12,12 +12,14 @@ from __future__ import annotations
 import logging
 from typing import List, Optional, Set
 
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
+)
 from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_page_number_value,
     extract_part_count_value,
     extract_step_number_value,
 )
-from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements

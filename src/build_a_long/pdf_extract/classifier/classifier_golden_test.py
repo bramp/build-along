@@ -19,9 +19,11 @@ from typing import Any, Dict, List
 
 import pytest
 
-from build_a_long.pdf_extract.classifier.classifier import classify_elements
+from build_a_long.pdf_extract.classifier import classify_elements
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
+)
 from build_a_long.pdf_extract.classifier.classifier_rules_test import ClassifiedPage
-from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.extractor import PageData
 
 log = logging.getLogger(__name__)

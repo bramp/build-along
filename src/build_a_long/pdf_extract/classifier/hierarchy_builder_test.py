@@ -2,11 +2,11 @@
 
 from typing import Dict
 
-from build_a_long.pdf_extract.classifier.hierarchy_builder import build_hierarchy
-from build_a_long.pdf_extract.classifier.types import (
+from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
 )
+from build_a_long.pdf_extract.classifier.hierarchy_builder import build_hierarchy
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
@@ -18,9 +18,9 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 )
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
+    Element,
     Image,
     Text,
-    Element,
 )
 
 

@@ -2,12 +2,12 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import (
     build_hierarchy_from_elements,
 )
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    StepNumber,
+)
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
     Text,
-)
-from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    StepNumber,
 )
 
 

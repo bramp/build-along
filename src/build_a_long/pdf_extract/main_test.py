@@ -1,10 +1,12 @@
 from pathlib import Path
 from unittest.mock import ANY, MagicMock, mock_open, patch
 
-from build_a_long.pdf_extract.classifier.types import ClassificationResult
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
+)
+from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_elements import Text
-from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.main import main
 
 

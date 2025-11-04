@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass, replace
-from typing import Any, List, Set, Sequence
+from typing import Any, List, Sequence, Set
 
 import pymupdf
 from dataclass_wizard import JSONPyWizard
@@ -10,9 +10,9 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 # Note: We intentionally do not build hierarchy here to avoid syncing issues
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
+    Element,
     Image,
     Text,
-    Element,
 )
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
     BBoxTuple,
