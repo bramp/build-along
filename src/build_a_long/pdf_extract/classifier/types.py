@@ -7,6 +7,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
+from dataclass_wizard import JSONPyWizard
+
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_elements import Element
 
@@ -19,7 +21,7 @@ ScoreKey = Union[Element, Tuple[Element, ...]]
 
 
 @dataclass
-class RemovalReason:
+class RemovalReason(JSONPyWizard):
     """Tracks why an element was removed during classification."""
 
     reason_type: str
@@ -30,7 +32,7 @@ class RemovalReason:
 
 
 @dataclass
-class Candidate:
+class Candidate(JSONPyWizard):
     """A candidate element with its score and constructed LegoElement.
 
     Represents a single element that was considered for a particular label,
@@ -70,8 +72,8 @@ class Candidate:
     """Whether this candidate was selected as the winner"""
 
 
-@dataclass(frozen=True)
-class ClassifierConfig:
+@dataclass
+class ClassifierConfig(JSONPyWizard):
     """Configuration for the classifier."""
 
     # TODO Not sure what this value is used for
@@ -92,7 +94,7 @@ class ClassifierConfig:
 
 
 @dataclass
-class ClassificationResult:
+class ClassificationResult(JSONPyWizard):
     """Represents the outcome of a single classification run.
 
     This class encapsulates the results of element classification, including
@@ -371,7 +373,7 @@ class ClassificationResult:
 
 
 @dataclass
-class ClassificationHints:
+class ClassificationHints(JSONPyWizard):
     """Hints to guide the classification process."""
 
     pass
