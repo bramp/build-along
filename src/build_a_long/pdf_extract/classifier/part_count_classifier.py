@@ -14,15 +14,7 @@ CLASSIFIER_DEBUG is set to "part_count" or "all".
 import logging
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Optional
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.types import (
-        Candidate,
-        ClassificationHints,
-    )
-    from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
-    from build_a_long.pdf_extract.extractor.page_elements import Element
+from typing import Optional
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -32,8 +24,9 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
 )
 from build_a_long.pdf_extract.classifier.types import (
     Candidate,
+    ClassificationHints,
+    ClassificationResult,
     ClassifierConfig,
-    RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import PartCount
@@ -74,8 +67,7 @@ class PartCountClassifier(LabelClassifier):
     def evaluate(
         self,
         page_data: PageData,
-        labeled_elements: Dict[Element, str],
-        candidates: "Dict[str, List[Candidate]]",
+        result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create candidates for part counts.
 
@@ -84,8 +76,6 @@ class PartCountClassifier(LabelClassifier):
         """
         if not page_data.elements:
             return
-
-        candidate_list: "List[Candidate]" = []
 
         for element in page_data.elements:
             if not isinstance(element, Text):
@@ -124,33 +114,29 @@ class PartCountClassifier(LabelClassifier):
                     id=element.id,
                 )
 
-            # Create candidate
-            candidate = Candidate(
-                source_element=element,
-                label="part_count",
-                score=detail_score.combined_score(self.config),
-                score_details=detail_score,
-                constructed=constructed_elem,
-                failure_reason=failure_reason,
-                is_winner=False,  # Will be set by classify()
+            # Add candidate
+            result.add_candidate(
+                "part_count",
+                Candidate(
+                    source_element=element,
+                    label="part_count",
+                    score=detail_score.combined_score(self.config),
+                    score_details=detail_score,
+                    constructed=constructed_elem,
+                    failure_reason=failure_reason,
+                    is_winner=False,  # Will be set by classify()
+                ),
             )
-            candidate_list.append(candidate)
-
-        # Store all candidates
-        candidates["part_count"] = candidate_list
 
     def classify(
         self,
         page_data: PageData,
-        labeled_elements: Dict[Element, str],
-        removal_reasons: Dict[int, RemovalReason],
-        hints: Optional["ClassificationHints"],
-        constructed_elements: "Dict[Element, LegoPageElement]",
-        candidates: "Dict[str, List[Candidate]]",
+        result: ClassificationResult,
+        hints: Optional[ClassificationHints],
     ) -> None:
         """Select winning part counts from pre-built candidates."""
         # Get pre-built candidates
-        candidate_list = candidates.get("part_count", [])
+        candidate_list = result.candidates.get("part_count", [])
 
         # Mark winners (all successfully constructed candidates)
         for candidate in candidate_list:
@@ -159,14 +145,15 @@ class PartCountClassifier(LabelClassifier):
                 continue
 
             # This is a winner!
-            candidate.is_winner = True
-            labeled_elements[candidate.source_element] = "part_count"
-            constructed_elements[candidate.source_element] = candidate.constructed
+            assert isinstance(candidate.constructed, PartCount)
+            result.mark_winner(
+                candidate, candidate.source_element, candidate.constructed
+            )
             self.classifier._remove_child_bboxes(
-                page_data, candidate.source_element, removal_reasons
+                page_data, candidate.source_element, result
             )
             self.classifier._remove_similar_bboxes(
-                page_data, candidate.source_element, removal_reasons
+                page_data, candidate.source_element, result
             )
 
     @staticmethod

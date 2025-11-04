@@ -26,26 +26,20 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Optional, Set
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.types import (
-        Candidate,
-        ClassificationHints,
-    )
-    from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
+from typing import List, Optional, Set
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.types import (
+    Candidate,
+    ClassificationHints,
+    ClassificationResult,
     ClassifierConfig,
-    RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
-    Element,
     Image,
     Text,
 )
@@ -93,8 +87,7 @@ class PartsImageClassifier(LabelClassifier):
     def evaluate(
         self,
         page_data: PageData,
-        labeled_elements: Dict[Element, str],
-        candidates: "Dict[str, List[Candidate]]",
+        result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create scores for part image pairings.
 
@@ -104,6 +97,7 @@ class PartsImageClassifier(LabelClassifier):
         # Reset pairs for this page
         self._part_image_pairs = []
 
+        labeled_elements = result.get_labeled_elements()
         part_counts: List[Text] = [
             e
             for e, label in labeled_elements.items()
@@ -131,7 +125,7 @@ class PartsImageClassifier(LabelClassifier):
         edges: List[_PartImageScore],
         part_counts: List[Text],
         images: List[Image],
-        labeled_elements: Dict[Element, str],
+        result: ClassificationResult,
     ):
         """Match part counts with images using greedy matching based on distance.
 
@@ -152,8 +146,22 @@ class PartsImageClassifier(LabelClassifier):
             matched_counts.add(id(pc))
             matched_images.add(id(img))
             # Label the image as part_image (only once per image)
-            if labeled_elements.get(img) != "part_image":
-                labeled_elements[img] = "part_image"
+            # NOTE: parts_image doesn't use the Candidate pattern yet, so we manually update
+            # the result's internal state. This should be migrated to use Candidates in the future.
+            if result.get_label(img) != "part_image":
+                # Create a minimal candidate for tracking (no constructed element for images yet)
+                result.add_candidate(
+                    "part_image",
+                    Candidate(
+                        source_element=img,
+                        label="part_image",
+                        score=1.0,  # Matched based on distance, not a traditional score
+                        score_details=score,
+                        constructed=None,
+                        failure_reason=None,
+                        is_winner=True,
+                    ),
+                )
             self._part_image_pairs.append((pc, img))
 
         if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
@@ -207,12 +215,10 @@ class PartsImageClassifier(LabelClassifier):
     def classify(
         self,
         page_data: PageData,
-        labeled_elements: Dict[Element, str],
-        removal_reasons: Dict[int, RemovalReason],
-        hints: Optional["ClassificationHints"],
-        constructed_elements: Dict[Element, "LegoPageElement"],
-        candidates: Dict[str, List["Candidate"]],
+        result: ClassificationResult,
+        hints: Optional[ClassificationHints],
     ) -> None:
+        labeled_elements = result.get_labeled_elements()
         part_counts: List[Text] = [
             e
             for e, label in labeled_elements.items()
@@ -234,6 +240,4 @@ class PartsImageClassifier(LabelClassifier):
         if not self._candidate_edges:
             return
 
-        self._match_and_label_parts(
-            self._candidate_edges, part_counts, images, labeled_elements
-        )
+        self._match_and_label_parts(self._candidate_edges, part_counts, images, result)

@@ -96,6 +96,11 @@ class ClassificationResult:
     primary source of truth for classification results, containing all scored
     elements, their constructed LegoPageElements, and winner information.
 
+    ClassificationResult is passed through the classifier pipeline, with each
+    classifier adding its candidates and marking winners. This allows later
+    classifiers to query the current state and make decisions based on earlier
+    results.
+
     External code should use the accessor methods rather than accessing internal
     fields directly to maintain encapsulation.
     """
@@ -132,6 +137,54 @@ class ClassificationResult:
     # Legacy: Persisted relations discovered during classification
     # TODO: Migrate to candidates pattern
     part_image_pairs: List[Tuple[Any, Any]] = field(default_factory=list)
+
+    # Builder methods for populating the result during classification
+
+    def add_candidate(self, label: str, candidate: Candidate) -> None:
+        """Add a single candidate for a specific label.
+
+        Args:
+            label: The label this candidate is for
+            candidate: The candidate to add
+        """
+        if label not in self.candidates:
+            self.candidates[label] = []
+        self.candidates[label].append(candidate)
+
+    def mark_winner(
+        self, candidate: Candidate, element: Element, constructed: "LegoPageElement"
+    ) -> None:
+        """Mark a candidate as the winner and update tracking dicts.
+
+        Args:
+            candidate: The candidate to mark as winner
+            element: The source element
+            constructed: The constructed LegoPageElement
+        """
+        candidate.is_winner = True
+        self.constructed_elements[element] = constructed
+
+    def mark_removed(self, element: Element, reason: RemovalReason) -> None:
+        """Mark an element as removed with the given reason.
+
+        Args:
+            element: The element to mark as removed
+            reason: The reason for removal
+        """
+        self._removal_reasons[id(element)] = reason
+
+    def get_labeled_elements(self) -> Dict[Element, str]:
+        """Get a dictionary of all labeled elements.
+
+        Returns:
+            Dictionary mapping elements to their labels
+        """
+        labeled: Dict[Element, str] = {}
+        for label, label_candidates in self.candidates.items():
+            for candidate in label_candidates:
+                if candidate.is_winner:
+                    labeled[candidate.source_element] = label
+        return labeled
 
     def get_label(self, element: Element) -> str | None:
         """Get the label for an element from this classification result.

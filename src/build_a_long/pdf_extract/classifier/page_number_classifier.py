@@ -5,7 +5,7 @@ Page number classifier.
 import math
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -16,13 +16,13 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
 from build_a_long.pdf_extract.classifier.types import (
     Candidate,
     ClassificationHints,
+    ClassificationResult,
     ClassifierConfig,
-    RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import PageNumber
-from build_a_long.pdf_extract.extractor.page_elements import Element, Text
+from build_a_long.pdf_extract.extractor.page_elements import Text
 
 
 @dataclass
@@ -66,8 +66,7 @@ class PageNumberClassifier(LabelClassifier):
     def evaluate(
         self,
         page_data: PageData,
-        labeled_elements: Dict[Any, str],
-        candidates: "Dict[str, List[Candidate]]",
+        result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create candidates for page numbers.
 
@@ -76,8 +75,6 @@ class PageNumberClassifier(LabelClassifier):
         """
         page_bbox = page_data.bbox
         assert page_bbox is not None
-
-        candidate_list: "List[Candidate]" = []
 
         for element in page_data.elements:
             # TODO Support non-text elements - such as images of text.
@@ -120,7 +117,8 @@ class PageNumberClassifier(LabelClassifier):
                 )
 
             # Store candidate (even if construction failed, for debugging)
-            candidate_list.append(
+            result.add_candidate(
+                "page_number",
                 Candidate(
                     source_element=element,
                     label="page_number",
@@ -129,23 +127,17 @@ class PageNumberClassifier(LabelClassifier):
                     constructed=constructed_elem,
                     failure_reason=failure_reason,
                     is_winner=False,  # Will be set by classify()
-                )
+                ),
             )
-
-        # Store all candidates
-        candidates["page_number"] = candidate_list
 
     def classify(
         self,
         page_data: PageData,
-        labeled_elements: Dict[Any, str],
-        removal_reasons: Dict[int, RemovalReason],
-        hints: "Optional[ClassificationHints]",
-        constructed_elements: "Dict[Element, Any]",
-        candidates: "Dict[str, List[Candidate]]",
+        result: ClassificationResult,
+        hints: Optional[ClassificationHints],
     ) -> None:
         """Select the best page number candidate from pre-built candidates."""
-        candidate_list = candidates.get("page_number", [])
+        candidate_list = result.candidates.get("page_number", [])
 
         if not candidate_list:
             return
@@ -157,22 +149,14 @@ class PageNumberClassifier(LabelClassifier):
             return
 
         # Mark winner and store results
-        winner.is_winner = True
-        labeled_elements[winner.source_element] = "page_number"
         assert isinstance(winner.constructed, PageNumber)
-        constructed_elements[winner.source_element] = winner.constructed
+        result.mark_winner(winner, winner.source_element, winner.constructed)
 
         # Cleanup: remove child/similar bboxes
-        self.classifier._remove_child_bboxes(
-            page_data, winner.source_element, removal_reasons
-        )
-        self.classifier._remove_similar_bboxes(
-            page_data, winner.source_element, removal_reasons
-        )
+        self.classifier._remove_child_bboxes(page_data, winner.source_element, result)
+        self.classifier._remove_similar_bboxes(page_data, winner.source_element, result)
 
-    def _select_winner(
-        self, candidate_list: "List[Candidate]"
-    ) -> "Optional[Candidate]":
+    def _select_winner(self, candidate_list: List[Candidate]) -> Optional[Candidate]:
         """Select the best candidate from the list.
 
         Only considers candidates that successfully constructed a PageNumber.

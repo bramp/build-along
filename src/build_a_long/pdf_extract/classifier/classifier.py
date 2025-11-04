@@ -17,7 +17,7 @@ are available, a ValueError will be raised at initialization time.
 """
 
 import logging
-from typing import Dict, List, Optional, Set
+from typing import List, Optional, Set
 
 from build_a_long.pdf_extract.classifier.page_number_classifier import (
     PageNumberClassifier,
@@ -41,7 +41,7 @@ from build_a_long.pdf_extract.classifier.types import (
     RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_elements import Element, Text
+from build_a_long.pdf_extract.extractor.page_elements import Text
 
 logger = logging.getLogger(__name__)
 
@@ -117,23 +117,14 @@ class Classifier:
         Runs the classification logic and returns a result.
         It does NOT modify page_data directly.
         """
-        labeled_elements = {}
-        removal_reasons = {}
-        constructed_elements = {}
-        candidates = {}
+        result = ClassificationResult()
 
         for classifier in self.classifiers:
-            classifier.evaluate(page_data, labeled_elements, candidates)
-            classifier.classify(
-                page_data,
-                labeled_elements,
-                removal_reasons,
-                hints,
-                constructed_elements,
-                candidates,
-            )
+            classifier.evaluate(page_data, result)
+            classifier.classify(page_data, result, hints)
 
-        warnings = self._log_post_classification_warnings(page_data, labeled_elements)
+        warnings = self._log_post_classification_warnings(page_data, result)
+        result.warnings = warnings
 
         # Extract persisted relations from PartsImageClassifier
         part_image_pairs = []
@@ -142,19 +133,15 @@ class Classifier:
                 part_image_pairs = classifier.get_part_image_pairs()
                 break
 
-        return ClassificationResult(
-            _removal_reasons=removal_reasons,
-            warnings=warnings,
-            constructed_elements=constructed_elements,
-            candidates=candidates,
-            part_image_pairs=part_image_pairs,
-        )
+        result.part_image_pairs = part_image_pairs
+
+        return result
 
     def _remove_child_bboxes(
         self,
         page_data: PageData,
         target,
-        removal_reasons: Dict[int, RemovalReason],
+        result: ClassificationResult,
         keep_ids: Optional[Set[int]] = None,
     ) -> None:
         if keep_ids is None:
@@ -167,15 +154,15 @@ class Classifier:
                 continue
             b = ele.bbox
             if b.fully_inside(target_bbox):
-                removal_reasons[id(ele)] = RemovalReason(
-                    reason_type="child_bbox", target_element=target
+                result.mark_removed(
+                    ele, RemovalReason(reason_type="child_bbox", target_element=target)
                 )
 
     def _remove_similar_bboxes(
         self,
         page_data: PageData,
         target,
-        removal_reasons: Dict[int, RemovalReason],
+        result: ClassificationResult,
         keep_ids: Optional[Set[int]] = None,
     ) -> None:
         if keep_ids is None:
@@ -195,8 +182,9 @@ class Classifier:
             b = ele.bbox
             iou = target.bbox.iou(b)
             if iou >= IOU_THRESHOLD:
-                removal_reasons[id(ele)] = RemovalReason(
-                    reason_type="similar_bbox", target_element=target
+                result.mark_removed(
+                    ele,
+                    RemovalReason(reason_type="similar_bbox", target_element=target),
                 )
                 continue
 
@@ -207,14 +195,19 @@ class Classifier:
                     target_area > 0
                     and abs(area - target_area) / target_area <= AREA_TOL
                 ):
-                    removal_reasons[id(ele)] = RemovalReason(
-                        reason_type="similar_bbox", target_element=target
+                    result.mark_removed(
+                        ele,
+                        RemovalReason(
+                            reason_type="similar_bbox", target_element=target
+                        ),
                     )
 
     def _log_post_classification_warnings(
-        self, page_data: PageData, labeled_elements: Dict[Element, str]
+        self, page_data: PageData, result: ClassificationResult
     ) -> List[str]:
         warnings = []
+
+        labeled_elements = result.get_labeled_elements()
 
         # Check if there's a page number
         has_page_number = any(

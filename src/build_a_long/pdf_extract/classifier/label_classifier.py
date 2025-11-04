@@ -3,20 +3,17 @@ Base class for label classifiers.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from build_a_long.pdf_extract.classifier.types import (
-    Candidate,
     ClassificationHints,
+    ClassificationResult,
     ClassifierConfig,
-    RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_elements import Element
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classifier import Classifier
-    from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
 
 # TODO Maybe classifers need a interface, where they have
 #      either scoring functions, or filter functions.
@@ -33,7 +30,7 @@ class LabelClassifier(ABC):
     outputs: set[str] = set()
     requires: set[str] = set()
 
-    def __init__(self, config: ClassifierConfig, classifier: "Classifier"):
+    def __init__(self, config: ClassifierConfig, classifier: Classifier):
         self.config = config
         self.classifier = classifier
 
@@ -41,8 +38,7 @@ class LabelClassifier(ABC):
     def evaluate(
         self,
         page_data: PageData,
-        labeled_elements: Dict[Element, str],
-        candidates: "Dict[str, List[Candidate]]",
+        result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create candidates for the label.
 
@@ -53,8 +49,7 @@ class LabelClassifier(ABC):
 
         Args:
             page_data: The page data containing all elements
-            labeled_elements: Elements labeled by earlier classifiers
-            candidates: Dict to store all candidates with scores and failure reasons
+            result: The classification result to populate with candidates
         """
         pass
 
@@ -62,20 +57,14 @@ class LabelClassifier(ABC):
     def classify(
         self,
         page_data: PageData,
-        labeled_elements: Dict[Element, str],
-        removal_reasons: Dict[int, RemovalReason],
+        result: ClassificationResult,
         hints: "Optional[ClassificationHints]",
-        constructed_elements: "Dict[Element, LegoPageElement]",
-        candidates: "Dict[str, List[Candidate]]",
     ) -> None:
         """Classify the elements for the label by selecting winners.
 
         Args:
             page_data: The page data containing all elements
-            labeled_elements: Elements labeled so far (by earlier classifiers)
-            removal_reasons: Reasons why elements were removed
+            result: The classification result containing candidates and to update with winners
             hints: Optional hints to guide classification (e.g., exclude specific elements)
-            constructed_elements: Dict to store constructed LegoPageElements
-            candidates: Dict to store all candidates (for re-evaluation/debugging)
         """
         pass
