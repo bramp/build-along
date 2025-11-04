@@ -1,20 +1,29 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+from dataclass_wizard import JSONPyWizard
+
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import Drawing
 
 
 @dataclass
-class LegoPageElement:
+class LegoPageElement(JSONPyWizard):
     """Base class for anything detected on a page.
 
     Contract:
     - Every element has exactly one bounding box in page coordinates
       (same coordinate system produced by the extractor).
     - Subclasses are small data holders.
+    - Inherits from JSONPyWizard to get automatic to_dict(), to_json(),
+      from_dict(), from_json() methods.
+    - Uses auto_assign_tags to add __tag__ field for polymorphic serialization.
     """
+
+    class _(JSONPyWizard.Meta):
+        # Enable auto-tagging for polymorphic serialization
+        auto_assign_tags = True
 
     bbox: BBox
     id: Optional[int] = field(default=None, kw_only=True)
@@ -28,7 +37,7 @@ class LegoPageElement:
 class PageNumber(LegoPageElement):
     """The page number, usually a small integer on the page."""
 
-    value: int
+    value: int = field(kw_only=True)
 
     def __post_init__(self) -> None:
         if self.value < 0:
@@ -43,7 +52,7 @@ class PageNumber(LegoPageElement):
 class StepNumber(LegoPageElement):
     """A step number label."""
 
-    value: int
+    value: int = field(kw_only=True)
 
     def __post_init__(self) -> None:
         if self.value <= 0:
@@ -58,7 +67,7 @@ class StepNumber(LegoPageElement):
 class PartCount(LegoPageElement):
     """The visual count label associated with a part entry (e.g., '2x')."""
 
-    count: int
+    count: int = field(kw_only=True)
 
     # TODO We may wish to add the part this count refers to.
 
@@ -75,12 +84,14 @@ class PartCount(LegoPageElement):
 class Part(LegoPageElement):
     """A single part entry within a parts list."""
 
-    count: PartCount
-    diagram: Optional[Drawing] = None  # TODO Make this required
+    count: PartCount = field(kw_only=True)
+    diagram: Optional[Drawing] = field(
+        default=None, kw_only=True
+    )  # TODO Make this required
 
     # Name and Number are not directly extracted, but may be filled in later
-    name: Optional[str] = None
-    number: Optional[str] = None
+    name: Optional[str] = field(default=None, kw_only=True)
+    number: Optional[str] = field(default=None, kw_only=True)
 
     # TODO maybe add color?
     # TODO Some parts have a "shiny" highlight - maybe reference that image
@@ -96,7 +107,7 @@ class Part(LegoPageElement):
 class PartsList(LegoPageElement):
     """A container of multiple parts for the page's parts list."""
 
-    parts: List[Part]
+    parts: List[Part] = field(kw_only=True)
 
     @property
     def total_items(self) -> int:
@@ -117,7 +128,7 @@ class PartsList(LegoPageElement):
 class BagNumber(LegoPageElement):
     """The bag number, usually a small integer on the page."""
 
-    value: int
+    value: int = field(kw_only=True)
 
     def __post_init__(self) -> None:
         if self.value <= 0:
@@ -132,7 +143,7 @@ class BagNumber(LegoPageElement):
 class NewBag(LegoPageElement):
     """The graphic showing a new bag icon on the page."""
 
-    bag: BagNumber
+    bag: BagNumber = field(kw_only=True)
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
@@ -152,9 +163,9 @@ class Diagram(LegoPageElement):
 class Step(LegoPageElement):
     """A single instruction step on the page."""
 
-    step_number: StepNumber
-    parts_list: PartsList
-    diagram: Diagram  # TODO maybe this should be a list?
+    step_number: StepNumber = field(kw_only=True)
+    parts_list: PartsList = field(kw_only=True)
+    diagram: Diagram = field(kw_only=True)  # TODO maybe this should be a list?
 
     # TODO add other interesting callouts (such as rotate the element)
 
@@ -181,17 +192,17 @@ class Page(LegoPageElement):
         unprocessed_elements: Raw elements that were classified but couldn't be converted
     """
 
-    page_data: PageData
+    page_data: PageData = field(kw_only=True)
 
-    page_number: Optional[PageNumber] = None
-    steps: List[Step] = field(default_factory=list)
-    parts_lists: List[PartsList] = field(default_factory=list)
+    page_number: Optional[PageNumber] = field(default=None, kw_only=True)
+    steps: List[Step] = field(default_factory=list, kw_only=True)
+    parts_lists: List[PartsList] = field(default_factory=list, kw_only=True)
 
     # Metadata about the conversion process
-    warnings: List[str] = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list, kw_only=True)
     # Keep reference to raw elements that weren't converted (for debugging/analysis)
     unprocessed_elements: List = field(
-        default_factory=list
+        default_factory=list, kw_only=True
     )  # List[Element] but avoiding import
 
     def __str__(self) -> str:
