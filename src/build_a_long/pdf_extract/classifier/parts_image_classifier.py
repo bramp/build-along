@@ -153,11 +153,12 @@ class PartsImageClassifier(LabelClassifier):
                 result.add_candidate(
                     "part_image",
                     Candidate(
-                        source_element=img,
+                        bbox=img.bbox,
                         label="part_image",
                         score=1.0,  # Matched based on distance, not a traditional score
                         score_details=score,
                         constructed=None,
+                        source_element=img,
                         failure_reason=None,
                         is_winner=True,
                     ),

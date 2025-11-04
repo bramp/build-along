@@ -120,11 +120,12 @@ class PageNumberClassifier(LabelClassifier):
             result.add_candidate(
                 "page_number",
                 Candidate(
-                    source_element=element,
+                    bbox=element.bbox,
                     label="page_number",
                     score=score.combined_score(self.config),
                     score_details=score,
                     constructed=constructed_elem,
+                    source_element=element,
                     failure_reason=failure_reason,
                     is_winner=False,  # Will be set by classify()
                 ),

@@ -118,11 +118,12 @@ class PartCountClassifier(LabelClassifier):
             result.add_candidate(
                 "part_count",
                 Candidate(
-                    source_element=element,
+                    bbox=element.bbox,
                     label="part_count",
                     score=detail_score.combined_score(self.config),
                     score_details=detail_score,
                     constructed=constructed_elem,
+                    source_element=element,
                     failure_reason=failure_reason,
                     is_winner=False,  # Will be set by classify()
                 ),

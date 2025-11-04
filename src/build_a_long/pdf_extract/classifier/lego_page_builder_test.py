@@ -32,11 +32,12 @@ def make_candidates(labeled_elements: Dict[Element, str]) -> Dict[str, list[Cand
             candidates[label] = []
         candidates[label].append(
             Candidate(
-                source_element=element,
+                bbox=element.bbox,
                 label=label,
                 score=1.0,
                 score_details={},
                 constructed=None,  # Tests don't need constructed elements
+                source_element=element,
                 is_winner=True,
             )
         )

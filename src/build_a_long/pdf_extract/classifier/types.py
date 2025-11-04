@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_elements import Element
 
 if TYPE_CHECKING:
@@ -42,8 +43,8 @@ class Candidate:
     - UI support (show users alternatives)
     """
 
-    source_element: Element
-    """The raw element that was scored"""
+    bbox: BBox
+    """The bounding box for this candidate (from source_element or constructed)"""
 
     label: str
     """The label this candidate would have (e.g., 'page_number')"""
@@ -57,6 +58,9 @@ class Candidate:
 
     constructed: "Optional[LegoPageElement]"
     """The constructed LegoElement if parsing succeeded, None if failed"""
+
+    source_element: Optional[Element] = None
+    """The raw element that was scored (None for synthetic elements like Step)"""
 
     failure_reason: "Optional[str]" = None
     """Why construction failed, if it did"""
@@ -207,17 +211,21 @@ class ClassificationResult:
         self._candidates[label].append(candidate)
 
     def mark_winner(
-        self, candidate: Candidate, element: Element, constructed: "LegoPageElement"
+        self,
+        candidate: Candidate,
+        element: Optional[Element],
+        constructed: "LegoPageElement",
     ) -> None:
         """Mark a candidate as the winner and update tracking dicts.
 
         Args:
             candidate: The candidate to mark as winner
-            element: The source element
+            element: The source element (None for synthetic candidates)
             constructed: The constructed LegoPageElement
         """
         candidate.is_winner = True
-        self._constructed_elements[element] = constructed
+        if element is not None:
+            self._constructed_elements[element] = constructed
 
     def mark_removed(self, element: Element, reason: RemovalReason) -> None:
         """Mark an element as removed with the given reason.
@@ -233,12 +241,12 @@ class ClassificationResult:
         """Get a dictionary of all labeled elements.
 
         Returns:
-            Dictionary mapping elements to their labels
+            Dictionary mapping elements to their labels (excludes synthetic candidates)
         """
         labeled: Dict[Element, str] = {}
         for label, label_candidates in self._candidates.items():
             for candidate in label_candidates:
-                if candidate.is_winner:
+                if candidate.is_winner and candidate.source_element is not None:
                     labeled[candidate.source_element] = label
         return labeled
 
@@ -265,10 +273,14 @@ class ClassificationResult:
             label: The label to search for
 
         Returns:
-            List of elements with that label
+            List of elements with that label (excludes synthetic candidates without source_element)
         """
         label_candidates = self._candidates.get(label, [])
-        return [c.source_element for c in label_candidates if c.is_winner]
+        return [
+            c.source_element
+            for c in label_candidates
+            if c.is_winner and c.source_element is not None
+        ]
 
     def is_removed(self, element: Element) -> bool:
         """Check if an element has been marked for removal.
@@ -300,9 +312,14 @@ class ClassificationResult:
 
         Returns:
             Dictionary mapping elements to score objects for that label
+            (excludes synthetic candidates without source_element)
         """
         label_candidates = self._candidates.get(label, [])
-        return {c.source_element: c.score_details for c in label_candidates}
+        return {
+            c.source_element: c.score_details
+            for c in label_candidates
+            if c.source_element is not None
+        }
 
     def has_label(self, label: str) -> bool:
         """Check if any elements have been assigned the given label.
