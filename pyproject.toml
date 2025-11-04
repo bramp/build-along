@@ -1,5 +1,6 @@
 [tool.ruff]
 target-version = "py314"
+#line-length = 80
 
 [tool.ruff.lint]
 extend-select = [
@@ -8,10 +9,14 @@ extend-select = [
   "E",
   # Pyflakes
   "F",
+  # pyupgrade
+  # "UP", , # TODO Fix this seems to break some self-referential type hints
+  # flake8-bugbear
+  "B",
+  # flake8-simplify
+  "SIM",
   # isort
   "I",
-  # pyupgrade
-  # "UP", # TODO Fix this seems to break some self-referential type hints
 ]
 
 [tool.pytest.ini_options]
