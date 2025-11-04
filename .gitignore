@@ -8,6 +8,8 @@ __pycache__/
 
 # Pants
 .pants.d/
+.pytest_cache/
+/pants
 dist/
 
 
