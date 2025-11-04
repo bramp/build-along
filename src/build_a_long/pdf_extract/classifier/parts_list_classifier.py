@@ -23,22 +23,16 @@ Set environment variables to aid investigation without code changes:
 import logging
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Optional, Set
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.types import (
-        Candidate,
-        ClassificationHints,
-    )
-    from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
+from typing import Dict, Optional, Set
 
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.types import (
     Candidate,
+    ClassificationHints,
+    ClassificationResult,
     ClassifierConfig,
-    RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
@@ -93,8 +87,7 @@ class PartsListClassifier(LabelClassifier):
     def evaluate(
         self,
         page_data: PageData,
-        labeled_elements: Dict[Element, str],
-        candidates: "Dict[str, List[Candidate]]",
+        result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create candidates for potential parts list drawings.
 
@@ -104,6 +97,7 @@ class PartsListClassifier(LabelClassifier):
         """
 
         # Get elements with specific labels
+        labeled_elements = result.get_labeled_elements()
         steps: list[Text] = []
         for element, label in labeled_elements.items():
             if label == "step_number" and isinstance(element, Text):
@@ -133,8 +127,6 @@ class PartsListClassifier(LabelClassifier):
                 len(drawings),
             )
 
-        candidate_list: "List[Candidate]" = []
-
         # Score each drawing relative to each step
         for step in steps:
             sb = step.bbox
@@ -154,22 +146,21 @@ class PartsListClassifier(LabelClassifier):
                         "Drawing contains no part_count texts or is not above step"
                     )
 
-                # Create candidate (even if rejected, for debugging)
-                candidate = Candidate(
-                    source_element=drawing,
-                    label="parts_list",
-                    score=1.0
-                    if score_obj
-                    else 0.0,  # Parts list uses ranking rather than scores
-                    score_details=score_obj,
-                    constructed=None,  # PartsList construction requires part pairing, done in builder
-                    failure_reason=failure_reason,
-                    is_winner=False,  # Will be set by classify()
+                # Add candidate (even if rejected, for debugging)
+                result.add_candidate(
+                    "parts_list",
+                    Candidate(
+                        source_element=drawing,
+                        label="parts_list",
+                        score=1.0
+                        if score_obj
+                        else 0.0,  # Parts list uses ranking rather than scores
+                        score_details=score_obj,
+                        constructed=None,  # PartsList construction requires part pairing, done in builder
+                        failure_reason=failure_reason,
+                        is_winner=False,  # Will be set by classify()
+                    ),
                 )
-                candidate_list.append(candidate)
-
-        # Store all candidates
-        candidates["parts_list"] = candidate_list
 
     def _get_candidate_drawings_for_scoring(
         self,
@@ -236,14 +227,12 @@ class PartsListClassifier(LabelClassifier):
     def classify(
         self,
         page_data: PageData,
-        labeled_elements: Dict[Element, str],
-        removal_reasons: Dict[int, RemovalReason],
-        hints: Optional["ClassificationHints"],
-        constructed_elements: "Dict[Element, LegoPageElement]",
-        candidates: "Dict[str, List[Candidate]]",
+        result: ClassificationResult,
+        hints: Optional[ClassificationHints],
     ) -> None:
         """Select winning parts list drawings from pre-built candidates."""
         # Get elements with step_number label
+        labeled_elements = result.get_labeled_elements()
         steps: list[Text] = []
         for element, label in labeled_elements.items():
             if label == "step_number" and isinstance(element, Text):
@@ -260,7 +249,7 @@ class PartsListClassifier(LabelClassifier):
         used_drawings: set[int] = set()
 
         # Get pre-built candidates
-        candidate_list = candidates.get("parts_list", [])
+        candidate_list = result.candidates.get("parts_list", [])
 
         # Group candidates by step (based on scoring)
         # For each step, find the best parts list drawing
@@ -270,7 +259,7 @@ class PartsListClassifier(LabelClassifier):
             for candidate in candidate_list:
                 if (
                     id(candidate.source_element) not in used_drawings
-                    and id(candidate.source_element) not in removal_reasons
+                    and not result.is_removed(candidate.source_element)
                     and candidate.score_details is not None  # Has valid score
                 ):
                     # Check if this candidate is above this step
@@ -290,8 +279,8 @@ class PartsListClassifier(LabelClassifier):
 
             # Select the best candidate
             winner = step_candidates[0]
+            # Note: parts_list doesn't have a constructed LegoPageElement, so we mark winner directly
             winner.is_winner = True
-            labeled_elements[winner.source_element] = "parts_list"
             used_drawings.add(id(winner.source_element))
 
             if self._debug_enabled:
@@ -308,7 +297,7 @@ class PartsListClassifier(LabelClassifier):
             for ele in page_data.elements:
                 if (
                     ele.bbox.fully_inside(chosen_bbox)
-                    and labeled_elements.get(ele) is not None
+                    and result.get_label(ele) is not None
                 ):
                     keep_ids.add(id(ele))
 
@@ -317,8 +306,8 @@ class PartsListClassifier(LabelClassifier):
                     keep_ids.add(id(ele))
 
             self.classifier._remove_child_bboxes(
-                page_data, winner.source_element, removal_reasons, keep_ids=keep_ids
+                page_data, winner.source_element, result, keep_ids=keep_ids
             )
             self.classifier._remove_similar_bboxes(
-                page_data, winner.source_element, removal_reasons, keep_ids=keep_ids
+                page_data, winner.source_element, result, keep_ids=keep_ids
             )
