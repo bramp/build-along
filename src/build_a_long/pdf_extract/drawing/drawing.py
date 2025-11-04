@@ -10,7 +10,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
-    Element,
     Text,
 )
 from build_a_long.pdf_extract.extractor.page_elements import (
@@ -44,7 +43,6 @@ def _draw_dashed_rectangle(
 
 def draw_and_save_bboxes(
     page: pymupdf.Page,
-    elements: list[Element],
     result: ClassificationResult,
     output_path: Path,
     *,
@@ -56,8 +54,7 @@ def draw_and_save_bboxes(
 
     Args:
         page: PyMuPDF page to render
-        elements: List of elements to draw
-        result: ClassificationResult containing labels for elements
+        result: ClassificationResult containing labels and elements
         output_path: Where to save the output image
         draw_deleted: If True, also render elements marked as deleted.
     """
@@ -77,10 +74,10 @@ def draw_and_save_bboxes(
     depth_colors = ["red", "green", "blue", "yellow", "purple", "orange"]
 
     # Build hierarchy once to efficiently calculate depths - O(n log n)
-    hierarchy = build_hierarchy_from_elements(elements)
+    hierarchy = build_hierarchy_from_elements(result.elements)
 
     # Draw all elements
-    for element in elements:
+    for element in result.elements:
         element_removed = result.is_removed(element)
         if element_removed and not draw_deleted:
             continue
@@ -115,7 +112,7 @@ def draw_and_save_bboxes(
         label = f"ID: {element.id} {label_prefix}" + (
             element_label or element.__class__.__name__
         )
-        if isinstance(element, Drawing) or isinstance(element, ImageElement):
+        if isinstance(element, (Drawing, ImageElement)):
             if element.image_id:
                 label = f"{label} ({element.image_id})"
         elif isinstance(element, Text):

@@ -71,16 +71,15 @@ class TestMain:
         assert call_args[0][1] == "w"
 
         # Assert draw_and_save_bboxes was called with correct arguments
-        # Now expects: page, elements, result, output_path, draw_deleted=False
+        # Now expects: page, result, output_path, draw_deleted=False
         mock_draw_and_save_bboxes.assert_called_once_with(
-            mock_page, ANY, ANY, ANY, draw_deleted=False
+            mock_page, ANY, ANY, draw_deleted=False
         )
         draw_call_args = mock_draw_and_save_bboxes.call_args
-        assert isinstance(draw_call_args.args[1], list)  # elements
-        # Third argument is now ClassificationResult
-        assert isinstance(draw_call_args.args[2], ClassificationResult)
-        assert isinstance(draw_call_args.args[3], Path)
-        assert draw_call_args.args[3].name == "page_001.png"
+        # Second argument is now ClassificationResult
+        assert isinstance(draw_call_args.args[1], ClassificationResult)
+        assert isinstance(draw_call_args.args[2], Path)
+        assert draw_call_args.args[2].name == "page_001.png"
 
     @patch("pathlib.Path.exists")
     @patch("sys.argv", ["main.py", "/nonexistent/file.pdf"])
@@ -199,8 +198,7 @@ class TestMain:
         draw_call_args = mock_draw_and_save_bboxes.call_args
         # Verify that draw_deleted keyword argument is True
         assert draw_call_args.kwargs["draw_deleted"] is True
-        # Verify signature matches expected: page, elements, result, output_path
-        assert len(draw_call_args.args) == 4
-        assert isinstance(draw_call_args.args[1], list)  # elements
-        assert isinstance(draw_call_args.args[2], ClassificationResult)
-        assert isinstance(draw_call_args.args[3], Path)
+        # Verify signature matches expected: page, result, output_path
+        assert len(draw_call_args.args) == 3
+        assert isinstance(draw_call_args.args[1], ClassificationResult)
+        assert isinstance(draw_call_args.args[2], Path)
