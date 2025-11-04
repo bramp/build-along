@@ -1,12 +1,12 @@
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_elements import (
-    Drawing,
-)
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartCount,
     PartsList,
     StepNumber,
+)
+from build_a_long.pdf_extract.extractor.page_elements import (
+    Drawing,
 )
 
 

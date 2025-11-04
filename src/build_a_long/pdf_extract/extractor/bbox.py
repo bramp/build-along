@@ -3,7 +3,6 @@ from typing import Annotated, Tuple
 
 from annotated_types import Ge
 
-
 # Type alias for non-negative floats
 NonNegativeFloat = Annotated[float, Ge(0)]
 

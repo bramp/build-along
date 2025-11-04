@@ -1,20 +1,23 @@
 import argparse
-from collections import defaultdict
 import json
 import logging
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List
+
 import pymupdf
 
-from build_a_long.pdf_extract.extractor import (
-    extract_bounding_boxes,
-    PageData,
-    ExtractionResult,
-)
 from build_a_long.pdf_extract.classifier import classify_pages
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
+)
 from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
-from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
+from build_a_long.pdf_extract.extractor import (
+    ExtractionResult,
+    PageData,
+    extract_bounding_boxes,
+)
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 from build_a_long.pdf_extract.parser import parse_page_ranges

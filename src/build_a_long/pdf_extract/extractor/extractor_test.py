@@ -1,13 +1,13 @@
-from unittest.mock import MagicMock
 from typing import Any
+from unittest.mock import MagicMock
 
 from build_a_long.pdf_extract.extractor import (
     extract_bounding_boxes,
 )
 from build_a_long.pdf_extract.extractor.extractor import (
-    _extract_text_elements,
-    _extract_image_elements,
     _extract_drawing_elements,
+    _extract_image_elements,
+    _extract_text_elements,
     _warn_unknown_block_types,
 )
 from build_a_long.pdf_extract.extractor.page_elements import (

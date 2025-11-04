@@ -4,14 +4,18 @@ from pathlib import Path
 import pymupdf
 from PIL import Image, ImageDraw
 
-from build_a_long.pdf_extract.classifier.types import ClassificationResult
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
+)
+from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
     Element,
-    Image as ImageElement,
     Text,
 )
-from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
+from build_a_long.pdf_extract.extractor.page_elements import (
+    Image as ImageElement,
+)
 
 logger = logging.getLogger(__name__)
 

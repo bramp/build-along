@@ -1,17 +1,17 @@
 """Tests for downloader.py - LegoInstructionDownloader class (pytest style)."""
 
+import json
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
-import json
 
 from build_a_long.downloader.downloader import (
+    File,
     LegoInstructionDownloader,
     Metadata,
     PdfEntry,
     read_metadata,
     write_metadata,
-    File,
 )
 from build_a_long.downloader.legocom_test import HTML_WITH_METADATA_AND_PDF
 

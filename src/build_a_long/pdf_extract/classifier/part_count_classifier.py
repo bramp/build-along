@@ -16,17 +16,17 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
+from build_a_long.pdf_extract.classifier.classification_result import (
+    Candidate,
+    ClassificationHints,
+    ClassificationResult,
+    ClassifierConfig,
+)
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_part_count_value,
-)
-from build_a_long.pdf_extract.classifier.types import (
-    Candidate,
-    ClassificationHints,
-    ClassificationResult,
-    ClassifierConfig,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import PartCount

@@ -24,9 +24,35 @@ The classifier pipeline runs in a fixed order, enforced at initialization:
 Changing the order such that dependencies are not met will raise a ValueError.
 """
 
-from .classifier import classify_elements, classify_pages
+from .classification_result import (
+    Candidate,
+    ClassificationResult,
+    ClassifierConfig,
+)
+from .classifier import Classifier, classify_elements, classify_pages
+from .label_classifier import LabelClassifier
+from .page_number_classifier import PageNumberClassifier
+from .part_count_classifier import PartCountClassifier
+from .parts_image_classifier import PartsImageClassifier
+from .parts_list_classifier import PartsListClassifier
+from .step_classifier import StepClassifier
+from .step_number_classifier import StepNumberClassifier
 
-__all__ = ["classify_elements", "classify_pages"]
+__all__ = [
+    "classify_elements",
+    "classify_pages",
+    "Candidate",
+    "Classifier",
+    "ClassificationResult",
+    "ClassifierConfig",
+    "LabelClassifier",
+    "StepClassifier",
+    "PageNumberClassifier",
+    "PartCountClassifier",
+    "StepNumberClassifier",
+    "PartsListClassifier",
+    "PartsImageClassifier",
+]
 
 import logging
 import os

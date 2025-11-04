@@ -1,9 +1,9 @@
+import hashlib
+import json
 from pathlib import Path
 from typing import Any, Callable, ContextManager, Iterable, List, Optional
 
 import httpx
-import hashlib
-import json
 
 from build_a_long.downloader.legocom import (
     LEGO_BASE,
@@ -11,10 +11,10 @@ from build_a_long.downloader.legocom import (
     build_metadata,
 )
 from build_a_long.downloader.metadata import (
-    Metadata,
-    PdfEntry,
     DownloadUrl,
     File,
+    Metadata,
+    PdfEntry,
 )
 
 __all__ = [

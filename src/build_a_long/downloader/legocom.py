@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Set
 
 from bs4 import BeautifulSoup
 
-from build_a_long.downloader.metadata import Metadata, PdfEntry, DownloadUrl
+from build_a_long.downloader.metadata import DownloadUrl, Metadata, PdfEntry
 
 LEGO_BASE = "https://www.lego.com"
 

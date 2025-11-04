@@ -7,6 +7,7 @@ This module uses dataclasses-json for (de)serialization so callers can use
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
+
 from dataclass_wizard import JSONPyWizard
 
 

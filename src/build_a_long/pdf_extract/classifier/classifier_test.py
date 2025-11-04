@@ -1,13 +1,11 @@
 """Tests for the element classifier."""
 
-from build_a_long.pdf_extract.classifier.classifier import (
-    classify_pages,
+from build_a_long.pdf_extract.classifier import (
     Classifier,
-)
-from build_a_long.pdf_extract.classifier.step_number_classifier import (
+    ClassifierConfig,
     StepNumberClassifier,
+    classify_pages,
 )
-from build_a_long.pdf_extract.classifier.types import ClassifierConfig
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_elements import Text

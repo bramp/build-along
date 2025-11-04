@@ -10,15 +10,14 @@ Rules covered:
 Real fixture(s) live under this package's fixtures/ directory.
 """
 
+import logging
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional
-import logging
 
 import pytest
 
-from build_a_long.pdf_extract.classifier.classifier import classify_elements
-from build_a_long.pdf_extract.classifier.types import ClassificationResult
+from build_a_long.pdf_extract.classifier import ClassificationResult, classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import Element, Text
 

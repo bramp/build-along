@@ -30,13 +30,13 @@ Note: These tests may fail if:
 import os
 
 import pytest
-from build_a_long.downloader.metadata import Metadata
 
 from build_a_long.downloader.legocom import (
     build_instructions_url,
     parse_instruction_pdf_urls,
     parse_set_metadata,
 )
+from build_a_long.downloader.metadata import Metadata
 
 # Skip all tests in this module unless explicitly enabled
 # Set ENABLE_INTEGRATION_TESTS=true to run these tests
