@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.types import (
@@ -83,18 +83,26 @@ class PartsImageClassifier(LabelClassifier):
             "part_image",
             "all",
         )
+        # TODO This should be stateless.
+        self._part_image_pairs: List[tuple[Text, Image]] = []
 
-    def calculate_scores(
+    def get_part_image_pairs(self) -> List[tuple[Text, Image]]:
+        """Return the list of (part_count, image) pairs created during classification."""
+        return self._part_image_pairs
+
+    def evaluate(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Element, str],
+        candidates: "Dict[str, List[Candidate]]",
     ) -> None:
-        """Calculate scores for part image pairings.
+        """Evaluate elements and create scores for part image pairings.
 
         Scores are based on vertical distance and horizontal alignment between
         part count texts and images within parts lists.
         """
+        # Reset pairs for this page
+        self._part_image_pairs = []
 
         part_counts: List[Text] = [
             e
@@ -113,19 +121,9 @@ class PartsImageClassifier(LabelClassifier):
         if not images:
             return
 
-        page_width = page_data.bbox.width if page_data.bbox else 100.0
-
-        # Initialize scores dict for this classifier
-        if "part_image" not in scores:
-            scores["part_image"] = {}
-
-        # Initialize storage for matched pairs (will be populated in classify())
-        if "part_image_pairs" not in scores:
-            scores["part_image_pairs"] = {}
-
-        # Build candidate pairings and store them in scores dict
-        self._build_candidate_edges(
-            part_counts, images, page_width, scores["part_image"]
+        # Store candidate pairings internally
+        self._candidate_edges = self._build_candidate_edges(
+            part_counts, images, page_data.bbox.width if page_data.bbox else 100.0
         )
 
     def _match_and_label_parts(
@@ -134,19 +132,17 @@ class PartsImageClassifier(LabelClassifier):
         part_counts: List[Text],
         images: List[Image],
         labeled_elements: Dict[Element, str],
-        scores: Dict[str, Dict[Any, Any]],
     ):
         """Match part counts with images using greedy matching based on distance.
 
-        Stores the matched pairs in scores dict under 'part_image_pairs' so they
-        can be retrieved by the classifier and passed to the builder.
+        Stores the matched pairs in self._part_image_pairs for later retrieval.
         """
         edges.sort(key=lambda score: score.sort_key())
         matched_counts: Set[int] = set()
         matched_images: Set[int] = set()
 
-        # Track pairs for later use - store in scores dict so classifier can retrieve them
-        part_image_pairs = []
+        # Track pairs for later use
+        self._part_image_pairs = []
 
         for score in edges:
             pc = score.part_count
@@ -158,47 +154,7 @@ class PartsImageClassifier(LabelClassifier):
             # Label the image as part_image (only once per image)
             if labeled_elements.get(img) != "part_image":
                 labeled_elements[img] = "part_image"
-            part_image_pairs.append((pc, img))
-
-        # CRITICAL: Store the pairs in scores dict so the main classifier
-        # can extract them and put them in ClassificationResult
-        # We use a special key "pairs" to distinguish from score objects
-        scores["part_image_pairs"]["pairs"] = part_image_pairs
-
-        if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
-            unmatched_c = [pc for pc in part_counts if id(pc) not in matched_counts]
-            unmatched_i = [im for im in images if id(im) not in matched_images]
-            if unmatched_c:
-                log.debug("[part_image] unmatched part_counts: %d", len(unmatched_c))
-            if unmatched_i:
-                log.debug("[part_image] unmatched images: %d", len(unmatched_i))
-        """Match part counts with images using greedy matching based on distance.
-        
-        Stores the matched pairs in labeled_elements under the special key
-        'part_image_pairs' so they can be retrieved by the classifier and
-        passed to the builder.
-        """
-        edges.sort(key=lambda score: score.sort_key())
-        matched_counts: Set[int] = set()
-        matched_images: Set[int] = set()
-
-        # Track pairs for later use - store in labeled_elements so classifier can retrieve them
-        part_image_pairs = []
-
-        for score in edges:
-            pc = score.part_count
-            img = score.image
-            if id(pc) in matched_counts or id(img) in matched_images:
-                continue
-            matched_counts.add(id(pc))
-            matched_images.add(id(img))
-            # Label the image as part_image (only once per image)
-            if labeled_elements.get(img) != "part_image":
-                labeled_elements[img] = "part_image"
-            part_image_pairs.append((pc, img))
-
-        # We use a special key "pairs" to distinguish from score objects
-        scores["part_image_pairs"]["pairs"] = part_image_pairs
+            self._part_image_pairs.append((pc, img))
 
         if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
             unmatched_c = [pc for pc in part_counts if id(pc) not in matched_counts]
@@ -213,7 +169,6 @@ class PartsImageClassifier(LabelClassifier):
         part_counts: List[Text],
         images: List[Image],
         page_width: float,
-        part_image_scores: Dict[Any, Any],
     ) -> List[_PartImageScore]:
         """Build candidate pairings between part counts and images.
 
@@ -235,9 +190,6 @@ class PartsImageClassifier(LabelClassifier):
                         image=img,
                     )
                     edges.append(score)
-                    # Store in scores dict (using a tuple key since multiple pairings)
-                    key = (pc, img)
-                    part_image_scores[key] = score
         return edges
 
     def _get_images_in_parts_lists(
@@ -255,7 +207,6 @@ class PartsImageClassifier(LabelClassifier):
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Element, str],
         removal_reasons: Dict[int, RemovalReason],
         hints: Optional["ClassificationHints"],
@@ -279,19 +230,10 @@ class PartsImageClassifier(LabelClassifier):
         if not images:
             return
 
-        # Retrieve pre-computed scores from scores dict (populated in calculate_scores)
-        part_image_scores: Dict[Any, Any] = scores.get("part_image", {})
-        edges = []
-        for pc in part_counts:
-            for img in images:
-                key = (pc, img)
-                score_obj = part_image_scores.get(key)
-                if isinstance(score_obj, _PartImageScore):
-                    edges.append(score_obj)
-
-        if not edges:
+        # Use candidate edges computed in evaluate()
+        if not self._candidate_edges:
             return
 
         self._match_and_label_parts(
-            edges, part_counts, images, labeled_elements, scores
+            self._candidate_edges, part_counts, images, labeled_elements
         )

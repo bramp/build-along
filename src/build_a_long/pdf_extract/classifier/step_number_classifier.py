@@ -3,7 +3,7 @@ Step number classifier.
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.types import (
@@ -75,12 +75,17 @@ class StepNumberClassifier(LabelClassifier):
         ratio_over = (h / page_num_height) - 1.0
         return max(0.0, min(1.0, ratio_over / 0.5))
 
-    def calculate_scores(
+    def evaluate(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[Any, str],
+        labeled_elements: Dict[Element, str],
+        candidates: "Dict[str, List[Candidate]]",
     ) -> None:
+        """Evaluate elements and create candidates for step numbers.
+
+        This method scores each text element, attempts to construct StepNumber objects,
+        and stores all candidates with their scores and any failure reasons.
+        """
         if not page_data.elements:
             return
 
@@ -96,9 +101,7 @@ class StepNumberClassifier(LabelClassifier):
         assert page_bbox is not None
         page_height = page_bbox.height
 
-        # Initialize scores dict for this classifier
-        if "step_number" not in scores:
-            scores["step_number"] = {}
+        candidate_list: "List[Candidate]" = []
 
         for element in page_data.elements:
             if not isinstance(element, Text):
@@ -128,46 +131,6 @@ class StepNumberClassifier(LabelClassifier):
                 size_score=size_score,
             )
 
-            scores["step_number"][element] = detail_score
-
-    def classify(
-        self,
-        page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[Any, str],
-        removal_reasons: Dict[int, RemovalReason],
-        hints: Optional["ClassificationHints"],
-        constructed_elements: Dict["Element", "LegoPageElement"],
-        candidates: Dict[str, List["Candidate"]],
-    ) -> None:
-        # Find the page number element to avoid classifying it as a step number
-        page_number_element = None
-        for element in page_data.elements:
-            if labeled_elements.get(element) == "page_number":
-                page_number_element = element
-                break
-
-        # Get pre-calculated scores for this classifier
-        step_number_scores = scores.get("step_number", {})
-        candidate_list: "List[Candidate]" = []
-
-        for element in page_data.elements:
-            if not isinstance(element, Text):
-                continue
-
-            # Skip if this element is already labeled as the page number
-            if element is page_number_element:
-                continue
-
-            # Get the score object and compute combined score
-            score_obj = step_number_scores.get(element)
-            if not isinstance(score_obj, _StepNumberScore):
-                continue
-
-            combined_score = score_obj.combined_score(self.config)
-            if combined_score < self.config.min_confidence_threshold:
-                continue
-
             # Try to construct (parse step number value)
             value = extract_step_number_value(element.text)
             constructed_elem = None
@@ -188,28 +151,66 @@ class StepNumberClassifier(LabelClassifier):
             candidate = Candidate(
                 source_element=element,
                 label="step_number",
-                score=combined_score,
-                score_details=score_obj,
+                score=detail_score.combined_score(self.config),
+                score_details=detail_score,
                 constructed=constructed_elem,
                 failure_reason=failure_reason,
-                is_winner=(value is not None),  # Winner if parsing succeeded
+                is_winner=False,  # Will be set by classify()
             )
             candidate_list.append(candidate)
 
-            # If it's a winner, mark it in labeled_elements for backward compatibility
-            if candidate.is_winner:
-                labeled_elements[element] = "step_number"
-                if constructed_elements is not None and constructed_elem is not None:
-                    constructed_elements[element] = constructed_elem
-                self.classifier._remove_child_bboxes(
-                    page_data, element, removal_reasons
-                )
-                self.classifier._remove_similar_bboxes(
-                    page_data, element, removal_reasons
-                )
-
         # Store all candidates
         candidates["step_number"] = candidate_list
+
+    def classify(
+        self,
+        page_data: PageData,
+        labeled_elements: Dict[Element, str],
+        removal_reasons: Dict[int, RemovalReason],
+        hints: Optional["ClassificationHints"],
+        constructed_elements: "Dict[Element, LegoPageElement]",
+        candidates: "Dict[str, List[Candidate]]",
+    ) -> None:
+        """Select winning step numbers from pre-built candidates."""
+        # Get pre-built candidates
+        candidate_list = candidates.get("step_number", [])
+
+        # Find the page number element to avoid classifying it as a step number
+        page_number_element = None
+        for element in page_data.elements:
+            if labeled_elements.get(element) == "page_number":
+                page_number_element = element
+                break
+
+        # Mark winners (all successfully constructed candidates that aren't the page number
+        # and meet the confidence threshold)
+        for candidate in candidate_list:
+            if candidate.source_element is page_number_element:
+                # Don't classify page number as step number
+                candidate.failure_reason = "Element is already labeled as page_number"
+                continue
+
+            if candidate.score < self.config.min_confidence_threshold:
+                candidate.failure_reason = (
+                    f"Score {candidate.score:.2f} below threshold "
+                    f"{self.config.min_confidence_threshold}"
+                )
+                continue
+
+            if candidate.constructed is None:
+                # Already has failure_reason from calculate_scores
+                continue
+
+            # This is a winner!
+            candidate.is_winner = True
+            labeled_elements[candidate.source_element] = "step_number"
+            constructed_elements[candidate.source_element] = candidate.constructed
+            self.classifier._remove_child_bboxes(
+                page_data, candidate.source_element, removal_reasons
+            )
+            self.classifier._remove_similar_bboxes(
+                page_data, candidate.source_element, removal_reasons
+            )
 
     def _score_step_number_text(self, text: str) -> float:
         """Score text based on how well it matches step number patterns.

@@ -3,14 +3,13 @@ Base class for label classifiers.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from build_a_long.pdf_extract.classifier.types import (
     Candidate,
     ClassificationHints,
     ClassifierConfig,
     RemovalReason,
-    ScoreKey,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_elements import Element
@@ -39,31 +38,40 @@ class LabelClassifier(ABC):
         self.classifier = classifier
 
     @abstractmethod
-    def calculate_scores(
+    def evaluate(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[ScoreKey, Any]],
         labeled_elements: Dict[Element, str],
+        candidates: "Dict[str, List[Candidate]]",
     ) -> None:
-        """Calculate the scores for the label."""
+        """Evaluate elements and create candidates for the label.
+
+        This method should:
+        1. Score each element for this label
+        2. Attempt to construct LegoPageElements from viable candidates
+        3. Store candidates (both successful and failed) with rejection reasons
+
+        Args:
+            page_data: The page data containing all elements
+            labeled_elements: Elements labeled by earlier classifiers
+            candidates: Dict to store all candidates with scores and failure reasons
+        """
         pass
 
     @abstractmethod
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[ScoreKey, Any]],
         labeled_elements: Dict[Element, str],
         removal_reasons: Dict[int, RemovalReason],
         hints: "Optional[ClassificationHints]",
         constructed_elements: "Dict[Element, LegoPageElement]",
         candidates: "Dict[str, List[Candidate]]",
     ) -> None:
-        """Classify the elements for the label.
+        """Classify the elements for the label by selecting winners.
 
         Args:
             page_data: The page data containing all elements
-            scores: Pre-calculated scores for all classifiers
             labeled_elements: Elements labeled so far (by earlier classifiers)
             removal_reasons: Reasons why elements were removed
             hints: Optional hints to guide classification (e.g., exclude specific elements)

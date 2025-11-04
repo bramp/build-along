@@ -117,17 +117,15 @@ class Classifier:
         Runs the classification logic and returns a result.
         It does NOT modify page_data directly.
         """
-        scores = {}
         labeled_elements = {}
         removal_reasons = {}
         constructed_elements = {}
         candidates = {}
 
         for classifier in self.classifiers:
-            classifier.calculate_scores(page_data, scores, labeled_elements)
+            classifier.evaluate(page_data, labeled_elements, candidates)
             classifier.classify(
                 page_data,
-                scores,
                 labeled_elements,
                 removal_reasons,
                 hints,
@@ -137,8 +135,12 @@ class Classifier:
 
         warnings = self._log_post_classification_warnings(page_data, labeled_elements)
 
-        # Extract persisted relations from scores dict (stored by PartsImageClassifier)
-        part_image_pairs = scores.get("part_image_pairs", {}).get("pairs", [])
+        # Extract persisted relations from PartsImageClassifier
+        part_image_pairs = []
+        for classifier in self.classifiers:
+            if isinstance(classifier, PartsImageClassifier):
+                part_image_pairs = classifier.get_part_image_pairs()
+                break
 
         return ClassificationResult(
             _removal_reasons=removal_reasons,

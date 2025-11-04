@@ -14,7 +14,7 @@ CLASSIFIER_DEBUG is set to "part_count" or "all".
 import logging
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.types import (
@@ -71,19 +71,21 @@ class PartCountClassifier(LabelClassifier):
             "all",
         )
 
-    def calculate_scores(
+    def evaluate(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[Any, str],
+        labeled_elements: Dict[Element, str],
+        candidates: "Dict[str, List[Candidate]]",
     ) -> None:
+        """Evaluate elements and create candidates for part counts.
+
+        This method scores each text element, attempts to construct PartCount objects,
+        and stores all candidates with their scores and any failure reasons.
+        """
         if not page_data.elements:
             return
 
-        # Initialize scores dict for this classifier
-        # TODO Do we need to do this? or should scores already have it?
-        if "part_count" not in scores:
-            scores["part_count"] = {}
+        candidate_list: "List[Candidate]" = []
 
         for element in page_data.elements:
             if not isinstance(element, Text):
@@ -93,7 +95,6 @@ class PartCountClassifier(LabelClassifier):
 
             # Store detailed score object
             detail_score = _PartCountScore(text_score=text_score)
-            scores["part_count"][element] = detail_score
 
             if self._debug_enabled:
                 log.debug(
@@ -103,72 +104,70 @@ class PartCountClassifier(LabelClassifier):
                     element.bbox,
                 )
 
-    def classify(
-        self,
-        page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
-        labeled_elements: Dict[Any, str],
-        removal_reasons: Dict[int, RemovalReason],
-        hints: Optional["ClassificationHints"],
-        constructed_elements: Dict["Element", "LegoPageElement"],
-        candidates: Dict[str, List["Candidate"]],
-    ) -> None:
-        # Get pre-calculated scores for this classifier
-        part_count_scores = scores.get("part_count", {})
-        candidate_list: "List[Candidate]" = []
-
-        for element in page_data.elements:
-            # TODO Support non-text elements - such as images of text.
-            if not isinstance(element, Text):
-                continue
-
-            # Get the score object and compute combined score
-            score = part_count_scores.get(element)
-            if not isinstance(score, _PartCountScore):
-                continue
-
             # Try to construct (parse part count value)
             value = extract_part_count_value(element.text)
             constructed_elem = None
             failure_reason = None
 
-            if value is not None:
+            if text_score == 0.0:
+                failure_reason = (
+                    f"Text doesn't match part count pattern: '{element.text}'"
+                )
+            elif value is None:
+                failure_reason = (
+                    f"Could not parse part count from text: '{element.text}'"
+                )
+            else:
                 constructed_elem = PartCount(
                     count=value,
                     bbox=element.bbox,
                     id=element.id,
-                )
-            else:
-                failure_reason = (
-                    f"Could not parse part count from text: '{element.text}'"
                 )
 
             # Create candidate
             candidate = Candidate(
                 source_element=element,
                 label="part_count",
-                score=score.combined_score(self.config),
-                score_details=score,
+                score=detail_score.combined_score(self.config),
+                score_details=detail_score,
                 constructed=constructed_elem,
                 failure_reason=failure_reason,
-                is_winner=(value is not None),  # Winner if parsing succeeded
+                is_winner=False,  # Will be set by classify()
             )
             candidate_list.append(candidate)
 
-            # If it's a winner, mark it in labeled_elements for backward compatibility
-            if candidate.is_winner:
-                labeled_elements[element] = "part_count"
-                if constructed_elements is not None and constructed_elem is not None:
-                    constructed_elements[element] = constructed_elem
-                self.classifier._remove_child_bboxes(
-                    page_data, element, removal_reasons
-                )
-                self.classifier._remove_similar_bboxes(
-                    page_data, element, removal_reasons
-                )
-
         # Store all candidates
         candidates["part_count"] = candidate_list
+
+    def classify(
+        self,
+        page_data: PageData,
+        labeled_elements: Dict[Element, str],
+        removal_reasons: Dict[int, RemovalReason],
+        hints: Optional["ClassificationHints"],
+        constructed_elements: "Dict[Element, LegoPageElement]",
+        candidates: "Dict[str, List[Candidate]]",
+    ) -> None:
+        """Select winning part counts from pre-built candidates."""
+        # Get pre-built candidates
+        candidate_list = candidates.get("part_count", [])
+
+        # Mark winners (all successfully constructed candidates)
+        for candidate in candidate_list:
+            if candidate.constructed is None:
+                # Already has failure_reason from calculate_scores
+                continue
+
+            # This is a winner!
+            candidate.is_winner = True
+            labeled_elements[candidate.source_element] = "part_count"
+            constructed_elements[candidate.source_element] = candidate.constructed
+            self.classifier._remove_child_bboxes(
+                page_data, candidate.source_element, removal_reasons
+            )
+            self.classifier._remove_similar_bboxes(
+                page_data, candidate.source_element, removal_reasons
+            )
 
     @staticmethod
     def _score_part_count_text(text: str) -> float:

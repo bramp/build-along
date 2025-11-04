@@ -23,7 +23,7 @@ Set environment variables to aid investigation without code changes:
 import logging
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.types import (
@@ -90,16 +90,17 @@ class PartsListClassifier(LabelClassifier):
             "all",
         )
 
-    def calculate_scores(
+    def evaluate(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Element, str],
+        candidates: "Dict[str, List[Candidate]]",
     ) -> None:
-        """Calculate scores for potential parts list drawings.
+        """Evaluate elements and create candidates for potential parts list drawings.
 
         Scores drawings based on their proximity to step numbers and the number
-        of part count texts they contain.
+        of part count texts they contain. Creates candidates for all viable
+        parts list drawings.
         """
 
         # Get elements with specific labels
@@ -132,32 +133,68 @@ class PartsListClassifier(LabelClassifier):
                 len(drawings),
             )
 
-        # Initialize scores dict for this classifier
-        if "parts_list" not in scores:
-            scores["parts_list"] = {}
+        candidate_list: "List[Candidate]" = []
 
         # Score each drawing relative to each step
         for step in steps:
             sb = step.bbox
-            candidate_drawings = self._get_candidate_drawings(step, drawings, set(), {})
+            candidate_drawings = self._get_candidate_drawings_for_scoring(
+                step, drawings
+            )
 
             for drawing in candidate_drawings:
                 score_obj = self._score_candidate(
                     drawing, part_counts, labeled_elements, sb
                 )
-                if score_obj is not None:
-                    # Store the score object in the scores dict
-                    scores["parts_list"][drawing] = score_obj
 
-    def _find_best_parts_list(
-        self, candidates: list[tuple[Drawing, _PartsListScore]]
-    ) -> Optional[Drawing]:
-        """Select the best parts list drawing from candidates."""
-        if not candidates:
-            return None
-        # Sort by the score's sort_key (part_count_count, proximity, area)
-        candidates.sort(key=lambda x: x[1].sort_key())
-        return candidates[0][0]
+                failure_reason = None
+                if score_obj is None:
+                    # Drawing was rejected (doesn't contain part counts or other reason)
+                    failure_reason = (
+                        "Drawing contains no part_count texts or is not above step"
+                    )
+
+                # Create candidate (even if rejected, for debugging)
+                candidate = Candidate(
+                    source_element=drawing,
+                    label="parts_list",
+                    score=1.0
+                    if score_obj
+                    else 0.0,  # Parts list uses ranking rather than scores
+                    score_details=score_obj,
+                    constructed=None,  # PartsList construction requires part pairing, done in builder
+                    failure_reason=failure_reason,
+                    is_winner=False,  # Will be set by classify()
+                )
+                candidate_list.append(candidate)
+
+        # Store all candidates
+        candidates["parts_list"] = candidate_list
+
+    def _get_candidate_drawings_for_scoring(
+        self,
+        step: Text,
+        drawings: list[Drawing],
+    ) -> list[Drawing]:
+        """Get candidate drawings above the given step number (for scoring phase)."""
+        ABOVE_EPS = 2.0
+        sb = step.bbox
+        candidates = []
+        for d in drawings:
+            db = d.bbox
+            if db.y1 > sb.y0 + ABOVE_EPS:
+                if self._debug_enabled:
+                    log.debug(
+                        "[parts_list] reject d=%s: not above step sb=%s (db.y1=%s, sb.y0=%s, eps=%s)",
+                        db,
+                        sb,
+                        db.y1,
+                        sb.y0,
+                        ABOVE_EPS,
+                    )
+                continue
+            candidates.append(d)
+        return candidates
 
     def _score_candidate(
         self,
@@ -196,45 +233,16 @@ class PartsListClassifier(LabelClassifier):
 
         return score
 
-    def _get_candidate_drawings(
-        self,
-        step: Text,
-        drawings: list[Drawing],
-        used_drawings: set[int],
-        removal_reasons: Dict[int, RemovalReason],
-    ) -> list[Drawing]:
-        """Get candidate drawings above the given step number."""
-        ABOVE_EPS = 2.0
-        sb = step.bbox
-        candidates = []
-        for d in drawings:
-            if id(d) in used_drawings or id(d) in removal_reasons:
-                continue
-            db = d.bbox
-            if db.y1 > sb.y0 + ABOVE_EPS:
-                if self._debug_enabled:
-                    log.debug(
-                        "[parts_list] reject d=%s: not above step sb=%s (db.y1=%s, sb.y0=%s, eps=%s)",
-                        db,
-                        sb,
-                        db.y1,
-                        sb.y0,
-                        ABOVE_EPS,
-                    )
-                continue
-            candidates.append(d)
-        return candidates
-
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Element, str],
         removal_reasons: Dict[int, RemovalReason],
         hints: Optional["ClassificationHints"],
-        constructed_elements: Dict[Element, "LegoPageElement"],
-        candidates: Dict[str, List["Candidate"]],
+        constructed_elements: "Dict[Element, LegoPageElement]",
+        candidates: "Dict[str, List[Candidate]]",
     ) -> None:
+        """Select winning parts list drawings from pre-built candidates."""
         # Get elements with step_number label
         steps: list[Text] = []
         for element, label in labeled_elements.items():
@@ -250,68 +258,67 @@ class PartsListClassifier(LabelClassifier):
             return
 
         used_drawings: set[int] = set()
-        candidate_list: "List[Candidate]" = []
 
-        # Get pre-calculated scores for this classifier
-        parts_list_scores: Dict[Element, Any] = scores.get("parts_list", {})
+        # Get pre-built candidates
+        candidate_list = candidates.get("parts_list", [])
 
+        # Group candidates by step (based on scoring)
+        # For each step, find the best parts list drawing
         for step in steps:
-            candidate_drawings = self._get_candidate_drawings(
-                step, drawings, used_drawings, removal_reasons
+            # Get candidates for this step that haven't been used
+            step_candidates = []
+            for candidate in candidate_list:
+                if (
+                    id(candidate.source_element) not in used_drawings
+                    and id(candidate.source_element) not in removal_reasons
+                    and candidate.score_details is not None  # Has valid score
+                ):
+                    # Check if this candidate is above this step
+                    drawing = candidate.source_element
+                    if isinstance(drawing, Drawing):
+                        db = drawing.bbox
+                        sb = step.bbox
+                        ABOVE_EPS = 2.0
+                        if db.y1 <= sb.y0 + ABOVE_EPS:
+                            step_candidates.append(candidate)
+
+            if not step_candidates:
+                continue
+
+            # Sort by score details (part_count_count, proximity, area)
+            step_candidates.sort(key=lambda c: c.score_details.sort_key())
+
+            # Select the best candidate
+            winner = step_candidates[0]
+            winner.is_winner = True
+            labeled_elements[winner.source_element] = "parts_list"
+            used_drawings.add(id(winner.source_element))
+
+            if self._debug_enabled:
+                log.debug(
+                    "[parts_list] choose d=%s for step sb=%s (candidates=%d)",
+                    winner.source_element.bbox,
+                    step.bbox,
+                    len(step_candidates),
+                )
+
+            # Keep child elements that are already labeled or are images
+            keep_ids: Set[int] = set()
+            chosen_bbox = winner.source_element.bbox
+            for ele in page_data.elements:
+                if (
+                    ele.bbox.fully_inside(chosen_bbox)
+                    and labeled_elements.get(ele) is not None
+                ):
+                    keep_ids.add(id(ele))
+
+            for ele in page_data.elements:
+                if isinstance(ele, Image) and ele.bbox.fully_inside(chosen_bbox):
+                    keep_ids.add(id(ele))
+
+            self.classifier._remove_child_bboxes(
+                page_data, winner.source_element, removal_reasons, keep_ids=keep_ids
             )
-
-            # Get scored candidates from scores dict (populated in calculate_scores)
-            scored_candidates = []
-            for d in candidate_drawings:
-                score_obj = parts_list_scores.get(d)
-                if isinstance(score_obj, _PartsListScore):
-                    scored_candidates.append((d, score_obj))
-
-            chosen = self._find_best_parts_list(scored_candidates)
-
-            if chosen:
-                # Create candidate for the chosen drawing
-                candidate = Candidate(
-                    source_element=chosen,
-                    label="parts_list",
-                    score=1.0,  # Parts list uses ranking rather than scores
-                    score_details=parts_list_scores.get(chosen),
-                    constructed=None,  # PartsList construction requires part pairing, done in builder
-                    failure_reason=None,
-                    is_winner=True,
-                )
-                candidate_list.append(candidate)
-
-                labeled_elements[chosen] = "parts_list"
-                used_drawings.add(id(chosen))
-
-                if self._debug_enabled:
-                    log.debug(
-                        "[parts_list] choose d=%s for step sb=%s (candidates=%d)",
-                        chosen.bbox,
-                        step.bbox,
-                        len(scored_candidates),
-                    )
-
-                keep_ids: Set[int] = set()
-                chosen_bbox = chosen.bbox
-                for ele in page_data.elements:
-                    if (
-                        ele.bbox.fully_inside(chosen_bbox)
-                        and labeled_elements.get(ele) is not None
-                    ):
-                        keep_ids.add(id(ele))
-
-                for ele in page_data.elements:
-                    if isinstance(ele, Image) and ele.bbox.fully_inside(chosen_bbox):
-                        keep_ids.add(id(ele))
-
-                self.classifier._remove_child_bboxes(
-                    page_data, chosen, removal_reasons, keep_ids=keep_ids
-                )
-                self.classifier._remove_similar_bboxes(
-                    page_data, chosen, removal_reasons, keep_ids=keep_ids
-                )
-
-        # Store all candidates
-        candidates["parts_list"] = candidate_list
+            self.classifier._remove_similar_bboxes(
+                page_data, winner.source_element, removal_reasons, keep_ids=keep_ids
+            )
