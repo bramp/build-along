@@ -16,7 +16,7 @@ are defined in lego_page_elements.py to keep this module focused on raw extracti
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Union
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
@@ -33,7 +33,7 @@ class PageElement:
     """
 
     bbox: BBox
-    id: Optional[int] = field(default=None, kw_only=True)
+    id: int | None = field(default=None, kw_only=True)
 
     def __hash__(self):
         return id(self)
@@ -50,7 +50,7 @@ class Drawing(PageElement):
     when/if available.
     """
 
-    image_id: Optional[str] = None
+    image_id: str | None = None
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
@@ -66,8 +66,8 @@ class Text(PageElement):
     """
 
     text: str
-    font_name: Optional[str] = None
-    font_size: Optional[float] = None
+    font_name: str | None = None
+    font_size: float | None = None
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
@@ -82,7 +82,7 @@ class Image(PageElement):
     image_id can be used to tie back to a raster extracted by the pipeline.
     """
 
-    image_id: Optional[str] = None
+    image_id: str | None = None
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""

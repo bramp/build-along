@@ -5,7 +5,7 @@ Data classes for the classifier.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from dataclass_wizard import JSONPyWizard
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 # Score key can be either a single Element or a tuple of Elements (for pairings)
-ScoreKey = Union[Element, Tuple[Element, ...]]
+ScoreKey = Union[Element, tuple[Element, ...]]
 
 
 @dataclass
@@ -58,13 +58,13 @@ class Candidate(JSONPyWizard):
     score_details: Any
     """The detailed score object (e.g., _PageNumberScore)"""
 
-    constructed: "Optional[LegoPageElement]"
+    constructed: LegoPageElement | None
     """The constructed LegoElement if parsing succeeded, None if failed"""
 
-    source_element: Optional[Element] = None
+    source_element: Element | None = None
     """The raw element that was scored (None for synthetic elements like Step)"""
 
-    failure_reason: "Optional[str]" = None
+    failure_reason: str | None = None
     """Why construction failed, if it did"""
 
     # TODO Is this redudant with being in the constructed_elements?
@@ -111,14 +111,12 @@ class ClassificationResult(JSONPyWizard):
     fields directly to maintain encapsulation.
     """
 
-    _warnings: List[str] = field(default_factory=list)
+    _warnings: list[str] = field(default_factory=list)
 
-    _removal_reasons: Dict[int, RemovalReason] = field(default_factory=dict)
+    _removal_reasons: dict[int, RemovalReason] = field(default_factory=dict)
     """Maps element IDs to the reason they were removed"""
 
-    _constructed_elements: "Dict[Element, LegoPageElement]" = field(
-        default_factory=dict
-    )
+    _constructed_elements: dict[Element, LegoPageElement] = field(default_factory=dict)
     """Maps source elements to their constructed LegoPageElements.
     
     Only contains elements that were successfully labeled and constructed.
@@ -126,7 +124,7 @@ class ClassificationResult(JSONPyWizard):
     re-parsing the source elements.
     """
 
-    _candidates: Dict[str, List[Candidate]] = field(default_factory=dict)
+    _candidates: dict[str, list[Candidate]] = field(default_factory=dict)
     """Maps label names to lists of all candidates considered for that label.
     
     Each candidate includes:
@@ -144,7 +142,7 @@ class ClassificationResult(JSONPyWizard):
 
     # Legacy: Persisted relations discovered during classification
     # TODO: Migrate to candidates pattern
-    part_image_pairs: List[Tuple[Any, Any]] = field(default_factory=list)
+    part_image_pairs: list[tuple[Any, Any]] = field(default_factory=list)
 
     def add_warning(self, warning: str) -> None:
         """Add a warning message to the classification result.
@@ -154,7 +152,7 @@ class ClassificationResult(JSONPyWizard):
         """
         self._warnings.append(warning)
 
-    def get_warnings(self) -> List[str]:
+    def get_warnings(self) -> list[str]:
         """Get all warnings generated during classification.
 
         Returns:
@@ -162,7 +160,7 @@ class ClassificationResult(JSONPyWizard):
         """
         return self._warnings.copy()
 
-    def get_constructed_elements(self) -> "Dict[Element, LegoPageElement]":
+    def get_constructed_elements(self) -> dict[Element, LegoPageElement]:
         """Get all successfully constructed elements.
 
         Returns:
@@ -170,7 +168,7 @@ class ClassificationResult(JSONPyWizard):
         """
         return self._constructed_elements.copy()
 
-    def get_constructed_element(self, element: Element) -> "Optional[LegoPageElement]":
+    def get_constructed_element(self, element: Element) -> LegoPageElement | None:
         """Get the constructed LegoPageElement for a source element.
 
         Args:
@@ -182,7 +180,7 @@ class ClassificationResult(JSONPyWizard):
         return self._constructed_elements.get(element)
 
     # TODO maybe add a parameter to fitler out winners/non-winners
-    def get_candidates(self, label: str) -> List[Candidate]:
+    def get_candidates(self, label: str) -> list[Candidate]:
         """Get all candidates for a specific label.
 
         Args:
@@ -193,7 +191,7 @@ class ClassificationResult(JSONPyWizard):
         """
         return self._candidates.get(label, []).copy()
 
-    def get_all_candidates(self) -> Dict[str, List[Candidate]]:
+    def get_all_candidates(self) -> dict[str, list[Candidate]]:
         """Get all candidates across all labels.
 
         Returns:
@@ -215,8 +213,8 @@ class ClassificationResult(JSONPyWizard):
     def mark_winner(
         self,
         candidate: Candidate,
-        element: Optional[Element],
-        constructed: "LegoPageElement",
+        element: Element | None,
+        constructed: LegoPageElement,
     ) -> None:
         """Mark a candidate as the winner and update tracking dicts.
 
@@ -239,13 +237,13 @@ class ClassificationResult(JSONPyWizard):
         self._removal_reasons[id(element)] = reason
 
     # TODO Consider removing this method.
-    def get_labeled_elements(self) -> Dict[Element, str]:
+    def get_labeled_elements(self) -> dict[Element, str]:
         """Get a dictionary of all labeled elements.
 
         Returns:
             Dictionary mapping elements to their labels (excludes synthetic candidates)
         """
-        labeled: Dict[Element, str] = {}
+        labeled: dict[Element, str] = {}
         for label, label_candidates in self._candidates.items():
             for candidate in label_candidates:
                 if candidate.is_winner and candidate.source_element is not None:
@@ -268,7 +266,7 @@ class ClassificationResult(JSONPyWizard):
                     return label
         return None
 
-    def get_elements_by_label(self, label: str) -> List[Element]:
+    def get_elements_by_label(self, label: str) -> list[Element]:
         """Get all elements with the given label.
 
         Args:
@@ -306,7 +304,7 @@ class ClassificationResult(JSONPyWizard):
         """
         return self._removal_reasons.get(id(element))
 
-    def get_scores_for_label(self, label: str) -> Dict[ScoreKey, Any]:
+    def get_scores_for_label(self, label: str) -> dict[ScoreKey, Any]:
         """Get all scores for a specific label.
 
         Args:
@@ -335,7 +333,7 @@ class ClassificationResult(JSONPyWizard):
         label_candidates = self._candidates.get(label, [])
         return any(c.is_winner for c in label_candidates)
 
-    def get_best_candidate(self, label: str) -> "Optional[Candidate]":
+    def get_best_candidate(self, label: str) -> Candidate | None:
         """Get the winning candidate for a label.
 
         Args:
@@ -351,7 +349,7 @@ class ClassificationResult(JSONPyWizard):
 
     def get_alternative_candidates(
         self, label: str, exclude_winner: bool = True
-    ) -> List[Candidate]:
+    ) -> list[Candidate]:
         """Get alternative candidates for a label (for UI/re-evaluation).
 
         Args:

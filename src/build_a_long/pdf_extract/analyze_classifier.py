@@ -10,7 +10,6 @@ import argparse
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
 
 import pymupdf
 
@@ -48,7 +47,7 @@ class DocumentAnalysis:
     pdf_path: Path
     total_pages: int
     pages_with_page_number: int
-    pages: List[PageAnalysis]
+    pages: list[PageAnalysis]
 
     @property
     def page_number_coverage(self) -> float:
@@ -62,7 +61,7 @@ class DocumentAnalysis:
 class GlobalAnalysis:
     """Analysis results across all documents."""
 
-    documents: List[DocumentAnalysis]
+    documents: list[DocumentAnalysis]
     total_pdfs: int
     total_pages: int
     total_pages_with_page_number: int
@@ -141,7 +140,7 @@ def analyze_document(pdf_path: Path) -> DocumentAnalysis:
         # Analyze each page
         page_analyses = [
             analyze_page(page_data, result)
-            for page_data, result in zip(pages_data, results)
+            for page_data, result in zip(pages_data, results, strict=True)
         ]
 
         pages_with_page_number = sum(
@@ -156,7 +155,7 @@ def analyze_document(pdf_path: Path) -> DocumentAnalysis:
         )
 
 
-def find_pdfs(data_dir: Path) -> List[Path]:
+def find_pdfs(data_dir: Path) -> list[Path]:
     """Find all PDF files in the data directory.
 
     Args:
@@ -183,7 +182,7 @@ def print_summary_report(analysis: GlobalAnalysis) -> None:
     print(f"Overall coverage: {analysis.overall_coverage:.1f}%")
 
     # Group by coverage percentage
-    coverage_buckets: Dict[str, List[DocumentAnalysis]] = {
+    coverage_buckets: dict[str, list[DocumentAnalysis]] = {
         "100%": [],
         "75-99%": [],
         "50-74%": [],

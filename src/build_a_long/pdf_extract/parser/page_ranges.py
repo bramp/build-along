@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator, List, Tuple
 
 
 @dataclass(frozen=True)
@@ -48,7 +48,7 @@ class PageRanges:
         return ",".join(str(r) for r in self.ranges)
 
     @classmethod
-    def all(cls) -> "PageRanges":
+    def all(cls) -> PageRanges:
         """Return a PageRanges instance representing all pages.
 
         Semantically equivalent to an empty ranges tuple in this design.
@@ -88,7 +88,7 @@ class PageRanges:
                     yield i + 1
 
 
-def parse_page_range(page_str: str) -> Tuple[int | None, int | None]:
+def parse_page_range(page_str: str) -> tuple[int | None, int | None]:
     """Parse a page range string into start and end page numbers.
 
     Supported formats:
@@ -189,7 +189,7 @@ def parse_page_ranges(pages_str: str) -> PageRanges:
     if not segments:
         raise ValueError("Invalid --pages value: empty after parsing")
 
-    ranges: List[PageRange] = []
+    ranges: list[PageRange] = []
     for seg in segments:
         start, end = parse_page_range(seg)
         ranges.append(PageRange(start, end))

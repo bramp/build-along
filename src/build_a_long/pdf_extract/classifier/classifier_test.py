@@ -35,7 +35,7 @@ class TestClassifyElements:
 
         # Verify all pages have their page numbers labeled
         assert len(results) == 3
-        for i, (page_data, result) in enumerate(zip(pages, results)):
+        for i, (page_data, result) in enumerate(zip(pages, results, strict=True)):
             labeled_elements = [
                 e
                 for e in page_data.elements

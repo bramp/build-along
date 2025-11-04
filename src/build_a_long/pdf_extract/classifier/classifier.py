@@ -18,7 +18,6 @@ are available, a ValueError will be raised at initialization time.
 """
 
 import logging
-from typing import List, Optional, Set
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationHints,
@@ -66,7 +65,7 @@ def classify_elements(page: PageData) -> ClassificationResult:
     return orchestrator.process_page(page)
 
 
-def classify_pages(pages: List[PageData]) -> List[ClassificationResult]:
+def classify_pages(pages: list[PageData]) -> list[ClassificationResult]:
     """Classify and label elements across multiple pages using rule-based heuristics.
 
     Args:
@@ -104,7 +103,7 @@ class Classifier:
             StepClassifier(config, self),
         ]
 
-        produced: Set[str] = set()
+        produced: set[str] = set()
         for c in self.classifiers:
             cls = c.__class__
             need = getattr(c, "requires", set())
@@ -116,7 +115,7 @@ class Classifier:
             produced |= getattr(c, "outputs", set())
 
     def classify(
-        self, page_data: PageData, hints: Optional[ClassificationHints] = None
+        self, page_data: PageData, hints: ClassificationHints | None = None
     ) -> ClassificationResult:
         """
         Runs the classification logic and returns a result.
@@ -148,7 +147,7 @@ class Classifier:
         page_data: PageData,
         target,
         result: ClassificationResult,
-        keep_ids: Optional[Set[int]] = None,
+        keep_ids: set[int] | None = None,
     ) -> None:
         if keep_ids is None:
             keep_ids = set()
@@ -169,7 +168,7 @@ class Classifier:
         page_data: PageData,
         target,
         result: ClassificationResult,
-        keep_ids: Optional[Set[int]] = None,
+        keep_ids: set[int] | None = None,
     ) -> None:
         if keep_ids is None:
             keep_ids = set()
@@ -210,7 +209,7 @@ class Classifier:
 
     def _log_post_classification_warnings(
         self, page_data: PageData, result: ClassificationResult
-    ) -> List[str]:
+    ) -> list[str]:
         warnings = []
 
         labeled_elements = result.get_labeled_elements()
@@ -261,7 +260,7 @@ class ClassificationOrchestrator:
 
     def __init__(self, classifier: Classifier):
         self.classifier = classifier
-        self.history: List[ClassificationResult] = []
+        self.history: list[ClassificationResult] = []
 
     def process_page(self, page_data: PageData) -> ClassificationResult:
         """
@@ -287,7 +286,7 @@ class ClassificationOrchestrator:
         return final_result
 
     def _generate_new_hints(
-        self, result: ClassificationResult, inconsistencies: List[str]
+        self, result: ClassificationResult, inconsistencies: list[str]
     ) -> ClassificationHints:
         """
         Creates new hints to guide the next classification run.

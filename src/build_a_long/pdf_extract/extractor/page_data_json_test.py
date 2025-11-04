@@ -265,7 +265,9 @@ class TestPageDataJsonSerialization:
         assert restored.bbox == original.bbox
         assert len(restored.elements) == len(original.elements)
 
-        for orig_elem, restored_elem in zip(original.elements, restored.elements):
+        for orig_elem, restored_elem in zip(
+            original.elements, restored.elements, strict=True
+        ):
             assert isinstance(restored_elem, type(orig_elem))
             assert restored_elem.bbox == orig_elem.bbox
             assert restored_elem.id == orig_elem.id

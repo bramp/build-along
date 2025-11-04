@@ -14,7 +14,6 @@ CLASSIFIER_DEBUG is set to "part_count" or "all".
 import logging
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
@@ -132,7 +131,7 @@ class PartCountClassifier(LabelClassifier):
         self,
         page_data: PageData,
         result: ClassificationResult,
-        hints: Optional[ClassificationHints],
+        hints: ClassificationHints | None,
     ) -> None:
         """Select winning part counts from pre-built candidates."""
         # Get pre-built candidates

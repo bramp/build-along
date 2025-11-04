@@ -3,7 +3,6 @@ Step number classifier.
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
@@ -51,7 +50,7 @@ class StepNumberClassifier(LabelClassifier):
     requires = {"page_number"}
 
     def _score_step_number_size(
-        self, element: Text, page_num_height: Optional[float]
+        self, element: Text, page_num_height: float | None
     ) -> float:
         """Score based on element height relative to page number height.
 
@@ -81,7 +80,7 @@ class StepNumberClassifier(LabelClassifier):
         if not page_data.elements:
             return
 
-        page_num_height: Optional[float] = None
+        page_num_height: float | None = None
         # Find the page_number element to use for size comparison
         labeled_elements = result.get_labeled_elements()
         for element in page_data.elements:
@@ -156,7 +155,7 @@ class StepNumberClassifier(LabelClassifier):
         self,
         page_data: PageData,
         result: ClassificationResult,
-        hints: Optional[ClassificationHints],
+        hints: ClassificationHints | None,
     ) -> None:
         """Select winning step numbers from pre-built candidates."""
         # Get pre-built candidates

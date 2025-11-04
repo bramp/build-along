@@ -4,6 +4,14 @@ target-version = "py314"
 [tool.ruff.lint]
 extend-select = [
   "PLC0415", # import-outside-toplevel (Pylint)
+  # pycodestyle
+  "E",
+  # Pyflakes
+  "F",
+  # isort
+  "I",
+  # pyupgrade
+  # "UP", # TODO Fix this seems to break some self-referential type hints
 ]
 
 [tool.pytest.ini_options]

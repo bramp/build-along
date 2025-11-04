@@ -6,7 +6,6 @@ This module uses dataclasses-json for (de)serialization so callers can use
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
 
 from dataclass_wizard import JSONPyWizard
 
@@ -20,7 +19,7 @@ class File(JSONPyWizard):
 
     path: Path
     size: int
-    hash: Optional[str]
+    hash: str | None
 
 
 @dataclass
@@ -28,7 +27,7 @@ class DownloadUrl(JSONPyWizard):
     """Holds the URL and preview URL for a download."""
 
     url: str
-    preview_url: Optional[str]
+    preview_url: str | None
 
 
 @dataclass
@@ -37,9 +36,9 @@ class PdfEntry(JSONPyWizard):
 
     url: str
     filename: str
-    preview_url: Optional[str] = None
-    filesize: Optional[int] = None
-    filehash: Optional[str] = None  # SHA256 hash of the file content
+    preview_url: str | None = None
+    filesize: int | None = None
+    filehash: str | None = None  # SHA256 hash of the file content
 
 
 @dataclass
@@ -48,10 +47,10 @@ class Metadata(JSONPyWizard):
 
     set: str
     locale: str
-    name: Optional[str] = None
-    theme: Optional[str] = None
-    age: Optional[str] = None
-    pieces: Optional[int] = None
-    year: Optional[int] = None
-    set_image_url: Optional[str] = None
-    pdfs: List[PdfEntry] = field(default_factory=list)
+    name: str | None = None
+    theme: str | None = None
+    age: str | None = None
+    pieces: int | None = None
+    year: int | None = None
+    set_image_url: str | None = None
+    pdfs: list[PdfEntry] = field(default_factory=list)

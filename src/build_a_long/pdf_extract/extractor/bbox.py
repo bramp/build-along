@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Annotated, Tuple
+from typing import Annotated
 
 from annotated_types import Ge
 
@@ -25,7 +25,7 @@ class BBox:
         return f"({self.x0:.1f},{self.y0:.1f},{self.x1:.1f},{self.y1:.1f})"
 
     @classmethod
-    def from_tuple(cls, bbox_tuple: Tuple[float, float, float, float]) -> "BBox":
+    def from_tuple(cls, bbox_tuple: tuple[float, float, float, float]) -> "BBox":
         """Create a BBox from a tuple of four floats (x0, y0, x1, y1)."""
         return cls(
             x0=bbox_tuple[0],
@@ -131,6 +131,6 @@ class BBox:
         return inter / ua
 
     @property
-    def center(self) -> Tuple[float, float]:
+    def center(self) -> tuple[float, float]:
         """Return the (x, y) center point of the bbox."""
         return ((self.x0 + self.x1) / 2.0, (self.y0 + self.y1) / 2.0)

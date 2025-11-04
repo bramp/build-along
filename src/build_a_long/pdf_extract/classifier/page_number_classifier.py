@@ -5,7 +5,6 @@ Page number classifier.
 import math
 import re
 from dataclasses import dataclass
-from typing import List, Optional
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
@@ -133,7 +132,7 @@ class PageNumberClassifier(LabelClassifier):
         self,
         page_data: PageData,
         result: ClassificationResult,
-        hints: Optional[ClassificationHints],
+        hints: ClassificationHints | None,
     ) -> None:
         """Select the best page number candidate from pre-built candidates."""
         candidate_list = result.get_candidates("page_number")
@@ -155,7 +154,7 @@ class PageNumberClassifier(LabelClassifier):
         self.classifier._remove_child_bboxes(page_data, winner.source_element, result)
         self.classifier._remove_similar_bboxes(page_data, winner.source_element, result)
 
-    def _select_winner(self, candidate_list: List[Candidate]) -> Optional[Candidate]:
+    def _select_winner(self, candidate_list: list[Candidate]) -> Candidate | None:
         """Select the best candidate from the list.
 
         Only considers candidates that successfully constructed a PageNumber.

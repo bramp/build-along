@@ -22,8 +22,8 @@ Set environment variables to aid investigation without code changes:
 
 import logging
 import os
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional, Sequence
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
@@ -223,7 +223,7 @@ class PartsListClassifier(LabelClassifier):
 
     def _score_distance_to_step_number(
         self, drawing: Drawing, steps: Sequence[StepNumber]
-    ) -> Optional[tuple[StepNumber, float]]:
+    ) -> tuple[StepNumber, float] | None:
         """Find the closest step that a drawing is above.
 
         Args:
@@ -267,7 +267,7 @@ class PartsListClassifier(LabelClassifier):
         parts_list_drawing: Drawing,
         page_data: PageData,
         result: ClassificationResult,
-    ) -> Optional[PartsList]:
+    ) -> PartsList | None:
         """Build a PartsList from a winning parts_list drawing.
 
         This method pairs part_count texts with part_image Images within the
@@ -304,7 +304,7 @@ class PartsListClassifier(LabelClassifier):
 
     def _build_part_from_pair(
         self, part_count_elem: Element, image_elem: Element
-    ) -> Optional[Part]:
+    ) -> Part | None:
         """Build a Part from a part_count and image pair.
 
         Args:
@@ -359,7 +359,7 @@ class PartsListClassifier(LabelClassifier):
         self,
         page_data: PageData,
         result: ClassificationResult,
-        hints: Optional[ClassificationHints],
+        hints: ClassificationHints | None,
     ) -> None:
         # Get pre-built candidates
         candidate_list = result.get_candidates("parts_list")

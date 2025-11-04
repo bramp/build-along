@@ -10,7 +10,6 @@ Page element with all its structured components.
 from __future__ import annotations
 
 import logging
-from typing import List, Optional, Set
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
@@ -54,14 +53,14 @@ class LegoPageBuilder:
         """
         self.page_data = page_data
         self.result = result
-        self.warnings: List[str] = []
-        self.unprocessed: List[Element] = []
+        self.warnings: list[str] = []
+        self.unprocessed: list[Element] = []
 
         # Build spatial hierarchy of raw elements for relationship queries
         self.element_tree = build_hierarchy_from_elements(page_data.elements)
 
         # Track which elements we've already converted
-        self.converted: Set[int] = set()
+        self.converted: set[int] = set()
 
     def build(self) -> Page:
         """Build the Page with all structured LEGO elements.
@@ -92,7 +91,7 @@ class LegoPageBuilder:
             unprocessed_elements=self.unprocessed,
         )
 
-    def _extract_page_number(self) -> Optional[PageNumber]:
+    def _extract_page_number(self) -> PageNumber | None:
         """Extract the page number element."""
         elements = self.result.get_elements_by_label("page_number")
 
@@ -123,7 +122,7 @@ class LegoPageBuilder:
             )
             return None
 
-    def _extract_steps(self) -> List[Step]:
+    def _extract_steps(self) -> list[Step]:
         """Extract Step elements from the page.
 
         A Step consists of:
@@ -131,7 +130,7 @@ class LegoPageBuilder:
         - A PartsList (optional, may be shared across pages)
         - A Diagram (the main instruction graphic)
         """
-        steps: List[Step] = []
+        steps: list[Step] = []
 
         step_number_elements = self.result.get_elements_by_label("step_number")
 
@@ -142,7 +141,7 @@ class LegoPageBuilder:
 
         return steps
 
-    def _build_step(self, step_elem: Element) -> Optional[Step]:
+    def _build_step(self, step_elem: Element) -> Step | None:
         """Build a Step from a step_number element.
 
         Args:
@@ -187,13 +186,13 @@ class LegoPageBuilder:
             diagram=diagram,
         )
 
-    def _extract_standalone_parts_lists(self) -> List[PartsList]:
+    def _extract_standalone_parts_lists(self) -> list[PartsList]:
         """Extract PartsList elements that are not within a Step.
 
         Returns:
             List of PartsList objects
         """
-        parts_lists: List[PartsList] = []
+        parts_lists: list[PartsList] = []
 
         parts_list_elements = self.result.get_elements_by_label("parts_list")
 
@@ -208,7 +207,7 @@ class LegoPageBuilder:
 
         return parts_lists
 
-    def _build_parts_list(self, parts_list_elem: Element) -> Optional[PartsList]:
+    def _build_parts_list(self, parts_list_elem: Element) -> PartsList | None:
         """Build a PartsList from a parts_list element.
 
         Args:
@@ -227,7 +226,7 @@ class LegoPageBuilder:
             parts=parts,
         )
 
-    def _extract_parts_from_list(self, parts_list_elem: Element) -> List[Part]:
+    def _extract_parts_from_list(self, parts_list_elem: Element) -> list[Part]:
         """Extract Part elements from within a parts_list.
 
         Uses the part_image_pairs from the classification result to build
@@ -239,7 +238,7 @@ class LegoPageBuilder:
         Returns:
             List of Part objects
         """
-        parts: List[Part] = []
+        parts: list[Part] = []
 
         # Get all part_image_pairs
         for part_count_elem, image_elem in self.result.part_image_pairs:
@@ -257,9 +256,7 @@ class LegoPageBuilder:
 
         return parts
 
-    def _build_part(
-        self, part_count_elem: Element, image_elem: Element
-    ) -> Optional[Part]:
+    def _build_part(self, part_count_elem: Element, image_elem: Element) -> Part | None:
         """Build a Part from a part_count and image pair.
 
         Args:
