@@ -11,6 +11,7 @@ labels produced by earlier stages:
 3) StepNumberClassifier → outputs: "step_number" (uses page_number size as context)
 4) PartsListClassifier  → outputs: "parts_list" (requires step_number and part_count)
 5) PartsImageClassifier → outputs: "part_image" (requires parts_list and part_count)
+6) StepClassifier       → outputs: "step" (requires step_number and parts_list)
 
 If the order is changed such that a classifier runs before its requirements
 are available, a ValueError will be raised at initialization time.
@@ -33,6 +34,9 @@ from build_a_long.pdf_extract.classifier.parts_image_classifier import (
 )
 from build_a_long.pdf_extract.classifier.step_number_classifier import (
     StepNumberClassifier,
+)
+from build_a_long.pdf_extract.classifier.step_classifier import (
+    StepClassifier,
 )
 from build_a_long.pdf_extract.classifier.types import (
     ClassifierConfig,
@@ -97,6 +101,7 @@ class Classifier:
             StepNumberClassifier(config, self),
             PartsListClassifier(config, self),
             PartsImageClassifier(config, self),
+            StepClassifier(config, self),
         ]
 
         produced: Set[str] = set()

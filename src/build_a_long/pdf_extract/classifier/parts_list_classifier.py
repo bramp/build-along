@@ -191,11 +191,12 @@ class PartsListClassifier(LabelClassifier):
             result.add_candidate(
                 "parts_list",
                 Candidate(
-                    source_element=drawing,
+                    bbox=drawing.bbox,
                     label="parts_list",
                     score=1.0,  # Parts list uses ranking rather than scores
                     score_details=score,
                     constructed=constructed,
+                    source_element=drawing,
                     failure_reason=None,
                     is_winner=False,  # Will be set by classify()
                 ),
@@ -382,17 +383,20 @@ class PartsListClassifier(LabelClassifier):
             assert isinstance(candidate.constructed, PartsList)
 
             # Check if this candidate has been removed due to overlap with a
-            # previous winner
-            if result.is_removed(candidate.source_element):
+            # previous winner (skip synthetic candidates without source_element)
+            if candidate.source_element is not None and result.is_removed(
+                candidate.source_element
+            ):
                 continue
 
             # This is a winner!
             result.mark_winner(
                 candidate, candidate.source_element, candidate.constructed
             )
-            self.classifier._remove_child_bboxes(
-                page_data, candidate.source_element, result
-            )
-            self.classifier._remove_similar_bboxes(
-                page_data, candidate.source_element, result
-            )
+            if candidate.source_element is not None:
+                self.classifier._remove_child_bboxes(
+                    page_data, candidate.source_element, result
+                )
+                self.classifier._remove_similar_bboxes(
+                    page_data, candidate.source_element, result
+                )
