@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Generate golden files for classifier tests.
+
+This script runs the classifier on all fixtures and generates golden output files.
+
+Usage:
+    pants run src/build_a_long/pdf_extract/classifier:generate-golden-files
+"""
+
+import json
+import logging
+import sys
+from pathlib import Path
+
+from build_a_long.pdf_extract.classifier.classifier import classify_elements
+from build_a_long.pdf_extract.classifier.classifier_golden_test import (
+    _serialize_classification_result,
+)
+from build_a_long.pdf_extract.extractor import PageData
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
+
+
+def main() -> None:
+    """Generate golden files for all fixtures."""
+    fixtures_dir = Path(__file__).parent / "fixtures"
+
+    if not fixtures_dir.exists():
+        log.error(f"Fixtures directory not found: {fixtures_dir}")
+        sys.exit(1)
+
+    raw_fixtures = list(fixtures_dir.glob("*_raw.json"))
+
+    if not raw_fixtures:
+        log.error(f"No *_raw.json fixtures found in {fixtures_dir}")
+        sys.exit(1)
+
+    log.info(f"Found {len(raw_fixtures)} raw fixtures")
+    log.info(f"Writing golden files to: {fixtures_dir.absolute()}")
+
+    for fixture_path in sorted(raw_fixtures):
+        golden_path = fixture_path.with_name(
+            fixture_path.name.replace("_raw.json", "_expected.json")
+        )
+
+        log.info(f"Processing {fixture_path.name}...")
+
+        # Load the input fixture
+        page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
+
+        # Run classification
+        result = classify_elements(page)
+
+        # Serialize the results
+        golden_data = _serialize_classification_result(page, result)
+
+        # Write golden file
+        golden_path.write_text(json.dumps(golden_data, indent=2) + "\n")
+        log.info(f"  Wrote {golden_path.absolute()}")
+
+    log.info(f"✓ Generated {len(raw_fixtures)} golden files")
+
+
+if __name__ == "__main__":
+    main()
