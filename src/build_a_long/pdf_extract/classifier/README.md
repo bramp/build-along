@@ -70,19 +70,21 @@ The classifier runs in a fixed order, with later stages depending on earlier one
 
 ### Why Candidates?
 
-The classifier uses a **candidate-based architecture** where classifiers construct `LegoPageElement` objects during classification rather than deferring to the builder phase. This solves several problems:
+The classifier uses a **candidate-based architecture** where classifiers construct `LegoPageElement` objects during the scoring phase rather than deferring to separate classification or building phases. This solves several problems:
 
 **Before (Two-Phase)**:
 
-- Classification: Score and label elements
-- Building: Parse labeled elements to construct objects
-- **Problem**: Information lost, inconsistent parsing, no re-evaluation
+- Scoring: Calculate scores for elements
+- Classification: Parse and label elements based on scores
+- Building: Re-parse labeled elements to construct objects
+- **Problem**: Duplicate parsing, information lost, inconsistent results, no re-evaluation
 
 **After (Single-Phase with Candidates)**:
 
-- Classification: Score, construct, and store all candidates
+- Scoring: Calculate scores AND construct candidates with LegoPageElements
+- Classification: Pick winners from pre-built candidates
 - Building: Use pre-constructed objects directly
-- **Benefit**: Consistency guaranteed, full decision trail, re-evaluation enabled
+- **Benefit**: Single parse, consistency guaranteed, full decision trail with rejection reasons, re-evaluation enabled
 
 ### Core Types
 
@@ -122,15 +124,56 @@ class ClassificationResult:
 
 ### Implementation Pattern
 
-Each classifier follows this pattern:
+Each classifier follows a two-phase pattern:
+
+#### Phase 1: Evaluation (`evaluate`)
+
+Evaluates elements and creates candidates with constructed LegoElements:
 
 ```python
-def classify(self, page_data, scores, labeled_elements, removal_reasons,
-             hints=None, constructed_elements=None, candidates=None):
-    # 1. Build candidates from scored elements
-    candidate_list = self._build_candidates(page_data, scores)
+def evaluate(self, page_data, labeled_elements, candidates):
+    candidate_list = []
     
-    # 2. Apply hints to filter/re-rank
+    for element in page_data.elements:
+        # 1. Score the element
+        score_obj = self._calculate_score(element)
+        
+        # 2. Try to construct LegoElement
+        constructed = None
+        failure_reason = None
+        
+        try:
+            constructed = self._construct_element(element)
+        except Exception as e:
+            failure_reason = f"Construction failed: {e}"
+        
+        # 3. Create candidate with all metadata
+        candidate = Candidate(
+            source_element=element,
+            label=self.label,
+            score=score_obj.combined_score(self.config),
+            score_details=score_obj,
+            constructed=constructed,
+            failure_reason=failure_reason,
+            is_winner=False,  # Will be set in classify()
+        )
+        candidate_list.append(candidate)
+    
+    # Store candidates for classification phase
+    candidates[self.label] = candidate_list
+```
+
+#### Phase 2: Classification (`classify`)
+
+Picks winners from pre-built candidates:
+
+```python
+def classify(self, page_data, labeled_elements, removal_reasons,
+             hints, constructed_elements, candidates):
+    # 1. Get pre-built candidates
+    candidate_list = candidates.get(self.label, [])
+    
+    # 2. Apply hints to filter/re-rank (optional)
     candidate_list = self._apply_hints(candidate_list, hints)
     
     # 3. Select the winner
@@ -138,25 +181,36 @@ def classify(self, page_data, scores, labeled_elements, removal_reasons,
     
     # 4. Store results
     if winner:
+        winner.is_winner = True
         labeled_elements[winner.source_element] = self.label
         constructed_elements[winner.source_element] = winner.constructed
-        candidates[self.label] = candidate_list
+        
+        # Cleanup: remove similar/child elements
+        self.classifier._remove_child_bboxes(...)
+        self.classifier._remove_similar_bboxes(...)
 ```
 
 See `PageNumberClassifier` for a complete reference implementation.
 
 ### Benefits
 
-1. **Consistency**: Parse once during classification → builders use pre-constructed objects
-2. **Debugging**: All candidates preserved with scores, failures, alternatives
-3. **Re-evaluation**: Can try second-best candidate if first fails downstream
-4. **Hints**: External code can guide classification (e.g., user corrections)
-5. **Type Safety**: Constructed elements have known, validated types
+1. **Single Parse**: Text and elements parsed once during scoring → no duplicate parsing
+2. **Consistency**: Builders use pre-constructed objects from classification
+3. **Better Debugging**: All candidates preserved with scores, failures, rejection reasons
+4. **Re-evaluation**: Can try second-best candidate if first fails downstream
+5. **Hints Support**: External code can guide classification (e.g., user corrections)
+6. **Type Safety**: Constructed elements have known, validated types
+7. **Clear Separation**: Scoring creates candidates; classification picks winners
 
 ### Migration Status
 
-✅ **Complete**: `PageNumberClassifier` - Full candidate implementation  
-⏳ **Pending**: Other classifiers have compatible signatures, need candidate implementation
+✅ **Complete**: All core classifiers migrated to two-phase pattern:
+
+- `PageNumberClassifier` - Candidates with rejection reasons
+- `StepNumberClassifier` - Candidates with size/position filtering
+- `PartCountClassifier` - Candidates with pattern matching
+- `PartsListClassifier` - Candidates with proximity scoring
+- `PartsImageClassifier` - Compatible signature (uses old pattern internally)
 
 
 ## Classifier Details
@@ -250,24 +304,29 @@ classifier/
 
 ## Adding New Classifiers
 
-To add a new classifier following the candidate-based pattern:
+To add a new classifier following the two-phase candidate pattern:
 
 1. **Create a new file** (e.g., `my_new_classifier.py`)
 2. **Inherit from `LabelClassifier`**
 3. **Define class attributes**:
    - `outputs`: Set of labels this classifier produces
    - `requires`: Set of labels this classifier depends on
-4. **Implement `calculate_scores`**: Score all elements and store in `scores` dict
-5. **Implement `classify`** following the pattern:
-   - `_build_candidates()`: Convert scored elements to Candidate objects with constructed LegoElements
-   - `_apply_hints()`: Filter candidates based on hints
-   - `_select_winner()`: Choose the best candidate
-   - Store winner in `labeled_elements`, `constructed_elements`, and `candidates`
+4. **Implement `evaluate`**:
+   - Score all elements
+   - Attempt to construct LegoPageElements
+   - Create Candidate objects with scores, constructed elements, and failure reasons
+   - Store candidates in the `candidates` dict
+5. **Implement `classify`**:
+   - Get pre-built candidates from `candidates` dict
+   - Apply hints to filter candidates (optional)
+   - Select the winning candidate(s)
+   - Mark winners and store in `labeled_elements` and `constructed_elements`
+   - Clean up similar/child bboxes
 6. **Add to pipeline**: Instantiate in `Classifier.__init__` in dependency order
-7. **Write tests**: Unit tests for scoring, construction, and edge cases
+7. **Write tests**: Unit tests for scoring, construction, candidate selection, and edge cases
 8. **Update documentation**: Add classifier details to this README
 
-See `PageNumberClassifier` for a complete reference implementation of the candidate pattern.
+See `PageNumberClassifier`, `StepNumberClassifier`, or `PartCountClassifier` for reference implementations.
 
 ## Page Builder
 
@@ -421,32 +480,35 @@ The page builder is under active development. Current limitations:
 
 ## Current Migration Status
 
-The candidate-based architecture is being rolled out incrementally:
+The candidate-based architecture has been successfully implemented:
 
 ### ✅ Completed
 
 - **Core Infrastructure**:
   - `types.py`: `Candidate` dataclass and enhanced `ClassificationResult`
   - `classifier.py`: Creates and passes `constructed_elements` and `candidates` dicts
-  - `label_classifier.py`: Updated abstract `classify()` signature
+  - `label_classifier.py`: Updated `calculate_scores()` signature with `candidates` parameter
   - `text_extractors.py`: Shared text parsing functions
 
-- **Classifiers**:
-  - `page_number_classifier.py`: Full candidate implementation with `_build_candidates()`, `_apply_hints()`, `_select_winner()`
+- **Classifiers** (two-phase pattern with candidates):
+  - `page_number_classifier.py`: Scores, constructs candidates, picks winners with rejection reasons
+  - `step_number_classifier.py`: Scores with size filtering, constructs candidates, picks winners
+  - `part_count_classifier.py`: Pattern matching, constructs candidates, picks all valid matches
+  - `parts_list_classifier.py`: Proximity scoring, constructs candidates, picks best per step
+  - `parts_image_classifier.py`: Compatible signature (uses pairing logic internally)
 
-### ⏳ In Progress
+### ⏳ Future Work
 
-- **Classifiers** (signatures updated, need candidate implementation):
-  - `part_count_classifier.py`
-  - `step_number_classifier.py`
-  - `parts_list_classifier.py`
-  - `parts_image_classifier.py`
+- **Builders** (to be updated to use `constructed_elements`):
+  - `lego_page_builder.py`: Currently parses elements; should use pre-constructed objects
+  - `hierarchy_builder.py`: Currently parses elements; should use pre-constructed objects
 
-- **Builders** (need to use `constructed_elements`):
-  - `lego_page_builder.py`
-  - `hierarchy_builder.py`
+- **Enhancements**:
+  - Implement hints support for re-evaluation
+  - Add user correction API
+  - Expand debugging UI with candidate alternatives
 
-Once migration is complete, all classifiers will construct elements immediately and all builders will use pre-constructed objects exclusively.
+All classifiers now create candidates during scoring, enabling single-parse consistency and rich debugging information.
 
 ## Testing
 

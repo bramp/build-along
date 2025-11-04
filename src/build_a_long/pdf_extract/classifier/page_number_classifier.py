@@ -63,70 +63,104 @@ class PageNumberClassifier(LabelClassifier):
     outputs = {"page_number"}
     requires = set()
 
-    def calculate_scores(
+    def evaluate(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
+        candidates: "Dict[str, List[Candidate]]",
     ) -> None:
+        """Evaluate elements and create candidates for page numbers.
+
+        This method scores each text element, attempts to construct PageNumber objects,
+        and stores all candidates with their scores and any failure reasons.
+        """
         page_bbox = page_data.bbox
         assert page_bbox is not None
 
-        # Initialize scores dict for this classifier
-        # TODO Do we need to do this? or should scores already have it?
-        if "page_number" not in scores:
-            scores["page_number"] = {}
+        candidate_list: "List[Candidate]" = []
 
         for element in page_data.elements:
             # TODO Support non-text elements - such as images of text.
             if not isinstance(element, Text):
                 continue
 
+            # Score the element
             text_score = self._score_page_number_text(element.text)
-
             position_score = self._score_page_number_position(element, page_bbox)
             page_value_score = self._score_page_number(
                 element.text, page_data.page_number
             )
 
             # Create detailed score object
-            page_score = _PageNumberScore(
+            score = _PageNumberScore(
                 text_score=text_score,
                 position_score=position_score,
                 page_value_score=page_value_score,
             )
 
-            # Store the score object directly in the scores dict
-            scores["page_number"][element] = page_score
+            # Try to construct the LegoElement (parse the text)
+            value = extract_page_number_value(element.text)
+            constructed_elem = None
+            failure_reason = None
+
+            if text_score == 0.0:
+                failure_reason = (
+                    f"Text doesn't match page number pattern: '{element.text}'"
+                )
+            elif position_score == 0.0:
+                failure_reason = "Element not in bottom 10% of page"
+            elif value is None or value < 0:
+                failure_reason = (
+                    f"Could not parse page number from text: '{element.text}'"
+                )
+            else:
+                # Successfully constructed
+                constructed_elem = PageNumber(
+                    value=value, bbox=element.bbox, id=element.id
+                )
+
+            # Store candidate (even if construction failed, for debugging)
+            candidate_list.append(
+                Candidate(
+                    source_element=element,
+                    label="page_number",
+                    score=score.combined_score(self.config),
+                    score_details=score,
+                    constructed=constructed_elem,
+                    failure_reason=failure_reason,
+                    is_winner=False,  # Will be set by classify()
+                )
+            )
+
+        # Store all candidates
+        candidates["page_number"] = candidate_list
 
     def classify(
         self,
         page_data: PageData,
-        scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
         removal_reasons: Dict[int, RemovalReason],
         hints: "Optional[ClassificationHints]",
         constructed_elements: "Dict[Element, Any]",
         candidates: "Dict[str, List[Candidate]]",
     ) -> None:
-        # Build candidate list from scored elements
-        candidate_list = self._build_candidates(page_data, scores)
+        """Select the best page number candidate from pre-built candidates."""
+        candidate_list = candidates.get("page_number", [])
 
         if not candidate_list:
             return
 
-        # Select the winner
+        # Select the winner from successfully constructed candidates
         winner = self._select_winner(candidate_list)
         if not winner:
-            # All candidates failed to construct - store for diagnostics
-            candidates["page_number"] = candidate_list
+            # All candidates failed to construct
             return
 
-        # Store results
+        # Mark winner and store results
+        winner.is_winner = True
         labeled_elements[winner.source_element] = "page_number"
         assert isinstance(winner.constructed, PageNumber)
         constructed_elements[winner.source_element] = winner.constructed
-        candidates["page_number"] = candidate_list
 
         # Cleanup: remove child/similar bboxes
         self.classifier._remove_child_bboxes(
@@ -136,67 +170,13 @@ class PageNumberClassifier(LabelClassifier):
             page_data, winner.source_element, removal_reasons
         )
 
-    def _build_candidates(
-        self, page_data: PageData, scores: Dict[str, Dict[Any, Any]]
-    ) -> "List[Candidate]":
-        """Build list of all candidate page numbers from scored elements.
-
-        Returns:
-            List of Candidate objects, including those that failed to construct.
-        """
-        page_bbox = page_data.bbox
-        assert page_bbox is not None
-
-        page_number_scores = scores.get("page_number", {})
-        candidate_list: "List[Candidate]" = []
-
-        for element in page_data.elements:
-            # Get the score object and compute combined score
-            score = page_number_scores.get(element)
-            if not isinstance(score, _PageNumberScore):
-                continue
-
-            # TODO Support non-text elements - such as images of text.
-            if not isinstance(element, Text):
-                continue
-
-            # Try to construct the LegoElement (parse the text)
-            value = extract_page_number_value(element.text)
-            constructed_elem = None
-            failure_reason = None
-
-            if value is not None and value >= 0:
-                constructed_elem = PageNumber(
-                    value=value, bbox=element.bbox, id=element.id
-                )
-            else:
-                failure_reason = (
-                    f"Could not parse page number from text: '{element.text}'"
-                )
-
-            # Store candidate even if construction failed (for debugging)
-            # Winner will be selected later by _select_winner()
-            candidate_list.append(
-                Candidate(
-                    source_element=element,
-                    label="page_number",
-                    score=score.combined_score(self.config),
-                    score_details=score,
-                    constructed=constructed_elem,
-                    failure_reason=failure_reason,
-                    is_winner=False,  # Will be set by _select_winner
-                )
-            )
-
-        return candidate_list
-
     def _select_winner(
         self, candidate_list: "List[Candidate]"
     ) -> "Optional[Candidate]":
         """Select the best candidate from the list.
 
         Only considers candidates that successfully constructed a PageNumber.
-        Selects the highest scoring candidate and marks it as winner.
+        Selects the highest scoring candidate.
 
         Args:
             candidate_list: List of candidates to choose from
@@ -210,9 +190,7 @@ class PageNumberClassifier(LabelClassifier):
             return None
 
         # Sort by score and pick winner
-        best = max(valid_candidates, key=lambda c: c.score)
-        best.is_winner = True
-        return best
+        return max(valid_candidates, key=lambda c: c.score)
 
     def _score_page_number_text(self, text: str) -> float:
         # TODO The score should increase if the text matches the actual page we
