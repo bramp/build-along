@@ -165,7 +165,6 @@ class StepClassifier(LabelClassifier):
             # Build the Diagram element
             diagram = Diagram(
                 bbox=diagram_bbox,
-                id=None,  # Diagram is a synthetic region, not from a single source
             )
 
             # Build the Step
@@ -173,11 +172,9 @@ class StepClassifier(LabelClassifier):
                 bbox=self._compute_step_bbox(step_num, associated_parts_list, diagram),
                 step_number=step_num,
                 parts_list=associated_parts_list
-                or PartsList(bbox=step_num.bbox, parts=[], id=None),
+                or PartsList(bbox=step_num.bbox, parts=[]),
                 diagram=diagram,
-                id=step_num.id,  # Use step number's id as the Step's id
             )
-
             # Add candidate - Note: Step is a synthetic element combining
             # step_number, parts_list, and diagram, so source_element is None
             result.add_candidate(

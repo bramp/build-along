@@ -131,7 +131,6 @@ class StepNumberClassifier(LabelClassifier):
                 constructed_elem = StepNumber(
                     value=value,
                     bbox=element.bbox,
-                    id=element.id,
                 )
             else:
                 failure_reason = (

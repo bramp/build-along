@@ -112,9 +112,7 @@ class PageNumberClassifier(LabelClassifier):
                 )
             else:
                 # Successfully constructed
-                constructed_elem = PageNumber(
-                    value=value, bbox=element.bbox, id=element.id
-                )
+                constructed_elem = PageNumber(value=value, bbox=element.bbox)
 
             # Store candidate (even if construction failed, for debugging)
             result.add_candidate(

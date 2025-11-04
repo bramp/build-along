@@ -184,7 +184,6 @@ class PartsListClassifier(LabelClassifier):
                     )
                     for pc in contained
                 ],
-                id=drawing.id,
             )
 
             # Add candidate
@@ -301,7 +300,6 @@ class PartsListClassifier(LabelClassifier):
         return PartsList(
             bbox=parts_list_drawing.bbox,
             parts=parts,
-            id=parts_list_drawing.id,
         )
 
     def _build_part_from_pair(
@@ -338,7 +336,6 @@ class PartsListClassifier(LabelClassifier):
         part_count = PartCount(
             bbox=part_count_elem.bbox,
             count=count_value,
-            id=part_count_elem.id,
         )
 
         # Combine bboxes of part_count and image to get Part bbox
@@ -356,7 +353,6 @@ class PartsListClassifier(LabelClassifier):
             name=None,
             number=None,
             count=part_count,
-            id=None,  # Part is a composite, so no single source id
         )
 
     def classify(

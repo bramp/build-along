@@ -111,7 +111,6 @@ class PartCountClassifier(LabelClassifier):
                 constructed_elem = PartCount(
                     count=value,
                     bbox=element.bbox,
-                    id=element.id,
                 )
 
             # Add candidate
