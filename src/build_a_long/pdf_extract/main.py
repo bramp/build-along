@@ -15,6 +15,7 @@ from build_a_long.pdf_extract.classifier import classify_pages
 from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
+from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 from build_a_long.pdf_extract.parser import parse_page_ranges
 from build_a_long.pdf_extract.parser.page_ranges import PageRanges
@@ -161,6 +162,11 @@ def parse_arguments() -> argparse.Namespace:
         help="Export raw page elements as a JSON document for debugging.",
     )
     parser.add_argument(
+        "--debug-classification",
+        action="store_true",
+        help="Print detailed classification debugging information for each page.",
+    )
+    parser.add_argument(
         "--draw-deleted",
         action="store_true",
         help="Draw bounding boxes for elements marked as deleted.",
@@ -222,6 +228,136 @@ def _print_summary(
         sample = ", ".join(str(n) for n in missing_page_numbers[:20])
         more = " ..." if len(missing_page_numbers) > 20 else ""
         print(f"Pages missing page number: {sample}{more}")
+
+
+def _print_classification_debug(page: PageData, result: ClassificationResult) -> None:
+    """Print line-by-line classification status for all elements.
+
+    For each element (ordered hierarchically), shows:
+    - Element ID, type, and string representation
+    - Winning candidate labels (if any)
+    - Removal status and reason (if removed)
+    - Indentation based on bbox nesting hierarchy
+
+    Args:
+        page: PageData containing all elements
+        result: ClassificationResult with classification information
+    """
+    # ANSI color codes
+    GREY = "\033[90m"
+    RESET = "\033[0m"
+
+    print(f"\n{'=' * 80}")
+    print(f"CLASSIFICATION DEBUG - Page {page.page_number}")
+    print(f"{'=' * 80}\n")
+
+    # Build element hierarchy tree
+    element_tree = build_hierarchy_from_elements(page.elements)
+
+    # Get all winning candidates organized by element
+    all_candidates = result.get_all_candidates()
+    # element.id -> list of winning labels
+    element_to_labels: Dict[int, List[str]] = {}
+
+    for label, candidates in all_candidates.items():
+        for candidate in candidates:
+            if candidate.is_winner and candidate.source_element is not None:
+                elem_id = candidate.source_element.id
+                if elem_id is not None:
+                    if elem_id not in element_to_labels:
+                        element_to_labels[elem_id] = []
+                    element_to_labels[elem_id].append(label)
+
+    def print_element(elem, depth: int, is_last: bool = True) -> None:
+        """Recursively print an element and its children."""
+        # Build tree characters
+        if depth == 0:
+            tree_prefix = ""
+            indent = ""
+        else:
+            # Use └─ for last child, ├─ for others
+            tree_char = "└─" if is_last else "├─"
+            # Build the prefix based on depth (spaces for alignment)
+            indent = "  " * (depth - 1)
+            tree_prefix = f"{indent}{tree_char} "
+
+        # Base info: ID and type
+        type_name = elem.__class__.__name__
+        elem_id = elem.id if elem.id is not None else -1
+
+        # Check if removed
+        is_removed = result.is_removed(elem)
+        color = GREY if is_removed else ""
+        reset = RESET if is_removed else ""
+
+        # Build the complete line with element details
+        # Prefer constructed element string if available
+        constructed = result.get_constructed_element(elem)
+        elem_str = str(constructed) if constructed else str(elem)
+        line = f"{color}{tree_prefix}{elem_id:3d} {type_name:8s} "
+
+        if is_removed:
+            reason = result.get_removal_reason(elem)
+            reason_text = reason.reason_type if reason else "unknown"
+            line += f"[REMOVED: {reason_text}"
+            if reason and hasattr(reason, "target_element"):
+                target = reason.target_element
+                target_id = target.id if hasattr(target, "id") else "?"
+                line += f" -> {target_id}"
+                # Show what the target element won as
+                if (
+                    hasattr(target, "id")
+                    and target.id is not None
+                    and target.id in element_to_labels
+                ):
+                    target_labels = element_to_labels[target.id]
+                    line += f" ({', '.join(target_labels)})"
+            line += f"] {elem_str}"
+        # Check if it has winning candidates
+        elif elem.id is not None and elem.id in element_to_labels:
+            labels = element_to_labels[elem.id]
+            line += f"[{', '.join(labels)}] {elem_str}"
+        else:
+            # No candidates
+            line += f"[no candidates] {elem_str}"
+
+        line += reset
+        print(line)
+
+        # Recursively print children, sorted by ID
+        children = element_tree.get_children(elem)
+        sorted_children = sorted(
+            children, key=lambda e: e.id if e.id is not None else 999999
+        )
+        for i, child in enumerate(sorted_children):
+            child_is_last = i == len(sorted_children) - 1
+            print_element(child, depth + 1, child_is_last)
+
+    # Print root elements sorted by ID, then their children recursively
+    sorted_roots = sorted(
+        element_tree.roots, key=lambda e: e.id if e.id is not None else 999999
+    )
+    for root in sorted_roots:
+        print_element(root, 0)
+
+    # Print summary statistics
+    total = len(page.elements)
+    with_labels = len(element_to_labels)
+    removed = sum(1 for e in page.elements if result.is_removed(e))
+    no_candidates = total - with_labels - removed
+
+    print(f"\n{'─' * 80}")
+    print(
+        f"Total: {total} | Winners: {with_labels} | Removed: {removed} | No candidates: {no_candidates}"
+    )
+
+    warnings = result.get_warnings()
+    if warnings:
+        print(f"Warnings: {len(warnings)}")
+        for warning in warnings:
+            print(f"  ⚠ {warning}")
+
+    print(f"{'=' * 80}\n")
 
 
 def _print_label_counts(page: PageData, result: ClassificationResult) -> None:
@@ -342,6 +478,8 @@ def main() -> int:
 
         for page, result in zip(pages, results):
             _print_label_counts(page, result)
+            if args.debug_classification:
+                _print_classification_debug(page, result)
 
         # Build structured LEGO page hierarchy from classification results
         _build_page_hierarchy(pages, results)

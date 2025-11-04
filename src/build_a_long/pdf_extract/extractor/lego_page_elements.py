@@ -19,6 +19,10 @@ class LegoPageElement:
     bbox: BBox
     id: Optional[int] = field(default=None, kw_only=True)
 
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"{self.__class__.__name__}(bbox={str(self.bbox)})"
+
 
 @dataclass
 class PageNumber(LegoPageElement):
@@ -30,6 +34,10 @@ class PageNumber(LegoPageElement):
         if self.value < 0:
             raise ValueError("PageNumber.value must be non-negative")
 
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"PageNumber(value={self.value})"
+
 
 @dataclass
 class StepNumber(LegoPageElement):
@@ -40,6 +48,10 @@ class StepNumber(LegoPageElement):
     def __post_init__(self) -> None:
         if self.value <= 0:
             raise ValueError("StepNumber.value must be positive")
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"StepNumber(value={self.value})"
 
 
 @dataclass
@@ -53,6 +65,10 @@ class PartCount(LegoPageElement):
     def __post_init__(self) -> None:
         if self.count < 0:
             raise ValueError("PartCount.count must be non-negative")
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"PartCount(count={self.count})"
 
 
 @dataclass
@@ -68,6 +84,12 @@ class Part(LegoPageElement):
 
     # TODO maybe add color?
     # TODO Some parts have a "shiny" highlight - maybe reference that image
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        name_str = f'"{self.name}"' if self.name else "unnamed"
+        number_str = self.number if self.number else "no-number"
+        return f"Part(count={self.count.count}x, name={name_str}, number={number_str})"
 
 
 @dataclass
@@ -86,6 +108,10 @@ class PartsList(LegoPageElement):
 
         return sum(p.count.count for p in self.parts)
 
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"PartsList(parts={len(self.parts)}, total_items={self.total_items})"
+
 
 @dataclass
 class BagNumber(LegoPageElement):
@@ -97,6 +123,10 @@ class BagNumber(LegoPageElement):
         if self.value <= 0:
             raise ValueError("BagNumber.value must be positive")
 
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"BagNumber(value={self.value})"
+
 
 @dataclass
 class NewBag(LegoPageElement):
@@ -104,10 +134,18 @@ class NewBag(LegoPageElement):
 
     bag: BagNumber
 
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"NewBag(bag={self.bag.value})"
+
 
 @dataclass
 class Diagram(LegoPageElement):
     """The graphic showing how to complete the step."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"Diagram(bbox={str(self.bbox)})"
 
 
 @dataclass
@@ -119,6 +157,12 @@ class Step(LegoPageElement):
     diagram: Diagram  # TODO maybe this should be a list?
 
     # TODO add other interesting callouts (such as rotate the element)
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return (
+            f"Step(number={self.step_number.value}, parts={len(self.parts_list.parts)})"
+        )
 
 
 @dataclass
@@ -149,6 +193,11 @@ class Page(LegoPageElement):
     unprocessed_elements: List = field(
         default_factory=list
     )  # List[Element] but avoiding import
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        page_num = self.page_number.value if self.page_number else "unknown"
+        return f"Page(number={page_num}, steps={len(self.steps)}, parts_lists={len(self.parts_lists)}, warnings={len(self.warnings)})"
 
 
 # TODO Add sub-assembly (or sub-step) element.

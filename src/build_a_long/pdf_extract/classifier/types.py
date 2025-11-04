@@ -25,7 +25,7 @@ class RemovalReason:
     reason_type: str
     """Type of removal: 'child_bbox' or 'similar_bbox'"""
 
-    target_element: Any
+    target_element: Element
     """The element that caused this removal"""
 
 
