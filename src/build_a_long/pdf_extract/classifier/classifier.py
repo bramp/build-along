@@ -121,7 +121,7 @@ class Classifier:
         Runs the classification logic and returns a result.
         It does NOT modify page_data directly.
         """
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
 
         for classifier in self.classifiers:
             classifier.evaluate(page_data, result)

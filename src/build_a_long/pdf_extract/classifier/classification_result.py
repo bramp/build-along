@@ -13,6 +13,7 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_elements import Element
 
 if TYPE_CHECKING:
+    from build_a_long.pdf_extract.extractor.extractor import PageData
     from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
 
 
@@ -111,6 +112,9 @@ class ClassificationResult(JSONPyWizard):
     fields directly to maintain encapsulation.
     """
 
+    page_data: PageData | None = None
+    """The original page data being classified"""
+
     _warnings: list[str] = field(default_factory=list)
 
     _removal_reasons: dict[int, RemovalReason] = field(default_factory=dict)
@@ -143,6 +147,17 @@ class ClassificationResult(JSONPyWizard):
     # Legacy: Persisted relations discovered during classification
     # TODO: Migrate to candidates pattern
     part_image_pairs: list[tuple[Any, Any]] = field(default_factory=list)
+
+    @property
+    def elements(self) -> list[Element]:
+        """Get the elements from the page data.
+
+        Returns:
+            List of elements from the page data, or empty list if page_data is None
+        """
+        if self.page_data is None:
+            return []
+        return self.page_data.elements
 
     def add_warning(self, warning: str) -> None:
         """Add a warning message to the classification result.

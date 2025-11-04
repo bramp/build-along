@@ -79,7 +79,7 @@ class TestPageNumberExtraction:
             bbox=page_bbox,
         )
 
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
 
         page = build_page(page_data, result)
 
