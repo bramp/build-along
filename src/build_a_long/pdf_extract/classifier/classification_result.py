@@ -120,12 +120,14 @@ class ClassificationResult(JSONPyWizard):
     _removal_reasons: dict[int, RemovalReason] = field(default_factory=dict)
     """Maps element IDs to the reason they were removed"""
 
-    _constructed_elements: dict[Element, LegoPageElement] = field(default_factory=dict)
-    """Maps source elements to their constructed LegoPageElements.
+    _constructed_elements: dict[int, LegoPageElement] = field(default_factory=dict)
+    """Maps source element IDs to their constructed LegoPageElements.
     
     Only contains elements that were successfully labeled and constructed.
     The builder should use these pre-constructed elements rather than
     re-parsing the source elements.
+    
+    Keys are element IDs (int) instead of Element objects to ensure JSON serializability.
     """
 
     _candidates: dict[str, list[Candidate]] = field(default_factory=dict)
@@ -175,14 +177,6 @@ class ClassificationResult(JSONPyWizard):
         """
         return self._warnings.copy()
 
-    def get_constructed_elements(self) -> dict[Element, LegoPageElement]:
-        """Get all successfully constructed elements.
-
-        Returns:
-            Dictionary mapping source elements to their constructed LegoPageElements
-        """
-        return self._constructed_elements.copy()
-
     def get_constructed_element(self, element: Element) -> LegoPageElement | None:
         """Get the constructed LegoPageElement for a source element.
 
@@ -192,7 +186,9 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             The constructed LegoPageElement if it exists, None otherwise
         """
-        return self._constructed_elements.get(element)
+        if element.id is None:
+            return None
+        return self._constructed_elements.get(element.id)
 
     # TODO maybe add a parameter to fitler out winners/non-winners
     def get_candidates(self, label: str) -> list[Candidate]:
@@ -239,8 +235,8 @@ class ClassificationResult(JSONPyWizard):
             constructed: The constructed LegoPageElement
         """
         candidate.is_winner = True
-        if element is not None:
-            self._constructed_elements[element] = constructed
+        if element is not None and element.id is not None:
+            self._constructed_elements[element.id] = constructed
 
     def mark_removed(self, element: Element, reason: RemovalReason) -> None:
         """Mark an element as removed with the given reason.

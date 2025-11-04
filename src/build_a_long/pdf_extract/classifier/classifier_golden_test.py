@@ -63,13 +63,13 @@ def _serialize_classification_result(
         serialized["labeled_elements"][str(element.id)] = label
 
     # Serialize constructed elements using LegoPageElement.to_dict()
-    for element, lego_element in result.get_constructed_elements().items():
+    for element_id, lego_element in result._constructed_elements.items():
         element_dict = lego_element.to_dict()
         # Add __tag__ field for type identification (auto_assign_tags only works for Union types)
         element_dict["__tag__"] = lego_element.__class__.__name__
         # Remove page_data to avoid circular references and reduce size
         element_dict.pop("page_data", None)
-        serialized["constructed_elements"][str(element.id)] = element_dict
+        serialized["constructed_elements"][str(element_id)] = element_dict
 
     # Serialize removed elements using RemovalReason.to_dict()
     for element in page.elements:
