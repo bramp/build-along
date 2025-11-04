@@ -58,7 +58,7 @@ class TestPageNumberExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates({page_number_text: "page_number"})
+            _candidates=make_candidates({page_number_text: "page_number"})
         )
 
         page = build_page(page_data, result)
@@ -99,7 +99,7 @@ class TestPageNumberExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates(
+            _candidates=make_candidates(
                 {
                     page_number_1: "page_number",
                     page_number_2: "page_number",
@@ -125,7 +125,7 @@ class TestPageNumberExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates({page_number_text: "page_number"})
+            _candidates=make_candidates({page_number_text: "page_number"})
         )
 
         page = build_page(page_data, result)
@@ -150,7 +150,7 @@ class TestStepExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates({step_number_text: "step_number"})
+            _candidates=make_candidates({step_number_text: "step_number"})
         )
 
         page = build_page(page_data, result)
@@ -174,7 +174,7 @@ class TestStepExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates(
+            _candidates=make_candidates(
                 {
                     step_1: "step_number",
                     step_2: "step_number",
@@ -200,7 +200,7 @@ class TestStepExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates({step_text: "step_number"})
+            _candidates=make_candidates({step_text: "step_number"})
         )
 
         page = build_page(page_data, result)
@@ -225,7 +225,7 @@ class TestPartsListExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates({parts_list_drawing: "parts_list"})
+            _candidates=make_candidates({parts_list_drawing: "parts_list"})
         )
 
         page = build_page(page_data, result)
@@ -258,7 +258,7 @@ class TestPartsListExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates(
+            _candidates=make_candidates(
                 {
                     parts_list_drawing: "parts_list",
                     part_count_1: "part_count",
@@ -311,7 +311,7 @@ class TestPartsListExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates(
+            _candidates=make_candidates(
                 {
                     parts_list_drawing: "parts_list",
                     part_count_inside: "part_count",
@@ -352,7 +352,7 @@ class TestPartExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates(
+            _candidates=make_candidates(
                 {
                     parts_list: "parts_list",
                     part_count: "part_count",
@@ -382,7 +382,7 @@ class TestPartExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates(
+            _candidates=make_candidates(
                 {
                     parts_list: "parts_list",
                     part_count: "part_count",
@@ -414,7 +414,7 @@ class TestPartExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates(
+            _candidates=make_candidates(
                 {
                     parts_list: "parts_list",
                     part_count: "part_count",
@@ -446,7 +446,7 @@ class TestPartExtraction:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates(
+            _candidates=make_candidates(
                 {
                     parts_list: "parts_list",
                     part_count: "part_count",
@@ -482,7 +482,7 @@ class TestUnprocessedElements:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates({kept_text: "some_label"}),
+            _candidates=make_candidates({kept_text: "some_label"}),
             _removal_reasons={id(removed_text): None},  # type: ignore
         )
 
@@ -506,7 +506,7 @@ class TestUnprocessedElements:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates({labeled_text: "some_label"})
+            _candidates=make_candidates({labeled_text: "some_label"})
         )
 
         page = build_page(page_data, result)
@@ -552,7 +552,7 @@ class TestIntegration:
         )
 
         result = ClassificationResult(
-            candidates=make_candidates(
+            _candidates=make_candidates(
                 {
                     page_num: "page_number",
                     step_1_num: "step_number",
