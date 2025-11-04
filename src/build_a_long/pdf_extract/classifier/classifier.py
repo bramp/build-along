@@ -124,7 +124,8 @@ class Classifier:
             classifier.classify(page_data, result, hints)
 
         warnings = self._log_post_classification_warnings(page_data, result)
-        result.warnings = warnings
+        for warning in warnings:
+            result.add_warning(warning)
 
         # Extract persisted relations from PartsImageClassifier
         part_image_pairs = []
@@ -271,7 +272,7 @@ class ClassificationOrchestrator:
             result = self.classifier.classify(page_data, hints)
             self.history.append(result)
 
-            inconsistencies = self._analyze_for_inconsistencies(result)
+            inconsistencies = result.get_warnings()
             if not inconsistencies:
                 return result
 
@@ -279,12 +280,6 @@ class ClassificationOrchestrator:
 
         final_result = self.history[-1]
         return final_result
-
-    def _analyze_for_inconsistencies(self, result: ClassificationResult) -> List[str]:
-        """
-        Checks for global problems, e.g., a step without a parts list.
-        """
-        return result.warnings
 
     def _generate_new_hints(
         self, result: ClassificationResult, inconsistencies: List[str]

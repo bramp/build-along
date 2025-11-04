@@ -137,7 +137,7 @@ class PageNumberClassifier(LabelClassifier):
         hints: Optional[ClassificationHints],
     ) -> None:
         """Select the best page number candidate from pre-built candidates."""
-        candidate_list = result.candidates.get("page_number", [])
+        candidate_list = result.get_candidates("page_number")
 
         if not candidate_list:
             return

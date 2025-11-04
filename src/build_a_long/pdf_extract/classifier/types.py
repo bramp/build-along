@@ -105,12 +105,14 @@ class ClassificationResult:
     fields directly to maintain encapsulation.
     """
 
-    warnings: List[str] = field(default_factory=list)
+    _warnings: List[str] = field(default_factory=list)
 
     _removal_reasons: Dict[int, RemovalReason] = field(default_factory=dict)
     """Maps element IDs to the reason they were removed"""
 
-    constructed_elements: "Dict[Element, LegoPageElement]" = field(default_factory=dict)
+    _constructed_elements: "Dict[Element, LegoPageElement]" = field(
+        default_factory=dict
+    )
     """Maps source elements to their constructed LegoPageElements.
     
     Only contains elements that were successfully labeled and constructed.
@@ -118,7 +120,7 @@ class ClassificationResult:
     re-parsing the source elements.
     """
 
-    candidates: Dict[str, List[Candidate]] = field(default_factory=dict)
+    _candidates: Dict[str, List[Candidate]] = field(default_factory=dict)
     """Maps label names to lists of all candidates considered for that label.
     
     Each candidate includes:
@@ -138,7 +140,59 @@ class ClassificationResult:
     # TODO: Migrate to candidates pattern
     part_image_pairs: List[Tuple[Any, Any]] = field(default_factory=list)
 
-    # Builder methods for populating the result during classification
+    def add_warning(self, warning: str) -> None:
+        """Add a warning message to the classification result.
+
+        Args:
+            warning: The warning message to add
+        """
+        self._warnings.append(warning)
+
+    def get_warnings(self) -> List[str]:
+        """Get all warnings generated during classification.
+
+        Returns:
+            List of warning messages
+        """
+        return self._warnings.copy()
+
+    def get_constructed_elements(self) -> "Dict[Element, LegoPageElement]":
+        """Get all successfully constructed elements.
+
+        Returns:
+            Dictionary mapping source elements to their constructed LegoPageElements
+        """
+        return self._constructed_elements.copy()
+
+    def get_constructed_element(self, element: Element) -> "Optional[LegoPageElement]":
+        """Get the constructed LegoPageElement for a source element.
+
+        Args:
+            element: The source element
+
+        Returns:
+            The constructed LegoPageElement if it exists, None otherwise
+        """
+        return self._constructed_elements.get(element)
+
+    def get_candidates(self, label: str) -> List[Candidate]:
+        """Get all candidates for a specific label.
+
+        Args:
+            label: The label to get candidates for
+
+        Returns:
+            List of candidates for that label (returns copy to prevent external modification)
+        """
+        return self._candidates.get(label, []).copy()
+
+    def get_all_candidates(self) -> Dict[str, List[Candidate]]:
+        """Get all candidates across all labels.
+
+        Returns:
+            Dictionary mapping labels to their candidates (returns deep copy)
+        """
+        return {label: cands.copy() for label, cands in self._candidates.items()}
 
     def add_candidate(self, label: str, candidate: Candidate) -> None:
         """Add a single candidate for a specific label.
@@ -147,9 +201,9 @@ class ClassificationResult:
             label: The label this candidate is for
             candidate: The candidate to add
         """
-        if label not in self.candidates:
-            self.candidates[label] = []
-        self.candidates[label].append(candidate)
+        if label not in self._candidates:
+            self._candidates[label] = []
+        self._candidates[label].append(candidate)
 
     def mark_winner(
         self, candidate: Candidate, element: Element, constructed: "LegoPageElement"
@@ -162,7 +216,7 @@ class ClassificationResult:
             constructed: The constructed LegoPageElement
         """
         candidate.is_winner = True
-        self.constructed_elements[element] = constructed
+        self._constructed_elements[element] = constructed
 
     def mark_removed(self, element: Element, reason: RemovalReason) -> None:
         """Mark an element as removed with the given reason.
@@ -180,7 +234,7 @@ class ClassificationResult:
             Dictionary mapping elements to their labels
         """
         labeled: Dict[Element, str] = {}
-        for label, label_candidates in self.candidates.items():
+        for label, label_candidates in self._candidates.items():
             for candidate in label_candidates:
                 if candidate.is_winner:
                     labeled[candidate.source_element] = label
@@ -196,7 +250,7 @@ class ClassificationResult:
             The label string if found, None otherwise
         """
         # Search through all candidates to find the winning label for this element
-        for label, label_candidates in self.candidates.items():
+        for label, label_candidates in self._candidates.items():
             for candidate in label_candidates:
                 if candidate.source_element is element and candidate.is_winner:
                     return label
@@ -211,7 +265,7 @@ class ClassificationResult:
         Returns:
             List of elements with that label
         """
-        label_candidates = self.candidates.get(label, [])
+        label_candidates = self._candidates.get(label, [])
         return [c.source_element for c in label_candidates if c.is_winner]
 
     def is_removed(self, element: Element) -> bool:
@@ -245,7 +299,7 @@ class ClassificationResult:
         Returns:
             Dictionary mapping elements to score objects for that label
         """
-        label_candidates = self.candidates.get(label, [])
+        label_candidates = self._candidates.get(label, [])
         return {c.source_element: c.score_details for c in label_candidates}
 
     def has_label(self, label: str) -> bool:
@@ -257,7 +311,7 @@ class ClassificationResult:
         Returns:
             True if at least one element has this label, False otherwise
         """
-        label_candidates = self.candidates.get(label, [])
+        label_candidates = self._candidates.get(label, [])
         return any(c.is_winner for c in label_candidates)
 
     def get_best_candidate(self, label: str) -> "Optional[Candidate]":
@@ -270,7 +324,7 @@ class ClassificationResult:
             The candidate with the highest score that successfully constructed,
             or None if no valid candidates exist
         """
-        label_candidates = self.candidates.get(label, [])
+        label_candidates = self._candidates.get(label, [])
         valid = [c for c in label_candidates if c.constructed is not None]
         return max(valid, key=lambda c: c.score) if valid else None
 
@@ -286,7 +340,7 @@ class ClassificationResult:
         Returns:
             List of candidates sorted by score (highest first)
         """
-        label_candidates = self.candidates.get(label, [])
+        label_candidates = self._candidates.get(label, [])
         if exclude_winner:
             winner_elems = self.get_elements_by_label(label)
             if winner_elems:

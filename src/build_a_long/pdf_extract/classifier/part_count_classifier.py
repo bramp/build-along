@@ -136,7 +136,7 @@ class PartCountClassifier(LabelClassifier):
     ) -> None:
         """Select winning part counts from pre-built candidates."""
         # Get pre-built candidates
-        candidate_list = result.candidates.get("part_count", [])
+        candidate_list = result.get_candidates("part_count")
 
         # Mark winners (all successfully constructed candidates)
         for candidate in candidate_list:

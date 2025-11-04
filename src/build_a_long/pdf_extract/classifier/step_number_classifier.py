@@ -160,7 +160,7 @@ class StepNumberClassifier(LabelClassifier):
     ) -> None:
         """Select winning step numbers from pre-built candidates."""
         # Get pre-built candidates
-        candidate_list = result.candidates.get("step_number", [])
+        candidate_list = result.get_candidates("step_number")
 
         # Find the page number element to avoid classifying it as a step number
         page_number_elements = result.get_elements_by_label("page_number")

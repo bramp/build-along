@@ -249,7 +249,7 @@ class PartsListClassifier(LabelClassifier):
         used_drawings: set[int] = set()
 
         # Get pre-built candidates
-        candidate_list = result.candidates.get("parts_list", [])
+        candidate_list = result.get_candidates("parts_list")
 
         # Group candidates by step (based on scoring)
         # For each step, find the best parts list drawing
