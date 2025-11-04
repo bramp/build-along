@@ -187,12 +187,11 @@ class PartsListClassifier(LabelClassifier):
         count = len(contained)
         # TODO Change this to a score (normalised by page height)
         proximity = max(0.0, sb.y0 - drawing.bbox.y1)
-        area = drawing.bbox.area()
 
         score = _PartsListScore(
             part_count_count=count,
             proximity=proximity,
-            area=area,
+            area=drawing.bbox.area,
         )
 
         return score

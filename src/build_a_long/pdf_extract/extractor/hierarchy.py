@@ -115,7 +115,7 @@ def build_hierarchy_from_elements(
     converted: List[Element] = list(elements)
 
     # Sort indices by area ascending to assign children first
-    idxs = sorted(range(len(converted)), key=lambda i: converted[i].bbox.area())
+    idxs = sorted(range(len(converted)), key=lambda i: converted[i].bbox.area)
 
     # Prepare parent mapping: each index maps to parent index or None
     parent: List[Optional[int]] = [None] * len(converted)
@@ -128,7 +128,7 @@ def build_hierarchy_from_elements(
             if i == j:
                 continue
             if bbox_i.fully_inside(candidate.bbox):
-                area = candidate.bbox.area()
+                area = candidate.bbox.area
                 if area < best_parent_area:
                     best_parent = j
                     best_parent_area = area

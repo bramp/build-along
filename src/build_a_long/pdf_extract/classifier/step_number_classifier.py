@@ -68,7 +68,7 @@ class StepNumberClassifier(LabelClassifier):
         if not page_num_height or page_num_height <= 0.0:
             return 0.0
 
-        h = max(0.0, element.bbox.y1 - element.bbox.y0)
+        h = element.bbox.height
         if h <= page_num_height * 1.1:
             return 0.0
 
@@ -88,13 +88,13 @@ class StepNumberClassifier(LabelClassifier):
         # Find the page_number element to use for size comparison
         for element in page_data.elements:
             if labeled_elements.get(element) == "page_number":
-                page_num_height = max(0.0, element.bbox.y1 - element.bbox.y0)
+                page_num_height = element.bbox.height
                 break
 
         # Get page bbox and height for bottom band check
         page_bbox = page_data.bbox
         assert page_bbox is not None
-        page_height = page_bbox.y1 - page_bbox.y0
+        page_height = page_bbox.height
 
         # Initialize scores dict for this classifier
         if "step_number" not in scores:

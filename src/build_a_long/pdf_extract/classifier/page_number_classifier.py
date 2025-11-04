@@ -74,9 +74,6 @@ class PageNumberClassifier(LabelClassifier):
         page_bbox = page_data.bbox
         assert page_bbox is not None
 
-        # TODO add height to bbox and use it here.
-        page_height = page_bbox.y1 - page_bbox.y0
-
         # Initialize scores dict for this classifier
         if "page_number" not in scores:
             scores["page_number"] = {}
@@ -88,7 +85,7 @@ class PageNumberClassifier(LabelClassifier):
             # Calculate all score components
             text_score = self._score_page_number_text(element.text)
             position_score = self._score_page_number_position(
-                element, page_bbox, page_height
+                element, page_bbox, page_bbox.height
             )
             page_value_score = self._score_page_number(
                 element.text, page_data.page_number
@@ -162,7 +159,7 @@ class PageNumberClassifier(LabelClassifier):
         """
         page_bbox = page_data.bbox
         assert page_bbox is not None
-        page_height = page_bbox.y1 - page_bbox.y0
+        page_height = page_bbox.height
 
         page_number_scores = scores.get("page_number", {})
         candidate_list: "List[Candidate]" = []

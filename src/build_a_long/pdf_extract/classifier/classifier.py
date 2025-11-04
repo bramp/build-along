@@ -199,9 +199,9 @@ class Classifier:
                 )
                 continue
 
-            cx, cy = b.center()
+            cx, cy = b.center
             if abs(cx - tx) <= CENTER_EPS and abs(cy - ty) <= CENTER_EPS:
-                area = b.area()
+                area = b.area
                 if (
                     target_area > 0
                     and abs(area - target_area) / target_area <= AREA_TOL

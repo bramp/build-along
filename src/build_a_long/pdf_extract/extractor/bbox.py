@@ -1,5 +1,11 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Annotated, Tuple
+
+from annotated_types import Ge
+
+
+# Type alias for non-negative floats
+NonNegativeFloat = Annotated[float, Ge(0)]
 
 
 @dataclass(frozen=True)
@@ -87,9 +93,20 @@ class BBox:
         """Helper to check if vertical projections overlap."""
         return max(self.y0, other.y0) < min(self.y1, other.y1)
 
-    def area(self) -> float:
+    @property
+    def width(self) -> NonNegativeFloat:
+        """Return the width of this bounding box (non-negative)."""
+        return self.x1 - self.x0
+
+    @property
+    def height(self) -> NonNegativeFloat:
+        """Return the height of this bounding box (non-negative)."""
+        return self.y1 - self.y0
+
+    @property
+    def area(self) -> NonNegativeFloat:
         """Return the area of this bounding box (non-negative)."""
-        return (self.x1 - self.x0) * (self.y1 - self.y0)
+        return self.width * self.height
 
     def intersection_area(self, other: "BBox") -> float:
         """Return the area of intersection between this bbox and another."""
@@ -109,11 +126,12 @@ class BBox:
         inter = self.intersection_area(other)
         if inter == 0.0:
             return 0.0
-        ua = self.area() + other.area() - inter
+        ua = self.area + other.area - inter
         if ua <= 0.0:
             return 0.0
         return inter / ua
 
+    @property
     def center(self) -> Tuple[float, float]:
         """Return the (x, y) center point of the bbox."""
         return ((self.x0 + self.x1) / 2.0, (self.y0 + self.y1) / 2.0)

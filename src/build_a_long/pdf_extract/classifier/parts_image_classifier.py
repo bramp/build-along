@@ -113,9 +113,7 @@ class PartsImageClassifier(LabelClassifier):
         if not images:
             return
 
-        page_width = (
-            (page_data.bbox.x1 - page_data.bbox.x0) if page_data.bbox else 100.0
-        )
+        page_width = page_data.bbox.width if page_data.bbox else 100.0
 
         # Initialize scores dict for this classifier
         if "part_image" not in scores:
