@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
+from build_a_long.pdf_extract.extractor.page_elements import Drawing
 
 
 @dataclass
@@ -58,13 +59,15 @@ class PartCount(LegoPageElement):
 class Part(LegoPageElement):
     """A single part entry within a parts list."""
 
-    name: Optional[str]
-    number: Optional[str]
+    count: PartCount
+    diagram: Optional[Drawing] = None  # TODO Make this required
+
+    # Name and Number are not directly extracted, but may be filled in later
+    name: Optional[str] = None
+    number: Optional[str] = None
 
     # TODO maybe add color?
     # TODO Some parts have a "shiny" highlight - maybe reference that image
-
-    count: PartCount
 
 
 @dataclass

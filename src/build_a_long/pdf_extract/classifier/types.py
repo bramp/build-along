@@ -175,6 +175,7 @@ class ClassificationResult:
         """
         return self._constructed_elements.get(element)
 
+    # TODO maybe add a parameter to fitler out winners/non-winners
     def get_candidates(self, label: str) -> List[Candidate]:
         """Get all candidates for a specific label.
 
@@ -227,6 +228,7 @@ class ClassificationResult:
         """
         self._removal_reasons[id(element)] = reason
 
+    # TODO Consider removing this method.
     def get_labeled_elements(self) -> Dict[Element, str]:
         """Get a dictionary of all labeled elements.
 
