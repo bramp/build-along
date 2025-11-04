@@ -88,7 +88,6 @@ class LegoPageBuilder:
             parts_lists=parts_lists,
             warnings=self.warnings,
             unprocessed_elements=self.unprocessed,
-            id=None,  # Page is synthetic, not from a single source element
         )
 
     def _extract_page_number(self) -> Optional[PageNumber]:
@@ -110,7 +109,7 @@ class LegoPageBuilder:
             # Extract numeric value using shared extraction logic
             value = extract_page_number_value(element.text)
             if value is not None:
-                return PageNumber(bbox=element.bbox, value=value, id=element.id)
+                return PageNumber(bbox=element.bbox, value=value)
             else:
                 self.warnings.append(
                     f"Could not parse page number from text: '{element.text}'"
@@ -165,7 +164,7 @@ class LegoPageBuilder:
             )
             return None
 
-        step_number = StepNumber(bbox=step_elem.bbox, value=value, id=step_elem.id)
+        step_number = StepNumber(bbox=step_elem.bbox, value=value)
         self.converted.add(id(step_elem))
 
         # TODO: Find associated parts_list and diagram
@@ -174,17 +173,16 @@ class LegoPageBuilder:
 
         # Create a placeholder diagram using the step number's bbox
         # In the future, we should find the actual diagram element
-        diagram = Diagram(bbox=step_elem.bbox, id=None)
+        diagram = Diagram(bbox=step_elem.bbox)
 
         # Create a minimal parts list
-        parts_list = PartsList(bbox=step_elem.bbox, parts=[], id=None)
+        parts_list = PartsList(bbox=step_elem.bbox, parts=[])
 
         return Step(
             bbox=step_elem.bbox,
             step_number=step_number,
             parts_list=parts_list,
             diagram=diagram,
-            id=step_elem.id,
         )
 
     def _extract_standalone_parts_lists(self) -> List[PartsList]:
@@ -225,7 +223,6 @@ class LegoPageBuilder:
         return PartsList(
             bbox=parts_list_elem.bbox,
             parts=parts,
-            id=parts_list_elem.id,
         )
 
     def _extract_parts_from_list(self, parts_list_elem: Element) -> List[Part]:
@@ -288,7 +285,6 @@ class LegoPageBuilder:
         part_count = PartCount(
             bbox=part_count_elem.bbox,
             count=count_value,
-            id=part_count_elem.id,
         )
 
         # Combine bboxes of part_count and image to get Part bbox
@@ -305,7 +301,6 @@ class LegoPageBuilder:
             name=None,
             number=None,
             count=part_count,
-            id=None,  # Part is a composite, so no single source id
         )
 
     def _is_inside(self, element: Element, container: Element) -> bool:

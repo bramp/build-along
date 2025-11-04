@@ -26,7 +26,6 @@ class LegoPageElement(JSONPyWizard):
         auto_assign_tags = True
 
     bbox: BBox
-    id: Optional[int] = field(default=None, kw_only=True)
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
