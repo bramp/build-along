@@ -20,6 +20,7 @@ from build_a_long.pdf_extract.classifier.types import (
     RemovalReason,
 )
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import PageNumber
 from build_a_long.pdf_extract.extractor.page_elements import Element, Text
 
@@ -68,25 +69,22 @@ class PageNumberClassifier(LabelClassifier):
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
     ) -> None:
-        if not page_data.elements:
-            return
-
         page_bbox = page_data.bbox
         assert page_bbox is not None
 
         # Initialize scores dict for this classifier
+        # TODO Do we need to do this? or should scores already have it?
         if "page_number" not in scores:
             scores["page_number"] = {}
 
         for element in page_data.elements:
+            # TODO Support non-text elements - such as images of text.
             if not isinstance(element, Text):
                 continue
 
-            # Calculate all score components
             text_score = self._score_page_number_text(element.text)
-            position_score = self._score_page_number_position(
-                element, page_bbox, page_bbox.height
-            )
+
+            position_score = self._score_page_number_position(element, page_bbox)
             page_value_score = self._score_page_number(
                 element.text, page_data.page_number
             )
@@ -107,23 +105,12 @@ class PageNumberClassifier(LabelClassifier):
         scores: Dict[str, Dict[Any, Any]],
         labeled_elements: Dict[Any, str],
         removal_reasons: Dict[int, RemovalReason],
-        hints: "Optional[ClassificationHints]" = None,
-        constructed_elements: "Optional[Dict[Element, Any]]" = None,
-        candidates: "Optional[Dict[str, List[Candidate]]]" = None,
+        hints: "Optional[ClassificationHints]",
+        constructed_elements: "Dict[Element, Any]",
+        candidates: "Dict[str, List[Candidate]]",
     ) -> None:
-        if not page_data.elements:
-            return
-
-        if constructed_elements is None:
-            constructed_elements = {}
-        if candidates is None:
-            candidates = {}
-
         # Build candidate list from scored elements
         candidate_list = self._build_candidates(page_data, scores)
-
-        # Apply hints to filter candidates
-        candidate_list = self._apply_hints(candidate_list, hints)
 
         if not candidate_list:
             return
@@ -159,34 +146,18 @@ class PageNumberClassifier(LabelClassifier):
         """
         page_bbox = page_data.bbox
         assert page_bbox is not None
-        page_height = page_bbox.height
 
         page_number_scores = scores.get("page_number", {})
         candidate_list: "List[Candidate]" = []
 
         for element in page_data.elements:
-            if not isinstance(element, Text):
-                continue
-
             # Get the score object and compute combined score
-            score_obj = page_number_scores.get(element)
-            if not isinstance(score_obj, _PageNumberScore):
+            score = page_number_scores.get(element)
+            if not isinstance(score, _PageNumberScore):
                 continue
 
-            combined_score = score_obj.combined_score(self.config)
-
-            # Still create candidates for low-scoring elements (for debugging/testing)
-            # but they won't be selected as winners
-            meets_threshold = combined_score >= self.config.min_confidence_threshold
-
-            # Require the element to be in the bottom band of the page
-            position_score = self._score_page_number_position(
-                element, page_bbox, page_height
-            )
-            in_position = position_score > 0.0
-
-            # Skip if both conditions fail
-            if not meets_threshold and not in_position:
+            # TODO Support non-text elements - such as images of text.
+            if not isinstance(element, Text):
                 continue
 
             # Try to construct the LegoElement (parse the text)
@@ -194,7 +165,7 @@ class PageNumberClassifier(LabelClassifier):
             constructed_elem = None
             failure_reason = None
 
-            if value is not None:
+            if value is not None and value >= 0:
                 constructed_elem = PageNumber(
                     value=value, bbox=element.bbox, id=element.id
                 )
@@ -209,8 +180,8 @@ class PageNumberClassifier(LabelClassifier):
                 Candidate(
                     source_element=element,
                     label="page_number",
-                    score=combined_score,
-                    score_details=score_obj,
+                    score=score.combined_score(self.config),
+                    score_details=score,
                     constructed=constructed_elem,
                     failure_reason=failure_reason,
                     is_winner=False,  # Will be set by _select_winner
@@ -218,31 +189,6 @@ class PageNumberClassifier(LabelClassifier):
             )
 
         return candidate_list
-
-    def _apply_hints(
-        self,
-        candidate_list: "List[Candidate]",
-        hints: "Optional[ClassificationHints]",
-    ) -> "List[Candidate]":
-        """Apply hints to filter candidate list.
-
-        Args:
-            candidate_list: List of candidates to filter
-            hints: Optional classification hints with element constraints
-
-        Returns:
-            Filtered list of candidates that match hint constraints.
-        """
-        if not hints or not hints.element_constraints:
-            return candidate_list
-
-        # Filter: keep only candidates that match constraints
-        return [
-            c
-            for c in candidate_list
-            if id(c.source_element) not in hints.element_constraints
-            or hints.element_constraints[id(c.source_element)] == "page_number"
-        ]
 
     def _select_winner(
         self, candidate_list: "List[Candidate]"
@@ -291,13 +237,13 @@ class PageNumberClassifier(LabelClassifier):
         diff = abs(value - page_number)
         return max(0.0, 1.0 - 0.1 * diff)
 
-    def _is_in_bottom_band(self, element: Text, page_bbox, page_height: float) -> bool:
+    def _is_in_bottom_band(self, element: Text, page_bbox: BBox) -> bool:
         """Check if the element is in the bottom 10% of the page height."""
-        bottom_threshold = page_bbox.y1 - (page_height * 0.1)
+        bottom_threshold = page_bbox.y1 - (page_bbox.height * 0.1)
         element_center_y = (element.bbox.y0 + element.bbox.y1) / 2
         return element_center_y >= bottom_threshold
 
-    def _calculate_position_score(self, element: Text, page_bbox) -> float:
+    def _calculate_position_score(self, element: Text, page_bbox: BBox) -> float:
         """Calculate position score based on distance to bottom corners. Based
         on exp(-min_distance_to_bottom_corners / scale)"""
         element_center_x = (element.bbox.x0 + element.bbox.x1) / 2
@@ -313,13 +259,11 @@ class PageNumberClassifier(LabelClassifier):
         min_dist = min(dist_bottom_left, dist_bottom_right)
         return math.exp(-min_dist / self.config.page_number_position_scale)
 
-    def _score_page_number_position(
-        self, element: Text, page_bbox, page_height: float
-    ) -> float:
+    def _score_page_number_position(self, element: Text, page_bbox: BBox) -> float:
         # TODO Take the hint, and increase score if near expected position (of
         # expected size).
 
-        if not self._is_in_bottom_band(element, page_bbox, page_height):
+        if not self._is_in_bottom_band(element, page_bbox):
             return 0.0
 
         # TODO it might be simplier to check if in left or right band.

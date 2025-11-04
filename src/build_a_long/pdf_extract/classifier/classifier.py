@@ -179,9 +179,8 @@ class Classifier:
         if keep_ids is None:
             keep_ids = set()
 
-        target_bbox = target.bbox
-        target_area = target_bbox.area()
-        tx, ty = target_bbox.center()
+        target_area = target.bbox.area
+        tx, ty = target.bbox.center
 
         IOU_THRESHOLD = 0.8
         CENTER_EPS = 1.5
@@ -192,7 +191,7 @@ class Classifier:
                 continue
 
             b = ele.bbox
-            iou = target_bbox.iou(b)
+            iou = target.bbox.iou(b)
             if iou >= IOU_THRESHOLD:
                 removal_reasons[id(ele)] = RemovalReason(
                     reason_type="similar_bbox", target_element=target

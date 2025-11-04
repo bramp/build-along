@@ -48,6 +48,7 @@ class Candidate:
     label: str
     """The label this candidate would have (e.g., 'page_number')"""
 
+    # TODO Maybe score is redudant with score_details?
     score: float
     """Combined score (0.0-1.0)"""
 
@@ -60,6 +61,7 @@ class Candidate:
     failure_reason: "Optional[str]" = None
     """Why construction failed, if it did"""
 
+    # TODO Is this redudant with being in the constructed_elements?
     is_winner: bool = False
     """Whether this candidate was selected as the winner"""
 
@@ -68,6 +70,7 @@ class Candidate:
 class ClassifierConfig:
     """Configuration for the classifier."""
 
+    # TODO Not sure what this value is used for
     min_confidence_threshold: float = 0.5
 
     page_number_text_weight: float = 0.7
@@ -245,5 +248,4 @@ class ClassificationResult:
 class ClassificationHints:
     """Hints to guide the classification process."""
 
-    element_constraints: Dict[int, str] = field(default_factory=dict)
-    global_goals: Dict[int, str] = field(default_factory=dict)
+    pass
