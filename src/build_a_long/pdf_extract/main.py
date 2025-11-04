@@ -15,6 +15,7 @@ from build_a_long.pdf_extract.classifier import classify_pages
 from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.classifier.types import ClassificationResult
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
+from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 from build_a_long.pdf_extract.parser import parse_page_ranges
 from build_a_long.pdf_extract.parser.page_ranges import PageRanges
 
@@ -234,6 +235,44 @@ def _print_label_counts(page: PageData, result: ClassificationResult) -> None:
     logger.info(f"Page {page.page_number} Label counts: {label_counts}")
 
 
+def _print_page_hierarchy(page_data: PageData, page: Page) -> None:
+    print(f"Page {page_data.page_number}:")
+
+    if page.page_number:
+        print(f"  ✓ Page Number: {page.page_number.value}")
+
+    if page.steps:
+        print(f"  ✓ Steps: {len(page.steps)}")
+        for step in page.steps:
+            parts_count = len(step.parts_list.parts)
+            print(f"    - Step {step.step_number.value} ({parts_count} parts)")
+            # Print parts list details
+            if step.parts_list.parts:
+                print("      Parts List:")
+                for part in step.parts_list.parts:
+                    print(
+                        f"        • {part.count.count}x {part.name or 'unnamed'} ({part.number or 'no number'})"
+                    )
+            else:
+                print("      Parts List: (empty)")
+
+            print(f"      Diagram: {step.diagram.bbox}")
+
+    if page.parts_lists:
+        print(f"  ✓ Unassigned Parts Lists: {len(page.parts_lists)}")
+        for pl in page.parts_lists:
+            total_items = sum(p.count.count for p in pl.parts)
+            print(f"    - {len(pl.parts)} part types, {total_items} total items")
+
+    if page.warnings:
+        print(f"  ⚠ Warnings: {len(page.warnings)}")
+        for warning in page.warnings:
+            print(f"    - {warning}")
+
+    if page.unprocessed_elements:
+        print(f"  ℹ Unprocessed elements: {len(page.unprocessed_elements)}")
+
+
 def _build_page_hierarchy(
     pages: List[PageData], results: List[ClassificationResult]
 ) -> None:
@@ -243,47 +282,11 @@ def _build_page_hierarchy(
         pages: List of PageData containing extracted elements
         results: List of ClassificationResult with labels and relationships
     """
-    logger.info("Building LEGO page hierarchy...")
+    print("Building LEGO page hierarchy...")
 
     for page_data, result in zip(pages, results):
         page = build_page(page_data, result)
-
-        # Log structured information about the page
-        logger.info("Page %d:", page_data.page_number)
-
-        if page.page_number:
-            logger.info("  ✓ Page Number: %d", page.page_number.value)
-
-        if page.steps:
-            logger.info("  ✓ Steps: %d", len(page.steps))
-            for step in page.steps:
-                parts_count = len(step.parts_list.parts)
-                if parts_count > 0:
-                    logger.info(
-                        "    - Step %d (%d parts)",
-                        step.step_number.value,
-                        parts_count,
-                    )
-                else:
-                    logger.info("    - Step %d", step.step_number.value)
-
-        if page.parts_lists:
-            logger.info("  ✓ Standalone Parts Lists: %d", len(page.parts_lists))
-            for pl in page.parts_lists:
-                total_items = sum(p.count.count for p in pl.parts)
-                logger.info(
-                    "    - %d part types, %d total items",
-                    len(pl.parts),
-                    total_items,
-                )
-
-        if page.warnings:
-            logger.warning("  ⚠ Warnings: %d", len(page.warnings))
-            for warning in page.warnings:
-                logger.warning("    - %s", warning)
-
-        if page.unprocessed_elements:
-            logger.info("  ℹ Unprocessed elements: %d", len(page.unprocessed_elements))
+        _print_page_hierarchy(page_data, page)
 
 
 def main() -> int:
