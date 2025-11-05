@@ -28,12 +28,13 @@ class PageElement:
     Contract:
     - Every element has exactly one bounding box in page coordinates
       (same coordinate system produced by the extractor).
+    - Every element must have a unique ID assigned by the Extractor.
     - Subclasses are small data holders.
     - deleted: True if this element was removed during classification (e.g., duplicate).
     """
 
     bbox: BBox
-    id: int | None = field(default=None, kw_only=True)
+    id: int = field(kw_only=True)
 
     def __hash__(self):
         return id(self)

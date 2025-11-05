@@ -17,9 +17,9 @@ def test_step_number():
 
 
 def test_drawing_optional_id():
-    d = Drawing(bbox=BBox(1, 1, 100, 100))
+    d = Drawing(bbox=BBox(1, 1, 100, 100), id=0)
     assert d.image_id is None
-    d2 = Drawing(bbox=BBox(1, 1, 100, 100), image_id="img_1")
+    d2 = Drawing(bbox=BBox(1, 1, 100, 100), image_id="img_1", id=1)
     assert d2.image_id == "img_1"
 
 

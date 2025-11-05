@@ -48,7 +48,7 @@ class TestPageNumberExtraction:
     def test_extract_single_page_number(self) -> None:
         """Test extracting a single page number."""
         page_bbox = BBox(0, 0, 100, 200)
-        page_number_text = Text(bbox=BBox(5, 190, 15, 198), text="5")
+        page_number_text = Text(bbox=BBox(5, 190, 15, 198), text="5", id=0)
 
         page_data = PageData(
             page_number=5,
@@ -75,7 +75,7 @@ class TestPageNumberExtraction:
     def test_extract_no_page_number(self) -> None:
         """Test when there's no page number."""
         page_bbox = BBox(0, 0, 100, 200)
-        some_text = Text(bbox=BBox(5, 10, 15, 18), text="Hello")
+        some_text = Text(bbox=BBox(5, 10, 15, 18), text="Hello", id=0)
 
         page_data = PageData(
             page_number=1,
@@ -92,8 +92,8 @@ class TestPageNumberExtraction:
     def test_extract_multiple_page_numbers_warns(self) -> None:
         """Test that multiple page numbers generates a warning."""
         page_bbox = BBox(0, 0, 100, 200)
-        page_number_1 = Text(bbox=BBox(5, 190, 15, 198), text="5")
-        page_number_2 = Text(bbox=BBox(85, 190, 95, 198), text="5")
+        page_number_1 = Text(bbox=BBox(5, 190, 15, 198), text="5", id=0)
+        page_number_2 = Text(bbox=BBox(85, 190, 95, 198), text="5", id=1)
 
         page_data = PageData(
             page_number=5,
@@ -120,7 +120,7 @@ class TestPageNumberExtraction:
     def test_invalid_page_number_text(self) -> None:
         """Test handling of non-numeric page number text."""
         page_bbox = BBox(0, 0, 100, 200)
-        page_number_text = Text(bbox=BBox(5, 190, 15, 198), text="abc")
+        page_number_text = Text(bbox=BBox(5, 190, 15, 198), text="abc", id=0)
 
         page_data = PageData(
             page_number=1,
@@ -149,7 +149,7 @@ class TestStepExtraction:
     def test_extract_single_step(self) -> None:
         """Test extracting a single step."""
         page_bbox = BBox(0, 0, 100, 200)
-        step_number_text = Text(bbox=BBox(10, 10, 20, 20), text="1")
+        step_number_text = Text(bbox=BBox(10, 10, 20, 20), text="1", id=0)
 
         page_data = PageData(
             page_number=1,
@@ -176,8 +176,8 @@ class TestStepExtraction:
     def test_extract_multiple_steps(self) -> None:
         """Test extracting multiple steps."""
         page_bbox = BBox(0, 0, 100, 200)
-        step_1 = Text(bbox=BBox(10, 10, 20, 20), text="1")
-        step_2 = Text(bbox=BBox(10, 50, 20, 60), text="2")
+        step_1 = Text(bbox=BBox(10, 10, 20, 20), text="1", id=0)
+        step_2 = Text(bbox=BBox(10, 50, 20, 60), text="2", id=1)
 
         page_data = PageData(
             page_number=1,
@@ -207,7 +207,7 @@ class TestStepExtraction:
     def test_invalid_step_number_text(self) -> None:
         """Test handling of non-numeric step number text."""
         page_bbox = BBox(0, 0, 100, 200)
-        step_text = Text(bbox=BBox(10, 10, 20, 20), text="abc")
+        step_text = Text(bbox=BBox(10, 10, 20, 20), text="abc", id=0)
 
         page_data = PageData(
             page_number=1,
@@ -235,7 +235,7 @@ class TestPartsListExtraction:
     def test_extract_empty_parts_list(self) -> None:
         """Test extracting a parts list with no parts."""
         page_bbox = BBox(0, 0, 100, 200)
-        parts_list_drawing = Drawing(bbox=BBox(10, 10, 90, 50))
+        parts_list_drawing = Drawing(bbox=BBox(10, 10, 90, 50), id=0)
 
         page_data = PageData(
             page_number=1,
@@ -262,11 +262,11 @@ class TestPartsListExtraction:
     def test_extract_parts_list_with_parts(self) -> None:
         """Test extracting a parts list with parts."""
         page_bbox = BBox(0, 0, 100, 200)
-        parts_list_drawing = Drawing(bbox=BBox(10, 10, 90, 100))
-        part_count_1 = Text(bbox=BBox(15, 15, 25, 25), text="2x")
-        part_image_1 = Image(bbox=BBox(30, 15, 50, 35))
-        part_count_2 = Text(bbox=BBox(15, 40, 25, 50), text="1x")
-        part_image_2 = Image(bbox=BBox(30, 40, 50, 60))
+        parts_list_drawing = Drawing(bbox=BBox(10, 10, 90, 100), id=0)
+        part_count_1 = Text(bbox=BBox(15, 15, 25, 25), text="2x", id=1)
+        part_image_1 = Image(bbox=BBox(30, 15, 50, 35), id=2)
+        part_count_2 = Text(bbox=BBox(15, 40, 25, 50), text="1x", id=3)
+        part_image_2 = Image(bbox=BBox(30, 40, 50, 60), id=4)
 
         page_data = PageData(
             page_number=1,
@@ -321,11 +321,11 @@ class TestPartsListExtraction:
     def test_parts_outside_parts_list_not_included(self) -> None:
         """Test that parts outside the parts_list bbox are not included."""
         page_bbox = BBox(0, 0, 100, 200)
-        parts_list_drawing = Drawing(bbox=BBox(10, 10, 50, 50))
-        part_count_inside = Text(bbox=BBox(15, 15, 25, 25), text="2x")
-        part_image_inside = Image(bbox=BBox(30, 15, 45, 35))
-        part_count_outside = Text(bbox=BBox(60, 60, 70, 70), text="1x")
-        part_image_outside = Image(bbox=BBox(75, 60, 90, 80))
+        parts_list_drawing = Drawing(bbox=BBox(10, 10, 50, 50), id=0)
+        part_count_inside = Text(bbox=BBox(15, 15, 25, 25), text="2x", id=1)
+        part_image_inside = Image(bbox=BBox(30, 15, 45, 35), id=2)
+        part_count_outside = Text(bbox=BBox(60, 60, 70, 70), text="1x", id=3)
+        part_image_outside = Image(bbox=BBox(75, 60, 90, 80), id=4)
 
         page_data = PageData(
             page_number=1,
@@ -380,9 +380,9 @@ class TestPartExtraction:
     def test_parse_part_count_with_x_suffix(self) -> None:
         """Test parsing part count text with 'x' suffix."""
         page_bbox = BBox(0, 0, 100, 200)
-        parts_list = Drawing(bbox=BBox(10, 10, 90, 50))
-        part_count = Text(bbox=BBox(15, 15, 25, 25), text="3x")
-        part_image = Image(bbox=BBox(30, 15, 50, 35))
+        parts_list = Drawing(bbox=BBox(10, 10, 90, 50), id=0)
+        part_count = Text(bbox=BBox(15, 15, 25, 25), text="3x", id=1)
+        part_image = Image(bbox=BBox(30, 15, 50, 35), id=2)
 
         page_data = PageData(
             page_number=1,
@@ -414,9 +414,11 @@ class TestPartExtraction:
     def test_parse_part_count_without_x_suffix(self) -> None:
         """Test that part count text without 'x' suffix is rejected."""
         page_bbox = BBox(0, 0, 100, 200)
-        parts_list = Drawing(bbox=BBox(10, 10, 90, 50))
-        part_count = Text(bbox=BBox(15, 15, 25, 25), text="5")  # Missing 'x' suffix
-        part_image = Image(bbox=BBox(30, 15, 50, 35))
+        parts_list = Drawing(bbox=BBox(10, 10, 90, 50), id=0)
+        part_count = Text(
+            bbox=BBox(15, 15, 25, 25), text="5", id=1
+        )  # Missing 'x' suffix
+        part_image = Image(bbox=BBox(30, 15, 50, 35), id=2)
 
         page_data = PageData(
             page_number=1,
@@ -450,9 +452,9 @@ class TestPartExtraction:
     def test_invalid_part_count_text(self) -> None:
         """Test handling of non-numeric part count text."""
         page_bbox = BBox(0, 0, 100, 200)
-        parts_list = Drawing(bbox=BBox(10, 10, 90, 50))
-        part_count = Text(bbox=BBox(15, 15, 25, 25), text="abc")
-        part_image = Image(bbox=BBox(30, 15, 50, 35))
+        parts_list = Drawing(bbox=BBox(10, 10, 90, 50), id=0)
+        part_count = Text(bbox=BBox(15, 15, 25, 25), text="abc", id=1)
+        part_image = Image(bbox=BBox(30, 15, 50, 35), id=2)
 
         page_data = PageData(
             page_number=1,
@@ -486,9 +488,9 @@ class TestPartExtraction:
     def test_part_bbox_combines_count_and_image(self) -> None:
         """Test that Part bbox is the union of count and image bboxes."""
         page_bbox = BBox(0, 0, 100, 200)
-        parts_list = Drawing(bbox=BBox(10, 10, 90, 100))
-        part_count = Text(bbox=BBox(15, 20, 25, 30), text="1x")
-        part_image = Image(bbox=BBox(30, 15, 50, 35))
+        parts_list = Drawing(bbox=BBox(10, 10, 90, 100), id=0)
+        part_count = Text(bbox=BBox(15, 20, 25, 30), text="1x", id=1)
+        part_image = Image(bbox=BBox(30, 15, 50, 35), id=2)
 
         page_data = PageData(
             page_number=1,
@@ -527,8 +529,8 @@ class TestUnprocessedElements:
     def test_unprocessed_elements_excluded_removed(self) -> None:
         """Test that removed elements are not in unprocessed."""
         page_bbox = BBox(0, 0, 100, 200)
-        removed_text = Text(bbox=BBox(5, 5, 15, 15), text="removed")
-        kept_text = Text(bbox=BBox(20, 20, 30, 30), text="kept")
+        removed_text = Text(bbox=BBox(5, 5, 15, 15), text="removed", id=0)
+        kept_text = Text(bbox=BBox(20, 20, 30, 30), text="kept", id=1)
 
         page_data = PageData(
             page_number=1,
@@ -555,8 +557,8 @@ class TestUnprocessedElements:
     def test_unprocessed_elements_excluded_unlabeled(self) -> None:
         """Test that unlabeled elements are not in unprocessed."""
         page_bbox = BBox(0, 0, 100, 200)
-        unlabeled_text = Text(bbox=BBox(5, 5, 15, 15), text="unlabeled")
-        labeled_text = Text(bbox=BBox(20, 20, 30, 30), text="labeled")
+        unlabeled_text = Text(bbox=BBox(5, 5, 15, 15), text="unlabeled", id=0)
+        labeled_text = Text(bbox=BBox(20, 20, 30, 30), text="labeled", id=1)
 
         page_data = PageData(
             page_number=1,
@@ -588,18 +590,18 @@ class TestIntegration:
         page_bbox = BBox(0, 0, 200, 300)
 
         # Page number
-        page_num = Text(bbox=BBox(5, 290, 15, 298), text="7")
+        page_num = Text(bbox=BBox(5, 290, 15, 298), text="7", id=0)
 
         # Step 1
-        step_1_num = Text(bbox=BBox(10, 10, 20, 20), text="1")
+        step_1_num = Text(bbox=BBox(10, 10, 20, 20), text="1", id=1)
 
         # Step 2
-        step_2_num = Text(bbox=BBox(10, 100, 20, 110), text="2")
+        step_2_num = Text(bbox=BBox(10, 100, 20, 110), text="2", id=2)
 
         # Parts list
-        parts_list = Drawing(bbox=BBox(120, 10, 190, 100))
-        part_count_1 = Text(bbox=BBox(125, 15, 135, 25), text="2x")
-        part_image_1 = Image(bbox=BBox(140, 15, 160, 35))
+        parts_list = Drawing(bbox=BBox(120, 10, 190, 100), id=3)
+        part_count_1 = Text(bbox=BBox(125, 15, 135, 25), text="2x", id=4)
+        part_image_1 = Image(bbox=BBox(140, 15, 160, 35), id=5)
 
         page_data = PageData(
             page_number=7,
