@@ -11,19 +11,16 @@ class TestPartCountClassification:
 
     def test_detect_multiple_piece_counts(self) -> None:
         page_bbox = BBox(0, 0, 100, 200)
-        t1 = Text(bbox=BBox(10, 50, 20, 60), text="2x")
-        t2 = Text(bbox=BBox(10, 50, 20, 60), text="2X")  # uppercase X
-        t3 = Text(bbox=BBox(30, 50, 40, 60), text="2×")  # times symbol
-        t4 = Text(bbox=BBox(50, 50, 70, 60), text="hello")
+        t1 = Text(id=0, bbox=BBox(10, 50, 20, 60), text="2x")
+        t2 = Text(id=1, bbox=BBox(10, 50, 20, 60), text="2X")  # uppercase X
+        t3 = Text(id=2, bbox=BBox(30, 50, 40, 60), text="2×")  # times symbol
+        t4 = Text(id=3, bbox=BBox(50, 50, 70, 60), text="hello")
 
         page = PageData(
             page_number=1,
             elements=[t1, t2, t3, t4],
             bbox=page_bbox,
         )
-
-        # Use elements from page since PageData may reassign IDs
-        t1, t2, t3, t4 = page.elements
 
         result = classify_elements(page)
 

@@ -64,6 +64,7 @@ class TestClassifyPageNumber:
         """Test identifying a page number in the bottom-left corner."""
         page_bbox = BBox(0, 0, 100, 200)
         page_number_text = Text(
+            id=0,
             bbox=BBox(5, 190, 15, 198),  # Bottom-left position
             text="1",
         )
@@ -73,9 +74,6 @@ class TestClassifyPageNumber:
             elements=[page_number_text],
             bbox=page_bbox,
         )
-
-        # Use element from page_data since PageData may reassign IDs
-        page_number_text = page_data.elements[0]
 
         results = classify_elements(page_data)
 
@@ -91,6 +89,7 @@ class TestClassifyPageNumber:
         """Test identifying a page number in the bottom-right corner."""
         page_bbox = BBox(0, 0, 100, 200)
         page_number_text = Text(
+            id=0,
             bbox=BBox(90, 190, 98, 198),  # Bottom-right position
             text="5",
         )
@@ -100,9 +99,6 @@ class TestClassifyPageNumber:
             elements=[page_number_text],
             bbox=page_bbox,
         )
-
-        # Use element from page_data since PageData may reassign IDs
-        page_number_text = page_data.elements[0]
 
         result = classify_elements(page_data)
 
@@ -118,12 +114,14 @@ class TestClassifyPageNumber:
 
         # Element in center-bottom (less preferred)
         center_text = Text(
+            id=0,
             bbox=BBox(45, 190, 55, 198),
             text="2",
         )
 
         # Element in corner (more preferred)
         corner_text = Text(
+            id=1,
             bbox=BBox(5, 190, 15, 198),
             text="3",
         )
@@ -133,9 +131,6 @@ class TestClassifyPageNumber:
             elements=[center_text, corner_text],
             bbox=page_bbox,
         )
-
-        # Use elements from page_data since PageData may reassign IDs
-        center_text, corner_text = page_data.elements
 
         result = classify_elements(page_data)
 
@@ -157,17 +152,14 @@ class TestClassifyPageNumber:
         """Prefer element whose numeric value equals PageData.page_number."""
         page_bbox = BBox(0, 0, 100, 200)
         # Two numbers, both near bottom, but only one matches the page number 7
-        txt6 = Text(bbox=BBox(10, 190, 14, 196), text="6")
-        txt7 = Text(bbox=BBox(90, 190, 94, 196), text="7")
+        txt6 = Text(id=0, bbox=BBox(10, 190, 14, 196), text="6")
+        txt7 = Text(id=1, bbox=BBox(90, 190, 94, 196), text="7")
 
         page_data = PageData(
             page_number=7,
             elements=[txt6, txt7],
             bbox=page_bbox,
         )
-
-        # Use elements from page_data since PageData may reassign IDs
-        txt6, txt7 = page_data.elements
 
         result = classify_elements(page_data)
 
@@ -178,18 +170,15 @@ class TestClassifyPageNumber:
         """After choosing page number, remove nearly identical shadow/duplicate elements."""
         page_bbox = BBox(0, 0, 100, 200)
         # Chosen page number
-        pn = Text(bbox=BBox(10, 190, 14, 196), text="3")
+        pn = Text(id=0, bbox=BBox(10, 190, 14, 196), text="3")
         # Very similar drawing (e.g., stroke/shadow) almost same bbox
-        dup = Drawing(bbox=BBox(10.2, 190.1, 14.1, 195.9))
+        dup = Drawing(id=1, bbox=BBox(10.2, 190.1, 14.1, 195.9))
 
         page_data = PageData(
             page_number=3,
             elements=[pn, dup],
             bbox=page_bbox,
         )
-
-        # Use elements from page_data since PageData may reassign IDs
-        pn, dup = page_data.elements
 
         result = classify_elements(page_data)
 
@@ -204,6 +193,7 @@ class TestClassifyPageNumber:
         """Test that non-numeric text scores low."""
         page_bbox = BBox(0, 0, 100, 200)
         text_element = Text(
+            id=0,
             bbox=BBox(5, 190, 50, 198),  # Bottom-left position
             text="Hello World",
         )
@@ -213,9 +203,6 @@ class TestClassifyPageNumber:
             elements=[text_element],
             bbox=page_bbox,
         )
-
-        # Use element from page_data since PageData may reassign IDs
-        text_element = page_data.elements[0]
 
         result = classify_elements(page_data)
 

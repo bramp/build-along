@@ -17,30 +17,27 @@ class TestPartsListClassification:
         page_bbox = BBox(0, 0, 200, 300)
 
         # Page and step
-        pn = Text(bbox=BBox(10, 285, 20, 295), text="6")
+        pn = Text(id=0, bbox=BBox(10, 285, 20, 295), text="6")
         step = Text(
-            bbox=BBox(50, 180, 70, 210), text="10"
+            id=1, bbox=BBox(50, 180, 70, 210), text="10"
         )  # height 30 (taller than PN)
 
         # Two drawings above the step; only d1 contains part counts
-        d1 = Drawing(bbox=BBox(30, 100, 170, 160))
-        d2 = Drawing(bbox=BBox(20, 40, 180, 80))
+        d1 = Drawing(id=2, bbox=BBox(30, 100, 170, 160))
+        d2 = Drawing(id=3, bbox=BBox(20, 40, 180, 80))
 
         # Part counts inside d1
-        pc1 = Text(bbox=BBox(40, 110, 55, 120), text="2x")
-        pc2 = Text(bbox=BBox(100, 130, 115, 140), text="5×")
+        pc1 = Text(id=4, bbox=BBox(40, 110, 55, 120), text="2x")
+        pc2 = Text(id=5, bbox=BBox(100, 130, 115, 140), text="5×")
 
         # Some unrelated text
-        other = Text(bbox=BBox(10, 10, 40, 20), text="hello")
+        other = Text(id=6, bbox=BBox(10, 10, 40, 20), text="hello")
 
         page = PageData(
             page_number=6,
             elements=[pn, step, d1, d2, pc1, pc2, other],
             bbox=page_bbox,
         )
-
-        # Use elements from page since PageData may reassign IDs
-        pn, step, d1, d2, pc1, pc2, other = page.elements
 
         result = classify_elements(page)
 
@@ -122,29 +119,27 @@ class TestPartsListClassification:
 
         # A part count inside the drawings
         pc = Text(
+            id=0,
             bbox=BBox(320, 45, 330, 55),
             text="1x",
         )
 
         # Two steps below the drawings (both tall enough)
-        step1 = Text(bbox=BBox(260, 70, 276, 96), text="5")
-        step2 = Text(bbox=BBox(300, 70, 316, 96), text="6")
+        step1 = Text(id=1, bbox=BBox(260, 70, 276, 96), text="5")
+        step2 = Text(id=2, bbox=BBox(300, 70, 316, 96), text="6")
 
         # Real page number at bottom to avoid confusion
-        page_number = Text(bbox=BBox(10, 380, 20, 390), text="1")
+        page_number = Text(id=3, bbox=BBox(10, 380, 20, 390), text="1")
 
         # Two near-duplicate drawings above the steps
-        d_small = Drawing(bbox=BBox(262.5, 14.7, 414.6, 61.9))
-        d_large = Drawing(bbox=BBox(262.0, 14.2, 415.1, 62.4))
+        d_small = Drawing(id=4, bbox=BBox(262.5, 14.7, 414.6, 61.9))
+        d_large = Drawing(id=5, bbox=BBox(262.0, 14.2, 415.1, 62.4))
 
         page = PageData(
             page_number=2,
             elements=[pc, step1, step2, page_number, d_small, d_large],
             bbox=page_bbox,
         )
-
-        # Use elements from page since PageData may reassign IDs
-        pc, step1, step2, page_number, d_small, d_large = page.elements
 
         result = classify_elements(page)
 
