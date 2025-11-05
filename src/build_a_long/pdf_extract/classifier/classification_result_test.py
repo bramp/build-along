@@ -1,6 +1,7 @@
 """Tests for the classification result data classes."""
 
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -12,8 +13,35 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.lego_page_elements import PageNumber, StepNumber
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    PageNumber,
+    StepNumber,
+)
+from build_a_long.pdf_extract.extractor.page_elements import Element, Text
+
+
+def assign_ids(elements: list[Element]) -> list[Element]:
+    """Assign sequential IDs to elements that don't have them.
+
+    This is a test helper to ensure all elements have IDs as required by
+    ClassificationResult. Since elements are frozen dataclasses, this creates
+    new instances with IDs for elements that don't have them.
+
+    Args:
+        elements: List of elements to process
+
+    Returns:
+        New list with all elements having IDs
+    """
+    next_id = 1
+    result = []
+    for element in elements:
+        if element.id is None:
+            result.append(replace(element, id=next_id))
+            next_id += 1
+        else:
+            result.append(element)
+    return result
 
 
 class TestClassifierConfig:
@@ -52,7 +80,12 @@ class TestClassificationResult:
 
     def test_add_and_get_warnings(self) -> None:
         """Test adding and retrieving warnings."""
-        result = ClassificationResult()
+        page_data = PageData(
+            page_number=1,
+            elements=[],
+            bbox=BBox(0, 0, 100, 100),
+        )
+        result = ClassificationResult(page_data=page_data)
         result.add_warning("Warning 1")
         result.add_warning("Warning 2")
 
@@ -64,6 +97,11 @@ class TestClassificationResult:
     def test_add_and_get_candidate(self) -> None:
         """Test adding and retrieving candidates."""
         element = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+        page_data = PageData(
+            page_number=1,
+            elements=[element],
+            bbox=BBox(0, 0, 100, 100),
+        )
         constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
         candidate = Candidate(
             bbox=BBox(0, 0, 10, 10),
@@ -74,7 +112,7 @@ class TestClassificationResult:
             source_element=element,
         )
 
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
         result.add_candidate("page_number", candidate)
 
         candidates = result.get_candidates("page_number")
@@ -101,15 +139,24 @@ class TestClassificationResult:
 
         result = ClassificationResult(page_data=page_data)
         result.add_candidate("page_number", candidate)
-        result.mark_winner(candidate, element, constructed)
+        result.mark_winner(candidate, constructed)
 
         assert candidate.is_winner is True
         assert result.get_constructed_element(element) is constructed
         assert result.has_label("page_number")
 
     def test_mark_winner_without_id(self) -> None:
-        """Test that marking winner with element without ID doesn't crash."""
-        element = Text(bbox=BBox(0, 0, 10, 10), text="1")  # No ID
+        """Test that marking winner works with auto-assigned IDs."""
+        element = Text(bbox=BBox(0, 0, 10, 10), text="1")  # No ID initially
+        page_data = PageData(
+            page_number=1,
+            elements=[element],
+            bbox=BBox(0, 0, 100, 100),
+        )
+        # PageData auto-assigns ID
+        element_with_id = page_data.elements[0]
+        assert element_with_id.id is not None
+
         constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
         candidate = Candidate(
             bbox=BBox(0, 0, 10, 10),
@@ -117,15 +164,16 @@ class TestClassificationResult:
             score=0.95,
             score_details={},
             constructed=constructed,
-            source_element=element,
+            source_element=element_with_id,
         )
 
-        result = ClassificationResult()
-        result.mark_winner(candidate, element, constructed)
+        result = ClassificationResult(page_data=page_data)
+        result.add_candidate("page_number", candidate)
+        result.mark_winner(candidate, constructed)
 
         assert candidate.is_winner is True
-        # Element without ID should not be added to constructed_elements
-        assert result.get_constructed_element(element) is None
+        # Element with ID should be added to constructed_elements
+        assert result.get_constructed_element(element_with_id) is constructed
 
     def test_constructed_elements_dict(self) -> None:
         """Test the internal _constructed_elements dict."""
@@ -158,8 +206,10 @@ class TestClassificationResult:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.mark_winner(candidate1, element1, constructed1)
-        result.mark_winner(candidate2, element2, constructed2)
+        result.add_candidate("page_number", candidate1)
+        result.add_candidate("step_number", candidate2)
+        result.mark_winner(candidate1, constructed1)
+        result.mark_winner(candidate2, constructed2)
 
         # Access the internal dict directly (keyed by element ID)
         assert len(result._constructed_elements) == 2
@@ -209,6 +259,11 @@ class TestClassificationResult:
     def test_get_label(self) -> None:
         """Test getting the label for a specific element."""
         element = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+        page_data = PageData(
+            page_number=1,
+            elements=[element],
+            bbox=BBox(0, 0, 100, 100),
+        )
         constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
         candidate = Candidate(
             bbox=BBox(0, 0, 10, 10),
@@ -220,7 +275,7 @@ class TestClassificationResult:
             is_winner=True,
         )
 
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
         result.add_candidate("page_number", candidate)
 
         assert result.get_label(element) == "page_number"
@@ -229,6 +284,11 @@ class TestClassificationResult:
         """Test getting elements by label."""
         element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
         element2 = Text(bbox=BBox(20, 20, 30, 30), text="5", id=2)
+        page_data = PageData(
+            page_number=1,
+            elements=[element1, element2],
+            bbox=BBox(0, 0, 100, 100),
+        )
         constructed1 = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
         constructed2 = PageNumber(bbox=BBox(20, 20, 30, 30), value=5)
 
@@ -251,7 +311,7 @@ class TestClassificationResult:
             is_winner=True,
         )
 
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
         result.add_candidate("page_number", candidate1)
         result.add_candidate("page_number", candidate2)
 
@@ -264,9 +324,14 @@ class TestClassificationResult:
         """Test marking elements as removed and checking removal status."""
         element1 = Text(bbox=BBox(0, 0, 10, 10), text="test", id=1)
         element2 = Text(bbox=BBox(20, 20, 30, 30), text="target", id=2)
+        page_data = PageData(
+            page_number=1,
+            elements=[element1, element2],
+            bbox=BBox(0, 0, 100, 100),
+        )
         reason = RemovalReason(reason_type="child_bbox", target_element=element2)
 
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
         result.mark_removed(element1, reason)
 
         assert result.is_removed(element1) is True
@@ -280,6 +345,11 @@ class TestClassificationResult:
     def test_get_scores_for_label(self) -> None:
         """Test getting scores for a specific label."""
         element = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+        page_data = PageData(
+            page_number=1,
+            elements=[element],
+            bbox=BBox(0, 0, 100, 100),
+        )
         score_details = {"text": 1.0, "position": 0.9}
         constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
         candidate = Candidate(
@@ -291,7 +361,7 @@ class TestClassificationResult:
             source_element=element,
         )
 
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
         result.add_candidate("page_number", candidate)
 
         scores = result.get_scores_for_label("page_number")
@@ -301,6 +371,11 @@ class TestClassificationResult:
     def test_has_label(self) -> None:
         """Test checking if a label has been assigned."""
         element = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+        page_data = PageData(
+            page_number=1,
+            elements=[element],
+            bbox=BBox(0, 0, 100, 100),
+        )
         constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
         candidate = Candidate(
             bbox=BBox(0, 0, 10, 10),
@@ -312,7 +387,7 @@ class TestClassificationResult:
             is_winner=True,
         )
 
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
         result.add_candidate("page_number", candidate)
 
         assert result.has_label("page_number") is True
@@ -322,6 +397,11 @@ class TestClassificationResult:
         """Test getting the best candidate for a label."""
         element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
         element2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)
+        page_data = PageData(
+            page_number=1,
+            elements=[element1, element2],
+            bbox=BBox(0, 0, 100, 100),
+        )
 
         constructed1 = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
         constructed2 = PageNumber(bbox=BBox(20, 20, 30, 30), value=2)
@@ -343,7 +423,7 @@ class TestClassificationResult:
             source_element=element2,
         )
 
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
         result.add_candidate("page_number", candidate1)
         result.add_candidate("page_number", candidate2)
 
@@ -356,6 +436,11 @@ class TestClassificationResult:
         """Test that get_best_candidate excludes failed constructions."""
         element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
         element2 = Text(bbox=BBox(20, 20, 30, 30), text="invalid", id=2)
+        page_data = PageData(
+            page_number=1,
+            elements=[element1, element2],
+            bbox=BBox(0, 0, 100, 100),
+        )
 
         constructed1 = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
 
@@ -378,7 +463,7 @@ class TestClassificationResult:
             failure_reason="Invalid format",
         )
 
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
         result.add_candidate("page_number", candidate1)
         result.add_candidate("page_number", candidate2)
 
@@ -392,6 +477,11 @@ class TestClassificationResult:
         element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
         element2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)
         element3 = Text(bbox=BBox(40, 40, 50, 50), text="3", id=3)
+        page_data = PageData(
+            page_number=1,
+            elements=[element1, element2, element3],
+            bbox=BBox(0, 0, 100, 100),
+        )
 
         constructed1 = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
         constructed2 = PageNumber(bbox=BBox(20, 20, 30, 30), value=2)
@@ -423,7 +513,7 @@ class TestClassificationResult:
             source_element=element3,
         )
 
-        result = ClassificationResult()
+        result = ClassificationResult(page_data=page_data)
         result.add_candidate("page_number", candidate1)
         result.add_candidate("page_number", candidate2)
         result.add_candidate("page_number", candidate3)
@@ -455,7 +545,8 @@ class TestClassificationResult:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.mark_winner(candidate, element, constructed)
+        result.add_candidate("page_number", candidate)
+        result.mark_winner(candidate, constructed)
 
         # Verify the internal _constructed_elements uses integer IDs as keys
         assert isinstance(result._constructed_elements, dict)
@@ -474,7 +565,12 @@ class TestClassificationResult:
         int keys instead of Element objects.
         """
         # Create a result with constructed elements
-        result = ClassificationResult()
+        page_data = PageData(
+            page_number=1,
+            elements=[],
+            bbox=BBox(0, 0, 100, 100),
+        )
+        result = ClassificationResult(page_data=page_data)
         result.add_warning("Warning 1")
         result.add_warning("Warning 2")
 
@@ -498,3 +594,239 @@ class TestClassificationResult:
         assert "99" in parsed
         assert parsed["42"]["value"] == 1
         assert parsed["99"]["value"] == 2
+
+
+class TestClassificationResultValidation:
+    """Tests for ClassificationResult validation logic."""
+
+    def test_post_init_validates_unique_element_ids(self) -> None:
+        """Test that __post_init__ validates PageData elements have unique IDs."""
+        element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+        element2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=1)  # Duplicate ID!
+
+        page_data = PageData(
+            page_number=1,
+            elements=[element1, element2],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        with pytest.raises(
+            ValueError, match=r"must have unique IDs.*duplicates.*\{1\}"
+        ):
+            ClassificationResult(page_data=page_data)
+
+    def test_post_init_allows_none_ids(self) -> None:
+        """Test that PageData auto-assigns IDs to elements without them."""
+        element1 = Text(bbox=BBox(0, 0, 10, 10), text="1")  # No ID initially
+        element2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=99)  # Has ID
+
+        page_data = PageData(
+            page_number=1,
+            elements=[element1, element2],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        # PageData should auto-assign ID to element1
+        assert page_data.elements[0].id is not None
+        assert page_data.elements[0].id != 99  # Different from element2's ID
+        assert page_data.elements[1].id == 99  # element2 keeps its ID
+
+        # Should not raise - all elements now have unique IDs
+        result = ClassificationResult(page_data=page_data)
+        assert result.page_data is page_data
+
+    def test_add_candidate_validates_source_element_in_page_data(self) -> None:
+        """Test that add_candidate validates source_element is in PageData."""
+        element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+        element2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)  # Not in PageData
+
+        page_data = PageData(
+            page_number=1,
+            elements=[element1],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        candidate = Candidate(
+            bbox=BBox(20, 20, 30, 30),
+            label="page_number",
+            score=0.95,
+            score_details={},
+            constructed=None,
+            source_element=element2,  # Not in PageData!
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        with pytest.raises(ValueError, match="must be in PageData.elements"):
+            result.add_candidate("page_number", candidate)
+
+    def test_add_candidate_allows_source_element_in_page_data(self) -> None:
+        """Test that add_candidate succeeds when source_element is in PageData."""
+        element = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+
+        page_data = PageData(
+            page_number=1,
+            elements=[element],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        candidate = Candidate(
+            bbox=BBox(0, 0, 10, 10),
+            label="page_number",
+            score=0.95,
+            score_details={},
+            constructed=None,
+            source_element=element,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        result.add_candidate("page_number", candidate)
+        assert len(result.get_candidates("page_number")) == 1
+
+    def test_add_candidate_allows_none_source_element(self) -> None:
+        """Test that add_candidate allows None source_element (synthetic candidates)."""
+        page_data = PageData(
+            page_number=1,
+            elements=[],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        candidate = Candidate(
+            bbox=BBox(0, 0, 10, 10),
+            label="step",
+            score=0.95,
+            score_details={},
+            constructed=None,
+            source_element=None,  # Synthetic candidate
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        result.add_candidate("step", candidate)
+        assert len(result.get_candidates("step")) == 1
+
+    def test_mark_winner_validates_source_element_in_page_data(self) -> None:
+        """Test that mark_winner validates source_element is in PageData."""
+        element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+        element2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)  # Not in PageData
+
+        page_data = PageData(
+            page_number=1,
+            elements=[element1],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        constructed = PageNumber(bbox=BBox(20, 20, 30, 30), value=2)
+        candidate = Candidate(
+            bbox=BBox(20, 20, 30, 30),
+            label="page_number",
+            score=0.95,
+            score_details={},
+            constructed=constructed,
+            source_element=element2,  # Not in PageData!
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        with pytest.raises(ValueError, match="must be in PageData.elements"):
+            result.mark_winner(candidate, constructed)
+
+    def test_mark_winner_allows_source_element_in_page_data(self) -> None:
+        """Test that mark_winner succeeds when source_element is in PageData."""
+        element = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+
+        page_data = PageData(
+            page_number=1,
+            elements=[element],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
+        candidate = Candidate(
+            bbox=BBox(0, 0, 10, 10),
+            label="page_number",
+            score=0.95,
+            score_details={},
+            constructed=constructed,
+            source_element=element,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        result.add_candidate("page_number", candidate)
+        result.mark_winner(candidate, constructed)
+        assert candidate.is_winner is True
+
+    def test_mark_winner_allows_none_source_element(self) -> None:
+        """Test that mark_winner allows None source_element (synthetic candidates)."""
+        page_data = PageData(
+            page_number=1,
+            elements=[],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        # Use a synthetic PageNumber without a source_element (e.g., derived from context)
+        constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
+        candidate = Candidate(
+            bbox=BBox(0, 0, 10, 10),
+            label="page_number",
+            score=0.95,
+            score_details={},
+            constructed=constructed,
+            source_element=None,  # Synthetic candidate
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        result.add_candidate("page_number", candidate)
+        result.mark_winner(candidate, constructed)
+        assert candidate.is_winner is True
+
+    def test_mark_removed_validates_element_in_page_data(self) -> None:
+        """Test that mark_removed validates element is in PageData."""
+        element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+        element2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)  # Not in PageData
+
+        page_data = PageData(
+            page_number=1,
+            elements=[element1],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        reason = RemovalReason(reason_type="child_bbox", target_element=element1)
+
+        result = ClassificationResult(page_data=page_data)
+        with pytest.raises(ValueError, match="must be in PageData.elements"):
+            result.mark_removed(element2, reason)
+
+    def test_mark_removed_allows_element_in_page_data(self) -> None:
+        """Test that mark_removed succeeds when element is in PageData."""
+        element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+        element2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)
+
+        page_data = PageData(
+            page_number=1,
+            elements=[element1, element2],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        reason = RemovalReason(reason_type="child_bbox", target_element=element1)
+
+        result = ClassificationResult(page_data=page_data)
+        result.mark_removed(element2, reason)
+        assert result.is_removed(element2)
+
+    def test_mark_removed_allows_element_without_id(self) -> None:
+        """Test that mark_removed requires elements to have IDs."""
+        element = Text(bbox=BBox(0, 0, 10, 10), text="1")  # No ID initially
+
+        page_data = PageData(
+            page_number=1,
+            elements=[element],
+            bbox=BBox(0, 0, 100, 100),
+        )
+        # PageData auto-assigns IDs, so element now has ID
+        element_with_id = page_data.elements[0]
+        assert element_with_id.id is not None
+
+        reason = RemovalReason(reason_type="child_bbox", target_element=element_with_id)
+
+        result = ClassificationResult(page_data=page_data)
+        # Should work now that element has ID
+        result.mark_removed(element_with_id, reason)
+        assert result.is_removed(element_with_id)

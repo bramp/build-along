@@ -343,9 +343,7 @@ class StepClassifier(LabelClassifier):
             # (there's no underlying element that could be removed by other classifiers)
 
             # This is a winner!
-            result.mark_winner(
-                candidate, candidate.source_element, candidate.constructed
-            )
+            result.mark_winner(candidate, candidate.constructed)
 
             # No need to remove overlapping elements since Step is synthetic
             # and doesn't consume any underlying elements

@@ -74,6 +74,9 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
+        # Use element from page_data since PageData may reassign IDs
+        page_number_text = page_data.elements[0]
+
         results = classify_elements(page_data)
 
         assert results.get_label(page_number_text) == "page_number"
@@ -97,6 +100,9 @@ class TestClassifyPageNumber:
             elements=[page_number_text],
             bbox=page_bbox,
         )
+
+        # Use element from page_data since PageData may reassign IDs
+        page_number_text = page_data.elements[0]
 
         result = classify_elements(page_data)
 
@@ -128,6 +134,9 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        center_text, corner_text = page_data.elements
+
         result = classify_elements(page_data)
 
         # Corner should have higher score and be labeled
@@ -157,6 +166,9 @@ class TestClassifyPageNumber:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        txt6, txt7 = page_data.elements
+
         result = classify_elements(page_data)
 
         assert result.get_label(txt7) == "page_number"
@@ -175,6 +187,9 @@ class TestClassifyPageNumber:
             elements=[pn, dup],
             bbox=page_bbox,
         )
+
+        # Use elements from page_data since PageData may reassign IDs
+        pn, dup = page_data.elements
 
         result = classify_elements(page_data)
 
@@ -198,6 +213,9 @@ class TestClassifyPageNumber:
             elements=[text_element],
             bbox=page_bbox,
         )
+
+        # Use element from page_data since PageData may reassign IDs
+        text_element = page_data.elements[0]
 
         result = classify_elements(page_data)
 

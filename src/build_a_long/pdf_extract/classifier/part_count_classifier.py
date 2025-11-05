@@ -145,9 +145,7 @@ class PartCountClassifier(LabelClassifier):
 
             # This is a winner!
             assert isinstance(candidate.constructed, PartCount)
-            result.mark_winner(
-                candidate, candidate.source_element, candidate.constructed
-            )
+            result.mark_winner(candidate, candidate.constructed)
             self.classifier._remove_child_bboxes(
                 page_data, candidate.source_element, result
             )

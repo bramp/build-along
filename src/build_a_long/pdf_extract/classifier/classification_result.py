@@ -112,13 +112,17 @@ class ClassificationResult(JSONPyWizard):
     fields directly to maintain encapsulation.
     """
 
-    page_data: PageData | None = None
+    page_data: PageData
     """The original page data being classified"""
 
     _warnings: list[str] = field(default_factory=list)
 
     _removal_reasons: dict[int, RemovalReason] = field(default_factory=dict)
-    """Maps element IDs to the reason they were removed"""
+    """Maps element IDs (element.id, not id(element)) to the reason they were removed.
+    
+    Keys are element IDs (int) instead of Element objects to ensure JSON serializability
+    and consistency with _constructed_elements.
+    """
 
     _constructed_elements: dict[int, LegoPageElement] = field(default_factory=dict)
     """Maps source element IDs to their constructed LegoPageElements.
@@ -150,15 +154,45 @@ class ClassificationResult(JSONPyWizard):
     # TODO: Migrate to candidates pattern
     part_image_pairs: list[tuple[Any, Any]] = field(default_factory=list)
 
+    def __post_init__(self) -> None:
+        """Validate PageData elements have unique IDs (if present).
+
+        Elements may have None IDs, but elements with IDs must have unique IDs.
+        Note: Only elements with IDs can be tracked in _constructed_elements and
+        _removal_reasons (which require element.id as keys for JSON serializability).
+        """
+        # Validate unique IDs (ignoring None values)
+        element_ids = [e.id for e in self.page_data.elements if e.id is not None]
+        if len(element_ids) != len(set(element_ids)):
+            duplicates = [id_ for id_ in element_ids if element_ids.count(id_) > 1]
+            raise ValueError(
+                f"PageData elements must have unique IDs. Found duplicates: {set(duplicates)}"
+            )
+
+    def _validate_element_in_page_data(
+        self, element: Element | None, param_name: str = "element"
+    ) -> None:
+        """Validate that an element is in PageData.
+
+        Args:
+            element: The element to validate (None is allowed and skips validation)
+            param_name: Name of the parameter being validated (for error messages)
+
+        Raises:
+            ValueError: If element is not None and not in PageData.elements
+        """
+        if element is not None and element not in self.page_data.elements:
+            raise ValueError(
+                f"{param_name} must be in PageData.elements. Element: {element}"
+            )
+
     @property
     def elements(self) -> list[Element]:
         """Get the elements from the page data.
 
         Returns:
-            List of elements from the page data, or empty list if page_data is None
+            List of elements from the page data
         """
-        if self.page_data is None:
-            return []
         return self.page_data.elements
 
     def add_warning(self, warning: str) -> None:
@@ -216,7 +250,14 @@ class ClassificationResult(JSONPyWizard):
         Args:
             label: The label this candidate is for
             candidate: The candidate to add
+
+        Raises:
+            ValueError: If candidate has a source_element that is not in PageData
         """
+        self._validate_element_in_page_data(
+            candidate.source_element, "candidate.source_element"
+        )
+
         if label not in self._candidates:
             self._candidates[label] = []
         self._candidates[label].append(candidate)
@@ -224,19 +265,31 @@ class ClassificationResult(JSONPyWizard):
     def mark_winner(
         self,
         candidate: Candidate,
-        element: Element | None,
         constructed: LegoPageElement,
     ) -> None:
         """Mark a candidate as the winner and update tracking dicts.
 
         Args:
             candidate: The candidate to mark as winner
-            element: The source element (None for synthetic candidates)
             constructed: The constructed LegoPageElement
+
+        Raises:
+            ValueError: If candidate has a source_element that is not in PageData
+            ValueError: If candidate.source_element has no ID (all elements should have IDs)
         """
+        self._validate_element_in_page_data(
+            candidate.source_element, "candidate.source_element"
+        )
+
         candidate.is_winner = True
-        if element is not None and element.id is not None:
-            self._constructed_elements[element.id] = constructed
+        # Require ID for tracking in dict (all elements should have IDs from PageData)
+        if candidate.source_element is not None:
+            if candidate.source_element.id is None:
+                raise ValueError(
+                    f"Cannot mark winner: candidate.source_element must have an ID. "
+                    f"Element: {candidate.source_element}"
+                )
+            self._constructed_elements[candidate.source_element.id] = constructed
 
     def mark_removed(self, element: Element, reason: RemovalReason) -> None:
         """Mark an element as removed with the given reason.
@@ -244,8 +297,19 @@ class ClassificationResult(JSONPyWizard):
         Args:
             element: The element to mark as removed
             reason: The reason for removal
+
+        Raises:
+            ValueError: If element is not in PageData
+            ValueError: If element has no ID (all elements should have IDs)
         """
-        self._removal_reasons[id(element)] = reason
+        self._validate_element_in_page_data(element, "element")
+        # Require ID for tracking in dict (all elements should have IDs from PageData)
+        if element.id is None:
+            raise ValueError(
+                f"Cannot mark element as removed: element must have an ID. "
+                f"Element: {element}"
+            )
+        self._removal_reasons[element.id] = reason
 
     # TODO Consider removing this method.
     def get_labeled_elements(self) -> dict[Element, str]:
@@ -302,7 +366,9 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             True if the element is marked for removal, False otherwise
         """
-        return id(element) in self._removal_reasons
+        if element.id is None:
+            return False
+        return element.id in self._removal_reasons
 
     def get_removal_reason(self, element: Element) -> RemovalReason | None:
         """Get the reason why an element was removed.
@@ -313,7 +379,9 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             The RemovalReason if the element was removed, None otherwise
         """
-        return self._removal_reasons.get(id(element))
+        if element.id is None:
+            return None
+        return self._removal_reasons.get(element.id)
 
     def get_scores_for_label(self, label: str) -> dict[ScoreKey, Any]:
         """Get all scores for a specific label.

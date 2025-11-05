@@ -24,6 +24,9 @@ class TestStepNumberClassification:
             bbox=page_bbox,
         )
 
+        # Use elements from page since PageData may reassign IDs
+        pn, big_step, small_step = page.elements
+
         result = classify_elements(page)
 
         assert result.get_label(pn) == "page_number"

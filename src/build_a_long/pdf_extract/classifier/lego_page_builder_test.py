@@ -56,8 +56,12 @@ class TestPageNumberExtraction:
             bbox=page_bbox,
         )
 
+        # Use the element from page_data since PageData may reassign IDs
+        page_number_text = page_data.elements[0]
+
         result = ClassificationResult(
-            _candidates=make_candidates({page_number_text: "page_number"})
+            page_data=page_data,
+            _candidates=make_candidates({page_number_text: "page_number"}),
         )
 
         page = build_page(page_data, result)
@@ -98,12 +102,13 @@ class TestPageNumberExtraction:
         )
 
         result = ClassificationResult(
+            page_data=page_data,
             _candidates=make_candidates(
                 {
                     page_number_1: "page_number",
                     page_number_2: "page_number",
                 }
-            )
+            ),
         )
 
         page = build_page(page_data, result)
@@ -123,8 +128,12 @@ class TestPageNumberExtraction:
             bbox=page_bbox,
         )
 
+        # Use the element from page_data since PageData may reassign IDs
+        page_number_text = page_data.elements[0]
+
         result = ClassificationResult(
-            _candidates=make_candidates({page_number_text: "page_number"})
+            page_data=page_data,
+            _candidates=make_candidates({page_number_text: "page_number"}),
         )
 
         page = build_page(page_data, result)
@@ -148,8 +157,12 @@ class TestStepExtraction:
             bbox=page_bbox,
         )
 
+        # Use the element from page_data since PageData may reassign IDs
+        step_number_text = page_data.elements[0]
+
         result = ClassificationResult(
-            _candidates=make_candidates({step_number_text: "step_number"})
+            page_data=page_data,
+            _candidates=make_candidates({step_number_text: "step_number"}),
         )
 
         page = build_page(page_data, result)
@@ -172,13 +185,17 @@ class TestStepExtraction:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        step_1, step_2 = page_data.elements
+
         result = ClassificationResult(
+            page_data=page_data,
             _candidates=make_candidates(
                 {
                     step_1: "step_number",
                     step_2: "step_number",
                 }
-            )
+            ),
         )
 
         page = build_page(page_data, result)
@@ -198,8 +215,11 @@ class TestStepExtraction:
             bbox=page_bbox,
         )
 
+        # Use element from page_data since PageData may reassign IDs
+        step_text = page_data.elements[0]
+
         result = ClassificationResult(
-            _candidates=make_candidates({step_text: "step_number"})
+            page_data=page_data, _candidates=make_candidates({step_text: "step_number"})
         )
 
         page = build_page(page_data, result)
@@ -223,8 +243,12 @@ class TestPartsListExtraction:
             bbox=page_bbox,
         )
 
+        # Use element from page_data since PageData may reassign IDs
+        parts_list_drawing = page_data.elements[0]
+
         result = ClassificationResult(
-            _candidates=make_candidates({parts_list_drawing: "parts_list"})
+            page_data=page_data,
+            _candidates=make_candidates({parts_list_drawing: "parts_list"}),
         )
 
         page = build_page(page_data, result)
@@ -256,7 +280,13 @@ class TestPartsListExtraction:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        parts_list_drawing, part_count_1, part_image_1, part_count_2, part_image_2 = (
+            page_data.elements
+        )
+
         result = ClassificationResult(
+            page_data=page_data,
             _candidates=make_candidates(
                 {
                     parts_list_drawing: "parts_list",
@@ -309,7 +339,17 @@ class TestPartsListExtraction:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        (
+            parts_list_drawing,
+            part_count_inside,
+            part_image_inside,
+            part_count_outside,
+            part_image_outside,
+        ) = page_data.elements
+
         result = ClassificationResult(
+            page_data=page_data,
             _candidates=make_candidates(
                 {
                     parts_list_drawing: "parts_list",
@@ -350,7 +390,11 @@ class TestPartExtraction:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        parts_list, part_count, part_image = page_data.elements
+
         result = ClassificationResult(
+            page_data=page_data,
             _candidates=make_candidates(
                 {
                     parts_list: "parts_list",
@@ -380,7 +424,11 @@ class TestPartExtraction:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        parts_list, part_count, part_image = page_data.elements
+
         result = ClassificationResult(
+            page_data=page_data,
             _candidates=make_candidates(
                 {
                     parts_list: "parts_list",
@@ -412,7 +460,11 @@ class TestPartExtraction:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        parts_list, part_count, part_image = page_data.elements
+
         result = ClassificationResult(
+            page_data=page_data,
             _candidates=make_candidates(
                 {
                     parts_list: "parts_list",
@@ -444,7 +496,11 @@ class TestPartExtraction:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        parts_list, part_count, part_image = page_data.elements
+
         result = ClassificationResult(
+            page_data=page_data,
             _candidates=make_candidates(
                 {
                     parts_list: "parts_list",
@@ -480,9 +536,13 @@ class TestUnprocessedElements:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        removed_text, kept_text = page_data.elements
+
         result = ClassificationResult(
+            page_data=page_data,
             _candidates=make_candidates({kept_text: "some_label"}),
-            _removal_reasons={id(removed_text): None},  # type: ignore
+            _removal_reasons={removed_text.id: None},  # type: ignore
         )
 
         page = build_page(page_data, result)
@@ -504,8 +564,12 @@ class TestUnprocessedElements:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        unlabeled_text, labeled_text = page_data.elements
+
         result = ClassificationResult(
-            _candidates=make_candidates({labeled_text: "some_label"})
+            page_data=page_data,
+            _candidates=make_candidates({labeled_text: "some_label"}),
         )
 
         page = build_page(page_data, result)
@@ -550,7 +614,13 @@ class TestIntegration:
             bbox=page_bbox,
         )
 
+        # Use elements from page_data since PageData may reassign IDs
+        page_num, step_1_num, step_2_num, parts_list, part_count_1, part_image_1 = (
+            page_data.elements
+        )
+
         result = ClassificationResult(
+            page_data=page_data,
             _candidates=make_candidates(
                 {
                     page_num: "page_number",

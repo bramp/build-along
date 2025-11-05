@@ -148,7 +148,7 @@ class PageNumberClassifier(LabelClassifier):
 
         # Mark winner and store results
         assert isinstance(winner.constructed, PageNumber)
-        result.mark_winner(winner, winner.source_element, winner.constructed)
+        result.mark_winner(winner, winner.constructed)
 
         # Cleanup: remove child/similar bboxes
         self.classifier._remove_child_bboxes(page_data, winner.source_element, result)
