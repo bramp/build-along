@@ -702,6 +702,57 @@ class TestClassificationResultValidation:
         result.mark_winner(candidate, constructed)
         assert candidate.is_winner is True
 
+    def test_mark_winner_rejects_duplicate_winners_for_same_element(self) -> None:
+        """Test that mark_winner rejects marking the same element as winner twice."""
+        element = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+
+        page_data = PageData(
+            page_number=1,
+            elements=[element],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        # First winner candidate
+        constructed1 = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
+        candidate1 = Candidate(
+            bbox=BBox(0, 0, 10, 10),
+            label="page_number",
+            score=0.95,
+            score_details={},
+            constructed=constructed1,
+            source_element=element,
+        )
+
+        # Second winner candidate with different label, same element
+        constructed2 = StepNumber(bbox=BBox(0, 0, 10, 10), value=1)
+        candidate2 = Candidate(
+            bbox=BBox(0, 0, 10, 10),
+            label="step_number",
+            score=0.90,
+            score_details={},
+            constructed=constructed2,
+            source_element=element,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        result.add_candidate("page_number", candidate1)
+        result.add_candidate("step_number", candidate2)
+
+        # First mark_winner should succeed
+        result.mark_winner(candidate1, constructed1)
+        assert candidate1.is_winner is True
+
+        # Second mark_winner should fail
+        with pytest.raises(
+            ValueError,
+            match="Element 1 already has a winner candidate for label 'page_number'",
+        ):
+            result.mark_winner(candidate2, constructed2)
+
+        # Verify only the first candidate is a winner
+        assert candidate1.is_winner is True
+        assert candidate2.is_winner is False
+
     def test_mark_removed_validates_element_in_page_data(self) -> None:
         """Test that mark_removed validates element is in PageData."""
         element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
