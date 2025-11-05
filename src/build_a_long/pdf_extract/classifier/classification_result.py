@@ -220,8 +220,6 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             The constructed LegoPageElement if it exists, None otherwise
         """
-        if element.id is None:
-            return None
         return self._constructed_elements.get(element.id)
 
     # TODO maybe add a parameter to fitler out winners/non-winners
@@ -282,13 +280,8 @@ class ClassificationResult(JSONPyWizard):
         )
 
         candidate.is_winner = True
-        # Require ID for tracking in dict (all elements should have IDs from PageData)
+        # Store the constructed element for this source element
         if candidate.source_element is not None:
-            if candidate.source_element.id is None:
-                raise ValueError(
-                    f"Cannot mark winner: candidate.source_element must have an ID. "
-                    f"Element: {candidate.source_element}"
-                )
             self._constructed_elements[candidate.source_element.id] = constructed
 
     def mark_removed(self, element: Element, reason: RemovalReason) -> None:
@@ -300,15 +293,8 @@ class ClassificationResult(JSONPyWizard):
 
         Raises:
             ValueError: If element is not in PageData
-            ValueError: If element has no ID (all elements should have IDs)
         """
         self._validate_element_in_page_data(element, "element")
-        # Require ID for tracking in dict (all elements should have IDs from PageData)
-        if element.id is None:
-            raise ValueError(
-                f"Cannot mark element as removed: element must have an ID. "
-                f"Element: {element}"
-            )
         self._removal_reasons[element.id] = reason
 
     # TODO Consider removing this method.
@@ -366,8 +352,6 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             True if the element is marked for removal, False otherwise
         """
-        if element.id is None:
-            return False
         return element.id in self._removal_reasons
 
     def get_removal_reason(self, element: Element) -> RemovalReason | None:
@@ -379,8 +363,6 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             The RemovalReason if the element was removed, None otherwise
         """
-        if element.id is None:
-            return None
         return self._removal_reasons.get(element.id)
 
     def get_scores_for_label(self, label: str) -> dict[ScoreKey, Any]:

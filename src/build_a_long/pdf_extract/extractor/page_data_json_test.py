@@ -27,11 +27,13 @@ class TestPageDataJsonSerialization:
                         "text": "Hello",
                         "font_name": "Arial",
                         "font_size": 12.0,
+                        "id": 0,
                     },
                     {
                         "__tag__": "Text",
                         "bbox": {"x0": 10, "y0": 40, "x1": 50, "y1": 60},
                         "text": "World",
+                        "id": 1,
                     },
                 ],
             }
@@ -59,6 +61,7 @@ class TestPageDataJsonSerialization:
                         "__tag__": "Image",
                         "bbox": {"x0": 20, "y0": 20, "x1": 80, "y1": 80},
                         "image_id": "img_001",
+                        "id": 0,
                     },
                     {
                         "__tag__": "Image",
@@ -89,6 +92,7 @@ class TestPageDataJsonSerialization:
                     {
                         "__tag__": "Drawing",
                         "bbox": {"x0": 5, "y0": 5, "x1": 95, "y1": 195},
+                        "id": 0,
                     },
                     {
                         "__tag__": "Drawing",
@@ -202,6 +206,7 @@ class TestPageDataJsonSerialization:
                             "y1": 30.0,
                         },
                         "text": "Dict bbox",
+                        "id": 0,
                     }
                 ],
             }
@@ -308,6 +313,7 @@ class TestPageDataJsonSerialization:
                         "bbox": {"x0": 10, "y0": 10, "x1": 50, "y1": 30},
                         "text": "Test",
                         "extra_field": "should raise",  # Unknown field
+                        "id": 0,
                     }
                 ],
             }

@@ -14,7 +14,7 @@ from build_a_long.pdf_extract.extractor.page_elements import (
 def test_build_hierarchy_basic_containment():
     # One big image with a small number inside it
     elements = [
-        Drawing(bbox=BBox(0, 0, 100, 100), image_id="image_0"),
+        Drawing(bbox=BBox(0, 0, 100, 100), image_id="image_0", id=0),
         StepNumber(bbox=BBox(10, 10, 20, 20), value=1),
     ]
     tree = build_hierarchy_from_elements(elements)
@@ -32,8 +32,8 @@ def test_build_hierarchy_basic_containment():
 def test_build_hierarchy_with_children():
     # Drawing parent with nested text child fully contained
     elements = [
-        Drawing(bbox=BBox(0, 0, 50, 50), image_id="drawing_0"),
-        Text(bbox=BBox(5, 5, 10, 10), text="x3"),
+        Drawing(bbox=BBox(0, 0, 50, 50), image_id="drawing_0", id=0),
+        Text(bbox=BBox(5, 5, 10, 10), text="x3", id=1),
     ]
     tree = build_hierarchy_from_elements(elements)
     assert len(tree.roots) == 1
@@ -51,10 +51,10 @@ def test_build_hierarchy_with_children():
 
 def test_build_hierarchy_depth_calculation():
     # Test multi-level nesting: outer -> middle -> inner
-    outer = Drawing(bbox=BBox(0, 0, 100, 100), image_id="outer")
-    middle = Drawing(bbox=BBox(10, 10, 90, 90), image_id="middle")
-    inner = Text(bbox=BBox(20, 20, 30, 30), text="inner")
-    sibling = Text(bbox=BBox(50, 50, 60, 60), text="sibling")
+    outer = Drawing(bbox=BBox(0, 0, 100, 100), image_id="outer", id=0)
+    middle = Drawing(bbox=BBox(10, 10, 90, 90), image_id="middle", id=1)
+    inner = Text(bbox=BBox(20, 20, 30, 30), text="inner", id=2)
+    sibling = Text(bbox=BBox(50, 50, 60, 60), text="sibling", id=3)
 
     elements = [outer, middle, inner, sibling]
     tree = build_hierarchy_from_elements(elements)
