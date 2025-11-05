@@ -131,15 +131,6 @@ class Classifier:
         for warning in warnings:
             result.add_warning(warning)
 
-        # Extract persisted relations from PartsImageClassifier
-        part_image_pairs = []
-        for classifier in self.classifiers:
-            if isinstance(classifier, PartsImageClassifier):
-                part_image_pairs = classifier.get_part_image_pairs()
-                break
-
-        result.part_image_pairs = part_image_pairs
-
         return result
 
     def _remove_child_bboxes(

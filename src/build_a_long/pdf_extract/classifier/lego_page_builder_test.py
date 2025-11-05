@@ -1,10 +1,10 @@
 """Tests for the lego_page_builder module."""
 
 from build_a_long.pdf_extract.classifier.classification_result import (
-    Candidate,
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
+from build_a_long.pdf_extract.classifier.test_helpers import make_candidates
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
@@ -16,30 +16,9 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 )
 from build_a_long.pdf_extract.extractor.page_elements import (
     Drawing,
-    Element,
     Image,
     Text,
 )
-
-
-def make_candidates(labeled_elements: dict[Element, str]) -> dict[str, list[Candidate]]:
-    """Helper to convert old _labeled_elements format to new candidates format."""
-    candidates: dict[str, list[Candidate]] = {}
-    for element, label in labeled_elements.items():
-        if label not in candidates:
-            candidates[label] = []
-        candidates[label].append(
-            Candidate(
-                bbox=element.bbox,
-                label=label,
-                score=1.0,
-                score_details={},
-                constructed=None,  # Tests don't need constructed elements
-                source_element=element,
-                is_winner=True,
-            )
-        )
-    return candidates
 
 
 class TestPageNumberExtraction:
@@ -294,12 +273,12 @@ class TestPartsListExtraction:
                     part_image_1: "part_image",
                     part_count_2: "part_count",
                     part_image_2: "part_image",
-                }
+                },
+                [
+                    (part_count_1, part_image_1),
+                    (part_count_2, part_image_2),
+                ],
             ),
-            part_image_pairs=[
-                (part_count_1, part_image_1),
-                (part_count_2, part_image_2),
-            ],
         )
 
         page = build_page(page_data, result)
@@ -357,12 +336,12 @@ class TestPartsListExtraction:
                     part_image_inside: "part_image",
                     part_count_outside: "part_count",
                     part_image_outside: "part_image",
-                }
+                },
+                [
+                    (part_count_inside, part_image_inside),
+                    (part_count_outside, part_image_outside),
+                ],
             ),
-            part_image_pairs=[
-                (part_count_inside, part_image_inside),
-                (part_count_outside, part_image_outside),
-            ],
         )
 
         page = build_page(page_data, result)
@@ -400,9 +379,9 @@ class TestPartExtraction:
                     parts_list: "parts_list",
                     part_count: "part_count",
                     part_image: "part_image",
-                }
+                },
+                [(part_count, part_image)],
             ),
-            part_image_pairs=[(part_count, part_image)],
         )
 
         page = build_page(page_data, result)
@@ -436,9 +415,9 @@ class TestPartExtraction:
                     parts_list: "parts_list",
                     part_count: "part_count",
                     part_image: "part_image",
-                }
+                },
+                [(part_count, part_image)],
             ),
-            part_image_pairs=[(part_count, part_image)],
         )
 
         page = build_page(page_data, result)
@@ -472,9 +451,9 @@ class TestPartExtraction:
                     parts_list: "parts_list",
                     part_count: "part_count",
                     part_image: "part_image",
-                }
+                },
+                [(part_count, part_image)],
             ),
-            part_image_pairs=[(part_count, part_image)],
         )
 
         page = build_page(page_data, result)
@@ -508,9 +487,9 @@ class TestPartExtraction:
                     parts_list: "parts_list",
                     part_count: "part_count",
                     part_image: "part_image",
-                }
+                },
+                [(part_count, part_image)],
             ),
-            part_image_pairs=[(part_count, part_image)],
         )
 
         page = build_page(page_data, result)
@@ -631,9 +610,9 @@ class TestIntegration:
                     parts_list: "parts_list",
                     part_count_1: "part_count",
                     part_image_1: "part_image",
-                }
+                },
+                [(part_count_1, part_image_1)],
             ),
-            part_image_pairs=[(part_count_1, part_image_1)],
         )
 
         page = build_page(page_data, result)

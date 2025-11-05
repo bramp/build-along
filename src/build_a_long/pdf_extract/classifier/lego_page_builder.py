@@ -241,7 +241,7 @@ class LegoPageBuilder:
         parts: list[Part] = []
 
         # Get all part_image_pairs
-        for part_count_elem, image_elem in self.result.part_image_pairs:
+        for part_count_elem, image_elem in self.result.get_part_image_pairs():
             # Check if this pair is inside the parts_list
             if not self._is_inside(part_count_elem, parts_list_elem):
                 continue

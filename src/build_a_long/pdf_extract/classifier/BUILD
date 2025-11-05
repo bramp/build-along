@@ -1,9 +1,14 @@
 python_sources()
 
+python_test_utils(
+    name="test-helpers",
+    sources=["test_helpers.py"],
+)
+
 python_tests(
     name="tests",
     sources=["*_test.py"],
-    dependencies=[":fixtures"],
+    dependencies=[":fixtures", ":test-helpers"],
 )
 
 python_source(
