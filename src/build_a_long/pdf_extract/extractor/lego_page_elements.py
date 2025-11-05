@@ -23,6 +23,8 @@ class LegoPageElement(JSONPyWizard):
     class _(JSONPyWizard.Meta):
         # Enable auto-tagging for polymorphic serialization
         auto_assign_tags = True
+        # Exclude page_data from serialization to avoid circular references
+        dump_exclude = {"page_data"}
 
     bbox: BBox
 
@@ -190,6 +192,9 @@ class Page(LegoPageElement):
         unprocessed_elements: Raw elements that were classified but couldn't be converted
     """
 
+    # TODO Consider if we want to keep the page_data field here. It creates a circular
+    # reference, and is not strictly necessary for the final LegoPageElement
+    # representation.
     page_data: PageData = field(kw_only=True)
 
     page_number: PageNumber | None = field(default=None, kw_only=True)
@@ -206,7 +211,10 @@ class Page(LegoPageElement):
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         page_num = self.page_number.value if self.page_number else "unknown"
-        return f"Page(number={page_num}, steps={len(self.steps)}, parts_lists={len(self.parts_lists)}, warnings={len(self.warnings)})"
+        return (
+            f"Page(number={page_num}, steps={len(self.steps)}, "
+            f"parts_lists={len(self.parts_lists)}, warnings={len(self.warnings)})"
+        )
 
 
 # TODO Add sub-assembly (or sub-step) element.

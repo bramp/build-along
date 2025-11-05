@@ -29,62 +29,6 @@ from build_a_long.pdf_extract.extractor import PageData
 log = logging.getLogger(__name__)
 
 
-def _serialize_classification_result(
-    page: PageData, result: ClassificationResult
-) -> dict[str, Any]:
-    """Serialize classification results to a JSON-serializable dict.
-
-    Note: We can't use result.to_dict() directly because:
-    - ClassificationResult uses Element objects as dictionary keys (not JSON serializable)
-    - We need to add __tag__ to LegoElements for type identification
-    - We need to remove page_data to avoid circular references
-    - Golden files need a simplified structure with string IDs
-
-    Args:
-        page: The PageData that was classified
-        result: The ClassificationResult to serialize
-
-    Returns:
-        Dict containing:
-        - labeled_elements: Dict mapping element IDs to labels
-        - constructed_elements: Dict mapping element IDs to serialized LegoElements
-        - removed_elements: Dict mapping element IDs to removal reasons
-        - warnings: List of warning messages
-    """
-    serialized: dict[str, Any] = {
-        "labeled_elements": {},
-        "constructed_elements": {},
-        "removed_elements": {},
-        "warnings": result.get_warnings(),
-    }
-
-    # Serialize labeled elements
-    for element, label in result.get_labeled_elements().items():
-        serialized["labeled_elements"][str(element.id)] = label
-
-    # Serialize constructed elements using LegoPageElement.to_dict()
-    for element_id, lego_element in result._constructed_elements.items():
-        element_dict = lego_element.to_dict()
-        # Add __tag__ field for type identification (auto_assign_tags only works for Union types)
-        element_dict["__tag__"] = lego_element.__class__.__name__
-        # Remove page_data to avoid circular references and reduce size
-        element_dict.pop("page_data", None)
-        serialized["constructed_elements"][str(element_id)] = element_dict
-
-    # Serialize removed elements using RemovalReason.to_dict()
-    for element in page.elements:
-        if result.is_removed(element):
-            reason = result.get_removal_reason(element)
-            if reason:
-                # Use to_dict() but customize for golden file format
-                serialized["removed_elements"][str(element.id)] = {
-                    "reason_type": reason.reason_type,
-                    "target_element_id": str(reason.target_element.id),
-                }
-
-    return serialized
-
-
 def _compare_classification_results(
     actual: dict[str, Any],
     expected: dict[str, Any],
@@ -93,62 +37,99 @@ def _compare_classification_results(
     """Compare actual and expected classification results.
 
     Returns a list of error messages (empty list if they match).
+
+    Note: We compare the serialized ClassificationResult.to_dict() output,
+    which includes fields like:
+    - _warnings: List of warning messages
+    - _removal_reasons: Dict mapping element IDs to removal reasons
+    - _constructed_elements: Dict mapping element IDs to LegoPageElements
+    - _candidates: Dict mapping labels to lists of candidates
     """
     errors: list[str] = []
 
-    # Compare labeled elements
-    actual_labels = actual.get("labeled_elements", {})
-    expected_labels = expected.get("labeled_elements", {})
+    # Compare warnings
+    actual_warnings = actual.get("_warnings", [])
+    expected_warnings = expected.get("_warnings", [])
+    if actual_warnings != expected_warnings:
+        errors.append(
+            f"Warnings mismatch: expected {expected_warnings}, got {actual_warnings}"
+        )
 
-    if actual_labels != expected_labels:
-        # Find differences
-        all_ids = set(actual_labels.keys()) | set(expected_labels.keys())
-        for elem_id in sorted(all_ids):
-            actual_label = actual_labels.get(elem_id)
-            expected_label = expected_labels.get(elem_id)
-            if actual_label != expected_label:
-                errors.append(
-                    f"Element {elem_id}: expected label '{expected_label}', got '{actual_label}'"
-                )
+    # Compare removal reasons
+    actual_removed = actual.get("_removal_reasons", {})
+    expected_removed = expected.get("_removal_reasons", {})
+    if actual_removed != expected_removed:
+        all_removed_ids = set(str(k) for k in actual_removed) | set(
+            str(k) for k in expected_removed
+        )
+        for elem_id in sorted(all_removed_ids):
+            str_id = str(elem_id)
+            if str_id not in expected_removed:
+                errors.append(f"Element {elem_id}: unexpectedly removed")
+            elif str_id not in actual_removed:
+                errors.append(f"Element {elem_id}: expected to be removed but wasn't")
 
-    # Compare constructed elements (just check types match, not full content)
-    actual_constructed = actual.get("constructed_elements", {})
-    expected_constructed = expected.get("constructed_elements", {})
+    # Compare constructed elements (check that types match)
+    actual_constructed = actual.get("_constructed_elements", {})
+    expected_constructed = expected.get("_constructed_elements", {})
 
-    all_constructed_ids = set(actual_constructed.keys()) | set(
-        expected_constructed.keys()
+    all_constructed_ids = set(str(k) for k in actual_constructed) | set(
+        str(k) for k in expected_constructed
     )
     for elem_id in sorted(all_constructed_ids):
-        actual_elem = actual_constructed.get(elem_id)
-        expected_elem = expected_constructed.get(elem_id)
+        str_id = str(elem_id)
+        actual_elem = actual_constructed.get(str_id)
+        expected_elem = expected_constructed.get(str_id)
 
         if actual_elem is None and expected_elem is not None:
             errors.append(
-                f"Element {elem_id}: expected constructed type '{expected_elem.get('__tag__')}', got None"
+                f"Element {elem_id}: expected constructed type "
+                f"'{expected_elem.get('__tag__')}', got None"
             )
         elif actual_elem is not None and expected_elem is None:
             errors.append(
-                f"Element {elem_id}: expected None, got constructed type '{actual_elem.get('__tag__')}'"
+                f"Element {elem_id}: expected None, got constructed type "
+                f"'{actual_elem.get('__tag__')}'"
             )
         elif actual_elem is not None and expected_elem is not None:
             actual_type = actual_elem.get("__tag__")
             expected_type = expected_elem.get("__tag__")
             if actual_type != expected_type:
                 errors.append(
-                    f"Element {elem_id}: expected type '{expected_type}', got '{actual_type}'"
+                    f"Element {elem_id}: expected type '{expected_type}', "
+                    f"got '{actual_type}'"
                 )
 
-    # Compare removed elements
-    actual_removed = actual.get("removed_elements", {})
-    expected_removed = expected.get("removed_elements", {})
+    # Compare candidates (check winners for each label)
+    actual_candidates = actual.get("_candidates", {})
+    expected_candidates = expected.get("_candidates", {})
 
-    if actual_removed != expected_removed:
-        all_removed_ids = set(actual_removed.keys()) | set(expected_removed.keys())
-        for elem_id in sorted(all_removed_ids):
-            if elem_id not in expected_removed:
-                errors.append(f"Element {elem_id}: unexpectedly removed")
-            elif elem_id not in actual_removed:
-                errors.append(f"Element {elem_id}: expected to be removed but wasn't")
+    all_labels = set(actual_candidates.keys()) | set(expected_candidates.keys())
+    for label in sorted(all_labels):
+        actual_label_candidates = actual_candidates.get(label, [])
+        expected_label_candidates = expected_candidates.get(label, [])
+
+        # Extract winners
+        actual_winners = [c for c in actual_label_candidates if c.get("is_winner")]
+        expected_winners = [c for c in expected_label_candidates if c.get("is_winner")]
+
+        # Compare winner element IDs
+        actual_winner_ids = {
+            c.get("source_element", {}).get("id")
+            for c in actual_winners
+            if c.get("source_element")
+        }
+        expected_winner_ids = {
+            c.get("source_element", {}).get("id")
+            for c in expected_winners
+            if c.get("source_element")
+        }
+
+        if actual_winner_ids != expected_winner_ids:
+            errors.append(
+                f"Label '{label}': expected winner IDs {expected_winner_ids}, "
+                f"got {actual_winner_ids}"
+            )
 
     return errors
 
@@ -222,7 +203,10 @@ def _run_invariant_checks(
 
 
 @pytest.mark.skip(
-    reason="Classifier has known issues with deleting labeled elements. Enable this test once classifier_rules_test passes."
+    reason=(
+        "Classifier has known issues with deleting labeled elements. "
+        "Enable this test once classifier_rules_test passes."
+    )
 )
 class TestClassifierGolden:
     """Golden file tests validating exact classification output."""
@@ -256,14 +240,15 @@ class TestClassifierGolden:
         # Run classification
         result = classify_elements(page)
 
-        # Serialize the results
-        actual = _serialize_classification_result(page, result)
+        # Serialize the results using to_dict()
+        actual = result.to_dict()
 
         # Check that golden file exists
         if not golden_path.exists():
             pytest.fail(
                 f"Golden file not found: {golden_file}\n"
-                f"Run: pants run src/build_a_long/pdf_extract/classifier:generate-golden-files"
+                "Run: pants run "
+                "src/build_a_long/pdf_extract/classifier:generate-golden-files"
             )
 
         expected = json.loads(golden_path.read_text())
@@ -274,7 +259,9 @@ class TestClassifierGolden:
         )
 
         # Run invariant checks
-        invariant_errors = _run_invariant_checks(page, result, fixture_file)
+        invariant_errors = _run_invariant_checks(
+            page, result, fixture_name=fixture_file
+        )
 
         # Combine all errors
         all_errors = []
@@ -289,7 +276,8 @@ class TestClassifierGolden:
             pytest.fail(
                 f"Classification test failed for {fixture_file}:\n"
                 + "\n".join(all_errors)
-                + "\n\nTo update golden files, run: pants run src/build_a_long/pdf_extract/classifier:generate-golden-files"
+                + "\n\nTo update golden files, run: "
+                "pants run src/build_a_long/pdf_extract/classifier:generate-golden-files"
             )
 
         # Log success

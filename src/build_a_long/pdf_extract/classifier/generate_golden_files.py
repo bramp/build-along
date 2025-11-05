@@ -13,9 +13,6 @@ import sys
 from pathlib import Path
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
-from build_a_long.pdf_extract.classifier.classifier_golden_test import (
-    _serialize_classification_result,
-)
 from build_a_long.pdf_extract.extractor import PageData
 
 logging.basicConfig(level=logging.INFO)
@@ -52,8 +49,8 @@ def main() -> None:
         # Run classification
         result = classify_elements(page)
 
-        # Serialize the results
-        golden_data = _serialize_classification_result(page, result)
+        # Serialize the results using to_dict()
+        golden_data = result.to_dict()
 
         # Write golden file
         golden_path.write_text(json.dumps(golden_data, indent=2) + "\n")
