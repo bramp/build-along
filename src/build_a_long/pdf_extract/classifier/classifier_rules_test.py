@@ -6,6 +6,7 @@ Rules covered:
 - Every parts list must contain at least one part image inside it.
 - No two parts lists overlap.
 - Each part image is inside a parts list.
+- Each element has at most one winner candidate.
 
 Real fixture(s) live under this package's fixtures/ directory.
 """
@@ -385,3 +386,46 @@ class TestClassifierRules:
             f"Found {len(labeled_and_deleted)} labeled elements that are deleted in {fixture_file}. "
             f"Labeled elements should not be deleted."
         )
+
+    @pytest.mark.parametrize(
+        "fixture_file",
+        [f.name for f in (Path(__file__).with_name("fixtures")).glob("*.json")],
+    )
+    def test_each_element_has_at_most_one_winner(self, fixture_file: str) -> None:
+        """Each element should have at most one winner candidate across all labels.
+
+        An element can have multiple candidates across different labels, but only
+        one of them should be marked as a winner. This ensures classification
+        decisions are unambiguous.
+        """
+        fixture_path = Path(__file__).with_name("fixtures").joinpath(fixture_file)
+        page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
+
+        # Run the full classification pipeline on the page
+        result = classify_elements(page)
+
+        # Track which elements have won, and for which label
+        element_to_winning_label: dict[int, str] = {}
+
+        # Check all candidates across all labels
+        all_candidates = result.get_all_candidates()
+        for label, candidates in all_candidates.items():
+            for candidate in candidates:
+                if not candidate.is_winner:
+                    continue
+
+                # Skip synthetic candidates (no source element)
+                if candidate.source_element is None:
+                    continue
+
+                element_id = candidate.source_element.id
+
+                # Check if this element already has a winner
+                if element_id in element_to_winning_label:
+                    existing_label = element_to_winning_label[element_id]
+                    pytest.fail(
+                        f"Element {element_id} in {fixture_file} has multiple winner candidates: "
+                        f"'{existing_label}' and '{label}'. Each element should have at most one winner."
+                    )
+
+                element_to_winning_label[element_id] = label

@@ -68,9 +68,17 @@ class Candidate(JSONPyWizard):
     failure_reason: str | None = None
     """Why construction failed, if it did"""
 
-    # TODO Is this redudant with being in the constructed_elements?
     is_winner: bool = False
-    """Whether this candidate was selected as the winner"""
+    """Whether this candidate was selected as the winner.
+    
+    This field is set by mark_winner() and is used for:
+    - Querying winners (get_label, get_elements_by_label, has_label)
+    - Synthetic candidates (which have no source_element and can't be tracked in _element_winners)
+    - JSON serialization and golden file comparisons
+    
+    Note: For candidates with source_element, this is redundant with _element_winners,
+    but provides convenient access and handles synthetic candidates.
+    """
 
 
 @dataclass
@@ -148,6 +156,13 @@ class ClassificationResult(JSONPyWizard):
     - Re-evaluation with hints (exclude specific candidates)
     - Debugging (see why each candidate won/lost)
     - UI support (show users alternatives)
+    """
+
+    _element_winners: dict[int, tuple[str, Candidate]] = field(default_factory=dict)
+    """Maps element IDs to their winning (label, candidate) tuple.
+    
+    Ensures each element has at most one winning candidate across all labels.
+    Keys are element IDs (int) for JSON serializability.
     """
 
     # Legacy: Persisted relations discovered during classification
@@ -273,16 +288,31 @@ class ClassificationResult(JSONPyWizard):
 
         Raises:
             ValueError: If candidate has a source_element that is not in PageData
-            ValueError: If candidate.source_element has no ID (all elements should have IDs)
+            ValueError: If this element already has a winner candidate
         """
         self._validate_element_in_page_data(
             candidate.source_element, "candidate.source_element"
         )
 
+        # Check if this element already has a winner
+        if candidate.source_element is not None:
+            element_id = candidate.source_element.id
+            if element_id in self._element_winners:
+                existing_label, existing_candidate = self._element_winners[element_id]
+                raise ValueError(
+                    f"Element {element_id} already has a winner candidate for label "
+                    f"'{existing_label}'. Cannot mark as winner for label '{candidate.label}'. "
+                    f"Each element can have at most one winner candidate."
+                )
+
         candidate.is_winner = True
         # Store the constructed element for this source element
         if candidate.source_element is not None:
             self._constructed_elements[candidate.source_element.id] = constructed
+            self._element_winners[candidate.source_element.id] = (
+                candidate.label,
+                candidate,
+            )
 
     def mark_removed(self, element: Element, reason: RemovalReason) -> None:
         """Mark an element as removed with the given reason.
