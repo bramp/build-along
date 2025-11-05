@@ -76,12 +76,6 @@ class PartsImageClassifier(LabelClassifier):
             "part_image",
             "all",
         )
-        # TODO This should be stateless.
-        self._part_image_pairs: list[tuple[Text, Image]] = []
-
-    def get_part_image_pairs(self) -> list[tuple[Text, Image]]:
-        """Return the list of (part_count, image) pairs created during classification."""
-        return self._part_image_pairs
 
     def evaluate(
         self,
@@ -93,9 +87,6 @@ class PartsImageClassifier(LabelClassifier):
         Scores are based on vertical distance and horizontal alignment between
         part count texts and images within parts lists.
         """
-        # Reset pairs for this page
-        self._part_image_pairs = []
-
         labeled_elements = result.get_labeled_elements()
         part_counts: list[Text] = [
             e
@@ -126,16 +117,10 @@ class PartsImageClassifier(LabelClassifier):
         images: list[Image],
         result: ClassificationResult,
     ):
-        """Match part counts with images using greedy matching based on distance.
-
-        Stores the matched pairs in self._part_image_pairs for later retrieval.
-        """
+        """Match part counts with images using greedy matching based on distance."""
         edges.sort(key=lambda score: score.sort_key())
         matched_counts: set[int] = set()
         matched_images: set[int] = set()
-
-        # Track pairs for later use
-        self._part_image_pairs = []
 
         for score in edges:
             pc = score.part_count
@@ -145,10 +130,8 @@ class PartsImageClassifier(LabelClassifier):
             matched_counts.add(id(pc))
             matched_images.add(id(img))
             # Label the image as part_image (only once per image)
-            # NOTE: parts_image doesn't use the Candidate pattern yet, so we manually update
-            # the result's internal state. This should be migrated to use Candidates in the future.
             if result.get_label(img) != "part_image":
-                # Create a minimal candidate for tracking (no constructed element for images yet)
+                # Create a candidate for tracking with the score containing the pair relationship
                 result.add_candidate(
                     "part_image",
                     Candidate(
@@ -162,7 +145,6 @@ class PartsImageClassifier(LabelClassifier):
                         is_winner=True,
                     ),
                 )
-            self._part_image_pairs.append((pc, img))
 
         if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
             unmatched_c = [pc for pc in part_counts if id(pc) not in matched_counts]

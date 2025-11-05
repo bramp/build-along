@@ -284,7 +284,7 @@ class PartsListClassifier(LabelClassifier):
         parts: list[Part] = []
 
         # Get all part_image_pairs that are inside this parts_list drawing
-        for part_count_elem, image_elem in result.part_image_pairs:
+        for part_count_elem, image_elem in result.get_part_image_pairs():
             # Check if both elements are inside the parts_list drawing
             if not part_count_elem.bbox.fully_inside(parts_list_drawing.bbox):
                 continue

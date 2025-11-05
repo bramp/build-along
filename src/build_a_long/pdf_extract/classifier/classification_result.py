@@ -165,10 +165,6 @@ class ClassificationResult(JSONPyWizard):
     Keys are element IDs (int) for JSON serializability.
     """
 
-    # Legacy: Persisted relations discovered during classification
-    # TODO: Migrate to candidates pattern
-    part_image_pairs: list[tuple[Any, Any]] = field(default_factory=list)
-
     def __post_init__(self) -> None:
         """Validate PageData elements have unique IDs (if present).
 
@@ -459,6 +455,24 @@ class ClassificationResult(JSONPyWizard):
                     c for c in label_candidates if id(c.source_element) != winner_id
                 ]
         return sorted(label_candidates, key=lambda c: c.score, reverse=True)
+
+    def get_part_image_pairs(self) -> list[tuple[Element, Element]]:
+        """Get part_count and part_image element pairs from winning candidates.
+
+        This derives the pairs from the part_image candidates' score_details,
+        which contain the relationship between part_count text and image elements.
+
+        Returns:
+            List of (part_count, image) tuples for all winning part_image candidates
+        """
+        pairs: list[tuple[Element, Element]] = []
+        for candidate in self.get_candidates("part_image"):
+            if candidate.is_winner and candidate.score_details:
+                # score_details is a _PartImageScore with part_count and image fields
+                score = candidate.score_details
+                if hasattr(score, "part_count") and hasattr(score, "image"):
+                    pairs.append((score.part_count, score.image))
+        return pairs
 
 
 @dataclass
