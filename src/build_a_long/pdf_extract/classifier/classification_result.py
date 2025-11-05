@@ -5,17 +5,14 @@ Data classes for the classifier.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Union
+from typing import Any, Union
 
 from dataclass_wizard import JSONPyWizard
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.extractor import PageData
+from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
 from build_a_long.pdf_extract.extractor.page_elements import Element
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.extractor.extractor import PageData
-    from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
-
 
 # Score key can be either a single Element or a tuple of Elements (for pairings)
 ScoreKey = Union[Element, tuple[Element, ...]]

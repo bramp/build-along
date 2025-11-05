@@ -21,7 +21,8 @@ log = logging.getLogger(__name__)
 
 def main() -> None:
     """Generate golden files for all fixtures."""
-    fixtures_dir = Path(__file__).parent / "fixtures"
+    # TODO maybe be explict with the full path of the directory
+    fixtures_dir = Path(__file__).parent.parent / "fixtures"
 
     if not fixtures_dir.exists():
         log.error(f"Fixtures directory not found: {fixtures_dir}")
