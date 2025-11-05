@@ -15,26 +15,23 @@ class TestStepClassification:
         page_bbox = BBox(0, 0, 200, 300)
 
         # Page number
-        pn = Text(bbox=BBox(10, 285, 20, 295), text="6")
+        pn = Text(id=0, bbox=BBox(10, 285, 20, 295), text="6")
 
         # Step number (taller than page number)
-        step = Text(bbox=BBox(50, 180, 70, 210), text="10")
+        step = Text(id=1, bbox=BBox(50, 180, 70, 210), text="10")
 
         # Parts list drawing above the step
-        d1 = Drawing(bbox=BBox(30, 100, 170, 160))
+        d1 = Drawing(id=2, bbox=BBox(30, 100, 170, 160))
 
         # Part counts inside d1
-        pc1 = Text(bbox=BBox(40, 110, 55, 120), text="2x")
-        pc2 = Text(bbox=BBox(100, 130, 115, 140), text="5×")
+        pc1 = Text(id=3, bbox=BBox(40, 110, 55, 120), text="2x")
+        pc2 = Text(id=4, bbox=BBox(100, 130, 115, 140), text="5×")
 
         page = PageData(
             page_number=6,
             elements=[pn, step, d1, pc1, pc2],
             bbox=page_bbox,
         )
-
-        # Use elements from page since PageData may reassign IDs
-        pn, step, d1, pc1, pc2 = page.elements
 
         result = classify_elements(page)
 
@@ -61,19 +58,16 @@ class TestStepClassification:
         page_bbox = BBox(0, 0, 200, 300)
 
         # Page number
-        pn = Text(bbox=BBox(10, 285, 20, 295), text="6")
+        pn = Text(id=0, bbox=BBox(10, 285, 20, 295), text="6")
 
         # Step number (taller than page number)
-        step = Text(bbox=BBox(50, 180, 70, 210), text="5")
+        step = Text(id=1, bbox=BBox(50, 180, 70, 210), text="5")
 
         page = PageData(
             page_number=6,
             elements=[pn, step],
             bbox=page_bbox,
         )
-
-        # Use elements from page since PageData may reassign IDs
-        pn, step = page.elements
 
         result = classify_elements(page)
 
@@ -100,26 +94,23 @@ class TestStepClassification:
         page_bbox = BBox(0, 0, 400, 300)
 
         # Page number
-        pn = Text(bbox=BBox(10, 285, 20, 295), text="6")
+        pn = Text(id=0, bbox=BBox(10, 285, 20, 295), text="6")
 
         # First step
-        step1 = Text(bbox=BBox(50, 180, 70, 210), text="1")
-        d1 = Drawing(bbox=BBox(30, 100, 170, 160))
-        pc1 = Text(bbox=BBox(40, 110, 55, 120), text="2x")
+        step1 = Text(id=1, bbox=BBox(50, 180, 70, 210), text="1")
+        d1 = Drawing(id=2, bbox=BBox(30, 100, 170, 160))
+        pc1 = Text(id=3, bbox=BBox(40, 110, 55, 120), text="2x")
 
         # Second step
-        step2 = Text(bbox=BBox(250, 180, 270, 210), text="2")
-        d2 = Drawing(bbox=BBox(230, 100, 370, 160))
-        pc2 = Text(bbox=BBox(240, 110, 255, 120), text="3x")
+        step2 = Text(id=4, bbox=BBox(250, 180, 270, 210), text="2")
+        d2 = Drawing(id=5, bbox=BBox(230, 100, 370, 160))
+        pc2 = Text(id=6, bbox=BBox(240, 110, 255, 120), text="3x")
 
         page = PageData(
             page_number=6,
             elements=[pn, step1, d1, pc1, step2, d2, pc2],
             bbox=page_bbox,
         )
-
-        # Use elements from page since PageData may reassign IDs
-        pn, step1, d1, pc1, step2, d2, pc2 = page.elements
 
         result = classify_elements(page)
 
@@ -151,13 +142,13 @@ class TestStepClassification:
         page_bbox = BBox(0, 0, 400, 300)
 
         # Page number
-        pn = Text(bbox=BBox(10, 285, 20, 295), text="6")
+        pn = Text(id=0, bbox=BBox(10, 285, 20, 295), text="6")
 
         # Step 2 appears first in the element list
-        step2 = Text(bbox=BBox(250, 180, 270, 210), text="2")
+        step2 = Text(id=1, bbox=BBox(250, 180, 270, 210), text="2")
 
         # Step 1 appears second
-        step1 = Text(bbox=BBox(50, 180, 70, 210), text="1")
+        step1 = Text(id=2, bbox=BBox(50, 180, 70, 210), text="1")
 
         page = PageData(
             page_number=6,

@@ -32,7 +32,7 @@ class TestMain:
 
         # Mock the extractor to return structured data
 
-        step_element = Text(bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
+        step_element = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
         page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
 
         page_data = PageData(
@@ -168,7 +168,7 @@ class TestMain:
         mock_exists.return_value = True
 
         # Mock the extractor to return structured data
-        step_element = Text(bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
+        step_element = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
         page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
 
         page_data = PageData(

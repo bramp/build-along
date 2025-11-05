@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Any
 
 import pymupdf
@@ -48,24 +48,6 @@ class PageData(JSONPyWizard):
     bbox: BBox
     elements: list[Element]
 
-    def __post_init__(self) -> None:
-        """Automatically assign IDs to elements that don't have them.
-
-        This ensures all elements have unique IDs within the page, which is required
-        for JSON serializability of ClassificationResult's tracking dictionaries.
-        """
-        # Find the next available ID (in case some elements already have IDs)
-        existing_ids = {e.id for e in self.elements if e.id is not None}
-        next_id = 0
-        while next_id in existing_ids:
-            next_id += 1
-
-        # Assign IDs to elements that don't have them
-        for i, element in enumerate(self.elements):
-            if element.id is None:
-                self.elements[i] = replace(element, id=next_id)
-                next_id += 1
-
 
 @dataclass
 class ExtractionResult(JSONPyWizard):
@@ -80,191 +62,205 @@ class ExtractionResult(JSONPyWizard):
     pages: list[PageData]
 
 
-def _extract_text_elements(blocks: list[BlockDict]) -> list[Text]:
-    """Extract text elements from a page's raw dictionary blocks.
+class Extractor:
+    """Handles extraction of page elements with sequential ID assignment.
 
-    Args:
-        blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
-
-    Returns:
-        List of Text elements
+    Each Extractor instance should be used for a single page to ensure
+    IDs are sequential and reset for each page.
     """
-    elements: list[Text] = []
 
-    for b in blocks:
-        assert isinstance(b, dict)
+    def __init__(self) -> None:
+        """Initialize the extractor with a fresh ID counter."""
+        self._next_id = 0
 
-        bi: int | None = b.get("number")
-        btype: int | None = b.get("type")  # 0=text, 1=image
+    def _get_next_id(self) -> int:
+        """Get the next sequential ID and increment the counter."""
+        current_id = self._next_id
+        self._next_id += 1
+        return current_id
 
-        if btype != 0:  # Skip non-text blocks
-            continue
+    def _extract_text_elements(self, blocks: list[BlockDict]) -> list[Text]:
+        """Extract text elements from a page's raw dictionary blocks.
 
-        # Now we know b is a text block
-        text_block: TextBlockDict = b  # type: ignore[assignment]
+        Args:
+            blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
 
-        for line in text_block.get("lines", []):
-            for span in line.get("spans", []):
-                sbbox: BBoxTuple = span.get("bbox", (0.0, 0.0, 0.0, 0.0))
-                nbbox = BBox.from_tuple(sbbox)
+        Returns:
+            List of Text elements with assigned IDs
+        """
+        elements: list[Text] = []
 
-                text: str = span.get("text", None)
-                if text is None or text == "":
-                    chars = span.get("chars", [])
-                    text = "".join(c["c"] for c in chars)
+        for b in blocks:
+            assert isinstance(b, dict)
 
-                font_size: float = span.get("size", 0.0)
-                font_name: str = span.get("font", "unknown")
+            bi: int | None = b.get("number")
+            btype: int | None = b.get("type")  # 0=text, 1=image
 
-                logger.debug(
-                    "Found text %s %r with bbox %s, font %s, size %s",
-                    bi,
-                    text,
-                    nbbox,
-                    font_name,
-                    font_size,
-                )
+            if btype != 0:  # Skip non-text blocks
+                continue
 
-                elements.append(
-                    Text(
-                        bbox=nbbox,
-                        text=text,
-                        font_name=font_name,
-                        font_size=font_size,
+            # Now we know b is a text block
+            text_block: TextBlockDict = b  # type: ignore[assignment]
+
+            for line in text_block.get("lines", []):
+                for span in line.get("spans", []):
+                    sbbox: BBoxTuple = span.get("bbox", (0.0, 0.0, 0.0, 0.0))
+                    nbbox = BBox.from_tuple(sbbox)
+
+                    text: str = span.get("text", None)
+                    if text is None or text == "":
+                        chars = span.get("chars", [])
+                        text = "".join(c["c"] for c in chars)
+
+                    font_size: float = span.get("size", 0.0)
+                    font_name: str = span.get("font", "unknown")
+
+                    logger.debug(
+                        "Found text %s %r with bbox %s, font %s, size %s",
+                        bi,
+                        text,
+                        nbbox,
+                        font_name,
+                        font_size,
                     )
+
+                    elements.append(
+                        Text(
+                            bbox=nbbox,
+                            text=text,
+                            font_name=font_name,
+                            font_size=font_size,
+                            id=self._get_next_id(),
+                        )
+                    )
+
+        return elements
+
+    def _extract_image_elements(self, blocks: list[BlockDict]) -> list[Image]:
+        """Extract image elements from a page's raw dictionary blocks.
+
+        Args:
+            blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
+
+        Returns:
+            List of Image elements with assigned IDs
+        """
+        elements: list[Image] = []
+
+        for b in blocks:
+            assert isinstance(b, dict)
+
+            bi: int | None = b.get("number")
+            btype: int | None = b.get("type")  # 0=text, 1=image
+
+            if btype != 1:  # Skip non-image blocks
+                continue
+
+            # Now we know b is an image block
+            image_block: ImageBlockDict = b  # type: ignore[assignment]
+
+            bbox: BBoxTuple = image_block.get("bbox", (0.0, 0.0, 0.0, 0.0))
+            nbbox = BBox.from_tuple(bbox)
+
+            elements.append(
+                Image(
+                    bbox=nbbox,
+                    image_id=f"image_{bi}",
+                    id=self._get_next_id(),
                 )
-
-    return elements
-
-
-def _extract_image_elements(blocks: list[BlockDict]) -> list[Image]:
-    """Extract image elements from a page's raw dictionary blocks.
-
-    Args:
-        blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
-
-    Returns:
-        List of Image elements
-    """
-    elements: list[Image] = []
-
-    for b in blocks:
-        assert isinstance(b, dict)
-
-        bi: int | None = b.get("number")
-        btype: int | None = b.get("type")  # 0=text, 1=image
-
-        if btype != 1:  # Skip non-image blocks
-            continue
-
-        # Now we know b is an image block
-        image_block: ImageBlockDict = b  # type: ignore[assignment]
-
-        bbox: BBoxTuple = image_block.get("bbox", (0.0, 0.0, 0.0, 0.0))
-        nbbox = BBox.from_tuple(bbox)
-
-        elements.append(Image(bbox=nbbox, image_id=f"image_{bi}"))
-        logger.debug("Found image %s with %s", bi, nbbox)
-
-    return elements
-
-
-def _extract_drawing_elements(drawings: list[Any]) -> list[Drawing]:
-    """Extract drawing (vector path) elements from a page.
-
-    Args:
-        drawings: List of drawing dictionaries from page.get_drawings()
-
-    Returns:
-        List of Drawing elements
-    """
-    elements: list[Drawing] = []
-
-    for d in drawings:
-        drect = d["rect"]
-        nbbox = BBox.from_tuple((drect.x0, drect.y0, drect.x1, drect.y1))
-        elements.append(Drawing(bbox=nbbox))
-        logger.debug("Found drawing with %s", nbbox)
-
-    return elements
-
-
-def _warn_unknown_block_types(blocks: list[Any]) -> bool:
-    """Log warnings for blocks with unsupported types.
-
-    Args:
-        blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
-
-    Returns:
-        True if all blocks are valid types, False if any unknown types were found
-    """
-    for b in blocks:
-        assert isinstance(b, dict)
-        bi: int | None = b.get("number")
-        btype: int | None = b.get("type")  # 0=text, 1=image
-
-        if btype not in (0, 1):
-            logger.warning(
-                "Skipping block with unsupported type %s at index %s", btype, bi
             )
-            return False
-    return True
+            logger.debug("Found image %s with %s", bi, nbbox)
 
+        return elements
 
-def _extract_page_elements(
-    page: pymupdf.Page, page_num: int, include_types: set[str]
-) -> PageData:
-    """Extract all elements from a single page.
+    def _extract_drawing_elements(self, drawings: list[Any]) -> list[Drawing]:
+        """Extract drawing (vector path) elements from a page.
 
-    Args:
-        page: PyMuPDF page object
-        page_num: Page number (1-indexed)
-        include_types: Set of element types to include
+        Args:
+            drawings: List of drawing dictionaries from page.get_drawings()
 
-    Returns:
-        PageData with all extracted elements
-    """
-    logger.info("Processing page %s", page_num)
+        Returns:
+            List of Drawing elements with assigned IDs
+        """
+        elements: list[Drawing] = []
 
-    # Get raw dictionary with text and image blocks
-    raw: RawDict = page.get_text("rawdict")  # type: ignore[assignment]
-    assert isinstance(raw, dict)
+        for d in drawings:
+            drect = d["rect"]
+            nbbox = BBox.from_tuple((drect.x0, drect.y0, drect.x1, drect.y1))
+            elements.append(Drawing(bbox=nbbox, id=self._get_next_id()))
+            logger.debug("Found drawing with %s", nbbox)
 
-    blocks = raw.get("blocks", [])
-    assert _warn_unknown_block_types(blocks)
+        return elements
 
-    # Extract elements by type
-    typed_elements: list[Element] = []
-    if "text" in include_types:
-        typed_elements.extend(_extract_text_elements(blocks))
-    if "image" in include_types:
-        typed_elements.extend(_extract_image_elements(blocks))
-    if "drawing" in include_types:
-        drawings = page.get_drawings()
-        typed_elements.extend(_extract_drawing_elements(drawings))
+    def _warn_unknown_block_types(self, blocks: list[Any]) -> bool:
+        """Log warnings for blocks with unsupported types.
 
-    # Assign sequential IDs to elements within this page. PageElement dataclasses
-    # are frozen, so we create new instances with the assigned id using
-    # dataclasses.replace.
-    for i, element in enumerate(typed_elements):
-        typed_elements[i] = replace(element, id=i)
+        Args:
+            blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
 
-    page_rect = page.rect
-    page_bbox = BBox.from_tuple(
-        (page_rect.x0, page_rect.y0, page_rect.x1, page_rect.y1)
-    )
+        Returns:
+            True if all blocks are valid types, False if any unknown types were found
+        """
+        for b in blocks:
+            assert isinstance(b, dict)
+            bi: int | None = b.get("number")
+            btype: int | None = b.get("type")  # 0=text, 1=image
 
-    return PageData(
-        page_number=page_num,
-        elements=typed_elements,
-        bbox=page_bbox,
-    )
+            if btype not in (0, 1):
+                logger.warning(
+                    "Skipping block with unsupported type %s at index %s", btype, bi
+                )
+                return False
+        return True
+
+    def extract_page_elements(
+        self, page: pymupdf.Page, page_num: int, include_types: set[str]
+    ) -> PageData:
+        """Extract all elements from a single page.
+
+        Args:
+            page: PyMuPDF page object
+            page_num: Page number (1-indexed)
+            include_types: Set of element types to include
+
+        Returns:
+            PageData with all extracted elements (with sequential IDs)
+        """
+        logger.info("Processing page %s", page_num)
+
+        # Get raw dictionary with text and image blocks
+        raw: RawDict = page.get_text("rawdict")  # type: ignore[assignment]
+        assert isinstance(raw, dict)
+
+        blocks = raw.get("blocks", [])
+        assert self._warn_unknown_block_types(blocks)
+
+        # Extract elements by type (IDs are assigned during creation)
+        typed_elements: list[Element] = []
+        if "text" in include_types:
+            typed_elements.extend(self._extract_text_elements(blocks))
+        if "image" in include_types:
+            typed_elements.extend(self._extract_image_elements(blocks))
+        if "drawing" in include_types:
+            drawings = page.get_drawings()
+            typed_elements.extend(self._extract_drawing_elements(drawings))
+
+        page_rect = page.rect
+        page_bbox = BBox.from_tuple(
+            (page_rect.x0, page_rect.y0, page_rect.x1, page_rect.y1)
+        )
+
+        return PageData(
+            page_number=page_num,
+            elements=typed_elements,
+            bbox=page_bbox,
+        )
 
 
 def extract_bounding_boxes(
     doc: pymupdf.Document,
     page_numbers: Sequence[int] | None = None,
-    include_types: set[str] = {"text", "image", "drawing"},
+    include_types: set[str] | None = None,
 ) -> list[PageData]:
     """
     Extract bounding boxes for the selected pages of a PDF document.
@@ -273,11 +269,15 @@ def extract_bounding_boxes(
         doc: PyMuPDF Document object
         page_numbers: A sequence of 1-indexed page numbers to process. If None or
             empty, all pages are processed.
-        include_types: Set of element types to include ("text", "image", "drawing")
+        include_types: Set of element types to include ("text", "image", "drawing").
+            If None, defaults to all types.
 
     Returns:
         List of PageData containing all pages with their elements
     """
+    if include_types is None:
+        include_types = {"text", "image", "drawing"}
+
     pages: list[PageData] = []
 
     num_pages = len(doc)
@@ -293,7 +293,9 @@ def extract_bounding_boxes(
             continue
         page = doc[page_index]
 
-        page_data = _extract_page_elements(page, page_num, include_types)
+        # Create a new Extractor for each page to reset IDs
+        extractor = Extractor()
+        page_data = extractor.extract_page_elements(page, page_num, include_types)
         pages.append(page_data)
 
     return pages

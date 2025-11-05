@@ -1,7 +1,6 @@
 """Tests for the classification result data classes."""
 
 import json
-from dataclasses import replace
 
 import pytest
 
@@ -17,31 +16,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PageNumber,
     StepNumber,
 )
-from build_a_long.pdf_extract.extractor.page_elements import Element, Text
-
-
-def assign_ids(elements: list[Element]) -> list[Element]:
-    """Assign sequential IDs to elements that don't have them.
-
-    This is a test helper to ensure all elements have IDs as required by
-    ClassificationResult. Since elements are frozen dataclasses, this creates
-    new instances with IDs for elements that don't have them.
-
-    Args:
-        elements: List of elements to process
-
-    Returns:
-        New list with all elements having IDs
-    """
-    next_id = 1
-    result = []
-    for element in elements:
-        if element.id is None:
-            result.append(replace(element, id=next_id))
-            next_id += 1
-        else:
-            result.append(element)
-    return result
+from build_a_long.pdf_extract.extractor.page_elements import Text
 
 
 class TestClassifierConfig:
@@ -144,36 +119,6 @@ class TestClassificationResult:
         assert candidate.is_winner is True
         assert result.get_constructed_element(element) is constructed
         assert result.has_label("page_number")
-
-    def test_mark_winner_without_id(self) -> None:
-        """Test that marking winner works with auto-assigned IDs."""
-        element = Text(bbox=BBox(0, 0, 10, 10), text="1")  # No ID initially
-        page_data = PageData(
-            page_number=1,
-            elements=[element],
-            bbox=BBox(0, 0, 100, 100),
-        )
-        # PageData auto-assigns ID
-        element_with_id = page_data.elements[0]
-        assert element_with_id.id is not None
-
-        constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
-        candidate = Candidate(
-            bbox=BBox(0, 0, 10, 10),
-            label="page_number",
-            score=0.95,
-            score_details={},
-            constructed=constructed,
-            source_element=element_with_id,
-        )
-
-        result = ClassificationResult(page_data=page_data)
-        result.add_candidate("page_number", candidate)
-        result.mark_winner(candidate, constructed)
-
-        assert candidate.is_winner is True
-        # Element with ID should be added to constructed_elements
-        assert result.get_constructed_element(element_with_id) is constructed
 
     def test_constructed_elements_dict(self) -> None:
         """Test the internal _constructed_elements dict."""
@@ -615,26 +560,6 @@ class TestClassificationResultValidation:
         ):
             ClassificationResult(page_data=page_data)
 
-    def test_post_init_allows_none_ids(self) -> None:
-        """Test that PageData auto-assigns IDs to elements without them."""
-        element1 = Text(bbox=BBox(0, 0, 10, 10), text="1")  # No ID initially
-        element2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=99)  # Has ID
-
-        page_data = PageData(
-            page_number=1,
-            elements=[element1, element2],
-            bbox=BBox(0, 0, 100, 100),
-        )
-
-        # PageData should auto-assign ID to element1
-        assert page_data.elements[0].id is not None
-        assert page_data.elements[0].id != 99  # Different from element2's ID
-        assert page_data.elements[1].id == 99  # element2 keeps its ID
-
-        # Should not raise - all elements now have unique IDs
-        result = ClassificationResult(page_data=page_data)
-        assert result.page_data is page_data
-
     def test_add_candidate_validates_source_element_in_page_data(self) -> None:
         """Test that add_candidate validates source_element is in PageData."""
         element1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
@@ -810,23 +735,3 @@ class TestClassificationResultValidation:
         result = ClassificationResult(page_data=page_data)
         result.mark_removed(element2, reason)
         assert result.is_removed(element2)
-
-    def test_mark_removed_allows_element_without_id(self) -> None:
-        """Test that mark_removed requires elements to have IDs."""
-        element = Text(bbox=BBox(0, 0, 10, 10), text="1")  # No ID initially
-
-        page_data = PageData(
-            page_number=1,
-            elements=[element],
-            bbox=BBox(0, 0, 100, 100),
-        )
-        # PageData auto-assigns IDs, so element now has ID
-        element_with_id = page_data.elements[0]
-        assert element_with_id.id is not None
-
-        reason = RemovalReason(reason_type="child_bbox", target_element=element_with_id)
-
-        result = ClassificationResult(page_data=page_data)
-        # Should work now that element has ID
-        result.mark_removed(element_with_id, reason)
-        assert result.is_removed(element_with_id)

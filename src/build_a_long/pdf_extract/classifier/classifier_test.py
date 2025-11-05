@@ -20,6 +20,7 @@ class TestClassifyElements:
         for i in range(1, 4):
             page_bbox = BBox(0, 0, 100, 200)
             page_number_text = Text(
+                id=0,
                 bbox=BBox(5, 190, 15, 198),
                 text=str(i),
             )
