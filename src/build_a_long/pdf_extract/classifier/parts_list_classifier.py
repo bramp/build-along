@@ -386,9 +386,7 @@ class PartsListClassifier(LabelClassifier):
                 continue
 
             # This is a winner!
-            result.mark_winner(
-                candidate, candidate.source_element, candidate.constructed
-            )
+            result.mark_winner(candidate, candidate.constructed)
             if candidate.source_element is not None:
                 self.classifier._remove_child_bboxes(
                     page_data, candidate.source_element, result

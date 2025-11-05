@@ -39,6 +39,9 @@ class TestPartsListClassification:
             bbox=page_bbox,
         )
 
+        # Use elements from page since PageData may reassign IDs
+        pn, step, d1, d2, pc1, pc2, other = page.elements
+
         result = classify_elements(page)
 
         # Part counts should be labeled, step labeled, and d1 chosen as parts list
@@ -139,6 +142,9 @@ class TestPartsListClassification:
             elements=[pc, step1, step2, page_number, d_small, d_large],
             bbox=page_bbox,
         )
+
+        # Use elements from page since PageData may reassign IDs
+        pc, step1, step2, page_number, d_small, d_large = page.elements
 
         result = classify_elements(page)
 

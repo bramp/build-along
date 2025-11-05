@@ -48,6 +48,24 @@ class PageData(JSONPyWizard):
     bbox: BBox
     elements: list[Element]
 
+    def __post_init__(self) -> None:
+        """Automatically assign IDs to elements that don't have them.
+
+        This ensures all elements have unique IDs within the page, which is required
+        for JSON serializability of ClassificationResult's tracking dictionaries.
+        """
+        # Find the next available ID (in case some elements already have IDs)
+        existing_ids = {e.id for e in self.elements if e.id is not None}
+        next_id = 0
+        while next_id in existing_ids:
+            next_id += 1
+
+        # Assign IDs to elements that don't have them
+        for i, element in enumerate(self.elements):
+            if element.id is None:
+                self.elements[i] = replace(element, id=next_id)
+                next_id += 1
+
 
 @dataclass
 class ExtractionResult(JSONPyWizard):

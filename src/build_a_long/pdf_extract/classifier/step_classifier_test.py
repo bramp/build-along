@@ -33,6 +33,9 @@ class TestStepClassification:
             bbox=page_bbox,
         )
 
+        # Use elements from page since PageData may reassign IDs
+        pn, step, d1, pc1, pc2 = page.elements
+
         result = classify_elements(page)
 
         # Check that step_number is still labeled as step_number
@@ -68,6 +71,9 @@ class TestStepClassification:
             elements=[pn, step],
             bbox=page_bbox,
         )
+
+        # Use elements from page since PageData may reassign IDs
+        pn, step = page.elements
 
         result = classify_elements(page)
 
@@ -111,6 +117,9 @@ class TestStepClassification:
             elements=[pn, step1, d1, pc1, step2, d2, pc2],
             bbox=page_bbox,
         )
+
+        # Use elements from page since PageData may reassign IDs
+        pn, step1, d1, pc1, step2, d2, pc2 = page.elements
 
         result = classify_elements(page)
 

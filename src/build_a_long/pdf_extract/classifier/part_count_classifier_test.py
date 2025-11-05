@@ -21,6 +21,10 @@ class TestPartCountClassification:
             elements=[t1, t2, t3, t4],
             bbox=page_bbox,
         )
+
+        # Use elements from page since PageData may reassign IDs
+        t1, t2, t3, t4 = page.elements
+
         result = classify_elements(page)
 
         assert result.get_label(t1) == "part_count"
