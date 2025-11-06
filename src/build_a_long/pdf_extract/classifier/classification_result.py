@@ -12,28 +12,28 @@ from dataclass_wizard import JSONPyWizard
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
-from build_a_long.pdf_extract.extractor.page_elements import Element
+from build_a_long.pdf_extract.extractor.page_blocks import Block
 
-# Score key can be either a single Element or a tuple of Elements (for pairings)
-ScoreKey = Element | tuple[Element, ...]
+# Score key can be either a single Block or a tuple of Blocks (for pairings)
+ScoreKey = Block | tuple[Block, ...]
 
 
 @dataclass
 class RemovalReason(JSONPyWizard):
-    """Tracks why an element was removed during classification."""
+    """Tracks why a block was removed during classification."""
 
     reason_type: str
     """Type of removal: 'child_bbox' or 'similar_bbox'"""
 
-    target_element: Element
-    """The element that caused this removal"""
+    target_block: Block
+    """The block that caused this removal"""
 
 
 @dataclass
 class Candidate(JSONPyWizard):
-    """A candidate element with its score and constructed LegoElement.
+    """A candidate block with its score and constructed LegoElement.
 
-    Represents a single element that was considered for a particular label,
+    Represents a single block that was considered for a particular label,
     including its score, the constructed LegoPageElement (if successful),
     and information about why it succeeded or failed.
 
@@ -44,7 +44,7 @@ class Candidate(JSONPyWizard):
     """
 
     bbox: BBox
-    """The bounding box for this candidate (from source_element or constructed)"""
+    """The bounding box for this candidate (from source_block or constructed)"""
 
     label: str
     """The label this candidate would have (e.g., 'page_number')"""
@@ -59,7 +59,7 @@ class Candidate(JSONPyWizard):
     constructed: LegoPageElement | None
     """The constructed LegoElement if parsing succeeded, None if failed"""
 
-    source_element: Element | None = None
+    source_block: Block | None = None
     """The raw element that was scored (None for synthetic elements like Step)"""
 
     failure_reason: str | None = None
@@ -69,12 +69,14 @@ class Candidate(JSONPyWizard):
     """Whether this candidate was selected as the winner.
     
     This field is set by mark_winner() and is used for:
-    - Querying winners (get_label, get_elements_by_label, has_label)
-    - Synthetic candidates (which have no source_element and can't be tracked in _element_winners)
+    - Querying winners (get_label, get_blocks_by_label, has_label)
+    - Synthetic candidates (which have no source_block and can't be tracked
+      in _block_winners)
     - JSON serialization and golden file comparisons
     
-    Note: For candidates with source_element, this is redundant with _element_winners,
-    but provides convenient access and handles synthetic candidates.
+    Note: For candidates with source_block, this is redundant with
+    _block_winners, but provides convenient access and handles synthetic
+    candidates.
     """
 
 
@@ -123,20 +125,20 @@ class ClassificationResult(JSONPyWizard):
     _warnings: list[str] = field(default_factory=list)
 
     _removal_reasons: dict[int, RemovalReason] = field(default_factory=dict)
-    """Maps element IDs (element.id, not id(element)) to the reason they were removed.
+    """Maps block IDs (block.id, not id(block)) to the reason they were removed.
     
-    Keys are element IDs (int) instead of Element objects to ensure JSON serializability
+    Keys are block IDs (int) instead of Block objects to ensure JSON serializability
     and consistency with _constructed_elements.
     """
 
     _constructed_elements: dict[int, LegoPageElement] = field(default_factory=dict)
-    """Maps source element IDs to their constructed LegoPageElements.
+    """Maps source block IDs to their constructed LegoPageElements.
     
     Only contains elements that were successfully labeled and constructed.
     The builder should use these pre-constructed elements rather than
-    re-parsing the source elements.
+    re-parsing the source blocks.
     
-    Keys are element IDs (int) instead of Element objects to ensure JSON serializability.
+    Keys are block IDs (int) instead of Block objects to ensure JSON serializability.
     """
 
     _candidates: dict[str, list[Candidate]] = field(default_factory=dict)
@@ -155,53 +157,52 @@ class ClassificationResult(JSONPyWizard):
     - UI support (show users alternatives)
     """
 
-    _element_winners: dict[int, tuple[str, Candidate]] = field(default_factory=dict)
-    """Maps element IDs to their winning (label, candidate) tuple.
+    _block_winners: dict[int, tuple[str, Candidate]] = field(default_factory=dict)
+    """Maps block IDs to their winning (label, candidate) tuple.
     
-    Ensures each element has at most one winning candidate across all labels.
-    Keys are element IDs (int) for JSON serializability.
+    Ensures each block has at most one winning candidate across all labels.
+    Keys are block IDs (int) for JSON serializability.
     """
 
     def __post_init__(self) -> None:
-        """Validate PageData elements have unique IDs (if present).
+        """Validate PageData blocks have unique IDs (if present).
 
-        Elements may have None IDs, but elements with IDs must have unique IDs.
-        Note: Only elements with IDs can be tracked in _constructed_elements and
-        _removal_reasons (which require element.id as keys for JSON serializability).
+        Blocks may have None IDs, but blocks with IDs must have unique IDs.
+        Note: Only blocks with IDs can be tracked in _constructed_elements and
+        _removal_reasons (which require block.id as keys for JSON serializability).
         """
         # Validate unique IDs (ignoring None values)
-        element_ids = [e.id for e in self.page_data.elements if e.id is not None]
-        if len(element_ids) != len(set(element_ids)):
-            duplicates = [id_ for id_ in element_ids if element_ids.count(id_) > 1]
+        block_ids = [e.id for e in self.page_data.blocks if e.id is not None]
+        if len(block_ids) != len(set(block_ids)):
+            duplicates = [id_ for id_ in block_ids if block_ids.count(id_) > 1]
             raise ValueError(
-                f"PageData elements must have unique IDs. Found duplicates: {set(duplicates)}"
+                f"PageData blocks must have unique IDs. "
+                f"Found duplicates: {set(duplicates)}"
             )
 
-    def _validate_element_in_page_data(
-        self, element: Element | None, param_name: str = "element"
+    def _validate_block_in_page_data(
+        self, block: Block | None, param_name: str = "block"
     ) -> None:
-        """Validate that an element is in PageData.
+        """Validate that a block is in PageData.
 
         Args:
-            element: The element to validate (None is allowed and skips validation)
+            block: The block to validate (None is allowed and skips validation)
             param_name: Name of the parameter being validated (for error messages)
 
         Raises:
-            ValueError: If element is not None and not in PageData.elements
+            ValueError: If block is not None and not in PageData.blocks
         """
-        if element is not None and element not in self.page_data.elements:
-            raise ValueError(
-                f"{param_name} must be in PageData.elements. Element: {element}"
-            )
+        if block is not None and block not in self.page_data.blocks:
+            raise ValueError(f"{param_name} must be in PageData.blocks. Block: {block}")
 
     @property
-    def elements(self) -> list[Element]:
-        """Get the elements from the page data.
+    def blocks(self) -> list[Block]:
+        """Get the blocks from the page data.
 
         Returns:
-            List of elements from the page data
+            List of blocks from the page data
         """
-        return self.page_data.elements
+        return self.page_data.blocks
 
     def add_warning(self, warning: str) -> None:
         """Add a warning message to the classification result.
@@ -219,16 +220,16 @@ class ClassificationResult(JSONPyWizard):
         """
         return self._warnings.copy()
 
-    def get_constructed_element(self, element: Element) -> LegoPageElement | None:
-        """Get the constructed LegoPageElement for a source element.
+    def get_constructed_element(self, block: Block) -> LegoPageElement | None:
+        """Get the constructed LegoPageElement for a source block.
 
         Args:
-            element: The source element
+            block: The source block
 
         Returns:
             The constructed LegoPageElement if it exists, None otherwise
         """
-        return self._constructed_elements.get(element.id)
+        return self._constructed_elements.get(block.id)
 
     # TODO maybe add a parameter to fitler out winners/non-winners
     def get_candidates(self, label: str) -> list[Candidate]:
@@ -238,7 +239,8 @@ class ClassificationResult(JSONPyWizard):
             label: The label to get candidates for
 
         Returns:
-            List of candidates for that label (returns copy to prevent external modification)
+            List of candidates for that label (returns copy to prevent
+            external modification)
         """
         return self._candidates.get(label, []).copy()
 
@@ -258,10 +260,10 @@ class ClassificationResult(JSONPyWizard):
             candidate: The candidate to add
 
         Raises:
-            ValueError: If candidate has a source_element that is not in PageData
+            ValueError: If candidate has a source_block that is not in PageData
         """
-        self._validate_element_in_page_data(
-            candidate.source_element, "candidate.source_element"
+        self._validate_block_in_page_data(
+            candidate.source_block, "candidate.source_block"
         )
 
         if label not in self._candidates:
@@ -280,113 +282,119 @@ class ClassificationResult(JSONPyWizard):
             constructed: The constructed LegoPageElement
 
         Raises:
-            ValueError: If candidate has a source_element that is not in PageData
-            ValueError: If this element already has a winner candidate
+            ValueError: If candidate has a source_block that is not in PageData
+            ValueError: If this block already has a winner candidate
         """
-        self._validate_element_in_page_data(
-            candidate.source_element, "candidate.source_element"
+        self._validate_block_in_page_data(
+            candidate.source_block, "candidate.source_block"
         )
 
-        # Check if this element already has a winner
-        if candidate.source_element is not None:
-            element_id = candidate.source_element.id
-            if element_id in self._element_winners:
-                existing_label, existing_candidate = self._element_winners[element_id]
+        # Check if this block already has a winner
+        if candidate.source_block is not None:
+            block_id = candidate.source_block.id
+            if block_id in self._block_winners:
+                existing_label, existing_candidate = self._block_winners[block_id]
                 raise ValueError(
-                    f"Element {element_id} already has a winner candidate for label "
-                    f"'{existing_label}'. Cannot mark as winner for label '{candidate.label}'. "
-                    f"Each element can have at most one winner candidate."
+                    f"Block {block_id} already has a winner candidate for "
+                    f"label '{existing_label}'. Cannot mark as winner for "
+                    f"label '{candidate.label}'. Each block can have at most "
+                    f"one winner candidate."
                 )
 
         candidate.is_winner = True
         # Store the constructed element for this source element
-        if candidate.source_element is not None:
-            self._constructed_elements[candidate.source_element.id] = constructed
-            self._element_winners[candidate.source_element.id] = (
+        if candidate.source_block is not None:
+            self._constructed_elements[candidate.source_block.id] = constructed
+            self._block_winners[candidate.source_block.id] = (
                 candidate.label,
                 candidate,
             )
 
-    def mark_removed(self, element: Element, reason: RemovalReason) -> None:
-        """Mark an element as removed with the given reason.
+    def mark_removed(self, block: Block, reason: RemovalReason) -> None:
+        """Mark a block as removed with the given reason.
 
         Args:
-            element: The element to mark as removed
+            block: The block to mark as removed
             reason: The reason for removal
 
         Raises:
-            ValueError: If element is not in PageData
+            ValueError: If block is not in PageData
         """
-        self._validate_element_in_page_data(element, "element")
-        self._removal_reasons[element.id] = reason
+        self._validate_block_in_page_data(block, "block")
+        self._removal_reasons[block.id] = reason
 
     # TODO Consider removing this method.
-    def get_labeled_elements(self) -> dict[Element, str]:
-        """Get a dictionary of all labeled elements.
+    def get_labeled_blocks(self) -> dict[Block, str]:
+        """Get a dictionary of all labeled blocks.
 
         Returns:
-            Dictionary mapping elements to their labels (excludes synthetic candidates)
+            Dictionary mapping blocks to their labels (excludes synthetic candidates)
         """
-        labeled: dict[Element, str] = {}
+        labeled: dict[Block, str] = {}
         for label, label_candidates in self._candidates.items():
             for candidate in label_candidates:
-                if candidate.is_winner and candidate.source_element is not None:
-                    labeled[candidate.source_element] = label
+                if candidate.is_winner and candidate.source_block is not None:
+                    labeled[candidate.source_block] = label
         return labeled
 
-    def get_label(self, element: Element) -> str | None:
-        """Get the label for an element from this classification result.
+    def get_label(self, block: Block) -> str | None:
+        """Get the label for a block from this classification result.
 
         Args:
-            element: The element to get the label for
+            block: The block to get the label for
 
         Returns:
             The label string if found, None otherwise
         """
-        # Search through all candidates to find the winning label for this element
+        # Search through all candidates to find the winning label for this block
         for label, label_candidates in self._candidates.items():
             for candidate in label_candidates:
-                if candidate.source_element is element and candidate.is_winner:
+                if candidate.source_block is block and candidate.is_winner:
                     return label
         return None
 
-    def get_elements_by_label(self, label: str) -> list[Element]:
-        """Get all elements with the given label.
+    def get_blocks_by_label(self, label: str) -> list[Block]:
+        """Get all blocks with the given label.
 
         Args:
             label: The label to search for
 
         Returns:
-            List of elements with that label (excludes synthetic candidates without source_element)
+            List of blocks with that label. For constructed blocks (e.g., Part),
+            returns the constructed object; for regular blocks, returns source_block.
         """
         label_candidates = self._candidates.get(label, [])
-        return [
-            c.source_element
-            for c in label_candidates
-            if c.is_winner and c.source_element is not None
-        ]
+        blocks = []
+        for c in label_candidates:
+            if c.is_winner:
+                # Prefer source_block, fall back to constructed for synthetic blocks
+                if c.source_block is not None:
+                    blocks.append(c.source_block)
+                elif c.constructed is not None:
+                    blocks.append(c.constructed)
+        return blocks
 
-    def is_removed(self, element: Element) -> bool:
-        """Check if an element has been marked for removal.
-
-        Args:
-            element: The element to check
-
-        Returns:
-            True if the element is marked for removal, False otherwise
-        """
-        return element.id in self._removal_reasons
-
-    def get_removal_reason(self, element: Element) -> RemovalReason | None:
-        """Get the reason why an element was removed.
+    def is_removed(self, block: Block) -> bool:
+        """Check if a block has been marked for removal.
 
         Args:
-            element: The element to get the removal reason for
+            block: The block to check
 
         Returns:
-            The RemovalReason if the element was removed, None otherwise
+            True if the block is marked for removal, False otherwise
         """
-        return self._removal_reasons.get(element.id)
+        return block.id in self._removal_reasons
+
+    def get_removal_reason(self, block: Block) -> RemovalReason | None:
+        """Get the reason why a block was removed.
+
+        Args:
+            block: The block to get the removal reason for
+
+        Returns:
+            The RemovalReason if the block was removed, None otherwise
+        """
+        return self._removal_reasons.get(block.id)
 
     def get_scores_for_label(self, label: str) -> dict[ScoreKey, Any]:
         """Get all scores for a specific label.
@@ -396,13 +404,13 @@ class ClassificationResult(JSONPyWizard):
 
         Returns:
             Dictionary mapping elements to score objects for that label
-            (excludes synthetic candidates without source_element)
+            (excludes synthetic candidates without source_block)
         """
         label_candidates = self._candidates.get(label, [])
         return {
-            c.source_element: c.score_details
+            c.source_block: c.score_details
             for c in label_candidates
-            if c.source_element is not None
+            if c.source_block is not None
         }
 
     def has_label(self, label: str) -> bool:
@@ -445,15 +453,15 @@ class ClassificationResult(JSONPyWizard):
         """
         label_candidates = self._candidates.get(label, [])
         if exclude_winner:
-            winner_elems = self.get_elements_by_label(label)
-            if winner_elems:
-                winner_id = id(winner_elems[0])
+            winner_blocks = self.get_blocks_by_label(label)
+            if winner_blocks:
+                winner_id = id(winner_blocks[0])
                 label_candidates = [
-                    c for c in label_candidates if id(c.source_element) != winner_id
+                    c for c in label_candidates if id(c.source_block) != winner_id
                 ]
         return sorted(label_candidates, key=lambda c: c.score, reverse=True)
 
-    def get_part_image_pairs(self) -> list[tuple[Element, Element]]:
+    def get_part_image_pairs(self) -> list[tuple[Block, Block]]:
         """Get part_count and part_image element pairs from winning candidates.
 
         This derives the pairs from the part_image candidates' score_details,
@@ -462,7 +470,7 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             List of (part_count, image) tuples for all winning part_image candidates
         """
-        pairs: list[tuple[Element, Element]] = []
+        pairs: list[tuple[Block, Block]] = []
         for candidate in self.get_candidates("part_image"):
             if candidate.is_winner and candidate.score_details:
                 # score_details is a _PartImageScore with part_count and image fields

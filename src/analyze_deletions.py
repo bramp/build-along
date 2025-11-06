@@ -1,4 +1,4 @@
-"""Analyze which elements are being deleted and why."""
+"""Analyze which blocks are being deleted and why."""
 
 from pathlib import Path
 
@@ -10,27 +10,25 @@ page_data = PageData.from_json(fixture.read_text())
 assert isinstance(page_data, PageData), "Expected single PageData, got list"
 page: PageData = page_data
 
-print(f"Page has {len(page.elements)} elements before classification")
-# Before classification, no elements are deleted
-print("Deleted elements before: 0")
+print(f"Page has {len(page.blocks)} blocks before classification")
+# Before classification, no blocks are deleted
+print("Deleted blocks before: 0")
 
 # Classify the page
 result = classify_elements(page)
 
-print(f"\nPage has {len(page.elements)} elements after classification")
-labeled_count = sum(1 for e in page.elements if result.get_label(e) is not None)
-print(f"Labeled elements after: {labeled_count}")
-print(
-    f"Deleted elements after: {sum(1 for e in page.elements if result.is_removed(e))}"
-)
+print(f"\nPage has {len(page.blocks)} blocks after classification")
+labeled_count = sum(1 for e in page.blocks if result.get_label(e) is not None)
+print(f"Labeled blocks after: {labeled_count}")
+print(f"Deleted blocks after: {sum(1 for e in page.blocks if result.is_removed(e))}")
 
-# Find deleted labeled elements
+# Find deleted labeled blocks
 deleted_labeled = [
-    e for e in page.elements if result.is_removed(e) and result.get_label(e) is not None
+    e for e in page.blocks if result.is_removed(e) and result.get_label(e) is not None
 ]
 
 print(f"\n{'=' * 60}")
-print(f"Found {len(deleted_labeled)} deleted labeled elements:")
+print(f"Found {len(deleted_labeled)} deleted labeled blocks:")
 print(f"{'=' * 60}")
 for elem in deleted_labeled:
     text = getattr(elem, "text", "N/A")
@@ -43,7 +41,7 @@ print("Checking for duplicates at same location:")
 print(f"{'=' * 60}")
 labeled = [
     e
-    for e in page.elements
+    for e in page.blocks
     if result.get_label(e) is not None and not result.is_removed(e)
 ]
 for del_elem in deleted_labeled:
@@ -73,7 +71,7 @@ for del_elem in deleted_labeled:
             print(f'      → ID {e.id}: "{e_text}"')
     elif near:
         print(
-            f'  ~ ID {del_elem.id} ({del_label} "{del_text}") has {len(near)} SIMILAR elements (IOU > 0.7):'
+            f'  ~ ID {del_elem.id} ({del_label} "{del_text}") has {len(near)} SIMILAR blocks (IOU > 0.7):'
         )
         for e, iou in near:
             e_text = getattr(e, "text", "N/A")
@@ -83,7 +81,7 @@ for del_elem in deleted_labeled:
             f'  ✗ ID {del_elem.id} ({del_label} "{del_text}") has NO duplicate - THIS IS THE BUG!'
         )
         # Let's see what's nearby
-        print(f"      Looking for other {del_label} elements:")
+        print(f"      Looking for other {del_label} blocks:")
         same_label = [e for e in labeled if result.get_label(e) == del_label]
         for e in same_label[:3]:  # Show first 3
             e_text = getattr(e, "text", "N/A")

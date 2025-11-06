@@ -4,7 +4,7 @@ from dataclass_wizard import JSONPyWizard
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_elements import Drawing
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 
 @dataclass
@@ -77,7 +77,7 @@ class PartCount(LegoPageElement):
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        return f"PartCount(count={self.count})"
+        return f"PartCount(count={self.count}x)"
 
 
 @dataclass

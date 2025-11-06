@@ -1,11 +1,11 @@
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import (
-    build_hierarchy_from_elements,
+    build_hierarchy_from_blocks,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     StepNumber,
 )
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
     Text,
 )
@@ -13,11 +13,11 @@ from build_a_long.pdf_extract.extractor.page_elements import (
 
 def test_build_hierarchy_basic_containment():
     # One big image with a small number inside it
-    elements = [
+    blocks = [
         Drawing(bbox=BBox(0, 0, 100, 100), image_id="image_0", id=0),
         StepNumber(bbox=BBox(10, 10, 20, 20), value=1),
     ]
-    tree = build_hierarchy_from_elements(elements)
+    tree = build_hierarchy_from_blocks(blocks)
     assert len(tree.roots) == 1
     root = tree.roots[0]
     assert isinstance(root, Drawing)
@@ -31,11 +31,11 @@ def test_build_hierarchy_basic_containment():
 
 def test_build_hierarchy_with_children():
     # Drawing parent with nested text child fully contained
-    elements = [
+    blocks = [
         Drawing(bbox=BBox(0, 0, 50, 50), image_id="drawing_0", id=0),
         Text(bbox=BBox(5, 5, 10, 10), text="x3", id=1),
     ]
-    tree = build_hierarchy_from_elements(elements)
+    tree = build_hierarchy_from_blocks(blocks)
     assert len(tree.roots) == 1
     root = tree.roots[0]
     assert isinstance(root, Drawing)
@@ -56,8 +56,8 @@ def test_build_hierarchy_depth_calculation():
     inner = Text(bbox=BBox(20, 20, 30, 30), text="inner", id=2)
     sibling = Text(bbox=BBox(50, 50, 60, 60), text="sibling", id=3)
 
-    elements = [outer, middle, inner, sibling]
-    tree = build_hierarchy_from_elements(elements)
+    blocks = [outer, middle, inner, sibling]
+    tree = build_hierarchy_from_blocks(blocks)
 
     # Verify depths
     assert tree.get_depth(outer) == 0

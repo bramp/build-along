@@ -37,7 +37,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
     Image,
     Text,
@@ -87,15 +87,15 @@ class PartsImageClassifier(LabelClassifier):
         Scores are based on vertical distance and horizontal alignment between
         part count texts and images within parts lists.
         """
-        labeled_elements = result.get_labeled_elements()
+        labeled_blocks = result.get_labeled_blocks()
         part_counts: list[Text] = [
             e
-            for e, label in labeled_elements.items()
+            for e, label in labeled_blocks.items()
             if label == "part_count" and isinstance(e, Text)
         ]
         parts_lists: list[Drawing] = [
             e
-            for e, label in labeled_elements.items()
+            for e, label in labeled_blocks.items()
             if label == "parts_list" and isinstance(e, Drawing)
         ]
         if not part_counts or not parts_lists:
@@ -140,7 +140,7 @@ class PartsImageClassifier(LabelClassifier):
                         score=1.0,  # Matched based on distance, not a traditional score
                         score_details=score,
                         constructed=None,
-                        source_element=img,
+                        source_block=img,
                         failure_reason=None,
                         is_winner=True,
                     ),
@@ -190,7 +190,7 @@ class PartsImageClassifier(LabelClassifier):
 
         return [
             e
-            for e in page_data.elements
+            for e in page_data.blocks
             if isinstance(e, Image) and inside_any_parts_list(e)
         ]
 
@@ -200,15 +200,15 @@ class PartsImageClassifier(LabelClassifier):
         result: ClassificationResult,
         hints: ClassificationHints | None,
     ) -> None:
-        labeled_elements = result.get_labeled_elements()
+        labeled_blocks = result.get_labeled_blocks()
         part_counts: list[Text] = [
             e
-            for e, label in labeled_elements.items()
+            for e, label in labeled_blocks.items()
             if label == "part_count" and isinstance(e, Text)
         ]
         parts_lists: list[Drawing] = [
             e
-            for e, label in labeled_elements.items()
+            for e, label in labeled_blocks.items()
             if label == "parts_list" and isinstance(e, Drawing)
         ]
         if not part_counts or not parts_lists:

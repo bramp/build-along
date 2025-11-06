@@ -14,7 +14,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartsList,
     Step,
 )
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
     Image,
     Text,
@@ -31,12 +31,12 @@ class TestPageNumberExtraction:
 
         page_data = PageData(
             page_number=5,
-            elements=[page_number_text],
+            blocks=[page_number_text],
             bbox=page_bbox,
         )
 
         # Use the element from page_data since PageData may reassign IDs
-        page_number_text = page_data.elements[0]
+        page_number_text = page_data.blocks[0]
 
         result = ClassificationResult(
             page_data=page_data,
@@ -58,7 +58,7 @@ class TestPageNumberExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[some_text],
+            blocks=[some_text],
             bbox=page_bbox,
         )
 
@@ -76,12 +76,12 @@ class TestPageNumberExtraction:
 
         page_data = PageData(
             page_number=5,
-            elements=[page_number_1, page_number_2],
+            blocks=[page_number_1, page_number_2],
             bbox=page_bbox,
         )
 
         # Use elements from page_data since PageData may reassign IDs
-        page_number_1, page_number_2 = page_data.elements
+        page_number_1, page_number_2 = page_data.blocks
 
         result = ClassificationResult(
             page_data=page_data,
@@ -97,7 +97,7 @@ class TestPageNumberExtraction:
 
         assert page.page_number is not None
         assert len(page.warnings) > 0
-        assert "2 page_number elements" in page.warnings[0]
+        assert "2 page_number blocks" in page.warnings[0]
 
     def test_invalid_page_number_text(self) -> None:
         """Test handling of non-numeric page number text."""
@@ -106,12 +106,12 @@ class TestPageNumberExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[page_number_text],
+            blocks=[page_number_text],
             bbox=page_bbox,
         )
 
         # Use element from page_data since PageData may reassign IDs
-        page_number_text = page_data.elements[0]
+        page_number_text = page_data.blocks[0]
 
         result = ClassificationResult(
             page_data=page_data,
@@ -135,12 +135,12 @@ class TestStepExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[step_number_text],
+            blocks=[step_number_text],
             bbox=page_bbox,
         )
 
         # Use element from page_data since PageData may reassign IDs
-        step_number_text = page_data.elements[0]
+        step_number_text = page_data.blocks[0]
 
         result = ClassificationResult(
             page_data=page_data,
@@ -163,12 +163,12 @@ class TestStepExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[step_1, step_2],
+            blocks=[step_1, step_2],
             bbox=page_bbox,
         )
 
         # Use elements from page_data since PageData may reassign IDs
-        step_1, step_2 = page_data.elements
+        step_1, step_2 = page_data.blocks
 
         result = ClassificationResult(
             page_data=page_data,
@@ -193,12 +193,12 @@ class TestStepExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[step_text],
+            blocks=[step_text],
             bbox=page_bbox,
         )
 
         # Use element from page_data since PageData may reassign IDs
-        step_text = page_data.elements[0]
+        step_text = page_data.blocks[0]
 
         result = ClassificationResult(
             page_data=page_data, _candidates=make_candidates({step_text: "step_number"})
@@ -221,12 +221,12 @@ class TestPartsListExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[parts_list_drawing],
+            blocks=[parts_list_drawing],
             bbox=page_bbox,
         )
 
         # Use element from page_data since PageData may reassign IDs
-        parts_list_drawing = page_data.elements[0]
+        parts_list_drawing = page_data.blocks[0]
 
         result = ClassificationResult(
             page_data=page_data,
@@ -252,7 +252,7 @@ class TestPartsListExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[
+            blocks=[
                 parts_list_drawing,
                 part_count_1,
                 part_image_1,
@@ -264,7 +264,7 @@ class TestPartsListExtraction:
 
         # Use elements from page_data since PageData may reassign IDs
         parts_list_drawing, part_count_1, part_image_1, part_count_2, part_image_2 = (
-            page_data.elements
+            page_data.blocks
         )
 
         result = ClassificationResult(
@@ -311,7 +311,7 @@ class TestPartsListExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[
+            blocks=[
                 parts_list_drawing,
                 part_count_inside,
                 part_image_inside,
@@ -328,7 +328,7 @@ class TestPartsListExtraction:
             part_image_inside,
             part_count_outside,
             part_image_outside,
-        ) = page_data.elements
+        ) = page_data.blocks
 
         result = ClassificationResult(
             page_data=page_data,
@@ -368,12 +368,12 @@ class TestPartExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[parts_list, part_count, part_image],
+            blocks=[parts_list, part_count, part_image],
             bbox=page_bbox,
         )
 
         # Use elements from page_data since PageData may reassign IDs
-        parts_list, part_count, part_image = page_data.elements
+        parts_list, part_count, part_image = page_data.blocks
 
         result = ClassificationResult(
             page_data=page_data,
@@ -402,12 +402,12 @@ class TestPartExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[parts_list, part_count, part_image],
+            blocks=[parts_list, part_count, part_image],
             bbox=page_bbox,
         )
 
         # Use elements from page_data since PageData may reassign IDs
-        parts_list, part_count, part_image = page_data.elements
+        parts_list, part_count, part_image = page_data.blocks
 
         result = ClassificationResult(
             page_data=page_data,
@@ -438,12 +438,12 @@ class TestPartExtraction:
 
         page_data = PageData(
             page_number=1,
-            elements=[parts_list, part_count, part_image],
+            blocks=[parts_list, part_count, part_image],
             bbox=page_bbox,
         )
 
         # Use elements from page_data since PageData may reassign IDs
-        parts_list, part_count, part_image = page_data.elements
+        parts_list, part_count, part_image = page_data.blocks
 
         result = ClassificationResult(
             page_data=page_data,
@@ -478,12 +478,12 @@ class TestUnprocessedElements:
 
         page_data = PageData(
             page_number=1,
-            elements=[removed_text, kept_text],
+            blocks=[removed_text, kept_text],
             bbox=page_bbox,
         )
 
         # Use elements from page_data since PageData may reassign IDs
-        removed_text, kept_text = page_data.elements
+        removed_text, kept_text = page_data.blocks
 
         result = ClassificationResult(
             page_data=page_data,
@@ -506,12 +506,12 @@ class TestUnprocessedElements:
 
         page_data = PageData(
             page_number=1,
-            elements=[unlabeled_text, labeled_text],
+            blocks=[unlabeled_text, labeled_text],
             bbox=page_bbox,
         )
 
         # Use elements from page_data since PageData may reassign IDs
-        unlabeled_text, labeled_text = page_data.elements
+        unlabeled_text, labeled_text = page_data.blocks
 
         result = ClassificationResult(
             page_data=page_data,
@@ -549,7 +549,7 @@ class TestIntegration:
 
         page_data = PageData(
             page_number=7,
-            elements=[
+            blocks=[
                 page_num,
                 step_1_num,
                 step_2_num,
@@ -562,7 +562,7 @@ class TestIntegration:
 
         # Use elements from page_data since PageData may reassign IDs
         page_num, step_1_num, step_2_num, parts_list, part_count_1, part_image_1 = (
-            page_data.elements
+            page_data.blocks
         )
 
         result = ClassificationResult(

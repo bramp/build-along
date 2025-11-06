@@ -3,7 +3,7 @@
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
 class TestStepNumberClassification:
@@ -22,7 +22,7 @@ class TestStepNumberClassification:
 
         page = PageData(
             page_number=5,
-            elements=[pn, big_step, small_step],
+            blocks=[pn, big_step, small_step],
             bbox=page_bbox,
         )
 

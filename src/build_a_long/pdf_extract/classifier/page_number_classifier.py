@@ -21,7 +21,7 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import PageNumber
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
 @dataclass
@@ -75,16 +75,16 @@ class PageNumberClassifier(LabelClassifier):
         page_bbox = page_data.bbox
         assert page_bbox is not None
 
-        for element in page_data.elements:
-            # TODO Support non-text elements - such as images of text.
-            if not isinstance(element, Text):
+        for block in page_data.blocks:
+            # TODO Support non-text blocks - such as images of text.
+            if not isinstance(block, Text):
                 continue
 
-            # Score the element
-            text_score = self._score_page_number_text(element.text)
-            position_score = self._score_page_number_position(element, page_bbox)
+            # Score the block
+            text_score = self._score_page_number_text(block.text)
+            position_score = self._score_page_number_position(block, page_bbox)
             page_value_score = self._score_page_number(
-                element.text, page_data.page_number
+                block.text, page_data.page_number
             )
 
             # Create detailed score object
@@ -95,34 +95,34 @@ class PageNumberClassifier(LabelClassifier):
             )
 
             # Try to construct the LegoElement (parse the text)
-            value = extract_page_number_value(element.text)
+            value = extract_page_number_value(block.text)
             constructed_elem = None
             failure_reason = None
 
             if text_score == 0.0:
                 failure_reason = (
-                    f"Text doesn't match page number pattern: '{element.text}'"
+                    f"Text doesn't match page number pattern: '{block.text}'"
                 )
             elif position_score == 0.0:
-                failure_reason = "Element not in bottom 10% of page"
+                failure_reason = "Block not in bottom 10% of page"
             elif value is None or value < 0:
                 failure_reason = (
-                    f"Could not parse page number from text: '{element.text}'"
+                    f"Could not parse page number from text: '{block.text}'"
                 )
             else:
                 # Successfully constructed
-                constructed_elem = PageNumber(value=value, bbox=element.bbox)
+                constructed_elem = PageNumber(value=value, bbox=block.bbox)
 
             # Store candidate (even if construction failed, for debugging)
             result.add_candidate(
                 "page_number",
                 Candidate(
-                    bbox=element.bbox,
+                    bbox=block.bbox,
                     label="page_number",
                     score=score.combined_score(self.config),
                     score_details=score,
                     constructed=constructed_elem,
-                    source_element=element,
+                    source_block=block,
                     failure_reason=failure_reason,
                     is_winner=False,  # Will be set by classify()
                 ),
@@ -151,8 +151,8 @@ class PageNumberClassifier(LabelClassifier):
         result.mark_winner(winner, winner.constructed)
 
         # Cleanup: remove child/similar bboxes
-        self.classifier._remove_child_bboxes(page_data, winner.source_element, result)
-        self.classifier._remove_similar_bboxes(page_data, winner.source_element, result)
+        self.classifier._remove_child_bboxes(page_data, winner.source_block, result)
+        self.classifier._remove_similar_bboxes(page_data, winner.source_block, result)
 
     def _select_winner(self, candidate_list: list[Candidate]) -> Candidate | None:
         """Select the best candidate from the list.

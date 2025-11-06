@@ -8,7 +8,7 @@ from build_a_long.pdf_extract.classifier import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
 class TestClassifyElements:
@@ -27,7 +27,7 @@ class TestClassifyElements:
 
             page_data = PageData(
                 page_number=i,
-                elements=[page_number_text],
+                blocks=[page_number_text],
                 bbox=page_bbox,
             )
             pages.append(page_data)
@@ -39,7 +39,7 @@ class TestClassifyElements:
         for _i, (page_data, result) in enumerate(zip(pages, results, strict=True)):
             labeled_elements = [
                 e
-                for e in page_data.elements
+                for e in page_data.blocks
                 if isinstance(e, Text) and result.get_label(e) == "page_number"
             ]
             assert len(labeled_elements) == 1

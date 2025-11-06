@@ -115,14 +115,14 @@ def _compare_classification_results(
 
         # Compare winner element IDs
         actual_winner_ids = {
-            c.get("source_element", {}).get("id")
+            c.get("source_block", {}).get("id")
             for c in actual_winners
-            if c.get("source_element")
+            if c.get("source_block")
         }
         expected_winner_ids = {
-            c.get("source_element", {}).get("id")
+            c.get("source_block", {}).get("id")
             for c in expected_winners
-            if c.get("source_element")
+            if c.get("source_block")
         }
 
         if actual_winner_ids != expected_winner_ids:
@@ -158,7 +158,7 @@ def _run_invariant_checks(
         # Check that no part_images inside are deleted
         all_part_images_inside = [
             elem
-            for elem in page.elements
+            for elem in page.blocks
             if result.get_label(elem) == "part_image"
             and elem.bbox.fully_inside(parts_list.bbox)
         ]
@@ -193,7 +193,7 @@ def _run_invariant_checks(
             errors.append(f"PartImage {part_image.id} is not inside any parts_list")
 
     # Check 4: No labeled element is deleted
-    for elem in page.elements:
+    for elem in page.blocks:
         if result.get_label(elem) is not None and result.is_removed(elem):
             errors.append(
                 f"Element {elem.id} has label '{result.get_label(elem)}' but is marked deleted"

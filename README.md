@@ -143,11 +143,9 @@ Options:
 
 Output:
 
-- **Images**: One PNG per page (`page_001.png`, `page_002.png`, etc.) with bounding boxes drawn in red (step numbers) or blue (other elements).
-- **JSON**: Single file named `page_001-003.json` (for pages 1-3) containing:
+- **Images**: One PNG per page (`page_001.png`, `page_002.png`, etc.) with bounding boxes drawn in red (step numbers) or blue (other blocks).
+- **JSON**: Per-page classification results (`page_001.json`, `page_002.json`, etc.):
   - Flat list of typed page elements (StepNumber, Drawing, Unknown)
-  - Hierarchical tree based on bounding box containment
-  - Full element metadata serialized via dataclasses
 
 Notes:
 

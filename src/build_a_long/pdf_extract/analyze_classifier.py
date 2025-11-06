@@ -22,7 +22,7 @@ from build_a_long.pdf_extract.extractor import (
     PageData,
     extract_bounding_boxes,
 )
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -36,8 +36,8 @@ class PageAnalysis:
     has_page_number_label: bool
     page_number_text: str | None
     page_number_score: float | None
-    total_elements: int
-    text_elements: int
+    total_blocks: int
+    text_blocks: int
 
 
 @dataclass
@@ -84,25 +84,25 @@ def analyze_page(page_data: PageData, result: ClassificationResult) -> PageAnaly
     Returns:
         Analysis results for the page
     """
-    total_elements = len(page_data.elements)
-    text_elements = sum(1 for e in page_data.elements if isinstance(e, Text))
+    total_blocks = len(page_data.blocks)
+    text_blocks = sum(1 for e in page_data.blocks if isinstance(e, Text))
 
-    # Find page number element
-    page_number_element = None
-    for element in page_data.elements:
-        if isinstance(element, Text) and result.get_label(element) == "page_number":
-            page_number_element = element
+    # Find page number block
+    page_number_block = None
+    for block in page_data.blocks:
+        if isinstance(block, Text) and result.get_label(block) == "page_number":
+            page_number_block = block
             break
 
-    has_page_number = page_number_element is not None
-    page_number_text = page_number_element.text if page_number_element else None
+    has_page_number = page_number_block is not None
+    page_number_text = page_number_block.text if page_number_block else None
 
-    # Get score from ClassificationResult instead of element.label_scores
+    # Get score from ClassificationResult instead of block.label_scores
     page_number_score = None
-    if page_number_element and result.has_label("page_number"):
+    if page_number_block and result.has_label("page_number"):
         page_number_scores = result.get_scores_for_label("page_number")
-        if page_number_element in page_number_scores:
-            score_obj = page_number_scores[page_number_element]
+        if page_number_block in page_number_scores:
+            score_obj = page_number_scores[page_number_block]
             # Convert score object to float if it has a combined_score method
             if hasattr(score_obj, "combined_score"):
                 # We need the config to compute the score
@@ -116,8 +116,8 @@ def analyze_page(page_data: PageData, result: ClassificationResult) -> PageAnaly
         has_page_number_label=has_page_number,
         page_number_text=page_number_text,
         page_number_score=page_number_score,
-        total_elements=total_elements,
-        text_elements=text_elements,
+        total_blocks=total_blocks,
+        text_blocks=text_blocks,
     )
 
 
@@ -252,8 +252,8 @@ def print_detailed_report(analysis: GlobalAnalysis, max_docs: int = 10) -> None:
                 for page in missing_pages[:5]:
                     print(
                         f"    Page {page.page_number}: "
-                        f"{page.text_elements} text elements, "
-                        f"{page.total_elements} total elements"
+                        f"{page.text_blocks} text blocks, "
+                        f"{page.total_blocks} total blocks"
                     )
                 if len(missing_pages) > 5:
                     print(f"    ... and {len(missing_pages) - 5} more")

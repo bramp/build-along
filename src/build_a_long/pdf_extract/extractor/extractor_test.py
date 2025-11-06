@@ -5,7 +5,7 @@ from build_a_long.pdf_extract.extractor import (
     extract_bounding_boxes,
 )
 from build_a_long.pdf_extract.extractor.extractor import Extractor
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
     Image,
     Text,
@@ -54,13 +54,13 @@ class TestBoundingBoxExtractor:
         assert len(result) == 1
         page_data = result[0]
         assert page_data.page_number == 1
-        elements = page_data.elements
-        # elements now only include actual content: 1 Text + 1 Image
-        assert len(elements) == 2
-        assert isinstance(elements[0], Text)
-        assert elements[0].text == "1"
-        assert elements[0].bbox.x0 == 10.0 and elements[0].bbox.y0 == 20.0
-        assert isinstance(elements[1], Image)
+        blocks = page_data.blocks
+        # blocks now only include actual content: 1 Text + 1 Image
+        assert len(blocks) == 2
+        assert isinstance(blocks[0], Text)
+        assert blocks[0].text == "1"
+        assert blocks[0].bbox.x0 == 10.0 and blocks[0].bbox.y0 == 20.0
+        assert isinstance(blocks[1], Image)
 
     def test_extract_bounding_boxes_with_output(self):
         """Test that extractor does NOT write images/json (that's in main.py now)."""
@@ -92,12 +92,12 @@ class TestBoundingBoxExtractor:
         # Typed elements exist (no Root)
         assert len(result) == 1
         page_data = result[0]
-        elements = page_data.elements
-        assert len(elements) == 1  # Only 1 Text element
-        assert isinstance(elements[0], Text)
-        assert elements[0].text == "1"
+        blocks = page_data.blocks
+        assert len(blocks) == 1  # Only 1 Text block
+        assert isinstance(blocks[0], Text)
+        assert blocks[0].text == "1"
 
-    def test_extract_text_elements(self):
+    def test_extract_text_blocks(self):
         """Test that regular text is extracted as Text elements with content."""
         mock_page = MagicMock()
         mock_page.get_text.return_value = {
@@ -130,11 +130,11 @@ class TestBoundingBoxExtractor:
         # Validate text element (no Root)
         assert len(result) == 1
         page_data = result[0]
-        elements = page_data.elements
-        assert len(elements) == 1  # Only 1 Text element
-        assert isinstance(elements[0], Text)
-        assert elements[0].text == "Build Step Instructions"
-        assert elements[0].bbox.x0 == 10.0
+        blocks = page_data.blocks
+        assert len(blocks) == 1  # Only 1 Text block
+        assert isinstance(blocks[0], Text)
+        assert blocks[0].text == "Build Step Instructions"
+        assert blocks[0].bbox.x0 == 10.0
 
     def test_sequential_id_assignment(self):
         """Test that IDs are assigned sequentially within a page."""
@@ -173,12 +173,12 @@ class TestBoundingBoxExtractor:
         # Validate IDs are sequential starting from 0
         assert len(result) == 1
         page_data = result[0]
-        elements = page_data.elements
-        assert len(elements) == 4  # 2 Text + 1 Image + 1 Drawing
+        blocks = page_data.blocks
+        assert len(blocks) == 4  # 2 Text + 1 Image + 1 Drawing
 
         # Check that IDs are sequential: 0, 1, 2, 3
-        for i, element in enumerate(elements):
-            assert element.id == i, f"Element {i} has id {element.id}, expected {i}"
+        for i, block in enumerate(blocks):
+            assert block.id == i, f"Block {i} has id {block.id}, expected {i}"
 
     def test_id_reset_across_pages(self):
         """Test that IDs reset to 0 for each new page."""
@@ -236,12 +236,12 @@ class TestBoundingBoxExtractor:
 
         # Both pages should have elements with ID starting from 0
         assert len(result) == 2
-        assert result[0].elements[0].id == 0
-        assert isinstance(result[0].elements[0], Text)
-        assert result[0].elements[0].text == "Page 1"
-        assert result[1].elements[0].id == 0  # Reset to 0 for second page
-        assert isinstance(result[1].elements[0], Text)
-        assert result[1].elements[0].text == "Page 2"
+        assert result[0].blocks[0].id == 0
+        assert isinstance(result[0].blocks[0], Text)
+        assert result[0].blocks[0].text == "Page 1"
+        assert result[1].blocks[0].id == 0  # Reset to 0 for second page
+        assert isinstance(result[1].blocks[0], Text)
+        assert result[1].blocks[0].text == "Page 2"
 
 
 class TestExtractor:
@@ -266,7 +266,7 @@ class TestExtractor:
             },
         ]
 
-        result = extractor._extract_text_elements(blocks)
+        result = extractor._extract_text_blocks(blocks)
 
         assert len(result) == 2
         assert result[0].id == 0
@@ -306,9 +306,9 @@ class TestExtractor:
         drawings = [{"rect": rect}]
 
         # Extract in order and verify IDs increment
-        texts = extractor._extract_text_elements(text_blocks)
-        images = extractor._extract_image_elements(image_blocks)
-        draw = extractor._extract_drawing_elements(drawings)
+        texts = extractor._extract_text_blocks(text_blocks)
+        images = extractor._extract_image_blocks(image_blocks)
+        draw = extractor._extract_drawing_blocks(drawings)
 
         assert texts[0].id == 0
         assert images[0].id == 1
@@ -318,8 +318,8 @@ class TestExtractor:
 class TestExtractorMethods:
     """Tests for the Extractor class methods."""
 
-    def test_extract_text_elements(self):
-        """Test Extractor._extract_text_elements extracts text from blocks."""
+    def test_extract_text_blocks(self):
+        """Test Extractor._extract_text_blocks extracts text from blocks."""
         extractor = Extractor()
         blocks: list[Any] = [
             {
@@ -341,7 +341,7 @@ class TestExtractorMethods:
             },
         ]
 
-        result = extractor._extract_text_elements(blocks)
+        result = extractor._extract_text_blocks(blocks)
 
         assert len(result) == 2
         assert isinstance(result[0], Text)
@@ -353,8 +353,8 @@ class TestExtractorMethods:
         assert result[1].bbox.x0 == 35.0
         assert result[1].id == 1
 
-    def test_extract_image_elements(self):
-        """Test Extractor._extract_image_elements extracts images from blocks."""
+    def test_extract_image_blocks(self):
+        """Test Extractor._extract_image_blocks extracts images from blocks."""
         extractor = Extractor()
         blocks: list[Any] = [
             {
@@ -374,7 +374,7 @@ class TestExtractorMethods:
             },
         ]
 
-        result = extractor._extract_image_elements(blocks)
+        result = extractor._extract_image_blocks(blocks)
 
         assert len(result) == 2
         assert isinstance(result[0], Image)
@@ -386,8 +386,8 @@ class TestExtractorMethods:
         assert result[1].bbox.x0 == 200.0
         assert result[1].id == 1
 
-    def test_extract_drawing_elements(self):
-        """Test Extractor._extract_drawing_elements extracts drawings from page.get_drawings()."""
+    def test_extract_drawing_blocks(self):
+        """Test Extractor._extract_drawing_blocks extracts drawings from page.get_drawings()."""
         extractor = Extractor()
         # Create mock rectangle objects
         rect1 = MagicMock()
@@ -407,7 +407,7 @@ class TestExtractorMethods:
             {"rect": rect2},
         ]
 
-        result = extractor._extract_drawing_elements(drawings)
+        result = extractor._extract_drawing_blocks(drawings)
 
         assert len(result) == 2
         assert isinstance(result[0], Drawing)
@@ -444,20 +444,20 @@ class TestExtractorMethods:
 
         assert result is False
 
-    def test_extract_text_elements_empty_blocks(self):
-        """Test Extractor._extract_text_elements handles empty blocks list."""
+    def test_extract_text_blocks_empty_blocks(self):
+        """Test Extractor._extract_text_blocks handles empty blocks list."""
         extractor = Extractor()
-        result = extractor._extract_text_elements([])
+        result = extractor._extract_text_blocks([])
         assert result == []
 
-    def test_extract_image_elements_empty_blocks(self):
-        """Test Extractor._extract_image_elements handles empty blocks list."""
+    def test_extract_image_blocks_empty_blocks(self):
+        """Test Extractor._extract_image_blocks handles empty blocks list."""
         extractor = Extractor()
-        result = extractor._extract_image_elements([])
+        result = extractor._extract_image_blocks([])
         assert result == []
 
-    def test_extract_drawing_elements_empty_drawings(self):
-        """Test Extractor._extract_drawing_elements handles empty drawings list."""
+    def test_extract_drawing_blocks_empty_drawings(self):
+        """Test Extractor._extract_drawing_blocks handles empty drawings list."""
         extractor = Extractor()
-        result = extractor._extract_drawing_elements([])
+        result = extractor._extract_drawing_blocks([])
         assert result == []

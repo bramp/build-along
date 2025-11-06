@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains test fixtures for the PDF element classifier.
+This directory contains test fixtures for the PDF block classifier.
 
 ## Fixture Types
 
@@ -33,7 +33,7 @@ Tests universal rules that must always hold:
 - Every parts list contains at least one part image
 - No two parts lists overlap
 - Each part image is inside a parts list
-- No labeled element is deleted
+- No labeled block is deleted
 
 **Status**: Currently skipped due to known classifier issues.
 

@@ -7,7 +7,7 @@ from build_a_long.pdf_extract.classifier.page_number_classifier import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
     Text,
 )
@@ -54,7 +54,7 @@ class TestClassifyPageNumber:
         """Test classification with no elements."""
         page_data = PageData(
             page_number=1,
-            elements=[],
+            blocks=[],
             bbox=BBox(0, 0, 100, 200),
         )
         # Run end-to-end classification; should not raise any errors
@@ -71,7 +71,7 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=1,
-            elements=[page_number_text],
+            blocks=[page_number_text],
             bbox=page_bbox,
         )
 
@@ -96,7 +96,7 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=1,
-            elements=[page_number_text],
+            blocks=[page_number_text],
             bbox=page_bbox,
         )
 
@@ -128,7 +128,7 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=1,
-            elements=[center_text, corner_text],
+            blocks=[center_text, corner_text],
             bbox=page_bbox,
         )
 
@@ -157,7 +157,7 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=7,
-            elements=[txt6, txt7],
+            blocks=[txt6, txt7],
             bbox=page_bbox,
         )
 
@@ -176,7 +176,7 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=3,
-            elements=[pn, dup],
+            blocks=[pn, dup],
             bbox=page_bbox,
         )
 
@@ -184,15 +184,15 @@ class TestClassifyPageNumber:
 
         # Page number kept and labeled; duplicate marked for removal
         assert result.get_label(pn) == "page_number"
-        assert pn in page_data.elements
-        assert dup in page_data.elements
+        assert pn in page_data.blocks
+        assert dup in page_data.blocks
         assert result.is_removed(dup)
         assert not result.is_removed(pn)
 
     def test_non_numeric_text_scores_low(self) -> None:
         """Test that non-numeric text scores low."""
         page_bbox = BBox(0, 0, 100, 200)
-        text_element = Text(
+        text_block = Text(
             id=0,
             bbox=BBox(5, 190, 50, 198),  # Bottom-left position
             text="Hello World",
@@ -200,16 +200,16 @@ class TestClassifyPageNumber:
 
         page_data = PageData(
             page_number=1,
-            elements=[text_element],
+            blocks=[text_block],
             bbox=page_bbox,
         )
 
         result = classify_elements(page_data)
 
         # Should not be labeled due to text pattern (position is good but text is bad)
-        assert result.get_label(text_element) is None
+        assert result.get_label(text_block) is None
 
         # Check that score is low from ClassificationResult
         page_number_scores = result.get_scores_for_label("page_number")
-        score = page_number_scores[text_element].combined_score(ClassifierConfig())
+        score = page_number_scores[text_block].combined_score(ClassifierConfig())
         assert score < 0.5
