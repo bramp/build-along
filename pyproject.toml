@@ -10,7 +10,7 @@ extend-select = [
   # Pyflakes
   "F",
   # pyupgrade
-  # "UP", , # TODO Fix this seems to break some self-referential type hints
+  "UP",
   # flake8-bugbear
   "B",
   # flake8-simplify

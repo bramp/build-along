@@ -6,3 +6,5 @@ pex_binary(
         "src/build_a_long/pdf_extract/classifier",
     ],
 )
+
+python_sources()

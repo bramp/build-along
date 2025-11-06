@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import json
 from collections.abc import Callable, Iterable
@@ -120,7 +122,7 @@ class LegoInstructionDownloader:
             self._client.close()
             self._client = None
 
-    def __enter__(self) -> "LegoInstructionDownloader":
+    def __enter__(self) -> LegoInstructionDownloader:
         """Context manager entry."""
         return self
 

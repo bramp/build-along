@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -25,7 +27,7 @@ class BBox:
         return f"({self.x0:.1f},{self.y0:.1f},{self.x1:.1f},{self.y1:.1f})"
 
     @classmethod
-    def from_tuple(cls, bbox_tuple: tuple[float, float, float, float]) -> "BBox":
+    def from_tuple(cls, bbox_tuple: tuple[float, float, float, float]) -> BBox:
         """Create a BBox from a tuple of four floats (x0, y0, x1, y1)."""
         return cls(
             x0=bbox_tuple[0],
@@ -34,7 +36,7 @@ class BBox:
             y1=bbox_tuple[3],
         )
 
-    def equals(self, other: "BBox") -> bool:
+    def equals(self, other: BBox) -> bool:
         """
         Checks if this bounding box is equal to another bounding box.
         """
@@ -45,7 +47,7 @@ class BBox:
             and self.y1 == other.y1
         )
 
-    def overlaps(self, other: "BBox") -> bool:
+    def overlaps(self, other: BBox) -> bool:
         """
         Checks if this bounding box overlaps with another bounding box.
         """
@@ -57,7 +59,7 @@ class BBox:
             return False
         return True
 
-    def fully_inside(self, other: "BBox") -> bool:
+    def fully_inside(self, other: BBox) -> bool:
         """
         Checks if this bounding box is fully inside another bounding box.
         """
@@ -68,7 +70,7 @@ class BBox:
             and self.y1 <= other.y1
         )
 
-    def adjacent(self, other: "BBox", tolerance: float = 1e-6) -> bool:
+    def adjacent(self, other: BBox, tolerance: float = 1e-6) -> bool:
         """
         Checks if this bounding box is adjacent to another bounding box (they are touching).
         A small tolerance is used for floating point comparisons.
@@ -84,11 +86,11 @@ class BBox:
 
         return horizontal_adjacent or vertical_adjacent
 
-    def overlaps_horizontal(self, other: "BBox") -> bool:
+    def overlaps_horizontal(self, other: BBox) -> bool:
         """Helper to check if horizontal projections overlap."""
         return max(self.x0, other.x0) < min(self.x1, other.x1)
 
-    def overlaps_vertical(self, other: "BBox") -> bool:
+    def overlaps_vertical(self, other: BBox) -> bool:
         """Helper to check if vertical projections overlap."""
         return max(self.y0, other.y0) < min(self.y1, other.y1)
 
@@ -107,7 +109,7 @@ class BBox:
         """Return the area of this bounding box (non-negative)."""
         return self.width * self.height
 
-    def intersection_area(self, other: "BBox") -> float:
+    def intersection_area(self, other: BBox) -> float:
         """Return the area of intersection between this bbox and another."""
         ix0 = max(self.x0, other.x0)
         iy0 = max(self.y0, other.y0)
@@ -117,7 +119,7 @@ class BBox:
         h = max(0.0, iy1 - iy0)
         return w * h
 
-    def iou(self, other: "BBox") -> float:
+    def iou(self, other: BBox) -> float:
         """Intersection over Union with another bbox.
 
         Returns 0.0 when there is no overlap or union is zero.
