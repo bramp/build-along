@@ -55,9 +55,7 @@ class BBox:
         if self.x0 >= other.x1 or other.x0 >= self.x1:
             return False
         # If one rectangle is above the other
-        if self.y0 >= other.y1 or other.y0 >= self.y1:
-            return False
-        return True
+        return not (self.y0 >= other.y1 or other.y0 >= self.y1)
 
     def fully_inside(self, other: BBox) -> bool:
         """

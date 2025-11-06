@@ -69,8 +69,7 @@ class PageRanges:
 
         if not self.ranges:
             # Default: all pages (yield 1..num_pages)
-            for n in range(1, num_pages + 1):
-                yield n
+            yield from range(1, num_pages + 1)
             return
 
         seen: set[int] = set()
@@ -132,7 +131,7 @@ def parse_page_range(page_str: str) -> tuple[int | None, int | None]:
                 return None, end_page
             except ValueError as e:
                 if "invalid literal" in str(e):
-                    raise ValueError(f"Invalid end page number: '{end_str}'")
+                    raise ValueError(f"Invalid end page number: '{end_str}'") from None
                 raise
 
         # Handle "10-" format (page 10 to end)
@@ -144,19 +143,21 @@ def parse_page_range(page_str: str) -> tuple[int | None, int | None]:
                 return start_page, None
             except ValueError as e:
                 if "invalid literal" in str(e):
-                    raise ValueError(f"Invalid start page number: '{start_str}'")
+                    raise ValueError(
+                        f"Invalid start page number: '{start_str}'"
+                    ) from None
                 raise
 
         # Handle "5-10" format (explicit range)
         try:
             start_page = int(start_str)
         except ValueError:
-            raise ValueError(f"Invalid start page number: '{start_str}'")
+            raise ValueError(f"Invalid start page number: '{start_str}'") from None
 
         try:
             end_page = int(end_str)
         except ValueError:
-            raise ValueError(f"Invalid end page number: '{end_str}'")
+            raise ValueError(f"Invalid end page number: '{end_str}'") from None
 
         if start_page < 1:
             raise ValueError(f"Start page must be >= 1, got {start_page}")
@@ -176,7 +177,7 @@ def parse_page_range(page_str: str) -> tuple[int | None, int | None]:
             return page_num, page_num
         except ValueError as e:
             if "invalid literal" in str(e):
-                raise ValueError(f"Invalid page number: '{page_str}'")
+                raise ValueError(f"Invalid page number: '{page_str}'") from None
             raise
 
 

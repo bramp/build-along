@@ -108,7 +108,7 @@ def analyze_page(page_data: PageData, result: ClassificationResult) -> PageAnaly
                 # We need the config to compute the score
                 config = ClassifierConfig()
                 page_number_score = score_obj.combined_score(config)
-            elif isinstance(score_obj, (int, float)):
+            elif isinstance(score_obj, int | float):
                 page_number_score = float(score_obj)
 
     return PageAnalysis(

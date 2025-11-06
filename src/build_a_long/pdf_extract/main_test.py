@@ -141,7 +141,7 @@ class TestMain:
         first = mock_extract_bounding_boxes.call_args_list[0]
         assert first.args[0] == mock_doc
         pages_arg = first.args[1]
-        assert isinstance(pages_arg, (list, tuple))
+        assert isinstance(pages_arg, list | tuple)
         # For "10-12,15" we should expand to explicit pages
         assert pages_arg == [10, 11, 12, 15]
 

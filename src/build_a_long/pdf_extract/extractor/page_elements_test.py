@@ -50,7 +50,8 @@ def test_parts_list_total_items():
 def test_partcount_non_negative():
     PartCount(bbox=BBox(0, 0, 1, 1), count=0)  # ok
     try:
+        # TODO Is this the correct way to test for ValueError?
         PartCount(bbox=BBox(0, 0, 1, 1), count=-1)
-        assert False, "Expected ValueError"
+        raise AssertionError("Expected ValueError")
     except ValueError:
         pass
