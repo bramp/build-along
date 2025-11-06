@@ -263,7 +263,7 @@ class ClassificationOrchestrator:
         hints = ClassificationHints()
 
         max_iterations = 1  # TODO raise this in future
-        for i in range(max_iterations):
+        for _i in range(max_iterations):
             result = self.classifier.classify(page_data, hints)
             self.history.append(result)
 

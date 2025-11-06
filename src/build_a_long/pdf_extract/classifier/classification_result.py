@@ -5,7 +5,7 @@ Data classes for the classifier.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Union
+from typing import Any
 
 from dataclass_wizard import JSONPyWizard
 
@@ -15,7 +15,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElemen
 from build_a_long.pdf_extract.extractor.page_elements import Element
 
 # Score key can be either a single Element or a tuple of Elements (for pairings)
-ScoreKey = Union[Element, tuple[Element, ...]]
+ScoreKey = Element | tuple[Element, ...]
 
 
 @dataclass

@@ -16,7 +16,6 @@ are defined in lego_page_elements.py to keep this module focused on raw extracti
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Union
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
@@ -92,4 +91,4 @@ class Image(PageElement):
 
 
 # A helpful alias for heterogeneous collections of page elements
-Element = Union[Drawing, Text, Image]
+Element = Drawing | Text | Image

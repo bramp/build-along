@@ -112,7 +112,7 @@ def draw_and_save_bboxes(
         label = f"ID: {element.id} {label_prefix}" + (
             element_label or element.__class__.__name__
         )
-        if isinstance(element, (Drawing, ImageElement)):
+        if isinstance(element, Drawing | ImageElement):
             if element.image_id:
                 label = f"{label} ({element.image_id})"
         elif isinstance(element, Text):
