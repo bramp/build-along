@@ -6,7 +6,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 from build_a_long.pdf_extract.main import main
 
 
@@ -32,12 +32,12 @@ class TestMain:
 
         # Mock the extractor to return structured data
 
-        step_element = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
+        step_block = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
         page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
 
         page_data = PageData(
             page_number=1,
-            elements=[step_element],
+            blocks=[step_block],
             bbox=page_bbox,
         )
 
@@ -112,7 +112,7 @@ class TestMain:
 
         # Prepare combined return: pages 10-12 and page 15
         def _mk_page(n: int) -> PageData:
-            return PageData(page_number=n, elements=[], bbox=BBox(0.0, 0.0, 1.0, 1.0))
+            return PageData(page_number=n, blocks=[], bbox=BBox(0.0, 0.0, 1.0, 1.0))
 
         mock_extract_bounding_boxes.return_value = [
             _mk_page(10),
@@ -168,12 +168,12 @@ class TestMain:
         mock_exists.return_value = True
 
         # Mock the extractor to return structured data
-        step_element = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
+        step_block = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
         page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
 
         page_data = PageData(
             page_number=1,
-            elements=[step_element],
+            blocks=[step_block],
             bbox=page_bbox,
         )
 

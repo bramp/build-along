@@ -18,7 +18,7 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import StepNumber
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
 @dataclass
@@ -77,15 +77,15 @@ class StepNumberClassifier(LabelClassifier):
         This method scores each text element, attempts to construct StepNumber objects,
         and stores all candidates with their scores and any failure reasons.
         """
-        if not page_data.elements:
+        if not page_data.blocks:
             return
 
         page_num_height: float | None = None
-        # Find the page_number element to use for size comparison
-        labeled_elements = result.get_labeled_elements()
-        for element in page_data.elements:
-            if labeled_elements.get(element) == "page_number":
-                page_num_height = element.bbox.height
+        # Find the page_number block to use for size comparison
+        labeled_blocks = result.get_labeled_blocks()
+        for block in page_data.blocks:
+            if labeled_blocks.get(block) == "page_number":
+                page_num_height = block.bbox.height
                 break
 
         # Get page bbox and height for bottom band check
@@ -93,23 +93,23 @@ class StepNumberClassifier(LabelClassifier):
         assert page_bbox is not None
         page_height = page_bbox.height
 
-        for element in page_data.elements:
-            if not isinstance(element, Text):
+        for block in page_data.blocks:
+            if not isinstance(block, Text):
                 continue
 
-            # Skip elements in the bottom 10% of the page where page numbers typically appear
-            element_center_y = (element.bbox.y0 + element.bbox.y1) / 2
+            # Skip blocks in the bottom 10% of the page where page numbers typically appear
+            block_center_y = (block.bbox.y0 + block.bbox.y1) / 2
             bottom_threshold = page_bbox.y1 - (page_height * 0.1)
-            if element_center_y >= bottom_threshold:
+            if block_center_y >= bottom_threshold:
                 continue
 
-            text_score = self._score_step_number_text(element.text)
+            text_score = self._score_step_number_text(block.text)
             if text_score == 0.0:
                 continue
 
-            size_score = self._score_step_number_size(element, page_num_height)
+            size_score = self._score_step_number_size(block, page_num_height)
 
-            # If we have a page number for size comparison, require the element to be
+            # If we have a page number for size comparison, require the block to be
             # taller than the page number (size_score > 0). This prevents small
             # numeric text from being classified as step numbers.
             if page_num_height and size_score == 0.0:
@@ -122,30 +122,30 @@ class StepNumberClassifier(LabelClassifier):
             )
 
             # Try to construct (parse step number value)
-            value = extract_step_number_value(element.text)
+            value = extract_step_number_value(block.text)
             constructed_elem = None
             failure_reason = None
 
             if value is not None:
                 constructed_elem = StepNumber(
                     value=value,
-                    bbox=element.bbox,
+                    bbox=block.bbox,
                 )
             else:
                 failure_reason = (
-                    f"Could not parse step number from text: '{element.text}'"
+                    f"Could not parse step number from text: '{block.text}'"
                 )
 
             # Add candidate
             result.add_candidate(
                 "step_number",
                 Candidate(
-                    bbox=element.bbox,
+                    bbox=block.bbox,
                     label="step_number",
                     score=detail_score.combined_score(self.config),
                     score_details=detail_score,
                     constructed=constructed_elem,
-                    source_element=element,
+                    source_block=block,
                     failure_reason=failure_reason,
                     is_winner=False,  # Will be set by classify()
                 ),
@@ -161,16 +161,16 @@ class StepNumberClassifier(LabelClassifier):
         # Get pre-built candidates
         candidate_list = result.get_candidates("step_number")
 
-        # Find the page number element to avoid classifying it as a step number
-        page_number_elements = result.get_elements_by_label("page_number")
-        page_number_element = page_number_elements[0] if page_number_elements else None
+        # Find the page number block to avoid classifying it as a step number
+        page_number_blocks = result.get_blocks_by_label("page_number")
+        page_number_block = page_number_blocks[0] if page_number_blocks else None
 
         # Mark winners (all successfully constructed candidates that aren't the page number
         # and meet the confidence threshold)
         for candidate in candidate_list:
-            if candidate.source_element is page_number_element:
+            if candidate.source_block is page_number_block:
                 # Don't classify page number as step number
-                candidate.failure_reason = "Element is already labeled as page_number"
+                candidate.failure_reason = "Block is already labeled as page_number"
                 continue
 
             if candidate.score < self.config.min_confidence_threshold:
@@ -188,10 +188,10 @@ class StepNumberClassifier(LabelClassifier):
             assert isinstance(candidate.constructed, StepNumber)
             result.mark_winner(candidate, candidate.constructed)
             self.classifier._remove_child_bboxes(
-                page_data, candidate.source_element, result
+                page_data, candidate.source_block, result
             )
             self.classifier._remove_similar_bboxes(
-                page_data, candidate.source_element, result
+                page_data, candidate.source_block, result
             )
 
     def _score_step_number_text(self, text: str) -> float:

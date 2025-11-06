@@ -7,13 +7,13 @@ from PIL import Image, ImageDraw
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
+from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
     Text,
 )
-from build_a_long.pdf_extract.extractor.page_elements import (
-    Image as ImageElement,
+from build_a_long.pdf_extract.extractor.page_blocks import (
+    Image as ImageBlock,
 )
 
 logger = logging.getLogger(__name__)
@@ -49,14 +49,14 @@ def draw_and_save_bboxes(
     draw_deleted: bool = False,
 ) -> None:
     """
-    Draws bounding boxes from elements on the PDF page image and saves it.
+    Draws bounding boxes from blocks on the PDF page image and saves it.
     Colors are based on nesting depth (calculated via bbox containment).
 
     Args:
         page: PyMuPDF page to render
-        result: ClassificationResult containing labels and elements
+        result: ClassificationResult containing labels and blocks
         output_path: Where to save the output image
-        draw_deleted: If True, also render elements marked as deleted.
+        draw_deleted: If True, also render blocks marked as deleted.
     """
     image_dpi = 150
 
@@ -74,15 +74,15 @@ def draw_and_save_bboxes(
     depth_colors = ["red", "green", "blue", "yellow", "purple", "orange"]
 
     # Build hierarchy once to efficiently calculate depths - O(n log n)
-    hierarchy = build_hierarchy_from_elements(result.elements)
+    hierarchy = build_hierarchy_from_blocks(result.blocks)
 
-    # Draw all elements
-    for element in result.elements:
-        element_removed = result.is_removed(element)
-        if element_removed and not draw_deleted:
+    # Draw all blocks
+    for block in result.blocks:
+        block_removed = result.is_removed(block)
+        if block_removed and not draw_deleted:
             continue
 
-        bbox = element.bbox
+        bbox = block.bbox
 
         # Scale the bounding box
         scaled_bbox = (
@@ -93,31 +93,31 @@ def draw_and_save_bboxes(
         )
 
         # Get pre-calculated depth - O(1)
-        depth = hierarchy.get_depth(element)
+        depth = hierarchy.get_depth(block)
 
         # Determine color based on depth
         color = depth_colors[depth % len(depth_colors)]
 
-        # If element is removed (in to_remove), use a lighter/grayed out color and dashed style
-        if element_removed:
-            # Draw dashed outline for removed elements
+        # If block is removed (in to_remove), use lighter/grayed color and dash
+        if block_removed:
+            # Draw dashed outline for removed blocks
             _draw_dashed_rectangle(draw, scaled_bbox, outline=color, width=2)
         else:
             # Draw the bounding box normally
             draw.rectangle(scaled_bbox, outline=color, width=1)
 
-        # Draw the element type text
-        label_prefix = "[REMOVED] " if element_removed else ""
-        element_label = result.get_label(element)  # type: ignore[arg-type]
-        label = f"ID: {element.id} {label_prefix}" + (
-            element_label or element.__class__.__name__
+        # Draw the block type text
+        label_prefix = "[REMOVED] " if block_removed else ""
+        block_label = result.get_label(block)  # type: ignore[arg-type]
+        label = f"ID: {block.id} {label_prefix}" + (
+            block_label or block.__class__.__name__
         )
-        if isinstance(element, Drawing | ImageElement):
-            if element.image_id:
-                label = f"{label} ({element.image_id})"
-        elif isinstance(element, Text):
-            # For Text elements, show the actual text content
-            content = element.text.strip()
+        if isinstance(block, Drawing | ImageBlock):
+            if block.image_id:
+                label = f"{label} ({block.image_id})"
+        elif isinstance(block, Text):
+            # For Text blocks, show the actual text content
+            content = block.text.strip()
             if len(content) > 50:  # Truncate long text
                 content = content[:47] + "..."
             label = f"{label}: {content}"

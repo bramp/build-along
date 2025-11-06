@@ -5,7 +5,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartsList,
     StepNumber,
 )
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
 )
 

@@ -9,9 +9,9 @@ from dataclass_wizard import JSONPyWizard
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
 # Note: We intentionally do not build hierarchy here to avoid syncing issues
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.page_blocks import (
+    Block,
     Drawing,
-    Element,
     Image,
     Text,
 )
@@ -33,7 +33,7 @@ class PageData(JSONPyWizard):
     Attributes:
         page_number: The page number (1-indexed) from the PDF metadata.
         bbox: The bounding box of the entire page (page coordinate space).
-        elements: Flat list of all elements on the page
+        blocks: Flat list of all blocks on the page
     """
 
     class _(JSONPyWizard.Meta):
@@ -46,7 +46,7 @@ class PageData(JSONPyWizard):
 
     page_number: int
     bbox: BBox
-    elements: list[Element]
+    blocks: list[Block]
 
 
 @dataclass
@@ -79,16 +79,16 @@ class Extractor:
         self._next_id += 1
         return current_id
 
-    def _extract_text_elements(self, blocks: list[BlockDict]) -> list[Text]:
-        """Extract text elements from a page's raw dictionary blocks.
+    def _extract_text_blocks(self, blocks: list[BlockDict]) -> list[Text]:
+        """Extract text blocks from a page's raw dictionary blocks.
 
         Args:
             blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
 
         Returns:
-            List of Text elements with assigned IDs
+            List of Text blocks with assigned IDs
         """
-        elements: list[Text] = []
+        text_blocks: list[Text] = []
 
         for b in blocks:
             assert isinstance(b, dict)
@@ -124,7 +124,7 @@ class Extractor:
                         font_size,
                     )
 
-                    elements.append(
+                    text_blocks.append(
                         Text(
                             bbox=nbbox,
                             text=text,
@@ -134,18 +134,18 @@ class Extractor:
                         )
                     )
 
-        return elements
+        return text_blocks
 
-    def _extract_image_elements(self, blocks: list[BlockDict]) -> list[Image]:
-        """Extract image elements from a page's raw dictionary blocks.
+    def _extract_image_blocks(self, blocks: list[BlockDict]) -> list[Image]:
+        """Extract image blocks from a page's raw dictionary blocks.
 
         Args:
             blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
 
         Returns:
-            List of Image elements with assigned IDs
+            List of Image blocks with assigned IDs
         """
-        elements: list[Image] = []
+        image_blocks: list[Image] = []
 
         for b in blocks:
             assert isinstance(b, dict)
@@ -162,7 +162,7 @@ class Extractor:
             bbox: BBoxTuple = image_block.get("bbox", (0.0, 0.0, 0.0, 0.0))
             nbbox = BBox.from_tuple(bbox)
 
-            elements.append(
+            image_blocks.append(
                 Image(
                     bbox=nbbox,
                     image_id=f"image_{bi}",
@@ -171,26 +171,26 @@ class Extractor:
             )
             logger.debug("Found image %s with %s", bi, nbbox)
 
-        return elements
+        return image_blocks
 
-    def _extract_drawing_elements(self, drawings: list[Any]) -> list[Drawing]:
-        """Extract drawing (vector path) elements from a page.
+    def _extract_drawing_blocks(self, drawings: list[Any]) -> list[Drawing]:
+        """Extract drawing (vector path) blocks from a page.
 
         Args:
             drawings: List of drawing dictionaries from page.get_drawings()
 
         Returns:
-            List of Drawing elements with assigned IDs
+            List of Drawing blocks with assigned IDs
         """
-        elements: list[Drawing] = []
+        drawing_blocks: list[Drawing] = []
 
         for d in drawings:
             drect = d["rect"]
             nbbox = BBox.from_tuple((drect.x0, drect.y0, drect.x1, drect.y1))
-            elements.append(Drawing(bbox=nbbox, id=self._get_next_id()))
+            drawing_blocks.append(Drawing(bbox=nbbox, id=self._get_next_id()))
             logger.debug("Found drawing with %s", nbbox)
 
-        return elements
+        return drawing_blocks
 
     def _warn_unknown_block_types(self, blocks: list[Any]) -> bool:
         """Log warnings for blocks with unsupported types.
@@ -213,10 +213,10 @@ class Extractor:
                 return False
         return True
 
-    def extract_page_elements(
+    def extract_page_blocks(
         self, page: pymupdf.Page, page_num: int, include_types: set[str]
     ) -> PageData:
-        """Extract all elements from a single page.
+        """Extract all blocks from a single page.
 
         Args:
             page: PyMuPDF page object
@@ -224,7 +224,7 @@ class Extractor:
             include_types: Set of element types to include
 
         Returns:
-            PageData with all extracted elements (with sequential IDs)
+            PageData with all extracted blocks (with sequential IDs)
         """
         logger.info("Processing page %s", page_num)
 
@@ -235,15 +235,15 @@ class Extractor:
         blocks = raw.get("blocks", [])
         assert self._warn_unknown_block_types(blocks)
 
-        # Extract elements by type (IDs are assigned during creation)
-        typed_elements: list[Element] = []
+        # Extract blocks by type (IDs are assigned during creation)
+        typed_blocks: list[Block] = []
         if "text" in include_types:
-            typed_elements.extend(self._extract_text_elements(blocks))
+            typed_blocks.extend(self._extract_text_blocks(blocks))
         if "image" in include_types:
-            typed_elements.extend(self._extract_image_elements(blocks))
+            typed_blocks.extend(self._extract_image_blocks(blocks))
         if "drawing" in include_types:
             drawings = page.get_drawings()
-            typed_elements.extend(self._extract_drawing_elements(drawings))
+            typed_blocks.extend(self._extract_drawing_blocks(drawings))
 
         page_rect = page.rect
         page_bbox = BBox.from_tuple(
@@ -252,7 +252,7 @@ class Extractor:
 
         return PageData(
             page_number=page_num,
-            elements=typed_elements,
+            blocks=typed_blocks,
             bbox=page_bbox,
         )
 
@@ -273,7 +273,7 @@ def extract_bounding_boxes(
             If None, defaults to all types.
 
     Returns:
-        List of PageData containing all pages with their elements
+        List of PageData containing all pages with their blocks
     """
     if include_types is None:
         include_types = {"text", "image", "drawing"}
@@ -295,7 +295,7 @@ def extract_bounding_boxes(
 
         # Create a new Extractor for each page to reset IDs
         extractor = Extractor()
-        page_data = extractor.extract_page_elements(page, page_num, include_types)
+        page_data = extractor.extract_page_blocks(page, page_num, include_types)
         pages.append(page_data)
 
     return pages

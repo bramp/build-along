@@ -44,7 +44,7 @@ from build_a_long.pdf_extract.classifier.step_number_classifier import (
     StepNumberClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 logger = logging.getLogger(__name__)
 
@@ -145,13 +145,13 @@ class Classifier:
 
         target_bbox = target.bbox
 
-        for ele in page_data.elements:
+        for ele in page_data.blocks:
             if ele is target or id(ele) in keep_ids:
                 continue
             b = ele.bbox
             if b.fully_inside(target_bbox):
                 result.mark_removed(
-                    ele, RemovalReason(reason_type="child_bbox", target_element=target)
+                    ele, RemovalReason(reason_type="child_bbox", target_block=target)
                 )
 
     def _remove_similar_bboxes(
@@ -171,7 +171,7 @@ class Classifier:
         CENTER_EPS = 1.5
         AREA_TOL = 0.12
 
-        for ele in page_data.elements:
+        for ele in page_data.blocks:
             if ele is target or id(ele) in keep_ids:
                 continue
 
@@ -180,7 +180,7 @@ class Classifier:
             if iou >= IOU_THRESHOLD:
                 result.mark_removed(
                     ele,
-                    RemovalReason(reason_type="similar_bbox", target_element=target),
+                    RemovalReason(reason_type="similar_bbox", target_block=target),
                 )
                 continue
 
@@ -193,9 +193,7 @@ class Classifier:
                 ):
                     result.mark_removed(
                         ele,
-                        RemovalReason(
-                            reason_type="similar_bbox", target_element=target
-                        ),
+                        RemovalReason(reason_type="similar_bbox", target_block=target),
                     )
 
     def _log_post_classification_warnings(
@@ -203,21 +201,21 @@ class Classifier:
     ) -> list[str]:
         warnings = []
 
-        labeled_elements = result.get_labeled_elements()
+        labeled_blocks = result.get_labeled_blocks()
 
         # Check if there's a page number
         has_page_number = any(
-            label == "page_number" for label in labeled_elements.values()
+            label == "page_number" for label in labeled_blocks.values()
         )
         if not has_page_number:
             warnings.append(f"Page {page_data.page_number}: missing page number")
 
         # Get elements by label
         parts_lists = [
-            e for e, label in labeled_elements.items() if label == "parts_list"
+            e for e, label in labeled_blocks.items() if label == "parts_list"
         ]
         part_counts = [
-            e for e, label in labeled_elements.items() if label == "part_count"
+            e for e, label in labeled_blocks.items() if label == "part_count"
         ]
 
         for pl in parts_lists:
@@ -229,7 +227,7 @@ class Classifier:
 
         steps: list[Text] = [
             e
-            for e, label in labeled_elements.items()
+            for e, label in labeled_blocks.items()
             if label == "step_number" and isinstance(e, Text)
         ]
         ABOVE_EPS = 2.0

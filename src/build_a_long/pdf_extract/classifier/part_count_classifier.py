@@ -29,7 +29,7 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import PartCount
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 log = logging.getLogger(__name__)
 
@@ -73,14 +73,14 @@ class PartCountClassifier(LabelClassifier):
         This method scores each text element, attempts to construct PartCount objects,
         and stores all candidates with their scores and any failure reasons.
         """
-        if not page_data.elements:
+        if not page_data.blocks:
             return
 
-        for element in page_data.elements:
-            if not isinstance(element, Text):
+        for block in page_data.blocks:
+            if not isinstance(block, Text):
                 continue
 
-            text_score = PartCountClassifier._score_part_count_text(element.text)
+            text_score = PartCountClassifier._score_part_count_text(block.text)
 
             # Store detailed score object
             detail_score = _PartCountScore(text_score=text_score)
@@ -88,40 +88,38 @@ class PartCountClassifier(LabelClassifier):
             if self._debug_enabled:
                 log.debug(
                     "[part_count] match text=%r score=%.2f bbox=%s",
-                    element.text,
+                    block.text,
                     text_score,
-                    element.bbox,
+                    block.bbox,
                 )
 
             # Try to construct (parse part count value)
-            value = extract_part_count_value(element.text)
+            value = extract_part_count_value(block.text)
             constructed_elem = None
             failure_reason = None
 
             if text_score == 0.0:
                 failure_reason = (
-                    f"Text doesn't match part count pattern: '{element.text}'"
+                    f"Text doesn't match part count pattern: '{block.text}'"
                 )
             elif value is None:
-                failure_reason = (
-                    f"Could not parse part count from text: '{element.text}'"
-                )
+                failure_reason = f"Could not parse part count from text: '{block.text}'"
             else:
                 constructed_elem = PartCount(
                     count=value,
-                    bbox=element.bbox,
+                    bbox=block.bbox,
                 )
 
             # Add candidate
             result.add_candidate(
                 "part_count",
                 Candidate(
-                    bbox=element.bbox,
+                    bbox=block.bbox,
                     label="part_count",
                     score=detail_score.combined_score(self.config),
                     score_details=detail_score,
                     constructed=constructed_elem,
-                    source_element=element,
+                    source_block=block,
                     failure_reason=failure_reason,
                     is_winner=False,  # Will be set by classify()
                 ),
@@ -147,10 +145,10 @@ class PartCountClassifier(LabelClassifier):
             assert isinstance(candidate.constructed, PartCount)
             result.mark_winner(candidate, candidate.constructed)
             self.classifier._remove_child_bboxes(
-                page_data, candidate.source_element, result
+                page_data, candidate.source_block, result
             )
             self.classifier._remove_similar_bboxes(
-                page_data, candidate.source_element, result
+                page_data, candidate.source_block, result
             )
 
     @staticmethod

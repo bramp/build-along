@@ -1,16 +1,14 @@
 """
-Typed data model for representing nested page elements detected by the
-bounding box extractor.
+Typed data model for representing raw blocks extracted from PDF.
 
-Each instance represents exactly one visual thing on the page and owns a
-single bounding box. Complex structures are represented hierarchically, e.g.
-PartsList -> Part -> PartCount.
+Each block represents exactly one primitive visual element (text, image, or drawing)
+extracted from the PDF. These are the raw building blocks before classification.
+
+For LEGO-specific structured elements (Part, PartCount, PartsList, StepNumber, etc.)
+that are constructed by classifiers, see lego_page_elements.py.
 
 These classes are intentionally small, immutable dataclasses with rich type
 hints to keep them easy to test and reason about.
-
-Note: Lego-specific structured elements (StepNumber, PartCount, Part, PartsList, etc.)
-are defined in lego_page_elements.py to keep this module focused on raw extraction.
 """
 
 from __future__ import annotations
@@ -21,15 +19,14 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 
 
 @dataclass(eq=False, frozen=True)
-class PageElement:
-    """Base class for anything detected on a page.
+class _Block:
+    """Base class for raw blocks extracted from PDF.
 
     Contract:
-    - Every element has exactly one bounding box in page coordinates
+    - Every block has exactly one bounding box in page coordinates
       (same coordinate system produced by the extractor).
-    - Every element must have a unique ID assigned by the Extractor.
+    - Every block must have a unique ID assigned by the Extractor.
     - Subclasses are small data holders.
-    - deleted: True if this element was removed during classification (e.g., duplicate).
     """
 
     bbox: BBox
@@ -43,8 +40,8 @@ class PageElement:
 
 
 @dataclass(eq=False, frozen=True)
-class Drawing(PageElement):
-    """A vector drawing on the page.
+class Drawing(_Block):
+    """A vector drawing block on the page.
 
     image_id can be used to tie back to a raster extracted by the pipeline
     when/if available.
@@ -59,8 +56,8 @@ class Drawing(PageElement):
 
 
 @dataclass(eq=False, frozen=True)
-class Text(PageElement):
-    """A text element on the page.
+class Text(_Block):
+    """A text block on the page.
 
     Stores the actual text content extracted from the PDF.
     """
@@ -76,8 +73,8 @@ class Text(PageElement):
 
 
 @dataclass(eq=False, frozen=True)
-class Image(PageElement):
-    """An image element on the page (raster image from PDF).
+class Image(_Block):
+    """An image block on the page (raster image from PDF).
 
     image_id can be used to tie back to a raster extracted by the pipeline.
     """
@@ -91,4 +88,4 @@ class Image(PageElement):
 
 
 # A helpful alias for heterogeneous collections of page elements
-Element = Drawing | Text | Image
+Block = Drawing | Text | Image

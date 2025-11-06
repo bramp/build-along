@@ -45,9 +45,9 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartsList,
     StepNumber,
 )
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.page_blocks import (
+    Block,
     Drawing,
-    Element,
     Text,
 )
 
@@ -135,16 +135,16 @@ class PartsListClassifier(LabelClassifier):
             return
 
         drawings: list[Drawing] = [
-            e for e in page_data.elements if isinstance(e, Drawing)
+            e for e in page_data.blocks if isinstance(e, Drawing)
         ]
         if not drawings:
             return
 
         if self._debug_enabled:
             log.debug(
-                "[parts_list] page=%s elements=%d steps=%d drawings=%d",
+                "[parts_list] page=%s blocks=%d steps=%d drawings=%d",
                 page_data.page_number,
-                len(page_data.elements),
+                len(page_data.blocks),
                 len(steps),
                 len(drawings),
             )
@@ -195,7 +195,7 @@ class PartsListClassifier(LabelClassifier):
                     score=1.0,  # Parts list uses ranking rather than scores
                     score_details=score,
                     constructed=constructed,
-                    source_element=drawing,
+                    source_block=drawing,
                     failure_reason=None,
                     is_winner=False,  # Will be set by classify()
                 ),
@@ -303,7 +303,7 @@ class PartsListClassifier(LabelClassifier):
         )
 
     def _build_part_from_pair(
-        self, part_count_elem: Element, image_elem: Element
+        self, part_count_elem: Block, image_elem: Block
     ) -> Part | None:
         """Build a Part from a part_count and image pair.
 
@@ -314,11 +314,11 @@ class PartsListClassifier(LabelClassifier):
         Returns:
             A Part object or None if it couldn't be built
         """
-        # Extract count value from part_count element
+        # Extract count value from part_count block
         if not isinstance(part_count_elem, Text):
             if self._debug_enabled:
                 log.debug(
-                    "[parts_list] part_count element is not Text: %s",
+                    "[parts_list] part_count block is not Text: %s",
                     type(part_count_elem).__name__,
                 )
             return None
@@ -379,18 +379,18 @@ class PartsListClassifier(LabelClassifier):
             assert isinstance(candidate.constructed, PartsList)
 
             # Check if this candidate has been removed due to overlap with a
-            # previous winner (skip synthetic candidates without source_element)
-            if candidate.source_element is not None and result.is_removed(
-                candidate.source_element
+            # previous winner (skip synthetic candidates without source_block)
+            if candidate.source_block is not None and result.is_removed(
+                candidate.source_block
             ):
                 continue
 
             # This is a winner!
             result.mark_winner(candidate, candidate.constructed)
-            if candidate.source_element is not None:
+            if candidate.source_block is not None:
                 self.classifier._remove_child_bboxes(
-                    page_data, candidate.source_element, result
+                    page_data, candidate.source_block, result
                 )
                 self.classifier._remove_similar_bboxes(
-                    page_data, candidate.source_element, result
+                    page_data, candidate.source_block, result
                 )

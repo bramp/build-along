@@ -19,7 +19,7 @@ import pytest
 
 from build_a_long.pdf_extract.classifier import ClassificationResult, classify_elements
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_elements import Element, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Block, Text
 
 log = logging.getLogger(__name__)
 
@@ -43,11 +43,11 @@ class ClassifiedPage:
         """
         self.page = page
         self.result = result
-        self._cache: dict[str, list[Element]] = {}
+        self._cache: dict[str, list[Block]] = {}
 
     def elements_by_label(
         self, label: str, include_deleted: bool = False
-    ) -> list[Element]:
+    ) -> list[Block]:
         """Get all elements with the given label.
 
         Args:
@@ -61,34 +61,34 @@ class ClassifiedPage:
         if cache_key not in self._cache:
             if include_deleted:
                 self._cache[cache_key] = [
-                    e for e in self.page.elements if self.result.get_label(e) == label
+                    e for e in self.page.blocks if self.result.get_label(e) == label
                 ]
             else:
                 self._cache[cache_key] = [
                     e
-                    for e in self.page.elements
+                    for e in self.page.blocks
                     if self.result.get_label(e) == label
                     and not self.result.is_removed(e)
                 ]
         return self._cache[cache_key]
 
-    def parts_lists(self) -> list[Element]:
+    def parts_lists(self) -> list[Block]:
         """Get all non-deleted parts_list elements."""
         return self.elements_by_label("parts_list")
 
-    def part_images(self) -> list[Element]:
+    def part_images(self) -> list[Block]:
         """Get all non-deleted part_image elements."""
         return self.elements_by_label("part_image")
 
-    def part_counts(self) -> list[Element]:
+    def part_counts(self) -> list[Block]:
         """Get all non-deleted part_count elements."""
         return self.elements_by_label("part_count")
 
-    def step_numbers(self) -> list[Element]:
+    def step_numbers(self) -> list[Block]:
         """Get all non-deleted step_number elements."""
         return self.elements_by_label("step_number")
 
-    def children_of(self, parent: Element, label: str | None = None) -> list[Element]:
+    def children_of(self, parent: Block, label: str | None = None) -> list[Block]:
         """Return all non-deleted elements spatially contained within a parent element.
 
         Note: This uses bbox containment, not ElementTree hierarchy, because the hierarchy
@@ -106,7 +106,7 @@ class ClassifiedPage:
         """
         # Use spatial containment, not hierarchy
         result = []
-        for elem in self.page.elements:
+        for elem in self.page.blocks:
             if id(elem) in self.result._removal_reasons:
                 continue
             if label is not None and self.result.get_label(elem) != label:
@@ -123,7 +123,7 @@ class ClassifiedPage:
         """
         logger = logger or log
         label_counts = defaultdict(int)
-        for e in self.page.elements:
+        for e in self.page.blocks:
             label = (
                 self.result.get_label(e) if self.result.get_label(e) else "<unknown>"
             )
@@ -132,42 +132,42 @@ class ClassifiedPage:
         logger.info(f"Label counts: {dict(label_counts)}")
 
 
-# TODO Replace this with just results.get_elements_by_label()
+# TODO Replace this with just results.get_blocks_by_label()
 
 
-def _parts_lists(page: PageData, result: ClassificationResult) -> list[Element]:
+def _parts_lists(page: PageData, result: ClassificationResult) -> list[Block]:
     return [
         e
-        for e in page.elements
+        for e in page.blocks
         if result.get_label(e) == "parts_list" and not result.is_removed(e)
     ]
 
 
-# TODO Replace this with just results.get_elements_by_label()
+# TODO Replace this with just results.get_blocks_by_label()
 
 
-def _part_images(page: PageData, result: ClassificationResult) -> list[Element]:
+def _part_images(page: PageData, result: ClassificationResult) -> list[Block]:
     return [
         e
-        for e in page.elements
+        for e in page.blocks
         if result.get_label(e) == "part_image" and not result.is_removed(e)
     ]
 
 
-# TODO Replace this with just results.get_elements_by_label()
+# TODO Replace this with just results.get_blocks_by_label()
 
 
-def _part_counts(page: PageData, result: ClassificationResult) -> list[Element]:
+def _part_counts(page: PageData, result: ClassificationResult) -> list[Block]:
     return [
         e
-        for e in page.elements
+        for e in page.blocks
         if result.get_label(e) == "part_count" and not result.is_removed(e)
     ]
 
 
 def _print_label_counts(page: PageData, result: ClassificationResult) -> None:
     label_counts = defaultdict(int)
-    for e in page.elements:
+    for e in page.blocks:
         label = result.get_label(e) if result.get_label(e) else "<unknown>"
         label_counts[label] += 1
 
@@ -238,7 +238,7 @@ class TestClassifierRules:
 
             # Also get ALL part_images (including deleted) to check for deletion bugs
             all_part_images_inside = []
-            for elem in page.elements:
+            for elem in page.blocks:
                 if result.get_label(elem) == "part_image" and elem.bbox.fully_inside(
                     parts_list.bbox
                 ):
@@ -369,7 +369,7 @@ class TestClassifierRules:
 
         # Find all elements that are both labeled and deleted
         labeled_and_deleted = []
-        for elem in page.elements:
+        for elem in page.blocks:
             if result.get_label(elem) is not None and result.is_removed(elem):
                 labeled_and_deleted.append(elem)
 
@@ -404,8 +404,8 @@ class TestClassifierRules:
         # Run the full classification pipeline on the page
         result = classify_elements(page)
 
-        # Track which elements have won, and for which label
-        element_to_winning_label: dict[int, str] = {}
+        # Track which blocks have won, and for which label
+        block_to_winning_label: dict[int, str] = {}
 
         # Check all candidates across all labels
         all_candidates = result.get_all_candidates()
@@ -414,18 +414,18 @@ class TestClassifierRules:
                 if not candidate.is_winner:
                     continue
 
-                # Skip synthetic candidates (no source element)
-                if candidate.source_element is None:
+                # Skip synthetic candidates (no source block)
+                if candidate.source_block is None:
                     continue
 
-                element_id = candidate.source_element.id
+                block_id = candidate.source_block.id
 
-                # Check if this element already has a winner
-                if element_id in element_to_winning_label:
-                    existing_label = element_to_winning_label[element_id]
+                # Check if this block already has a winner
+                if block_id in block_to_winning_label:
+                    existing_label = block_to_winning_label[block_id]
                     pytest.fail(
-                        f"Element {element_id} in {fixture_file} has multiple winner candidates: "
-                        f"'{existing_label}' and '{label}'. Each element should have at most one winner."
+                        f"Block {block_id} in {fixture_file} has multiple winner candidates: "
+                        f"'{existing_label}' and '{label}'. Each block should have at most one winner."
                     )
 
-                element_to_winning_label[element_id] = label
+                block_to_winning_label[block_id] = label

@@ -4,7 +4,7 @@ from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import Step
-from build_a_long.pdf_extract.extractor.page_elements import Drawing, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
 
 
 class TestStepClassification:
@@ -29,7 +29,7 @@ class TestStepClassification:
 
         page = PageData(
             page_number=6,
-            elements=[pn, step, d1, pc1, pc2],
+            blocks=[pn, step, d1, pc1, pc2],
             bbox=page_bbox,
         )
 
@@ -65,7 +65,7 @@ class TestStepClassification:
 
         page = PageData(
             page_number=6,
-            elements=[pn, step],
+            blocks=[pn, step],
             bbox=page_bbox,
         )
 
@@ -108,7 +108,7 @@ class TestStepClassification:
 
         page = PageData(
             page_number=6,
-            elements=[pn, step1, d1, pc1, step2, d2, pc2],
+            blocks=[pn, step1, d1, pc1, step2, d2, pc2],
             bbox=page_bbox,
         )
 
@@ -152,7 +152,7 @@ class TestStepClassification:
 
         page = PageData(
             page_number=6,
-            elements=[pn, step2, step1],
+            blocks=[pn, step2, step1],
             bbox=page_bbox,
         )
 

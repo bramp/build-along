@@ -4,7 +4,7 @@ import json
 
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
     Image,
     Text,
@@ -20,7 +20,7 @@ class TestPageDataJsonSerialization:
             {
                 "page_number": 1,
                 "bbox": {"x0": 0, "y0": 0, "x1": 100, "y1": 200},
-                "elements": [
+                "blocks": [
                     {
                         "__tag__": "Text",
                         "bbox": {"x0": 10, "y0": 10, "x1": 50, "y1": 30},
@@ -43,12 +43,12 @@ class TestPageDataJsonSerialization:
 
         assert page.page_number == 1
         assert page.bbox == BBox(0, 0, 100, 200)
-        assert len(page.elements) == 2
-        assert all(isinstance(e, Text) for e in page.elements)
-        assert page.elements[0].text == "Hello"  # type: ignore
-        assert page.elements[0].font_name == "Arial"  # type: ignore
-        assert page.elements[0].font_size == 12.0  # type: ignore
-        assert page.elements[1].text == "World"  # type: ignore
+        assert len(page.blocks) == 2
+        assert all(isinstance(e, Text) for e in page.blocks)
+        assert page.blocks[0].text == "Hello"  # type: ignore
+        assert page.blocks[0].font_name == "Arial"  # type: ignore
+        assert page.blocks[0].font_size == 12.0  # type: ignore
+        assert page.blocks[1].text == "World"  # type: ignore
 
     def test_from_json_with_image_elements(self) -> None:
         """Verify Image elements are correctly deserialized from JSON."""
@@ -56,7 +56,7 @@ class TestPageDataJsonSerialization:
             {
                 "page_number": 2,
                 "bbox": {"x0": 0, "y0": 0, "x1": 100, "y1": 200},
-                "elements": [
+                "blocks": [
                     {
                         "__tag__": "Image",
                         "bbox": {"x0": 20, "y0": 20, "x1": 80, "y1": 80},
@@ -76,11 +76,11 @@ class TestPageDataJsonSerialization:
         page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
 
         assert page.page_number == 2
-        assert len(page.elements) == 2
-        assert all(isinstance(e, Image) for e in page.elements)
-        assert page.elements[0].image_id == "img_001"  # type: ignore
-        assert page.elements[1].image_id == "img_002"  # type: ignore
-        assert page.elements[1].id == 42
+        assert len(page.blocks) == 2
+        assert all(isinstance(e, Image) for e in page.blocks)
+        assert page.blocks[0].image_id == "img_001"  # type: ignore
+        assert page.blocks[1].image_id == "img_002"  # type: ignore
+        assert page.blocks[1].id == 42
 
     def test_from_json_with_drawing_elements(self) -> None:
         """Verify Drawing elements are correctly deserialized from JSON."""
@@ -88,7 +88,7 @@ class TestPageDataJsonSerialization:
             {
                 "page_number": 3,
                 "bbox": {"x0": 0, "y0": 0, "x1": 100, "y1": 200},
-                "elements": [
+                "blocks": [
                     {
                         "__tag__": "Drawing",
                         "bbox": {"x0": 5, "y0": 5, "x1": 95, "y1": 195},
@@ -107,13 +107,13 @@ class TestPageDataJsonSerialization:
         page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
 
         assert page.page_number == 3
-        assert len(page.elements) == 2
-        assert all(isinstance(e, Drawing) for e in page.elements)
-        assert isinstance(page.elements[0], Drawing)
-        assert page.elements[0].image_id is None
-        assert isinstance(page.elements[1], Drawing)
-        assert page.elements[1].image_id == "drawing_raster"  # type: ignore
-        assert page.elements[1].id == 99
+        assert len(page.blocks) == 2
+        assert all(isinstance(e, Drawing) for e in page.blocks)
+        assert isinstance(page.blocks[0], Drawing)
+        assert page.blocks[0].image_id is None
+        assert isinstance(page.blocks[1], Drawing)
+        assert page.blocks[1].image_id == "drawing_raster"  # type: ignore
+        assert page.blocks[1].id == 99
 
     def test_from_json_with_mixed_element_types(self) -> None:
         """Verify mixed Text, Image, and Drawing elements are correctly deserialized."""
@@ -121,7 +121,7 @@ class TestPageDataJsonSerialization:
             {
                 "page_number": 10,
                 "bbox": {"x0": 0.0, "y0": 0.0, "x1": 552.75, "y1": 496.06},
-                "elements": [
+                "blocks": [
                     {
                         "__tag__": "Text",
                         "id": 0,
@@ -172,23 +172,23 @@ class TestPageDataJsonSerialization:
 
         assert page.page_number == 10
         assert page.bbox == BBox(0.0, 0.0, 552.75, 496.06)
-        assert len(page.elements) == 4
+        assert len(page.blocks) == 4
 
         # Check each element type
-        assert isinstance(page.elements[0], Text)
-        assert page.elements[0].text == "1"  # type: ignore
-        assert page.elements[0].id == 0
+        assert isinstance(page.blocks[0], Text)
+        assert page.blocks[0].text == "1"  # type: ignore
+        assert page.blocks[0].id == 0
 
-        assert isinstance(page.elements[1], Text)
-        assert page.elements[1].text == "2x"  # type: ignore
-        assert page.elements[1].id == 1
+        assert isinstance(page.blocks[1], Text)
+        assert page.blocks[1].text == "2x"  # type: ignore
+        assert page.blocks[1].id == 1
 
-        assert isinstance(page.elements[2], Image)
-        assert page.elements[2].image_id == "image_123"  # type: ignore
-        assert page.elements[2].id == 2
+        assert isinstance(page.blocks[2], Image)
+        assert page.blocks[2].image_id == "image_123"  # type: ignore
+        assert page.blocks[2].id == 2
 
-        assert isinstance(page.elements[3], Drawing)
-        assert page.elements[3].id == 3
+        assert isinstance(page.blocks[3], Drawing)
+        assert page.blocks[3].id == 3
 
     def test_from_json_with_bbox_as_dict(self) -> None:
         """Verify bbox can be specified as a dict instead of a list."""
@@ -196,7 +196,7 @@ class TestPageDataJsonSerialization:
             {
                 "page_number": 5,
                 "bbox": {"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 200.0},
-                "elements": [
+                "blocks": [
                     {
                         "__tag__": "Text",
                         "bbox": {
@@ -216,9 +216,9 @@ class TestPageDataJsonSerialization:
 
         assert page.page_number == 5
         assert page.bbox == BBox(0.0, 0.0, 100.0, 200.0)
-        assert len(page.elements) == 1
-        assert isinstance(page.elements[0], Text)
-        assert page.elements[0].bbox == BBox(10.0, 10.0, 50.0, 30.0)
+        assert len(page.blocks) == 1
+        assert isinstance(page.blocks[0], Text)
+        assert page.blocks[0].bbox == BBox(10.0, 10.0, 50.0, 30.0)
 
     def test_from_json_with_unknown_element_type(self) -> None:
         """Unknown element types should be skipped with a warning, not crash."""
@@ -226,7 +226,7 @@ class TestPageDataJsonSerialization:
             {
                 "page_number": 6,
                 "bbox": {"x0": 0, "y0": 0, "x1": 100, "y1": 200},
-                "elements": [
+                "blocks": [
                     {
                         "__tag__": "Text",
                         "bbox": {"x0": 10, "y0": 10, "x1": 50, "y1": 30},
@@ -256,7 +256,7 @@ class TestPageDataJsonSerialization:
         original = PageData(
             page_number=42,
             bbox=BBox(0, 0, 500, 600),
-            elements=[
+            blocks=[
                 Text(bbox=BBox(10, 10, 100, 30), text="Test", id=1),
                 Image(bbox=BBox(10, 40, 100, 140), image_id="img_1", id=2),
                 Drawing(bbox=BBox(10, 150, 100, 250), id=3),
@@ -268,10 +268,10 @@ class TestPageDataJsonSerialization:
 
         assert restored.page_number == original.page_number
         assert restored.bbox == original.bbox
-        assert len(restored.elements) == len(original.elements)
+        assert len(restored.blocks) == len(original.blocks)
 
         for orig_elem, restored_elem in zip(
-            original.elements, restored.elements, strict=True
+            original.blocks, restored.blocks, strict=True
         ):
             assert isinstance(restored_elem, type(orig_elem))
             assert restored_elem.bbox == orig_elem.bbox
@@ -288,14 +288,14 @@ class TestPageDataJsonSerialization:
                 "page_number": 1,
                 "bbox": {"x0": 0, "y0": 0, "x1": 100, "y1": 200},
                 "unknown_field": "extra field",  # Unknown field
-                "elements": [],
+                "blocks": [],
             }
         )
 
         # Unknown top-level fields are ignored in current configuration
         page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
         assert page.page_number == 1
-        assert len(page.elements) == 0
+        assert len(page.blocks) == 0
 
     def test_unknown_element_field_raises_error(self) -> None:
         """Verify that unknown fields in element JSON are handled appropriately.
@@ -307,7 +307,7 @@ class TestPageDataJsonSerialization:
             {
                 "page_number": 1,
                 "bbox": {"x0": 0, "y0": 0, "x1": 100, "y1": 200},
-                "elements": [
+                "blocks": [
                     {
                         "__tag__": "Text",
                         "bbox": {"x0": 10, "y0": 10, "x1": 50, "y1": 30},
@@ -321,5 +321,5 @@ class TestPageDataJsonSerialization:
 
         # Unknown fields on elements are ignored in current configuration
         page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
-        assert len(page.elements) == 1
-        assert isinstance(page.elements[0], Text)
+        assert len(page.blocks) == 1
+        assert isinstance(page.blocks[0], Text)

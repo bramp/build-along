@@ -1,8 +1,8 @@
 """
-Utilities to build a hierarchy of page elements from a flat list of
+Utilities to build a hierarchy of page blocks from a flat list of
 extracted blocks, using bounding-box containment.
 
-We nest elements by bbox containment, choosing the smallest containing
+We nest blocks by bbox containment, choosing the smallest containing
 ancestor for each child.
 """
 
@@ -12,107 +12,105 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from build_a_long.pdf_extract.extractor.page_elements import Element
+from build_a_long.pdf_extract.extractor.page_blocks import Block
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ElementTree:
-    """A tree structure for managing hierarchical relationships between elements.
+class BlockTree:
+    """A tree structure for managing hierarchical relationships between blocks.
 
-    This separates the hierarchy structure from the elements themselves, keeping
-    elements as pure data holders without circular references.
+    This separates the hierarchy structure from the blocks themselves, keeping
+    blocks as pure data holders without circular references.
 
     Attributes:
-        roots: Top-level elements with no parent
-        parent_map: Maps element id to its parent element (None for roots)
-        children_map: Maps element id to list of its children elements
-        depth_map: Maps element id to its nesting depth (0 for roots)
+        roots: Top-level blocks with no parent
+        parent_map: Maps block id to its parent block (None for roots)
+        children_map: Maps block id to list of its children blocks
+        depth_map: Maps block id to its nesting depth (0 for roots)
     """
 
-    roots: list[Element] = field(default_factory=list)
-    parent_map: dict[int, Element | None] = field(default_factory=dict)
-    children_map: dict[int, list[Element]] = field(default_factory=dict)
+    roots: list[Block] = field(default_factory=list)
+    parent_map: dict[int, Block | None] = field(default_factory=dict)
+    children_map: dict[int, list[Block]] = field(default_factory=dict)
     depth_map: dict[int, int] = field(default_factory=dict)
 
-    def get_children(self, element: Element) -> list[Element]:
-        """Get the children of a given element.
+    def get_children(self, block: Block) -> list[Block]:
+        """Get the children of a given block.
 
         Args:
-            element: The element to get children for
+            block: The block to get children for
 
         Returns:
-            List of child elements (empty list if no children)
+            List of child blocks (empty list if no children)
         """
-        return self.children_map.get(id(element), [])
+        return self.children_map.get(id(block), [])
 
-    def get_descendants(self, element: Element) -> list[Element]:
-        """Get all descendants of a given element (children, grandchildren, etc.).
+    def get_descendants(self, block: Block) -> list[Block]:
+        """Get all descendants of a given block (children, grandchildren, etc.).
 
         Args:
-            element: The element to get descendants for
+            block: The block to get descendants for
 
         Returns:
-            List of all descendant elements (empty list if no descendants)
+            List of all descendant blocks (empty list if no descendants)
         """
-        descendants: list[Element] = []
-        children = self.get_children(element)
+        descendants: list[Block] = []
+        children = self.get_children(block)
         for child in children:
             descendants.append(child)
             # Recursively add all descendants of this child
             descendants.extend(self.get_descendants(child))
         return descendants
 
-    def get_parent(self, element: Element) -> Element | None:
-        """Get the parent of a given element.
+    def get_parent(self, block: Block) -> Block | None:
+        """Get the parent of a given block.
 
         Args:
-            element: The element to get parent for
+            block: The block to get parent for
 
         Returns:
-            Parent element or None if this is a root element
+            Parent block or None if this is a root block
         """
-        return self.parent_map.get(id(element))
+        return self.parent_map.get(id(block))
 
-    def get_depth(self, element: Element) -> int:
-        """Get the nesting depth of an element.
+    def get_depth(self, block: Block) -> int:
+        """Get the nesting depth of a block.
 
         Args:
-            element: The element to get depth for
+            block: The block to get depth for
 
         Returns:
-            Nesting depth (0 for root elements, 1 for their children, etc.)
+            Nesting depth (0 for root blocks, 1 for their children, etc.)
         """
-        return self.depth_map.get(id(element), 0)
+        return self.depth_map.get(id(block), 0)
 
-    def is_root(self, element: Element) -> bool:
-        """Check if an element is a root element.
+    def is_root(self, block: Block) -> bool:
+        """Check if a block is a root block.
 
         Args:
-            element: The element to check
+            block: The block to check
 
         Returns:
-            True if the element is a root, False otherwise
+            True if the block is a root, False otherwise
         """
-        return (
-            id(element) not in self.parent_map or self.parent_map[id(element)] is None
-        )
+        return id(block) not in self.parent_map or self.parent_map[id(block)] is None
 
 
-def build_hierarchy_from_elements(
-    elements: Sequence[Element],
-) -> ElementTree:
-    """Build a containment-based hierarchy from typed elements.
+def build_hierarchy_from_blocks(
+    blocks: Sequence[Block],
+) -> BlockTree:
+    """Build a containment-based hierarchy from typed blocks.
 
     Strategy:
-    - Sort elements by area ascending (smallest first) so children attach before parents.
-    - For each element, find the smallest containing ancestor and attach as a child.
+    - Sort blocks by area ascending (smallest first) so children attach before parents.
+    - For each block, find the smallest containing ancestor and attach as a child.
 
     Returns:
-        ElementTree containing the hierarchy with roots and parent/children mappings.
+        BlockTree containing the hierarchy with roots and parent/children mappings.
     """
-    converted: list[Element] = list(elements)
+    converted: list[Block] = list(blocks)
 
     # Sort indices by area ascending to assign children first
     idxs = sorted(range(len(converted)), key=lambda i: converted[i].bbox.area)
@@ -143,24 +141,24 @@ def build_hierarchy_from_elements(
         else:
             children_lists[p].append(i)
 
-    # Build ElementTree structure
-    tree = ElementTree()
+    # Build BlockTree structure
+    tree = BlockTree()
     tree.roots = [converted[r] for r in roots]
 
-    for i, element in enumerate(converted):
+    for i, block in enumerate(converted):
         parent_idx = parent[i]
         if parent_idx is not None:
-            tree.parent_map[id(element)] = converted[parent_idx]
+            tree.parent_map[id(block)] = converted[parent_idx]
         else:
-            tree.parent_map[id(element)] = None
+            tree.parent_map[id(block)] = None
 
-        tree.children_map[id(element)] = [converted[cidx] for cidx in children_lists[i]]
+        tree.children_map[id(block)] = [converted[cidx] for cidx in children_lists[i]]
 
     # Calculate depths by walking from roots - O(n)
-    def _calculate_depth(element: Element, depth: int) -> None:
-        """Recursively calculate and store depth for element and its descendants."""
-        tree.depth_map[id(element)] = depth
-        for child in tree.children_map.get(id(element), []):
+    def _calculate_depth(block: Block, depth: int) -> None:
+        """Recursively calculate and store depth for block and its descendants."""
+        tree.depth_map[id(block)] = depth
+        for child in tree.children_map.get(id(block), []):
             _calculate_depth(child, depth + 1)
 
     for root in tree.roots:

@@ -46,7 +46,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Step,
     StepNumber,
 )
-from build_a_long.pdf_extract.extractor.page_elements import (
+from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
 )
 
@@ -129,14 +129,14 @@ class StepClassifier(LabelClassifier):
                 parts_lists.append(candidate.constructed)
 
         drawings: list[Drawing] = [
-            e for e in page_data.elements if isinstance(e, Drawing)
+            e for e in page_data.blocks if isinstance(e, Drawing)
         ]
 
         if self._debug_enabled:
             log.debug(
-                "[step] page=%s elements=%d steps=%d parts_lists=%d drawings=%d",
+                "[step] page=%s blocks=%d steps=%d parts_lists=%d drawings=%d",
                 page_data.page_number,
-                len(page_data.elements),
+                len(page_data.blocks),
                 len(steps),
                 len(parts_lists),
                 len(drawings),
@@ -176,7 +176,7 @@ class StepClassifier(LabelClassifier):
                 diagram=diagram,
             )
             # Add candidate - Note: Step is a synthetic element combining
-            # step_number, parts_list, and diagram, so source_element is None
+            # step_number, parts_list, and diagram, so source_block is None
             result.add_candidate(
                 "step",
                 Candidate(
@@ -185,7 +185,7 @@ class StepClassifier(LabelClassifier):
                     score=1.0,  # Step uses ranking rather than scores
                     score_details=score,
                     constructed=constructed,
-                    source_element=None,  # Synthetic element has no single source
+                    source_block=None,  # Synthetic candidate has no single source block
                     failure_reason=None,
                     is_winner=False,  # Will be set by classify()
                 ),
@@ -339,7 +339,7 @@ class StepClassifier(LabelClassifier):
 
             assert isinstance(candidate.constructed, Step)
 
-            # Step is synthetic and has no source_element, so no removal check needed
+            # Step is synthetic and has no source_block, so no removal check needed
             # (there's no underlying element that could be removed by other classifiers)
 
             # This is a winner!

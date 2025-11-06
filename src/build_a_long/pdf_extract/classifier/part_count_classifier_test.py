@@ -3,7 +3,7 @@
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_elements import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
 class TestPartCountClassification:
@@ -18,7 +18,7 @@ class TestPartCountClassification:
 
         page = PageData(
             page_number=1,
-            elements=[t1, t2, t3, t4],
+            blocks=[t1, t2, t3, t4],
             bbox=page_bbox,
         )
 

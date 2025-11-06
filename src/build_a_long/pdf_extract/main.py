@@ -18,7 +18,7 @@ from build_a_long.pdf_extract.extractor import (
     PageData,
     extract_bounding_boxes,
 )
-from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_elements
+from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 from build_a_long.pdf_extract.parser import parse_page_ranges
 from build_a_long.pdf_extract.parser.page_ranges import PageRanges
@@ -184,22 +184,22 @@ def _print_summary(
 ) -> None:
     """Print a human-readable summary of classification results to stdout."""
     total_pages = len(pages)
-    total_elements = 0
-    elements_by_type: dict[str, int] = {}
+    total_blocks = 0
+    blocks_by_type: dict[str, int] = {}
     labeled_counts: dict[str, int] = {}
 
     pages_with_page_number = 0
     missing_page_numbers: list[int] = []
 
     for page, result in zip(pages, results, strict=True):
-        total_elements += len(page.elements)
-        # Tally element types and labels
+        total_blocks += len(page.blocks)
+        # Tally block types and labels
         has_page_number = False
-        for ele in page.elements:
-            t = ele.__class__.__name__.lower()
-            elements_by_type[t] = elements_by_type.get(t, 0) + 1
+        for block in page.blocks:
+            t = block.__class__.__name__.lower()
+            blocks_by_type[t] = blocks_by_type.get(t, 0) + 1
 
-            label = result.get_label(ele)
+            label = result.get_label(block)
             if label:
                 labeled_counts[label] = labeled_counts.get(label, 0) + 1
                 if label == "page_number":
@@ -215,9 +215,9 @@ def _print_summary(
     # Human-friendly, single-shot summary
     print("=== Classification summary ===")
     print(f"Pages processed: {total_pages}")
-    print(f"Total elements: {total_elements}")
-    if elements_by_type:
-        parts = [f"{k}={v}" for k, v in sorted(elements_by_type.items())]
+    print(f"Total blocks: {total_blocks}")
+    if blocks_by_type:
+        parts = [f"{k}={v}" for k, v in sorted(blocks_by_type.items())]
         print("Elements by type: " + ", ".join(parts))
     if labeled_counts:
         parts = [f"{k}={v}" for k, v in sorted(labeled_counts.items())]
@@ -252,25 +252,25 @@ def _print_classification_debug(page: PageData, result: ClassificationResult) ->
     print(f"CLASSIFICATION DEBUG - Page {page.page_number}")
     print(f"{'=' * 80}\n")
 
-    # Build element hierarchy tree
-    element_tree = build_hierarchy_from_elements(page.elements)
+    # Build block hierarchy tree
+    block_tree = build_hierarchy_from_blocks(page.blocks)
 
-    # Get all winning candidates organized by element
+    # Get all winning candidates organized by block
     all_candidates = result.get_all_candidates()
-    # element.id -> list of winning labels
-    element_to_labels: dict[int, list[str]] = {}
+    # block.id -> list of winning labels
+    block_to_labels: dict[int, list[str]] = {}
 
     for label, candidates in all_candidates.items():
         for candidate in candidates:
-            if candidate.is_winner and candidate.source_element is not None:
-                elem_id = candidate.source_element.id
-                if elem_id is not None:
-                    if elem_id not in element_to_labels:
-                        element_to_labels[elem_id] = []
-                    element_to_labels[elem_id].append(label)
+            if candidate.is_winner and candidate.source_block is not None:
+                block_id = candidate.source_block.id
+                if block_id is not None:
+                    if block_id not in block_to_labels:
+                        block_to_labels[block_id] = []
+                    block_to_labels[block_id].append(label)
 
     def print_element(elem, depth: int, is_last: bool = True) -> None:
-        """Recursively print an element and its children."""
+        """Recursively print a block and its children."""
         # Build tree characters
         if depth == 0:
             tree_prefix = ""
@@ -291,7 +291,7 @@ def _print_classification_debug(page: PageData, result: ClassificationResult) ->
         color = GREY if is_removed else ""
         reset = RESET if is_removed else ""
 
-        # Build the complete line with element details
+        # Build the complete line with block details
         # Prefer constructed element string if available
         constructed = result.get_constructed_element(elem)
         elem_str = str(constructed) if constructed else str(elem)
@@ -302,21 +302,21 @@ def _print_classification_debug(page: PageData, result: ClassificationResult) ->
             reason_text = reason.reason_type if reason else "unknown"
             line += f"[REMOVED: {reason_text}"
             if reason and hasattr(reason, "target_element"):
-                target = reason.target_element
+                target = reason.target_block
                 target_id = target.id if hasattr(target, "id") else "?"
                 line += f" -> {target_id}"
-                # Show what the target element won as
+                # Show what the target block won as
                 if (
                     hasattr(target, "id")
                     and target.id is not None
-                    and target.id in element_to_labels
+                    and target.id in block_to_labels
                 ):
-                    target_labels = element_to_labels[target.id]
+                    target_labels = block_to_labels[target.id]
                     line += f" ({', '.join(target_labels)})"
             line += f"] {elem_str}"
         # Check if it has winning candidates
-        elif elem.id is not None and elem.id in element_to_labels:
-            labels = element_to_labels[elem.id]
+        elif elem.id is not None and elem.id in block_to_labels:
+            labels = block_to_labels[elem.id]
             line += f"[{', '.join(labels)}] {elem_str}"
         else:
             # No candidates
@@ -326,7 +326,7 @@ def _print_classification_debug(page: PageData, result: ClassificationResult) ->
         print(line)
 
         # Recursively print children, sorted by ID
-        children = element_tree.get_children(elem)
+        children = block_tree.get_children(elem)
         sorted_children = sorted(
             children, key=lambda e: e.id if e.id is not None else 999999
         )
@@ -334,17 +334,17 @@ def _print_classification_debug(page: PageData, result: ClassificationResult) ->
             child_is_last = i == len(sorted_children) - 1
             print_element(child, depth + 1, child_is_last)
 
-    # Print root elements sorted by ID, then their children recursively
+    # Print root blocks sorted by ID, then their children recursively
     sorted_roots = sorted(
-        element_tree.roots, key=lambda e: e.id if e.id is not None else 999999
+        block_tree.roots, key=lambda e: e.id if e.id is not None else 999999
     )
     for root in sorted_roots:
         print_element(root, 0)
 
     # Print summary statistics
-    total = len(page.elements)
-    with_labels = len(element_to_labels)
-    removed = sum(1 for e in page.elements if result.is_removed(e))
+    total = len(page.blocks)
+    with_labels = len(block_to_labels)
+    removed = sum(1 for e in page.blocks if result.is_removed(e))
     no_candidates = total - with_labels - removed
 
     print(f"\n{'─' * 80}")
@@ -363,7 +363,7 @@ def _print_classification_debug(page: PageData, result: ClassificationResult) ->
 
 def _print_label_counts(page: PageData, result: ClassificationResult) -> None:
     label_counts = defaultdict(int)
-    for e in page.elements:
+    for e in page.blocks:
         label = result.get_label(e) or "<unknown>"
         label_counts[label] += 1
 

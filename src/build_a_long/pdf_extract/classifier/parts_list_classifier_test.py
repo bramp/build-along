@@ -7,7 +7,7 @@ import pytest
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_elements import Drawing, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
 
 
 class TestPartsListClassification:
@@ -35,7 +35,7 @@ class TestPartsListClassification:
 
         page = PageData(
             page_number=6,
-            elements=[pn, step, d1, d2, pc1, pc2, other],
+            blocks=[pn, step, d1, d2, pc1, pc2, other],
             bbox=page_bbox,
         )
 
@@ -71,7 +71,7 @@ class TestPartsListClassification:
         result = classify_elements(page)
 
         # Build a quick map of elements by id for easy lookup in assertions
-        elems = {e.id: e for e in page.elements if e.id is not None}
+        elems = {e.id: e for e in page.blocks if e.id is not None}
         # Recreate references for assertions by their IDs
         pc4 = elems[4]
         pc5 = elems[5]
@@ -137,7 +137,7 @@ class TestPartsListClassification:
 
         page = PageData(
             page_number=2,
-            elements=[pc, step1, step2, page_number, d_small, d_large],
+            blocks=[pc, step1, step2, page_number, d_small, d_large],
             bbox=page_bbox,
         )
 
