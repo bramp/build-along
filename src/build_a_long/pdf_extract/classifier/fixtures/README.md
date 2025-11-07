@@ -71,7 +71,7 @@ When you intentionally change classifier logic and want to update the expected o
 
 ```bash
 # Generate/update all golden files
-pants run src/build_a_long/pdf_extract/classifier:generate-golden-files
+pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-files
 ```
 
 This script runs without sandboxing, allowing it to write files directly to the `fixtures/` directory.
@@ -87,6 +87,3 @@ Once the classifier issues are fixed:
 ## Fixture Details
 
 - `6509377_*` files are from set 75375 LEGO® Star Wars™ Millennium Falcon™
-
-
-

@@ -141,12 +141,17 @@ class PartCountClassifier(LabelClassifier):
                 # Already has failure_reason from calculate_scores
                 continue
 
+            # Check if this candidate has been removed due to overlap with a
+            # previous winner
+            if candidate.source_block is not None and result.is_removed(
+                candidate.source_block
+            ):
+                continue
+
             # This is a winner!
             assert isinstance(candidate.constructed, PartCount)
             result.mark_winner(candidate, candidate.constructed)
-            self.classifier._remove_child_bboxes(
-                page_data, candidate.source_block, result
-            )
+            # Note: Do NOT remove child bboxes - paired images might be nearby
             self.classifier._remove_similar_bboxes(
                 page_data, candidate.source_block, result
             )

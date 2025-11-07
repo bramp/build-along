@@ -9,7 +9,10 @@ from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 @dataclass
 class LegoPageElement(JSONPyWizard):
-    """Base class for anything detected on a page.
+    """Base class for LEGO-specific structured elements constructed by classifiers.
+
+    LegoPageElements are typically constructed from one or more Blocks during
+    classification and are stored in Candidate.constructed, not in PageData.elements.
 
     Contract:
     - Every element has exactly one bounding box in page coordinates

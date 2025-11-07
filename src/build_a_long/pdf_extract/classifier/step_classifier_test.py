@@ -4,7 +4,7 @@ from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import Step
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
 
 class TestStepClassification:
@@ -27,9 +27,13 @@ class TestStepClassification:
         pc1 = Text(id=3, bbox=BBox(40, 110, 55, 120), text="2x")
         pc2 = Text(id=4, bbox=BBox(100, 130, 115, 140), text="5×")
 
+        # Images above the part counts (required for PartsClassifier)
+        img1 = Image(id=5, bbox=BBox(40, 90, 55, 105))
+        img2 = Image(id=6, bbox=BBox(100, 115, 115, 125))
+
         page = PageData(
             page_number=6,
-            blocks=[pn, step, d1, pc1, pc2],
+            blocks=[pn, step, d1, pc1, pc2, img1, img2],
             bbox=page_bbox,
         )
 

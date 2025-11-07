@@ -1,0 +1,225 @@
+"""
+Parts classifier.
+
+Purpose
+-------
+Associate each part_count text with exactly one image to create Part candidates.
+These Part candidates will be consumed by PartsListClassifier to build PartsList
+elements.
+
+Heuristic
+---------
+- For each part_count Text, find candidate Images that are above (image.y1 <= count.y0 + VERT_EPS)
+  and roughly left-aligned (|image.x0 - count.x0| <= ALIGN_EPS).
+- Sort candidates by vertical distance (count.y0 - image.y1), then greedily match
+  to enforce one-to-one pairing between part counts and images.
+- Create Part candidates with the paired PartCount and Drawing (image).
+
+Debugging
+---------
+Enable with CLASSIFIER_DEBUG=parts or =all for structured logs.
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+from dataclasses import dataclass
+
+from build_a_long.pdf_extract.classifier.classification_result import (
+    Candidate,
+    ClassificationHints,
+    ClassificationResult,
+    ClassifierConfig,
+)
+from build_a_long.pdf_extract.classifier.label_classifier import (
+    LabelClassifier,
+)
+from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    Part,
+    PartCount,
+)
+from build_a_long.pdf_extract.extractor.page_blocks import (
+    Image,
+)
+
+log = logging.getLogger(__name__)
+
+
+@dataclass
+class _PartPairScore:
+    """Internal score representation for part pairing."""
+
+    distance: float
+    """Vertical distance from part count text to image (lower is better)."""
+
+    part_count: PartCount
+    """The constructed PartCount element."""
+
+    image: Image
+    """The image element (will become diagram in Part)."""
+
+    def sort_key(self) -> float:
+        """Return sort key for matching (prefer smaller distance)."""
+        return self.distance
+
+
+class PartsClassifier(LabelClassifier):
+    """Classifier for Part elements (pairs of part_count + image)."""
+
+    outputs = {"part"}
+    requires = {"part_count"}
+
+    def __init__(self, config: ClassifierConfig, classifier):
+        super().__init__(config, classifier)
+        self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
+            "parts",
+            "all",
+        )
+        self._candidate_edges: list[_PartPairScore] = []
+
+    def evaluate(
+        self,
+        page_data: PageData,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create scores for part pairings.
+
+        Scores are based on vertical distance and horizontal alignment between
+        part count elements and images.
+        """
+        # Get winning part_count candidates
+        part_count_candidates = result.get_candidates("part_count")
+        part_counts: list[PartCount] = []
+
+        for candidate in part_count_candidates:
+            if (
+                candidate.is_winner
+                and candidate.constructed is not None
+                and isinstance(candidate.constructed, PartCount)
+            ):
+                part_counts.append(candidate.constructed)
+
+        if not part_counts:
+            return
+
+        # Get all images on the page
+        images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
+
+        if not images:
+            return
+
+        # Build candidate pairings
+        self._candidate_edges = self._build_candidate_edges(
+            part_counts, images, page_data.bbox.width if page_data.bbox else 100.0
+        )
+
+        if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
+            log.debug(
+                "[parts] page=%s part_counts=%d images=%d candidate_pairs=%d",
+                page_data.page_number,
+                len(part_counts),
+                len(images),
+                len(self._candidate_edges),
+            )
+
+    def _build_candidate_edges(
+        self,
+        part_counts: list[PartCount],
+        images: list[Image],
+        page_width: float,
+    ) -> list[_PartPairScore]:
+        """Build candidate pairings between part counts and images.
+
+        Returns a list of score objects representing valid pairings.
+        """
+        VERT_EPS = 2.0  # allow minor overlap/touching
+        ALIGN_EPS = max(2.0, 0.02 * page_width)
+
+        edges: list[_PartPairScore] = []
+        for pc in part_counts:
+            cb = pc.bbox
+            for img in images:
+                ib = img.bbox
+                # Image should be above the count and left-aligned
+                if ib.y1 <= cb.y0 + VERT_EPS and abs(ib.x0 - cb.x0) <= ALIGN_EPS:
+                    distance = max(0.0, cb.y0 - ib.y1)
+                    score = _PartPairScore(
+                        distance=distance,
+                        part_count=pc,
+                        image=img,
+                    )
+                    edges.append(score)
+        return edges
+
+    def classify(
+        self,
+        page_data: PageData,
+        result: ClassificationResult,
+        hints: ClassificationHints | None,
+    ) -> None:
+        """Match part counts with images and create Part candidates."""
+        if not self._candidate_edges:
+            return
+
+        # Sort by distance (closest pairs first)
+        self._candidate_edges.sort(key=lambda score: score.sort_key())
+
+        matched_counts: set[int] = set()
+        matched_images: set[int] = set()
+
+        for score in self._candidate_edges:
+            pc = score.part_count
+            img = score.image
+
+            # Skip if already matched
+            if id(pc) in matched_counts or id(img) in matched_images:
+                continue
+
+            matched_counts.add(id(pc))
+            matched_images.add(id(img))
+
+            # Create a Part from this pairing
+            # The bbox is the union of the part_count and image bboxes
+            combined_bbox = BBox(
+                x0=min(pc.bbox.x0, img.bbox.x0),
+                y0=min(pc.bbox.y0, img.bbox.y0),
+                x1=max(pc.bbox.x1, img.bbox.x1),
+                y1=max(pc.bbox.y1, img.bbox.y1),
+            )
+
+            part = Part(
+                bbox=combined_bbox,
+                count=pc,
+                # Note: diagram field is optional and not set here
+                # The image is tracked via the score_details
+            )
+
+            # Create a candidate for this Part
+            result.add_candidate(
+                "part",
+                Candidate(
+                    bbox=combined_bbox,
+                    label="part",
+                    score=1.0,  # Matched based on distance
+                    score_details=score,
+                    constructed=part,
+                    source_block=None,  # Synthetic element, no single source
+                    failure_reason=None,
+                    is_winner=True,  # All matched pairs are winners
+                ),
+            )
+
+        if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
+            all_counts = [s.part_count for s in self._candidate_edges]
+            all_images = [s.image for s in self._candidate_edges]
+            unmatched_c = [pc for pc in all_counts if id(pc) not in matched_counts]
+            unmatched_i = [im for im in all_images if id(im) not in matched_images]
+            log.debug(
+                "[parts] matched=%d unmatched_counts=%d unmatched_images=%d",
+                len(matched_counts),
+                len(set(id(pc) for pc in unmatched_c)),
+                len(set(id(im) for im in unmatched_i)),
+            )

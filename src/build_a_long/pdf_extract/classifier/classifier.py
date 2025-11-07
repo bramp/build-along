@@ -8,10 +8,11 @@ labels produced by earlier stages:
 
 1) PageNumberClassifier → outputs: "page_number"
 2) PartCountClassifier  → outputs: "part_count"
-3) StepNumberClassifier → outputs: "step_number" (uses page_number size as context)
-4) PartsListClassifier  → outputs: "parts_list" (requires step_number and part_count)
-5) PartsImageClassifier → outputs: "part_image" (requires parts_list and part_count)
-6) StepClassifier       → outputs: "step" (requires step_number and parts_list)
+3) StepNumberClassifier → outputs: "step_number" (uses page_number size)
+4) PartsClassifier      → outputs: "part" (requires part_count, pairs with images)
+5) PartsListClassifier  → outputs: "parts_list" (requires step_number and part)
+6) PartsImageClassifier → outputs: "part_image" (requires parts_list, part_count)
+7) StepClassifier       → outputs: "step" (requires step_number and parts_list)
 
 If the order is changed such that a classifier runs before its requirements
 are available, a ValueError will be raised at initialization time.
@@ -30,6 +31,9 @@ from build_a_long.pdf_extract.classifier.page_number_classifier import (
 )
 from build_a_long.pdf_extract.classifier.part_count_classifier import (
     PartCountClassifier,
+)
+from build_a_long.pdf_extract.classifier.parts_classifier import (
+    PartsClassifier,
 )
 from build_a_long.pdf_extract.classifier.parts_image_classifier import (
     PartsImageClassifier,
@@ -86,6 +90,17 @@ def classify_pages(pages: list[PageData]) -> list[ClassificationResult]:
     return results
 
 
+type Classifiers = (
+    PageNumberClassifier
+    | PartCountClassifier
+    | StepNumberClassifier
+    | PartsClassifier
+    | PartsListClassifier
+    | PartsImageClassifier
+    | StepClassifier
+)
+
+
 class Classifier:
     """
     Performs a single run of classification based on rules, configuration, and hints.
@@ -94,15 +109,17 @@ class Classifier:
 
     def __init__(self, config: ClassifierConfig):
         self.config = config
-        self.classifiers = [
+        self.classifiers: list[Classifiers] = [
             PageNumberClassifier(config, self),
             PartCountClassifier(config, self),
             StepNumberClassifier(config, self),
+            PartsClassifier(config, self),
             PartsListClassifier(config, self),
             PartsImageClassifier(config, self),
             StepClassifier(config, self),
         ]
 
+        # TODO Create a directed graph, and run it in order.
         produced: set[str] = set()
         for c in self.classifiers:
             cls = c.__class__
