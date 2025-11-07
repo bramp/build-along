@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 
+from build_a_long.pdf_extract.classifier.block_filter import filter_duplicate_blocks
 from build_a_long.pdf_extract.classifier.classification_result import (
     BatchClassificationResult,
     ClassificationHints,
@@ -76,9 +77,10 @@ def classify_elements(page: PageData) -> ClassificationResult:
 def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
     """Classify and label elements across multiple pages using rule-based heuristics.
 
-    This function performs a two-phase process:
-    1. Analysis phase: Build a histogram of text properties across all pages
-    2. Classification phase: Use the histogram to guide element classification
+    This function performs a three-phase process:
+    1. Filtering phase: Remove duplicate/similar blocks on each page
+    2. Analysis phase: Build a histogram of text properties across all pages
+    3. Classification phase: Use the histogram to guide element classification
 
     Args:
         pages: A list of PageData objects to classify.
@@ -86,16 +88,35 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
     Returns:
         BatchClassificationResult containing per-page results and global histogram
     """
-    # Phase 1: Build global histogram
-    histogram = TextHistogram.from_pages(pages)
+    # Phase 1: Filter duplicate blocks on each page
+    filtered_pages = []
+    for page_data in pages:
+        filtered_blocks = filter_duplicate_blocks(page_data.blocks)
 
-    # Phase 2: Classify using the histogram
+        logger.debug(
+            f"Page {page_data.page_number}: "
+            f"filtered {len(page_data.blocks) - len(filtered_blocks)} "
+            f"duplicate blocks"
+        )
+
+        # Create a new PageData with filtered blocks
+        filtered_page = PageData(
+            page_number=page_data.page_number,
+            bbox=page_data.bbox,
+            blocks=filtered_blocks,
+        )
+        filtered_pages.append(filtered_page)
+
+    # Phase 2: Build global histogram
+    histogram = TextHistogram.from_pages(filtered_pages)
+
+    # Phase 3: Classify using the histogram
     config = ClassifierConfig()
     classifier = Classifier(config)
     orchestrator = ClassificationOrchestrator(classifier)
 
     results = []
-    for page_data in pages:
+    for page_data in filtered_pages:
         # TODO: Pass histogram to orchestrator/classifier to guide classification
         result = orchestrator.process_page(page_data)
         results.append(result)
