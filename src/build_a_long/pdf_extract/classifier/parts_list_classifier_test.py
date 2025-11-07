@@ -7,7 +7,7 @@ import pytest
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
 
 class TestPartsListClassification:
@@ -27,15 +27,19 @@ class TestPartsListClassification:
         d2 = Drawing(id=3, bbox=BBox(20, 40, 180, 80))
 
         # Part counts inside d1
-        pc1 = Text(id=4, bbox=BBox(40, 110, 55, 120), text="2x")
-        pc2 = Text(id=5, bbox=BBox(100, 130, 115, 140), text="5×")
+        pc1 = Text(id=4, bbox=BBox(40, 135, 55, 145), text="2x")
+        pc2 = Text(id=5, bbox=BBox(100, 145, 115, 155), text="5×")
+
+        # Images inside d1, above the part counts
+        img1 = Image(id=7, bbox=BBox(40, 110, 55, 125))
+        img2 = Image(id=8, bbox=BBox(100, 120, 115, 135))
 
         # Some unrelated text
         other = Text(id=6, bbox=BBox(10, 10, 40, 20), text="hello")
 
         page = PageData(
             page_number=6,
-            blocks=[pn, step, d1, d2, pc1, pc2, other],
+            blocks=[pn, step, d1, d2, pc1, pc2, img1, img2, other],
             bbox=page_bbox,
         )
 
@@ -109,11 +113,11 @@ class TestPartsListClassification:
         assert result.is_removed(img17)
 
     def test_two_steps_do_not_label_and_delete_both_drawings(self) -> None:
-        """When there are two step numbers and two near-duplicate drawings above them,
-        we should select only one drawing as the parts list across the page, and only
-        the other near-duplicate should be removed. Previously, the second step could
-        select the drawing already scheduled for removal, causing both drawings to be
-        labeled and deleted.
+        """When there are two step numbers and two near-duplicate drawings
+        above them, we should select only one drawing as the parts list
+        across the page, and only the other near-duplicate should be removed.
+        Previously, the second step could select the drawing already scheduled
+        for removal, causing both drawings to be labeled and deleted.
         """
         page_bbox = BBox(0, 0, 600, 400)
 
@@ -123,6 +127,9 @@ class TestPartsListClassification:
             bbox=BBox(320, 45, 330, 55),
             text="1x",
         )
+
+        # Image inside the drawings, above the part count
+        img = Image(id=6, bbox=BBox(320, 20, 330, 40))
 
         # Two steps below the drawings (both tall enough)
         step1 = Text(id=1, bbox=BBox(260, 70, 276, 96), text="5")
@@ -137,13 +144,14 @@ class TestPartsListClassification:
 
         page = PageData(
             page_number=2,
-            blocks=[pc, step1, step2, page_number, d_small, d_large],
+            blocks=[pc, img, step1, step2, page_number, d_small, d_large],
             bbox=page_bbox,
         )
 
         result = classify_elements(page)
 
-        # Exactly one of the drawings is chosen as parts_list, and exactly one is deleted
+        # Exactly one of the drawings is chosen as parts_list, and exactly
+        # one is deleted
         d_small_label = result.get_label(d_small)
         d_large_label = result.get_label(d_large)
         assert (d_small_label == "parts_list") ^ (d_large_label == "parts_list")

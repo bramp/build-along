@@ -8,3 +8,8 @@ python_sources(
 python_tests(
     name="tests",
 )
+
+pex_binary(
+    name="generate-golden-files",
+    entry_point="build_a_long.pdf_extract.classifier.tools.generate_golden_files:main",
+)

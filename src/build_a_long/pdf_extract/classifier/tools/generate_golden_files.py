@@ -4,7 +4,7 @@
 This script runs the classifier on all fixtures and generates golden output files.
 
 Usage:
-    pants run src/build_a_long/pdf_extract/classifier:generate-golden-files
+    pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-files
 """
 
 import json
@@ -21,8 +21,9 @@ log = logging.getLogger(__name__)
 
 def main() -> None:
     """Generate golden files for all fixtures."""
+
     # TODO maybe be explict with the full path of the directory
-    fixtures_dir = Path(__file__).parent.parent / "fixtures"
+    fixtures_dir = Path("src/build_a_long/pdf_extract/classifier/fixtures")
 
     if not fixtures_dir.exists():
         log.error(f"Fixtures directory not found: {fixtures_dir}")

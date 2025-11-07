@@ -85,7 +85,7 @@ class PartsListClassifier(LabelClassifier):
     """Classifier for parts lists."""
 
     outputs = {"parts_list"}
-    requires = {"step_number", "part_count"}
+    requires = {"step_number", "part"}
 
     def __init__(self, config: ClassifierConfig, classifier):
         super().__init__(config, classifier)
@@ -102,7 +102,7 @@ class PartsListClassifier(LabelClassifier):
         """Evaluate elements and create candidates for potential parts list drawings.
 
         Scores drawings based on their proximity to step numbers and the number
-        of part count texts they contain. Creates candidates for all viable
+        of Part elements they contain. Creates candidates for all viable
         parts list drawings.
         """
 
@@ -120,18 +120,18 @@ class PartsListClassifier(LabelClassifier):
         if not steps:
             return
 
-        # Get part_count candidates and their constructed PartCount elements
-        part_count_candidates = result.get_candidates("part_count")
-        # Use constructed PartCount elements instead of source elements
-        part_counts: list[PartCount] = []
-        for candidate in part_count_candidates:
+        # Get part candidates and their constructed Part elements
+        part_candidates = result.get_candidates("part")
+        # Use constructed Part elements instead of source elements
+        parts: list[Part] = []
+        for candidate in part_candidates:
             if (
                 candidate.is_winner
                 and candidate.constructed is not None
-                and isinstance(candidate.constructed, PartCount)
+                and isinstance(candidate.constructed, Part)
             ):
-                part_counts.append(candidate.constructed)
-        if not part_counts:
+                parts.append(candidate.constructed)
+        if not parts:
             return
 
         drawings: list[Drawing] = [
@@ -142,11 +142,12 @@ class PartsListClassifier(LabelClassifier):
 
         if self._debug_enabled:
             log.debug(
-                "[parts_list] page=%s blocks=%d steps=%d drawings=%d",
+                "[parts_list] page=%s blocks=%d steps=%d drawings=%d parts=%d",
                 page_data.page_number,
                 len(page_data.blocks),
                 len(steps),
                 len(drawings),
+                len(parts),
             )
 
         # Score each drawing relative to all steps
@@ -160,10 +161,10 @@ class PartsListClassifier(LabelClassifier):
 
             closest_step, step_score = step_score
 
-            # Find all part counts contained in this drawing
-            contained = self._score_containing_parts(drawing, part_counts)
+            # Find all parts contained in this drawing
+            contained = self._score_containing_parts(drawing, parts)
             if not contained:
-                # Drawing contains no part counts, skip it
+                # Drawing contains no parts, skip it
                 continue
 
             # Create score object with associated step
@@ -176,14 +177,7 @@ class PartsListClassifier(LabelClassifier):
 
             constructed = PartsList(
                 bbox=drawing.bbox,
-                # TODO Extract Part and do the matching
-                parts=[
-                    Part(
-                        bbox=pc.bbox,  # TODO
-                        count=pc,
-                    )
-                    for pc in contained
-                ],
+                parts=contained,
             )
 
             # Add candidate
@@ -202,22 +196,18 @@ class PartsListClassifier(LabelClassifier):
             )
 
     def _score_containing_parts(
-        self, drawing: Drawing, part_counts: Sequence[PartCount]
-    ) -> list[PartCount]:
-        """Find all part counts that are contained within a drawing.
+        self, drawing: Drawing, parts: Sequence[Part]
+    ) -> list[Part]:
+        """Find all parts that are contained within a drawing.
 
         Args:
             drawing: The drawing element to check
-            part_counts: List of all part count elements on the page
+            parts: List of all Part elements on the page
 
         Returns:
-            List of PartCount elements whose bboxes are fully inside the drawing
+            List of Part elements whose bboxes are fully inside the drawing
         """
-        contained = [
-            part_count
-            for part_count in part_counts
-            if part_count.bbox.fully_inside(drawing.bbox)
-        ]
+        contained = [part for part in parts if part.bbox.fully_inside(drawing.bbox)]
 
         return contained
 
@@ -387,10 +377,8 @@ class PartsListClassifier(LabelClassifier):
 
             # This is a winner!
             result.mark_winner(candidate, candidate.constructed)
+            # Note: Do NOT remove child bboxes - Parts are contained within
             if candidate.source_block is not None:
-                self.classifier._remove_child_bboxes(
-                    page_data, candidate.source_block, result
-                )
                 self.classifier._remove_similar_bboxes(
                     page_data, candidate.source_block, result
                 )
