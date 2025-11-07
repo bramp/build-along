@@ -172,7 +172,15 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Draw bounding boxes for elements marked as deleted.",
     )
-    parser.set_defaults(summary=True, summary_detailed=False, draw_deleted=False)
+    parser.add_argument(
+        "--no-draw",
+        dest="draw",
+        action="store_false",
+        help="Do not draw annotated images.",
+    )
+    parser.set_defaults(
+        summary=True, summary_detailed=False, draw_deleted=False, draw=True
+    )
     return parser.parse_args()
 
 
@@ -491,9 +499,10 @@ def main() -> int:
 
         # Save results as JSON and render annotated images
         save_classified_json(pages, results, output_dir, pdf_path)
-        render_annotated_images(
-            doc, pages, results, output_dir, draw_deleted=args.draw_deleted
-        )
+        if args.draw:
+            render_annotated_images(
+                doc, pages, results, output_dir, draw_deleted=args.draw_deleted
+            )
 
     return 0
 
