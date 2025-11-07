@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from dataclass_wizard import JSONPyWizard
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 
@@ -194,11 +193,6 @@ class Page(LegoPageElement):
         warnings: List of warnings generated during hierarchy building
         unprocessed_elements: Raw elements that were classified but couldn't be converted
     """
-
-    # TODO Consider if we want to keep the page_data field here. It creates a circular
-    # reference, and is not strictly necessary for the final LegoPageElement
-    # representation.
-    page_data: PageData = field(kw_only=True)
 
     page_number: PageNumber | None = field(default=None, kw_only=True)
     steps: list[Step] = field(default_factory=list, kw_only=True)
