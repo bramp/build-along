@@ -32,11 +32,16 @@ class TestClassifyElements:
             )
             pages.append(page_data)
 
-        results = classify_pages(pages)
+        batch_result = classify_pages(pages)
+
+        # Verify histogram was built
+        assert batch_result.histogram is not None
 
         # Verify all pages have their page numbers labeled
-        assert len(results) == 3
-        for _i, (page_data, result) in enumerate(zip(pages, results, strict=True)):
+        assert len(batch_result.results) == 3
+        for _i, (page_data, result) in enumerate(
+            zip(pages, batch_result.results, strict=True)
+        ):
             labeled_elements = [
                 e
                 for e in page_data.blocks
@@ -54,8 +59,9 @@ class TestClassifyElements:
 
     def test_empty_pages_list(self) -> None:
         """Test with an empty list of pages."""
-        results = classify_pages([])
-        assert len(results) == 0
+        batch_result = classify_pages([])
+        assert len(batch_result.results) == 0
+        assert batch_result.histogram is not None
         # Should not raise any errors
 
 

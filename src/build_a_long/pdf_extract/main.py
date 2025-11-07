@@ -12,6 +12,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
+from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
 from build_a_long.pdf_extract.extractor import (
     ExtractionResult,
@@ -168,6 +169,11 @@ def parse_arguments() -> argparse.Namespace:
         help="Print detailed classification debugging information for each page.",
     )
     parser.add_argument(
+        "--print-histogram",
+        action="store_true",
+        help="Print text histogram showing font size and name distributions.",
+    )
+    parser.add_argument(
         "--draw-deleted",
         action="store_true",
         help="Draw bounding boxes for elements marked as deleted.",
@@ -231,12 +237,91 @@ def _print_summary(
         parts = [f"{k}={v}" for k, v in sorted(labeled_counts.items())]
         print("Labeled elements: " + ", ".join(parts))
     print(
-        f"Page-number coverage: {pages_with_page_number}/{total_pages} ({coverage:.1f}%)"
+        f"Page-number coverage: {pages_with_page_number}/{total_pages} "
+        f"({coverage:.1f}%)"
     )
     if detailed and missing_page_numbers:
         sample = ", ".join(str(n) for n in missing_page_numbers[:20])
         more = " ..." if len(missing_page_numbers) > 20 else ""
         print(f"Pages missing page number: {sample}{more}")
+
+
+def _print_histogram(histogram: TextHistogram) -> None:
+    """Print the text histogram showing font size and name distributions.
+
+    Args:
+        histogram: TextHistogram containing font statistics across all pages
+    """
+    print("=== Text Histogram ===")
+
+    # Print font size distribution
+    print("\nFont Size Distribution:")
+    print("-" * 50)
+    print(f"{'Size':>8} | {'Count':>6} | Distribution")
+    print("-" * 50)
+
+    font_sizes = histogram.font_size_counts.most_common(20)
+    if font_sizes:
+        max_count = font_sizes[0][1]
+        for font_size, count in font_sizes:
+            bar_length = int((count / max_count) * 30)
+            bar = "█" * bar_length
+            print(f"{font_size:8.1f} | {count:6d} | {bar}")
+
+        total_size_entries = sum(histogram.font_size_counts.values())
+        print("-" * 50)
+        print(f"Total unique sizes: {len(histogram.font_size_counts)}")
+        print(f"Total text elements: {total_size_entries}")
+    else:
+        print("(no font size data)")
+
+    # Print font name distribution
+    print("\nFont Name Distribution:")
+    print("-" * 50)
+    print(f"{'Font Name':<30} | {'Count':>6} | Distribution")
+    print("-" * 50)
+
+    font_names = histogram.font_name_counts.most_common(20)
+    if font_names:
+        max_count = font_names[0][1]
+        for font_name, count in font_names:
+            bar_length = int((count / max_count) * 30)
+            bar = "█" * bar_length
+            name_display = font_name[:27] + "..." if len(font_name) > 30 else font_name
+            print(f"{name_display:<30} | {count:6d} | {bar}")
+
+        total_name_entries = sum(histogram.font_name_counts.values())
+        print("-" * 50)
+        print(f"Total unique fonts: {len(histogram.font_name_counts)}")
+        print(f"Total text elements: {total_name_entries}")
+    else:
+        print("(no font name data)")
+
+    # Print pattern-specific statistics
+    print("\nPattern-Specific Font Size Statistics:")
+    print("-" * 60)
+
+    # Part counts (\dx pattern)
+    part_count_total = sum(histogram.part_count_font_sizes.values())
+
+    if part_count_total > 0:
+        print(r"Part counts (\dx pattern):")
+        print(f"  Count:   {part_count_total}")
+        print(f"  Most common sizes: {histogram.part_count_font_sizes.most_common(3)}")
+    else:
+        print(r"Part counts (\dx pattern): N/A")
+
+    # Page numbers (±1)
+    page_number_total = sum(histogram.page_number_font_sizes.values())
+
+    if page_number_total > 0:
+        print("\nPage numbers (±1):")
+        print(f"  Count:   {page_number_total}")
+        print(f"  Most common sizes: {histogram.page_number_font_sizes.most_common(3)}")
+    else:
+        print("\nPage numbers (±1): N/A")
+
+    print()
 
 
 def _print_classification_debug(page: PageData, result: ClassificationResult) -> None:
@@ -482,26 +567,34 @@ def main() -> int:
 
         # Classify elements to add labels (e.g., page numbers)
         # This also marks elements as deleted if they're duplicates/shadows
-        # Returns classification results with labels for each page
-        results = classify_pages(pages)
+        # Returns batch classification result with per-page results and histogram
+        batch_result = classify_pages(pages)
 
-        for page, result in zip(pages, results, strict=True):
-            _print_label_counts(page, result)
-            if args.debug_classification:
+        # Optionally print the text histogram
+        if args.print_histogram:
+            _print_histogram(batch_result.histogram)
+
+        if args.debug_classification:
+            for page, result in zip(pages, batch_result.results, strict=True):
+                _print_label_counts(page, result)
                 _print_classification_debug(page, result)
 
-        # Build structured LEGO page hierarchy from classification results
-        _build_page_hierarchy(pages, results)
+            # Build structured LEGO page hierarchy from classification results
+            _build_page_hierarchy(pages, batch_result.results)
 
         # Optionally print a concise summary to stdout
         if args.summary:
-            _print_summary(pages, results, detailed=args.summary_detailed)
+            _print_summary(pages, batch_result.results, detailed=args.summary_detailed)
 
         # Save results as JSON and render annotated images
-        save_classified_json(pages, results, output_dir, pdf_path)
+        save_classified_json(pages, batch_result.results, output_dir, pdf_path)
         if args.draw:
             render_annotated_images(
-                doc, pages, results, output_dir, draw_deleted=args.draw_deleted
+                doc,
+                pages,
+                batch_result.results,
+                output_dir,
+                draw_deleted=args.draw_deleted,
             )
 
     return 0

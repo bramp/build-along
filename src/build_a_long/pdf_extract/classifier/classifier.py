@@ -18,9 +18,12 @@ If the order is changed such that a classifier runs before its requirements
 are available, a ValueError will be raised at initialization time.
 """
 
+from __future__ import annotations
+
 import logging
 
 from build_a_long.pdf_extract.classifier.classification_result import (
+    BatchClassificationResult,
     ClassificationHints,
     ClassificationResult,
     ClassifierConfig,
@@ -47,6 +50,7 @@ from build_a_long.pdf_extract.classifier.step_classifier import (
 from build_a_long.pdf_extract.classifier.step_number_classifier import (
     StepNumberClassifier,
 )
+from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
@@ -69,25 +73,34 @@ def classify_elements(page: PageData) -> ClassificationResult:
     return orchestrator.process_page(page)
 
 
-def classify_pages(pages: list[PageData]) -> list[ClassificationResult]:
+def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
     """Classify and label elements across multiple pages using rule-based heuristics.
+
+    This function performs a two-phase process:
+    1. Analysis phase: Build a histogram of text properties across all pages
+    2. Classification phase: Use the histogram to guide element classification
 
     Args:
         pages: A list of PageData objects to classify.
 
     Returns:
-        List of ClassificationResult objects, one per page.
+        BatchClassificationResult containing per-page results and global histogram
     """
+    # Phase 1: Build global histogram
+    histogram = TextHistogram.from_pages(pages)
+
+    # Phase 2: Classify using the histogram
     config = ClassifierConfig()
     classifier = Classifier(config)
     orchestrator = ClassificationOrchestrator(classifier)
 
     results = []
     for page_data in pages:
+        # TODO: Pass histogram to orchestrator/classifier to guide classification
         result = orchestrator.process_page(page_data)
         results.append(result)
 
-    return results
+    return BatchClassificationResult(results=results, histogram=histogram)
 
 
 type Classifiers = (
@@ -127,7 +140,8 @@ class Classifier:
             if not need.issubset(produced):
                 missing = ", ".join(sorted(need - produced))
                 raise ValueError(
-                    f"Classifier order invalid: {cls.__name__} requires labels not yet produced: {missing}"
+                    f"Classifier order invalid: {cls.__name__} requires "
+                    f"labels not yet produced: {missing}"
                 )
             produced |= getattr(c, "outputs", set())
 
@@ -239,7 +253,8 @@ class Classifier:
             inside_counts = [t for t in part_counts if t.bbox.fully_inside(pl.bbox)]
             if not inside_counts:
                 warnings.append(
-                    f"Page {page_data.page_number}: parts list at {pl.bbox} contains no part counts"
+                    f"Page {page_data.page_number}: parts list at {pl.bbox} "
+                    f"contains no part counts"
                 )
 
         steps: list[Text] = [
@@ -253,7 +268,8 @@ class Classifier:
             above = [pl for pl in parts_lists if pl.bbox.y1 <= sb.y0 + ABOVE_EPS]
             if not above:
                 warnings.append(
-                    f"Page {page_data.page_number}: step number '{step.text}' at {sb} has no parts list above it"
+                    f"Page {page_data.page_number}: step number '{step.text}' "
+                    f"at {sb} has no parts list above it"
                 )
         return warnings
 
