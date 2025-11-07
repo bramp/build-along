@@ -5,7 +5,7 @@ Data classes for the classifier.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dataclass_wizard import JSONPyWizard
 
@@ -14,8 +14,38 @@ from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
 from build_a_long.pdf_extract.extractor.page_blocks import Block
 
+if TYPE_CHECKING:
+    from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
+
 # Score key can be either a single Block or a tuple of Blocks (for pairings)
 ScoreKey = Block | tuple[Block, ...]
+
+
+@dataclass
+class BatchClassificationResult:
+    """Results from classifying multiple pages together.
+
+    This class holds both the per-page classification results and the
+    global text histogram computed across all pages.
+    """
+
+    results: list[ClassificationResult]
+    """Per-page classification results, one for each input page"""
+
+    histogram: TextHistogram
+    """Global text histogram computed across all pages"""
+
+    def __len__(self) -> int:
+        """Return the number of pages classified."""
+        return len(self.results)
+
+    def __getitem__(self, index: int) -> ClassificationResult:
+        """Get the classification result for a specific page."""
+        return self.results[index]
+
+    def __iter__(self):
+        """Iterate over per-page classification results."""
+        return iter(self.results)
 
 
 @dataclass
