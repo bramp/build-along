@@ -44,20 +44,18 @@ class LegoPageBuilder:
     a complete structured Page using LEGO-specific types.
     """
 
-    def __init__(self, page_data: PageData, result: ClassificationResult):
+    def __init__(self, result: ClassificationResult):
         """Initialize the hierarchy builder.
 
         Args:
-            page_data: The page data containing all blocks
             result: Classification result with labels and relationships
         """
-        self.page_data = page_data
         self.result = result
         self.warnings: list[str] = []
         self.unprocessed: list[Block] = []
 
         # Build spatial hierarchy of raw blocks for relationship queries
-        self.block_tree = build_hierarchy_from_blocks(page_data.blocks)
+        self.block_tree = build_hierarchy_from_blocks(self.result.page_data.blocks)
 
         # Track which blocks we've already converted
         self.converted: set[int] = set()
@@ -82,8 +80,7 @@ class LegoPageBuilder:
 
         # Use the page's bbox from the original page data
         return Page(
-            bbox=self.page_data.bbox,
-            page_data=self.page_data,
+            bbox=self.result.page_data.bbox,
             page_number=page_number,
             steps=steps,
             parts_lists=parts_lists,
@@ -316,7 +313,7 @@ class LegoPageBuilder:
 
     def _collect_unprocessed_elements(self) -> None:
         """Collect blocks that were classified but not converted."""
-        for block in self.page_data.blocks:
+        for block in self.result.page_data.blocks:
             # Skip removed blocks
             if self.result.is_removed(block):
                 continue
@@ -358,5 +355,5 @@ def build_page(
         ...     for step in page.steps:
         ...         print(f"  Step {step.step_number.value}")
     """
-    builder = LegoPageBuilder(page_data, result)
+    builder = LegoPageBuilder(result)
     return builder.build()

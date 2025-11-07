@@ -290,8 +290,7 @@ classifier/
 ├── parts_list_classifier.py         # Parts list classification logic
 ├── step_number_classifier.py        # Step number classification logic
 ├── text_extractors.py               # Shared text parsing functions
-├── lego_page_builder.py             # Hierarchy builder
-├── hierarchy_builder.py             # Alternative hierarchy builder
+├── lego_page_builder.py             # Builds Page from classification results
 └── types.py                         # Shared data types
 ```
 
@@ -501,7 +500,6 @@ The candidate-based architecture has been successfully implemented:
 
 - **Builders** (to be updated to use `constructed_elements`):
   - `lego_page_builder.py`: Currently parses elements; should use pre-constructed objects
-  - `hierarchy_builder.py`: Currently parses elements; should use pre-constructed objects
 
 - **Enhancements**:
   - Implement hints support for re-evaluation
