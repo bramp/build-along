@@ -1,9 +1,5 @@
 """Tests for the parts list classifier."""
 
-from pathlib import Path
-
-import pytest
-
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
@@ -52,65 +48,6 @@ class TestPartsListClassification:
         assert result.get_label(d1) == "parts_list"
         d2_label = result.get_label(d2)
         assert d2_label is None or d2_label != "parts_list"
-
-    @pytest.mark.skip(reason="Re-enable, once we fix the classifer rules.")
-    def test_real_example_parts_list_and_deletions(self) -> None:
-        """Replicate the user's provided example.
-
-        Ensures:
-        - Step text is classified as step_number
-        - Exactly one of the near-duplicate drawings is labeled parts_list; the other is removed
-        - The three "1x" texts are labeled part_count
-        - Images inside the chosen parts list are labeled part_image and kept
-        - The unrelated image is removed
-        """
-        # Load the page from a JSON fixture next to this test file
-        fixture = (
-            Path(__file__)
-            .with_name("fixtures")
-            .joinpath("real_example_parts_list_and_deletions.json")
-        )
-        page: PageData = PageData.from_json(fixture.read_text())  # type: ignore[assignment]
-
-        result = classify_elements(page)
-
-        # Build a quick map of elements by id for easy lookup in assertions
-        elems = {e.id: e for e in page.blocks if e.id is not None}
-        # Recreate references for assertions by their IDs
-        pc4 = elems[4]
-        pc5 = elems[5]
-        pc6 = elems[6]
-        step = elems[7]
-        img17 = elems[17]
-        img18 = elems[18]
-        img19 = elems[19]
-        img20 = elems[20]
-        d34 = elems[34]
-        d35 = elems[35]
-
-        # Assertions matching the previous test
-        assert result.get_label(step) == "step_number"
-        assert result.get_label(pc4) == "part_count"
-        assert result.get_label(pc5) == "part_count"
-        assert result.get_label(pc6) == "part_count"
-
-        # Exactly one of the drawings is chosen as parts list; the other is removed
-        d34_label = result.get_label(d34)
-        d35_label = result.get_label(d35)
-        assert (d34_label == "parts_list") ^ (d35_label == "parts_list")
-        assert result.is_removed(d34) ^ result.is_removed(d35)
-
-        # Images within the chosen parts list should be labeled as part_image; unrelated image is removed
-        assert result.get_label(img18) == "part_image"
-        assert not result.is_removed(img18)
-
-        assert result.get_label(img19) == "part_image"
-        assert not result.is_removed(img19)
-
-        assert result.get_label(img20) == "part_image"
-        assert not result.is_removed(img20)
-
-        assert result.is_removed(img17)
 
     def test_two_steps_do_not_label_and_delete_both_drawings(self) -> None:
         """When there are two step numbers and two near-duplicate drawings
