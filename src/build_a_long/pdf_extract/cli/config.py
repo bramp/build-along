@@ -11,8 +11,8 @@ from pathlib import Path
 class ProcessingConfig:
     """Configuration for PDF processing."""
 
-    pdf_path: Path
-    output_dir: Path
+    pdf_paths: list[Path]
+    output_dir: Path | None
     include_types: set[str]
     page_ranges: str | None = None
 
@@ -37,13 +37,12 @@ class ProcessingConfig:
         Returns:
             ProcessingConfig instance
         """
-        pdf_path = Path(args.pdf_path)
-        output_dir = args.output_dir if args.output_dir else pdf_path.parent
+        pdf_paths = [Path(p) for p in args.pdf_paths]
         include_types = set(t.strip() for t in args.include_types.split(","))
 
         return cls(
-            pdf_path=pdf_path,
-            output_dir=output_dir,
+            pdf_paths=pdf_paths,
+            output_dir=args.output_dir,
             include_types=include_types,
             page_ranges=args.pages,
             save_summary=args.summary,
@@ -63,11 +62,17 @@ def parse_arguments() -> argparse.Namespace:
         Parsed arguments namespace
     """
     parser = argparse.ArgumentParser(
-        description="Extract bounding boxes from a PDF file and export images/JSON for debugging."
+        description=(
+            "Extract bounding boxes from PDF files and export images/JSON for debugging."
+        )
     )
 
     # Basic arguments
-    parser.add_argument("pdf_path", help="The path to the PDF file.")
+    parser.add_argument(
+        "pdf_paths",
+        nargs="+",
+        help="Path(s) to one or more PDF files to process.",
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,

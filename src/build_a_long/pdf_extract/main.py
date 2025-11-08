@@ -74,19 +74,21 @@ def _parse_page_selection(pages_arg: str | None, doc_length: int) -> PageRanges 
         return None
 
 
-def _process_pdf(config: ProcessingConfig) -> int:
-    """Process the PDF file with the given configuration.
+def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> int:
+    """Process a single PDF file with the given configuration.
 
     Args:
         config: Processing configuration
+        pdf_path: Path to the PDF file to process
+        output_dir: Output directory for this PDF
 
     Returns:
         Exit code (0 for success, non-zero for error)
     """
-    logging.info("Processing PDF: %s", config.pdf_path)
+    logging.info("Processing PDF: %s", pdf_path)
 
     # Extract and classify
-    with pymupdf.open(str(config.pdf_path)) as doc:
+    with pymupdf.open(str(pdf_path)) as doc:
         page_ranges = _parse_page_selection(config.page_ranges, len(doc))
         if page_ranges is None:
             return 2
@@ -100,7 +102,7 @@ def _process_pdf(config: ProcessingConfig) -> int:
 
         # Save raw JSON if requested
         if config.save_raw_json:
-            save_raw_json(pages, config.output_dir, config.pdf_path)
+            save_raw_json(pages, output_dir, pdf_path)
 
         # Classify elements
         batch_result = classify_pages(pages)
@@ -120,16 +122,14 @@ def _process_pdf(config: ProcessingConfig) -> int:
             print_summary(pages, batch_result.results, detailed=config.summary_detailed)
 
         # Save results
-        save_classified_json(
-            pages, batch_result.results, config.output_dir, config.pdf_path
-        )
+        save_classified_json(pages, batch_result.results, output_dir, pdf_path)
 
         if config.draw_images:
             render_annotated_images(
                 doc,
                 pages,
                 batch_result.results,
-                config.output_dir,
+                output_dir,
                 draw_deleted=config.draw_deleted,
             )
 
@@ -149,14 +149,28 @@ def main() -> int:
     config = ProcessingConfig.from_args(args)
 
     # Validate inputs
-    if not _validate_pdf_path(config.pdf_path):
-        return 2
+    for pdf_path in config.pdf_paths:
+        if not _validate_pdf_path(pdf_path):
+            return 2
 
-    # Ensure output directory exists
-    config.output_dir.mkdir(parents=True, exist_ok=True)
+    # Process each PDF
+    for pdf_path in config.pdf_paths:
+        # Determine output directory for this PDF
+        if config.output_dir is not None:
+            output_dir = config.output_dir
+        else:
+            # Default to same directory as the PDF
+            output_dir = pdf_path.parent
 
-    # Process the PDF
-    return _process_pdf(config)
+        # Ensure output directory exists
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Process this PDF
+        exit_code = _process_pdf(config, pdf_path, output_dir)
+        if exit_code != 0:
+            return exit_code
+
+    return 0
 
 
 if __name__ == "__main__":
