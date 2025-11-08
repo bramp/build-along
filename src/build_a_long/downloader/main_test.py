@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from build_a_long.downloader.main import get_set_numbers_from_args, main
-from build_a_long.downloader.metadata import Metadata, PdfEntry
+from build_a_long.downloader.metadata import InstructionMetadata, PdfEntry
 
 
 def test_get_set_numbers_from_args_single_arg():
@@ -122,7 +122,7 @@ def test_main_metadata_mode(
     mock_downloader_class.return_value = mock_instance
 
     # Mock metadata return
-    mock_meta = Metadata(
+    mock_meta = InstructionMetadata(
         set="12345",
         locale="en-us",
         name="Test Set",
