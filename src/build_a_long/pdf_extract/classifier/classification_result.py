@@ -23,8 +23,8 @@ ScoreKey = Block | tuple[Block, ...]
 
 
 # TODO Make this JSON serializable
-@dataclass(frozen=True)
-class BatchClassificationResult:
+@dataclass
+class BatchClassificationResult(JSONPyWizard):
     """Results from classifying multiple pages together.
 
     This class holds both the per-page classification results and the
