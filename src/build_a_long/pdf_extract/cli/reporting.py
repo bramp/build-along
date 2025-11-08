@@ -227,7 +227,7 @@ def print_font_hints(hints: FontSizeHints) -> None:
     if hints.remaining_font_sizes:
         print(f"{'Size':>8} | {'Count':>6}")
         print("-" * 20)
-        for size, count in hints.remaining_font_sizes.most_common(10):
+        for size, count in hints.remaining_font_sizes:
             print(f"{size:8.1f} | {count:6d}")
         print(f"\nTotal unique sizes: {len(hints.remaining_font_sizes)}")
     else:

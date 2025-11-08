@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 def main() -> None:
     """Generate golden files for FontSizeHints on all bz2 fixtures."""
 
-    fixtures_dir = Path("src/build_a_long/pdf_extract/classifier/fixtures")
+    fixtures_dir = Path("src/build_a_long/pdf_extract/fixtures")
 
     if not fixtures_dir.exists():
         log.error(f"Fixtures directory not found: {fixtures_dir}")

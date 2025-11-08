@@ -8,10 +8,5 @@ python_test_utils(
 python_tests(
     name="tests",
     sources=["*_test.py"],
-    dependencies=[":fixtures"],
-)
-
-files(
-    name="fixtures",
-    sources=["fixtures/*.json", "fixtures/*.json.bz2"],
+    dependencies=["//src/build_a_long/pdf_extract:fixtures"],
 )

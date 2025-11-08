@@ -5,12 +5,12 @@ python_tests(
     sources=["*_test.py"],
 )
 
-pex_binary(
-    name="main",
-    entry_point="build_a_long.pdf_extract.main:main",
+files(
+    name="fixtures",
+    sources=["fixtures/*.json", "fixtures/*.json.bz2"],
 )
 
 pex_binary(
-    name="analyze_classifier",
-    entry_point="build_a_long.pdf_extract.analyze_classifier:main",
+    name="main",
+    entry_point="build_a_long.pdf_extract.main:main",
 )
