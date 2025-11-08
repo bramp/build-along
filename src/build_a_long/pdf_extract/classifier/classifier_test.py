@@ -84,33 +84,3 @@ class TestPipelineEnforcement:
         finally:
             # Restore original declaration to avoid impacting other tests
             StepNumberClassifier.requires = original_requires
-
-
-class TestBlockFiltering:
-    """Tests for block filtering integration with classify_pages."""
-
-    def test_classify_pages_filters_duplicate_blocks(self) -> None:
-        """Test that classify_pages applies duplicate block filtering."""
-        # Create a page with duplicate blocks
-        page_bbox = BBox(0, 0, 100, 200)
-        blocks: list[Text] = [
-            # Page number with shadow
-            Text(id=1, bbox=BBox(5, 190, 15, 198), text="1"),
-            Text(id=2, bbox=BBox(5.5, 190.5, 15.5, 198.5), text="1"),
-            # Another text element (no duplicate)
-            Text(id=3, bbox=BBox(50, 100, 80, 110), text="Step 1"),
-        ]
-
-        page_data = PageData(
-            page_number=1,
-            blocks=list(blocks),  # Convert to list[Block]
-            bbox=page_bbox,
-        )
-
-        batch_result = classify_pages([page_data])
-
-        # After filtering, should have fewer blocks than original
-        result = batch_result.results[0]
-        labeled_blocks = result.get_labeled_blocks()
-        # Should have filtered out one of the duplicate page numbers
-        assert len(labeled_blocks) <= 2

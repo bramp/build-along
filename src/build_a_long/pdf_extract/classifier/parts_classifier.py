@@ -28,7 +28,6 @@ from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
-    ClassificationHints,
     ClassificationResult,
     ClassifierConfig,
 )
@@ -154,12 +153,7 @@ class PartsClassifier(LabelClassifier):
                     edges.append(score)
         return edges
 
-    def classify(
-        self,
-        page_data: PageData,
-        result: ClassificationResult,
-        hints: ClassificationHints | None,
-    ) -> None:
+    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
         """Match part counts with images and create Part candidates."""
         if not self._candidate_edges:
             return

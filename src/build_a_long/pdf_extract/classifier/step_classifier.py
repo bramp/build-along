@@ -31,7 +31,6 @@ from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
-    ClassificationHints,
     ClassificationResult,
     ClassifierConfig,
 )
@@ -90,11 +89,7 @@ class StepClassifier(LabelClassifier):
             "all",
         )
 
-    def evaluate(
-        self,
-        page_data: PageData,
-        result: ClassificationResult,
-    ) -> None:
+    def evaluate(self, page_data: PageData, result: ClassificationResult) -> None:
         """Evaluate elements and create candidates for complete Step structures.
 
         Combines step_number and parts_list elements, identifies diagram regions,
@@ -309,12 +304,7 @@ class StepClassifier(LabelClassifier):
 
         return BBox(x0=x0, y0=y0, x1=x1, y1=y1)
 
-    def classify(
-        self,
-        page_data: PageData,
-        result: ClassificationResult,
-        hints: ClassificationHints | None,
-    ) -> None:
+    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
         """Classify Step candidates and mark winners.
 
         Args:

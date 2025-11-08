@@ -140,7 +140,7 @@ def analyze_document(pdf_path: Path) -> DocumentAnalysis:
         # Analyze each page
         page_analyses = [
             analyze_page(page_data, result)
-            for page_data, result in zip(pages_data, results, strict=True)
+            for page_data, result in zip(pages_data, results.results, strict=True)
         ]
 
         pages_with_page_number = sum(

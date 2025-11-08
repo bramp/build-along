@@ -23,9 +23,9 @@ class TestTextHistogram:
 
         histogram = TextHistogram.from_pages(pages)
 
-        assert len(histogram.font_size_counts) == 0
+        assert len(histogram.remaining_font_sizes) == 0
         assert len(histogram.font_name_counts) == 0
-        assert histogram.font_size_counts.most_common(5) == []
+        assert histogram.remaining_font_sizes.most_common(5) == []
         assert histogram.font_name_counts.most_common(5) == []
 
     def test_histogram_from_multiple_pages(self) -> None:
@@ -80,24 +80,29 @@ class TestTextHistogram:
         # Build the histogram
         histogram = TextHistogram.from_pages(pages)
 
-        # Verify font size counts
-        assert len(histogram.font_size_counts) == 3
-        assert histogram.font_size_counts[8.0] == 3  # 3 page numbers
-        assert histogram.font_size_counts[12.0] == 6  # 6 part counts
-        assert histogram.font_size_counts[24.0] == 3  # 3 step numbers
+        # Verify font size counts (only includes "other integers" - not part counts or page numbers)
+        # In this test: page numbers (str(i)) match page ±1, so they're in page_number_font_sizes
+        # Step numbers (i*2) are integers but NOT within ±1 of page number, so they're in font_size_counts
+        assert len(histogram.remaining_font_sizes) == 1
+        assert (
+            histogram.remaining_font_sizes[24.0] == 2
+        )  # Only pages 1 and 2 have step numbers outside ±1 range
+
+        # Verify part count font sizes
+        assert len(histogram.part_count_font_sizes) == 1
+        assert histogram.part_count_font_sizes[12.0] == 6  # 6 part counts
+
+        # Verify page number font sizes
+        assert len(histogram.page_number_font_sizes) == 2
+        assert histogram.page_number_font_sizes[8.0] == 3  # 3 page numbers
+        assert (
+            histogram.page_number_font_sizes[24.0] == 1
+        )  # Page 3's step number (6) is within ±1 of page 3
 
         # Verify font name counts
         assert len(histogram.font_name_counts) == 2
         assert histogram.font_name_counts["Arial"] == 9  # page nums + part counts
         assert histogram.font_name_counts["Arial-Bold"] == 3  # step numbers
-
-        # Verify most_common_font_sizes returns correct order
-        most_common_sizes = histogram.font_size_counts.most_common(3)
-        assert most_common_sizes[0] == (12.0, 6)  # Most common
-        assert most_common_sizes[1][1] == 3  # Second most common (tie)
-        assert most_common_sizes[2][1] == 3  # Third most common (tie)
-
-        # Verify most_common_font_names returns correct order
         most_common_names = histogram.font_name_counts.most_common(2)
         assert most_common_names[0] == ("Arial", 9)
         assert most_common_names[1] == ("Arial-Bold", 3)
@@ -123,21 +128,21 @@ class TestTextHistogram:
                     Text(
                         id=0,
                         bbox=BBox(10, 10, 50, 50),
-                        text="text1",
+                        text="10",  # Integer text (not matching page ±1)
                         font_name="Arial",
                         font_size=12.0,
                     ),
                     Text(
                         id=1,
                         bbox=BBox(10, 60, 50, 80),
-                        text="text2",
+                        text="20",  # Integer text (not matching page ±1)
                         font_name=None,
                         font_size=None,
                     ),
                     Text(
                         id=2,
                         bbox=BBox(10, 90, 50, 110),
-                        text="text3",
+                        text="30",  # Integer text (not matching page ±1)
                         font_name="Arial",
                         font_size=12.0,
                     ),
@@ -149,8 +154,11 @@ class TestTextHistogram:
         histogram = TextHistogram.from_pages(pages)
 
         # Only the non-None values should be counted
-        assert len(histogram.font_size_counts) == 1
-        assert histogram.font_size_counts[12.0] == 2
+        # font_size_counts only tracks integers that aren't part counts or page numbers
+        assert len(histogram.remaining_font_sizes) == 1
+        assert (
+            histogram.remaining_font_sizes[12.0] == 2
+        )  # "10" and "30" (not "20" which has None font_size)
 
         assert len(histogram.font_name_counts) == 1
         assert histogram.font_name_counts["Arial"] == 2
@@ -177,7 +185,7 @@ class TestTextHistogram:
         histogram = TextHistogram.from_pages(pages)
 
         # Request only top 3
-        top_3_sizes = histogram.font_size_counts.most_common(3)
+        top_3_sizes = histogram.remaining_font_sizes.most_common(3)
         assert len(top_3_sizes) <= 3
 
         top_2_names = histogram.font_name_counts.most_common(2)
