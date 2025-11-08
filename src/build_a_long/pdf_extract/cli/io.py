@@ -1,5 +1,7 @@
 """Input/Output operations for PDF extraction."""
 
+import bz2
+import gzip
 import json
 import logging
 from pathlib import Path
@@ -16,28 +18,47 @@ from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 logger = logging.getLogger(__name__)
 
 
-def _prune_element_metadata(page: dict[str, Any]) -> dict[str, Any]:
-    """Prune noisy/empty fields from PageData dict.
+class _RoundingEncoder(json.JSONEncoder):
+    """JSON encoder that rounds floats to 4 decimal places."""
 
-    Applies to each element in page["elements"] only:
-    - Drop "deleted" when falsy (e.g., False)
-    - Drop "label" when None
+    DEFAULT_DECIMALS = 2
+
+    def iterencode(self, o: Any, _one_shot: bool = False):
+        """Encode object in chunks, rounding floats during iteration."""
+
+        # Pre-process the entire object to round floats before encoding
+        def round_floats(obj: Any) -> Any:
+            if isinstance(obj, float):
+                return round(obj, self.DEFAULT_DECIMALS)
+            elif isinstance(obj, dict):
+                return {k: round_floats(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [round_floats(item) for item in obj]
+            return obj
+
+        return super().iterencode(round_floats(o), _one_shot)
+
+
+def load_json_auto(path: Path) -> dict[str, Any]:
+    """Load JSON from file, automatically detecting compression.
+
+    Supports uncompressed .json, gzip .json.gz, and bz2 .json.bz2 files.
 
     Args:
-        page: Page dictionary from PageData.to_dict()
+        path: Path to JSON file (compressed or uncompressed)
 
     Returns:
-        The same page dict with pruned fields (modified in-place)
+        Parsed JSON data
     """
-    elements = page.get("elements", [])
-    if isinstance(elements, list):
-        for ele in elements:
-            if isinstance(ele, dict):
-                if not bool(ele.get("deleted")):
-                    ele.pop("deleted", None)
-                if ele.get("label") is None:
-                    ele.pop("label", None)
-    return page
+    if path.suffix == ".bz2":
+        with bz2.open(path, "rt", encoding="utf-8") as f:
+            return json.load(f)  # type: ignore[return-value]
+    elif path.suffix == ".gz":
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            return json.load(f)  # type: ignore[return-value]
+    else:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)  # type: ignore[return-value]
 
 
 # TODO I don't think this works, as it doesn't actually output the classified results
@@ -62,27 +83,61 @@ def save_classified_json(
     logger.info("Saved JSON to %s", output_json_path)
 
 
-def save_raw_json(pages: list[PageData], output_dir: Path, pdf_path: Path) -> None:
-    """Save extracted raw data as JSON files, one per page.
+def save_raw_json(
+    pages: list[PageData],
+    output_dir: Path,
+    pdf_path: Path,
+    *,
+    compress: bool = False,
+    per_page: bool = False,
+) -> None:
+    """Save extracted raw data as JSON file(s).
+
+    Floats are automatically rounded to 4 decimal places to reduce file size.
+    JSON is indented with tabs for better compression and readability.
 
     Args:
         pages: List of PageData to serialize
         output_dir: Directory where JSON should be saved
         pdf_path: Original PDF path (used for naming the JSON file)
+        compress: If True, use bz2 compression (default: False)
+        per_page: If True, save one JSON file per page; if False, save all
+            pages in a single file
     """
-    for page_data in pages:
-        json_page = _prune_element_metadata(page_data.to_dict())
 
-        output_json_path = output_dir / (
-            f"{pdf_path.stem}_page_{page_data.page_number:03d}_raw.json"
-        )
-        with open(output_json_path, "w") as f:
-            json.dump(json_page, f, indent=4)
+    suffix = ".json.bz2" if compress else ".json"
+    opener = bz2.open if compress else open  # type: ignore[assignment]
+    compression_note = "compressed " if compress else ""
+
+    # Helper to save a single JSON file
+    def _save_json_file(
+        data: dict[str, Any], output_path: Path, page_desc: str
+    ) -> None:
+        with opener(output_path, "wt", encoding="utf-8") as f:  # type: ignore[operator]
+            # Use custom encoder to round floats
+            json.dump(data, f, indent="\t", cls=_RoundingEncoder)
+
         logger.info(
-            "Saved raw JSON for page %d to %s",
-            page_data.page_number,
-            output_json_path,
+            "Saved %sraw JSON for %s to %s",
+            compression_note,
+            page_desc,
+            output_path,
         )
+
+    if per_page:
+        # Save individual JSON files for each page
+        for page_data in pages:
+            json_data = ExtractionResult(pages=[page_data]).to_dict()
+            page_num = page_data.page_number
+            output_path = (
+                output_dir / f"{pdf_path.stem}_page_{page_num:03d}_raw{suffix}"
+            )
+            _save_json_file(json_data, output_path, f"page {page_num}")
+    else:
+        # Save all pages in a single JSON file
+        json_data = ExtractionResult(pages=pages).to_dict()
+        output_path = output_dir / f"{pdf_path.stem}_raw{suffix}"
+        _save_json_file(json_data, output_path, f"{len(pages)} pages")
 
 
 def render_annotated_images(

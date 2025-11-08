@@ -104,7 +104,15 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
 
         # Save raw JSON if requested
         if config.save_raw_json:
-            save_raw_json(pages, output_dir, pdf_path)
+            # Save per-page files if specific pages were selected
+            per_page = bool(page_ranges.ranges)  # True if specific ranges, False if all
+            save_raw_json(
+                pages,
+                output_dir,
+                pdf_path,
+                compress=config.compress_json,
+                per_page=per_page,
+            )
 
         # Print font hints if requested (before classification)
         if config.print_font_hints:
