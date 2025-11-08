@@ -1,0 +1,137 @@
+"""Tests for io module."""
+
+import bz2
+import gzip
+import json
+import tempfile
+from pathlib import Path
+
+import pytest
+
+from build_a_long.pdf_extract.cli.io import load_json_auto
+
+
+def test_load_json_auto_with_valid_json() -> None:
+    """Test loading valid JSON from uncompressed file."""
+    data = {"key": "value", "number": 42}
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        json.dump(data, f)
+        temp_path = Path(f.name)
+
+    try:
+        result = load_json_auto(temp_path)
+        assert result == data
+    finally:
+        temp_path.unlink()
+
+
+def test_load_json_auto_with_bz2() -> None:
+    """Test loading valid JSON from bz2 compressed file."""
+    data = {"compressed": True, "format": "bz2"}
+
+    with tempfile.NamedTemporaryFile(suffix=".json.bz2", delete=False) as f:
+        temp_path = Path(f.name)
+
+    try:
+        with bz2.open(temp_path, "wt", encoding="utf-8") as f:
+            json.dump(data, f)
+
+        result = load_json_auto(temp_path)
+        assert result == data
+    finally:
+        temp_path.unlink()
+
+
+def test_load_json_auto_with_gz() -> None:
+    """Test loading valid JSON from gzip compressed file."""
+    data = {"compressed": True, "format": "gzip"}
+
+    with tempfile.NamedTemporaryFile(suffix=".json.gz", delete=False) as f:
+        temp_path = Path(f.name)
+
+    try:
+        with gzip.open(temp_path, "wt", encoding="utf-8") as f:
+            json.dump(data, f)
+
+        result = load_json_auto(temp_path)
+        assert result == data
+    finally:
+        temp_path.unlink()
+
+
+def test_load_json_auto_with_invalid_json() -> None:
+    """Test that invalid JSON raises ValueError with helpful message."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        f.write("not valid json")
+        temp_path = Path(f.name)
+
+    try:
+        with pytest.raises(ValueError) as exc_info:
+            load_json_auto(temp_path)
+
+        # Check that the error message contains the file path
+        assert str(temp_path) in str(exc_info.value)
+        # Check that the error message contains position information
+        assert "line" in str(exc_info.value).lower()
+        assert "column" in str(exc_info.value).lower()
+    finally:
+        temp_path.unlink()
+
+
+def test_load_json_auto_with_empty_file() -> None:
+    """Test that empty file raises ValueError with helpful message."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        # Write nothing to create empty file
+        temp_path = Path(f.name)
+
+    try:
+        with pytest.raises(ValueError) as exc_info:
+            load_json_auto(temp_path)
+
+        # Check that the error message contains the file path
+        assert str(temp_path) in str(exc_info.value)
+        assert "Failed to parse JSON" in str(exc_info.value)
+    finally:
+        temp_path.unlink()
+
+
+def test_load_json_auto_with_corrupted_bz2() -> None:
+    """Test that corrupted JSON in bz2 file raises ValueError."""
+    with tempfile.NamedTemporaryFile(suffix=".json.bz2", delete=False) as f:
+        temp_path = Path(f.name)
+
+    try:
+        # Write corrupted JSON to bz2 file
+        with bz2.open(temp_path, "wt", encoding="utf-8") as f:
+            f.write("mv { invalid json }")
+
+        with pytest.raises(ValueError) as exc_info:
+            load_json_auto(temp_path)
+
+        # Check that the error message is helpful
+        assert str(temp_path) in str(exc_info.value)
+        assert "Failed to parse JSON" in str(exc_info.value)
+        assert "line" in str(exc_info.value).lower()
+    finally:
+        temp_path.unlink()
+
+
+def test_load_json_auto_with_corrupted_gz() -> None:
+    """Test that corrupted JSON in gzip file raises ValueError."""
+    with tempfile.NamedTemporaryFile(suffix=".json.gz", delete=False) as f:
+        temp_path = Path(f.name)
+
+    try:
+        # Write corrupted JSON to gzip file
+        with gzip.open(temp_path, "wt", encoding="utf-8") as f:
+            f.write("{ incomplete: json")
+
+        with pytest.raises(ValueError) as exc_info:
+            load_json_auto(temp_path)
+
+        # Check that the error message is helpful
+        assert str(temp_path) in str(exc_info.value)
+        assert "Failed to parse JSON" in str(exc_info.value)
+    finally:
+        temp_path.unlink()
