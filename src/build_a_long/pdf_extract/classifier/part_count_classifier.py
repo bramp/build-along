@@ -17,7 +17,6 @@ from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
-    ClassificationHints,
     ClassificationResult,
     ClassifierConfig,
 )
@@ -125,12 +124,7 @@ class PartCountClassifier(LabelClassifier):
                 ),
             )
 
-    def classify(
-        self,
-        page_data: PageData,
-        result: ClassificationResult,
-        hints: ClassificationHints | None,
-    ) -> None:
+    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
         """Select winning part counts from pre-built candidates."""
         # Get pre-built candidates
         candidate_list = result.get_candidates("part_count")

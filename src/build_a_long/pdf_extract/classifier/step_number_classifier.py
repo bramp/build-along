@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
-    ClassificationHints,
     ClassificationResult,
     ClassifierConfig,
 )
@@ -151,12 +150,7 @@ class StepNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def classify(
-        self,
-        page_data: PageData,
-        result: ClassificationResult,
-        hints: ClassificationHints | None,
-    ) -> None:
+    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
         """Select winning step numbers from pre-built candidates."""
         # Get pre-built candidates
         candidate_list = result.get_candidates("step_number")

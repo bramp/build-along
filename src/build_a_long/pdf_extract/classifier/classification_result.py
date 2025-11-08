@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from dataclass_wizard import JSONPyWizard
 
+from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
@@ -21,7 +22,8 @@ if TYPE_CHECKING:
 ScoreKey = Block | tuple[Block, ...]
 
 
-@dataclass
+# TODO Make this JSON serializable
+@dataclass(frozen=True)
 class BatchClassificationResult:
     """Results from classifying multiple pages together.
 
@@ -34,18 +36,6 @@ class BatchClassificationResult:
 
     histogram: TextHistogram
     """Global text histogram computed across all pages"""
-
-    def __len__(self) -> int:
-        """Return the number of pages classified."""
-        return len(self.results)
-
-    def __getitem__(self, index: int) -> ClassificationResult:
-        """Get the classification result for a specific page."""
-        return self.results[index]
-
-    def __iter__(self):
-        """Iterate over per-page classification results."""
-        return iter(self.results)
 
 
 @dataclass
@@ -125,8 +115,13 @@ class ClassifierConfig(JSONPyWizard):
     step_number_text_weight: float = 0.8
     step_number_size_weight: float = 0.2
 
+    font_size_hints: FontSizeHints | None = None
+    """Font size hints derived from analyzing all pages"""
+
     def __post_init__(self) -> None:
-        for weight in self.__dict__.values():
+        for key, weight in self.__dict__.items():
+            if key == "font_size_hints":
+                continue
             if weight < 0:
                 raise ValueError("All weights must be greater than or equal to 0.")
 
@@ -508,10 +503,3 @@ class ClassificationResult(JSONPyWizard):
                 if hasattr(score, "part_count") and hasattr(score, "image"):
                     pairs.append((score.part_count, score.image))
         return pairs
-
-
-@dataclass
-class ClassificationHints(JSONPyWizard):
-    """Hints to guide the classification process."""
-
-    pass

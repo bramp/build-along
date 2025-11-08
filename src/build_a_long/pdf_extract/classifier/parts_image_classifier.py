@@ -29,7 +29,6 @@ from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
-    ClassificationHints,
     ClassificationResult,
     ClassifierConfig,
 )
@@ -194,12 +193,7 @@ class PartsImageClassifier(LabelClassifier):
             if isinstance(e, Image) and inside_any_parts_list(e)
         ]
 
-    def classify(
-        self,
-        page_data: PageData,
-        result: ClassificationResult,
-        hints: ClassificationHints | None,
-    ) -> None:
+    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
         labeled_blocks = result.get_labeled_blocks()
         part_counts: list[Text] = [
             e

@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.classification_result import (
-    ClassificationHints,
     ClassificationResult,
     ClassifierConfig,
 )
@@ -58,7 +57,6 @@ class LabelClassifier(ABC):
         self,
         page_data: PageData,
         result: ClassificationResult,
-        hints: ClassificationHints | None,
     ) -> None:
         """Classify the elements for the label by selecting winners.
 

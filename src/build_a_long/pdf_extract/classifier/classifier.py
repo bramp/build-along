@@ -25,11 +25,11 @@ import logging
 from build_a_long.pdf_extract.classifier.block_filter import filter_duplicate_blocks
 from build_a_long.pdf_extract.classifier.classification_result import (
     BatchClassificationResult,
-    ClassificationHints,
     ClassificationResult,
     ClassifierConfig,
     RemovalReason,
 )
+from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.page_number_classifier import (
     PageNumberClassifier,
 )
@@ -69,18 +69,19 @@ def classify_elements(page: PageData) -> ClassificationResult:
     """
     config = ClassifierConfig()
     classifier = Classifier(config)
-    orchestrator = ClassificationOrchestrator(classifier)
 
-    return orchestrator.process_page(page)
+    return classifier.classify(page)
 
 
-def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
+def classify_pages(
+    pages: list[PageData], max_iterations: int = 1
+) -> BatchClassificationResult:
     """Classify and label elements across multiple pages using rule-based heuristics.
 
     This function performs a three-phase process:
     1. Filtering phase: Remove duplicate/similar blocks on each page
-    2. Analysis phase: Build a histogram of text properties across all pages
-    3. Classification phase: Use the histogram to guide element classification
+    2. Analysis phase: Build font size hints from text properties across all pages
+    3. Classification phase: Use hints to guide element classification
 
     Args:
         pages: A list of PageData objects to classify.
@@ -107,18 +108,19 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
         )
         filtered_pages.append(filtered_page)
 
-    # Phase 2: Build global histogram
+    # Phase 2: Extract font size hints from all pages
+    font_size_hints = FontSizeHints.from_pages(filtered_pages)
+
+    # Build histogram for result (keeping for compatibility)
     histogram = TextHistogram.from_pages(filtered_pages)
 
-    # Phase 3: Classify using the histogram
-    config = ClassifierConfig()
+    # Phase 3: Classify using the hints
+    config = ClassifierConfig(font_size_hints=font_size_hints)
     classifier = Classifier(config)
-    orchestrator = ClassificationOrchestrator(classifier)
 
     results = []
     for page_data in filtered_pages:
-        # TODO: Pass histogram to orchestrator/classifier to guide classification
-        result = orchestrator.process_page(page_data)
+        result = classifier.classify(page_data)
         results.append(result)
 
     return BatchClassificationResult(results=results, histogram=histogram)
@@ -166,9 +168,7 @@ class Classifier:
                 )
             produced |= getattr(c, "outputs", set())
 
-    def classify(
-        self, page_data: PageData, hints: ClassificationHints | None = None
-    ) -> ClassificationResult:
+    def classify(self, page_data: PageData) -> ClassificationResult:
         """
         Runs the classification logic and returns a result.
         It does NOT modify page_data directly.
@@ -177,7 +177,7 @@ class Classifier:
 
         for classifier in self.classifiers:
             classifier.evaluate(page_data, result)
-            classifier.classify(page_data, result, hints)
+            classifier.classify(page_data, result)
 
         warnings = self._log_post_classification_warnings(page_data, result)
         for warning in warnings:
@@ -293,48 +293,3 @@ class Classifier:
                     f"at {sb} has no parts list above it"
                 )
         return warnings
-
-
-class ClassificationOrchestrator:
-    """
-    Manages the backtracking classification process.
-    This class is stateful.
-    """
-
-    def __init__(self, classifier: Classifier):
-        self.classifier = classifier
-        self.history: list[ClassificationResult] = []
-
-    def process_page(self, page_data: PageData) -> ClassificationResult:
-        """
-        Orchestrates the classification of a single page, with backtracking.
-
-        Returns:
-            The final ClassificationResult containing labels and removal info.
-        """
-        hints = ClassificationHints()
-
-        max_iterations = 1  # TODO raise this in future
-        for _i in range(max_iterations):
-            result = self.classifier.classify(page_data, hints)
-            self.history.append(result)
-
-            inconsistencies = result.get_warnings()
-            if not inconsistencies:
-                return result
-
-            hints = self._generate_new_hints(result, inconsistencies)
-
-        final_result = self.history[-1]
-        return final_result
-
-    def _generate_new_hints(
-        self, result: ClassificationResult, inconsistencies: list[str]
-    ) -> ClassificationHints:
-        """
-        Creates new hints to guide the next classification run.
-        """
-        # TODO Here, we should look at the font sizes, and use that to help
-        # bias the next run towards more consistent results.
-        # TODO Figure out how to pass the hints between pages (of the book).
-        return ClassificationHints()

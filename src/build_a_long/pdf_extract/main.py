@@ -246,6 +246,56 @@ def _print_summary(
         print(f"Pages missing page number: {sample}{more}")
 
 
+def _print_font_size_distribution(
+    title: str,
+    counter: Any,
+    *,
+    max_items: int = 10,
+    empty_message: str = "(no data)",
+    total_label: str = "Total text elements",
+    unique_label: str = "Total unique sizes",
+) -> None:
+    """Print a font size distribution with bar chart.
+
+    Args:
+        title: Section title to display
+        counter: Counter/dict mapping font sizes to counts
+        max_items: Maximum number of items to display
+        empty_message: Message to show when counter is empty
+        total_label: Label for total count summary
+        unique_label: Label for unique size count
+    """
+    print(title)
+    print("-" * 60)
+
+    total = sum(counter.values())
+
+    if total > 0:
+        print(f"{'Size':>8} | {'Count':>6} | Distribution")
+        print("-" * 60)
+
+        # Get most common items
+        if hasattr(counter, "most_common"):
+            items = counter.most_common(max_items)
+        else:
+            items = sorted(counter.items(), key=lambda x: x[1], reverse=True)[
+                :max_items
+            ]
+
+        max_count = items[0][1] if items else 1
+        for size, count in items:
+            bar_length = int((count / max_count) * 30)
+            bar = "█" * bar_length
+            print(f"{size:8.1f} | {count:6d} | {bar}")
+
+        print("-" * 60)
+        print(f"{unique_label}: {len(counter)}")
+        print(f"{total_label}: {total}")
+    else:
+        print(empty_message)
+    print()
+
+
 def _print_histogram(histogram: TextHistogram) -> None:
     """Print the text histogram showing font size and name distributions.
 
@@ -253,73 +303,63 @@ def _print_histogram(histogram: TextHistogram) -> None:
         histogram: TextHistogram containing font statistics across all pages
     """
     print("=== Text Histogram ===")
+    print()
 
-    # Print font size distribution
-    print("\nFont Size Distribution:")
-    print("-" * 50)
-    print(f"{'Size':>8} | {'Count':>6} | Distribution")
-    print("-" * 50)
+    # 1. Part counts (\dx pattern) - calculated first
+    _print_font_size_distribution(
+        "1. Part Count Font Sizes (\\dx pattern, e.g., '2x', '3x'):",
+        histogram.part_count_font_sizes,
+        empty_message="(no part count data)",
+        total_label="Total part counts",
+    )
 
-    font_sizes = histogram.font_size_counts.most_common(20)
-    if font_sizes:
-        max_count = font_sizes[0][1]
-        for font_size, count in font_sizes:
-            bar_length = int((count / max_count) * 30)
-            bar = "█" * bar_length
-            print(f"{font_size:8.1f} | {count:6d} | {bar}")
+    # 2. Page numbers (±1) - calculated second
+    _print_font_size_distribution(
+        "2. Page Number Font Sizes (digits ±1 from current page):",
+        histogram.page_number_font_sizes,
+        empty_message="(no page number data)",
+        total_label="Total page numbers",
+    )
 
-        total_size_entries = sum(histogram.font_size_counts.values())
-        print("-" * 50)
-        print(f"Total unique sizes: {len(histogram.font_size_counts)}")
-        print(f"Total text elements: {total_size_entries}")
-    else:
-        print("(no font size data)")
+    # 3. Element IDs (6-7 digit numbers) - calculated third
+    _print_font_size_distribution(
+        "3. Element ID Font Sizes (6-7 digit numbers):",
+        histogram.element_id_font_sizes,
+        empty_message="(no Element ID data)",
+        total_label="Total Element IDs",
+    )
 
-    # Print font name distribution
-    print("\nFont Name Distribution:")
-    print("-" * 50)
-    print(f"{'Font Name':<30} | {'Count':>6} | Distribution")
-    print("-" * 50)
+    # 4. Other integer font sizes - calculated fourth
+    _print_font_size_distribution(
+        "4. Other Integer Font Sizes (integers not matching above patterns):",
+        histogram.remaining_font_sizes,
+        max_items=20,
+        empty_message="(no other integer font size data)",
+    )
 
-    font_names = histogram.font_name_counts.most_common(20)
-    if font_names:
-        max_count = font_names[0][1]
+    # 5. Font name distribution - calculated fifth
+    print("5. Font Name Distribution:")
+    print("-" * 60)
+
+    font_name_total = sum(histogram.font_name_counts.values())
+
+    if font_name_total > 0:
+        print(f"{'Font Name':<30} | {'Count':>6} | Distribution")
+        print("-" * 60)
+
+        font_names = histogram.font_name_counts.most_common(20)
+        max_count = font_names[0][1] if font_names else 1
         for font_name, count in font_names:
             bar_length = int((count / max_count) * 30)
             bar = "█" * bar_length
             name_display = font_name[:27] + "..." if len(font_name) > 30 else font_name
             print(f"{name_display:<30} | {count:6d} | {bar}")
 
-        total_name_entries = sum(histogram.font_name_counts.values())
-        print("-" * 50)
-        print(f"Total unique fonts: {len(histogram.font_name_counts)}")
-        print(f"Total text elements: {total_name_entries}")
+        print("-" * 60)
+        print(f"Total unique fonts:  {len(histogram.font_name_counts)}")
+        print(f"Total text elements: {font_name_total}")
     else:
         print("(no font name data)")
-
-    # Print pattern-specific statistics
-    print("\nPattern-Specific Font Size Statistics:")
-    print("-" * 60)
-
-    # Part counts (\dx pattern)
-    part_count_total = sum(histogram.part_count_font_sizes.values())
-
-    if part_count_total > 0:
-        print(r"Part counts (\dx pattern):")
-        print(f"  Count:   {part_count_total}")
-        print(f"  Most common sizes: {histogram.part_count_font_sizes.most_common(3)}")
-    else:
-        print(r"Part counts (\dx pattern): N/A")
-
-    # Page numbers (±1)
-    page_number_total = sum(histogram.page_number_font_sizes.values())
-
-    if page_number_total > 0:
-        print("\nPage numbers (±1):")
-        print(f"  Count:   {page_number_total}")
-        print(f"  Most common sizes: {histogram.page_number_font_sizes.most_common(3)}")
-    else:
-        print("\nPage numbers (±1): N/A")
 
     print()
 
