@@ -39,7 +39,35 @@ class _RoundingEncoder(json.JSONEncoder):
         return super().iterencode(round_floats(o), _one_shot)
 
 
-def load_json_auto(path: Path) -> dict[str, Any]:
+def open_compressed(path: Path, mode: str = "rt", **kwargs):
+    """Open a file, automatically detecting compression.
+
+    Supports uncompressed files, gzip .gz, and bz2 .bz2 files.
+    Works like the built-in open() but handles compressed files transparently.
+
+    Args:
+        path: Path to file (compressed or uncompressed)
+        mode: File mode (e.g., 'rt', 'rb', 'wt', 'wb')
+        **kwargs: Additional arguments passed to the opener (e.g., encoding)
+
+    Returns:
+        File handle (text or binary mode depending on mode parameter)
+
+    Examples:
+        >>> with open_compressed(Path("data.json.bz2")) as f:
+        ...     data = json.load(f)
+        >>> with open_compressed(Path("data.txt.gz"), encoding="utf-8") as f:
+        ...     text = f.read()
+    """
+    if path.suffix == ".bz2":
+        return bz2.open(path, mode, **kwargs)
+    elif path.suffix == ".gz":
+        return gzip.open(path, mode, **kwargs)
+    else:
+        return open(path, mode, **kwargs)
+
+
+def load_json(path: Path) -> dict[str, Any]:
     """Load JSON from file, automatically detecting compression.
 
     Supports uncompressed .json, gzip .json.gz, and bz2 .json.bz2 files.
@@ -54,15 +82,8 @@ def load_json_auto(path: Path) -> dict[str, Any]:
         ValueError: If the file contains invalid JSON
     """
     try:
-        if path.suffix == ".bz2":
-            with bz2.open(path, "rt", encoding="utf-8") as f:
-                return json.load(f)  # type: ignore[return-value]
-        elif path.suffix == ".gz":
-            with gzip.open(path, "rt", encoding="utf-8") as f:
-                return json.load(f)  # type: ignore[return-value]
-        else:
-            with open(path, encoding="utf-8") as f:
-                return json.load(f)  # type: ignore[return-value]
+        with open_compressed(path, "rt", encoding="utf-8") as f:
+            return json.load(f)  # type: ignore[return-value]
     except json.JSONDecodeError as e:
         raise ValueError(
             f"Failed to parse JSON from {path}: {e.msg} at line {e.lineno}, "

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
-from build_a_long.pdf_extract.cli.io import load_json_auto
+from build_a_long.pdf_extract.cli.io import load_json
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Text
@@ -305,7 +305,7 @@ class TestFontSizeHintsGolden:
         golden_path = fixtures_dir / golden_file
 
         # Load the input fixture
-        json_data = load_json_auto(fixture_path)
+        json_data = load_json(fixture_path)
         extraction: ExtractionResult = ExtractionResult.from_json(json.dumps(json_data))  # type: ignore[assignment]
 
         # Run FontSizeHints.from_pages
