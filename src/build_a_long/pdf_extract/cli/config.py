@@ -1,0 +1,152 @@
+"""CLI configuration and argument parsing."""
+
+from __future__ import annotations
+
+import argparse
+from dataclasses import dataclass
+from pathlib import Path
+
+
+@dataclass
+class ProcessingConfig:
+    """Configuration for PDF processing."""
+
+    pdf_path: Path
+    output_dir: Path
+    include_types: set[str]
+    page_ranges: str | None = None
+
+    # Output flags
+    save_summary: bool = True
+    summary_detailed: bool = False
+    save_raw_json: bool = False
+    draw_images: bool = True
+    draw_deleted: bool = False
+
+    # Debug flags
+    debug_classification: bool = False
+    print_histogram: bool = False
+
+    @classmethod
+    def from_args(cls, args: argparse.Namespace) -> ProcessingConfig:
+        """Create config from parsed arguments.
+
+        Args:
+            args: Parsed command-line arguments
+
+        Returns:
+            ProcessingConfig instance
+        """
+        pdf_path = Path(args.pdf_path)
+        output_dir = args.output_dir if args.output_dir else pdf_path.parent
+        include_types = set(t.strip() for t in args.include_types.split(","))
+
+        return cls(
+            pdf_path=pdf_path,
+            output_dir=output_dir,
+            include_types=include_types,
+            page_ranges=args.pages,
+            save_summary=args.summary,
+            summary_detailed=args.summary_detailed,
+            save_raw_json=args.debug_json,
+            draw_images=args.draw,
+            draw_deleted=args.draw_deleted,
+            debug_classification=args.debug_classification,
+            print_histogram=args.print_histogram,
+        )
+
+
+def parse_arguments() -> argparse.Namespace:
+    """Parse and return command-line arguments.
+
+    Returns:
+        Parsed arguments namespace
+    """
+    parser = argparse.ArgumentParser(
+        description="Extract bounding boxes from a PDF file and export images/JSON for debugging."
+    )
+
+    # Basic arguments
+    parser.add_argument("pdf_path", help="The path to the PDF file.")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help="Directory to save images and JSON files. Defaults to same directory as PDF.",
+    )
+    parser.add_argument(
+        "--pages",
+        type=str,
+        help=(
+            "Pages to process (1-indexed). Accepts single pages and ranges, "
+            "optionally comma-separated. Examples: '5', '5-10', '10-' (from 10 to end), "
+            "'-5' (from 1 to 5), or '10-20,180' for multiple segments. Defaults to all pages."
+        ),
+    )
+    parser.add_argument(
+        "--include-types",
+        type=str,
+        help=(
+            "Comma-separated list of block types to decode from PDF. "
+            "Valid types: text, image, drawing. "
+            "Examples: 'text', 'text,image', or 'text,image,drawing' (default: all types)."
+        ),
+        default="text,image,drawing",
+    )
+
+    # Output options group
+    output_group = parser.add_argument_group("output options")
+    output_group.add_argument(
+        "--no-summary",
+        dest="summary",
+        action="store_false",
+        help="Do not print a classification summary to stdout.",
+    )
+    output_group.add_argument(
+        "--summary-detailed",
+        action="store_true",
+        help=(
+            "Print a slightly more detailed summary, "
+            "including pages missing page numbers."
+        ),
+    )
+    output_group.add_argument(
+        "--no-draw",
+        dest="draw",
+        action="store_false",
+        help="Do not draw annotated images.",
+    )
+    output_group.add_argument(
+        "--draw-deleted",
+        action="store_true",
+        help="Draw bounding boxes for elements marked as deleted.",
+    )
+
+    # Debug options group
+    debug_group = parser.add_argument_group("debug options")
+    debug_group.add_argument(
+        "--debug-json",
+        action="store_true",
+        help="Export raw page elements as a JSON document for debugging.",
+    )
+    debug_group.add_argument(
+        "--debug-classification",
+        action="store_true",
+        help="Print detailed classification debugging information for each page.",
+    )
+    debug_group.add_argument(
+        "--print-histogram",
+        action="store_true",
+        help="Print text histogram showing font size and name distributions.",
+    )
+    debug_group.add_argument(
+        "--log-level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Set the logging level (default: INFO).",
+    )
+
+    parser.set_defaults(
+        summary=True, summary_detailed=False, draw_deleted=False, draw=True
+    )
+    return parser.parse_args()
