@@ -13,7 +13,7 @@ from build_a_long.pdf_extract.main import main
 class TestMain:
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
     @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
-    @patch("build_a_long.pdf_extract.main.draw_and_save_bboxes")
+    @patch("build_a_long.pdf_extract.cli.io.draw_and_save_bboxes")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.mkdir")
     @patch("builtins.open", new_callable=mock_open)
@@ -93,7 +93,7 @@ class TestMain:
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
     @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
-    @patch("build_a_long.pdf_extract.main.draw_and_save_bboxes")
+    @patch("build_a_long.pdf_extract.cli.io.draw_and_save_bboxes")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.mkdir")
     @patch("builtins.open", new_callable=mock_open)
@@ -150,7 +150,7 @@ class TestMain:
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
     @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
-    @patch("build_a_long.pdf_extract.main.draw_and_save_bboxes")
+    @patch("build_a_long.pdf_extract.cli.io.draw_and_save_bboxes")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.mkdir")
     @patch("builtins.open", new_callable=mock_open)
@@ -205,7 +205,7 @@ class TestMain:
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
     @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
-    @patch("build_a_long.pdf_extract.main.draw_and_save_bboxes")
+    @patch("build_a_long.pdf_extract.cli.io.draw_and_save_bboxes")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.mkdir")
     @patch("builtins.open", new_callable=mock_open)
