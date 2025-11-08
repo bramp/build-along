@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
-from build_a_long.pdf_extract.cli.io import load_json_auto
+from build_a_long.pdf_extract.cli.io import load_json
 from build_a_long.pdf_extract.extractor import ExtractionResult
 
 logging.basicConfig(level=logging.INFO)
@@ -48,7 +48,7 @@ def main() -> None:
         log.info(f"Processing {fixture_path.name}...")
 
         # Load the input fixture
-        json_data = load_json_auto(fixture_path)
+        json_data = load_json(fixture_path)
         extraction: ExtractionResult = ExtractionResult.from_json(json.dumps(json_data))  # type: ignore[assignment]
 
         # Run FontSizeHints.from_pages

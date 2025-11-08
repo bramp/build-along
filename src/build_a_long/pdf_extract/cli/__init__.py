@@ -2,7 +2,8 @@
 
 from .config import ProcessingConfig, parse_arguments
 from .io import (
-    load_json_auto,
+    load_json,
+    open_compressed,
     render_annotated_images,
     save_classified_json,
     save_raw_json,
@@ -19,7 +20,8 @@ from .reporting import (
 __all__ = [
     "ProcessingConfig",
     "parse_arguments",
-    "load_json_auto",
+    "load_json",
+    "open_compressed",
     "render_annotated_images",
     "save_classified_json",
     "save_raw_json",
