@@ -14,30 +14,23 @@ from build_a_long.downloader.legocom import (
     build_metadata,
 )
 from build_a_long.downloader.metadata import (
-    DownloadUrl,
-    File,
-    Metadata,
-    PdfEntry,
+    DownloadedFile,
+    InstructionMetadata,
 )
 
 __all__ = [
     "LegoInstructionDownloader",
-    "Metadata",
-    "PdfEntry",
-    "DownloadUrl",
-    "read_metadata",
-    "write_metadata",
 ]
 
 
-def read_metadata(path: Path) -> Metadata | None:
+def read_metadata(path: Path) -> InstructionMetadata | None:
     """Read a metadata.json file from disk using dataclasses-json.
 
     Args:
         path: Path to the metadata.json file.
 
     Returns:
-        The parsed Metadata object if successful; otherwise None.
+        The parsed InstructionMetadata object if successful; otherwise None.
     """
     try:
         with open(path, encoding="utf-8") as f:
@@ -45,7 +38,7 @@ def read_metadata(path: Path) -> Metadata | None:
         if not isinstance(raw, dict):
             print(f"Warning: Metadata at {path} is not a JSON object; ignoring")
             return None
-        return Metadata.from_dict(raw)
+        return InstructionMetadata.from_dict(raw)
     except (
         json.JSONDecodeError,
         OSError,
@@ -57,7 +50,7 @@ def read_metadata(path: Path) -> Metadata | None:
     return None
 
 
-def write_metadata(path: Path, data: Metadata) -> None:
+def write_metadata(path: Path, data: InstructionMetadata) -> None:
     """Write metadata to disk atomically as UTF-8 JSON.
 
     This creates parent directories if they do not exist and writes with
@@ -66,7 +59,7 @@ def write_metadata(path: Path, data: Metadata) -> None:
 
     Args:
         path: Destination path for metadata.json
-        data: The Metadata object to write
+        data: The InstructionMetadata object to write
     """
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -157,7 +150,7 @@ class LegoInstructionDownloader:
         progress_prefix: str = "",
         stream_fn: Callable[..., ContextManager[Any]] | None = None,
         chunk_iter: Callable[[Any, int], Iterable[bytes]] | None = None,
-    ) -> File:
+    ) -> DownloadedFile:
         """Download a URL to a directory.
 
         Args:
@@ -180,7 +173,7 @@ class LegoInstructionDownloader:
             else:
                 print(f"Skip (exists): {dest}")
 
-            return File(path=dest, size=dest.stat().st_size, hash=None)
+            return DownloadedFile(path=dest, size=dest.stat().st_size, hash=None)
 
         # Use injected stream_fn for testing, otherwise use client.stream
         if stream_fn is None:
@@ -232,7 +225,7 @@ class LegoInstructionDownloader:
                     print(" " * 60, end="\r")
         file_size = dest.stat().st_size
         file_hash = file_hash_obj.hexdigest()
-        return File(path=dest, size=file_size, hash=file_hash)
+        return DownloadedFile(path=dest, size=file_size, hash=file_hash)
 
     def process_set(self, set_number: str) -> int:
         """Process and download instruction PDFs for a single LEGO set.
@@ -247,7 +240,7 @@ class LegoInstructionDownloader:
         meta_path = out_dir / "metadata.json"
 
         # Try to load existing metadata first (if allowed)
-        existing_meta: Metadata | None = None
+        existing_meta: InstructionMetadata | None = None
         if meta_path.exists() and not self.overwrite:
             existing_meta = read_metadata(meta_path)
 
@@ -258,7 +251,7 @@ class LegoInstructionDownloader:
 
             # existing_meta is guaranteed non-None here
             assert existing_meta is not None
-            metadata: Metadata = existing_meta
+            metadata: InstructionMetadata = existing_meta
         else:
             print(f"Processing set: {set_number}")
             metadata = self._fetch_metadata_for_set(set_number)
@@ -296,12 +289,14 @@ class LegoInstructionDownloader:
         html = self.fetch_instructions_page(set_number)
         return build_metadata(html, set_number, self.locale, base=LEGO_BASE)
 
-    def _print_metadata_info(self, set_number: str, metadata: Metadata) -> None:
+    def _print_metadata_info(
+        self, set_number: str, metadata: InstructionMetadata
+    ) -> None:
         """Print metadata information on a single line.
 
         Args:
             set_number: The LEGO set number.
-            metadata: Metadata object.
+            metadata: InstructionMetadata object.
             pdf_count: Number of PDFs found.
         """
         parts = [f"Found {len(metadata.pdfs)} PDF(s) for set {set_number}"]

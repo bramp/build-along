@@ -6,14 +6,16 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from build_a_long.downloader.downloader import (
-    File,
     LegoInstructionDownloader,
-    Metadata,
-    PdfEntry,
     read_metadata,
     write_metadata,
 )
 from build_a_long.downloader.legocom_test import HTML_WITH_METADATA_AND_PDF
+from build_a_long.downloader.metadata import (
+    DownloadedFile,
+    InstructionMetadata,
+    PdfEntry,
+)
 
 
 def _make_mock_httpx_client(html: str):
@@ -106,7 +108,7 @@ def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
         p = dest_dir / url.split("/")[-1]
         content = b"dummy"
         p.write_bytes(content)
-        return File(path=p, size=len(content), hash="a" * 64)
+        return DownloadedFile(path=p, size=len(content), hash="a" * 64)
 
     monkeypatch.setattr(LegoInstructionDownloader, "download", fake_download)
 
@@ -185,7 +187,7 @@ def test_process_set_uses_existing_metadata_and_skips_fetch(
         p = dest_dir / url.split("/")[-1]
         content = b"dummy"
         p.write_bytes(content)
-        return File(path=p, size=len(content), hash="a" * 64)
+        return DownloadedFile(path=p, size=len(content), hash="a" * 64)
 
     downloader = LegoInstructionDownloader(
         client=mock_client, out_dir=out_dir, show_progress=False
@@ -223,7 +225,7 @@ def test_read_metadata_handles_invalid_json(tmp_path: Path):
 
 def test_write_and_read_metadata_round_trip(tmp_path: Path):
     meta_path = tmp_path / "metadata.json"
-    payload = Metadata(
+    payload = InstructionMetadata(
         set="12345",
         locale="en-us",
         name="Test",

@@ -11,7 +11,7 @@ from typing import Any
 
 from bs4 import BeautifulSoup
 
-from build_a_long.downloader.metadata import DownloadUrl, Metadata, PdfEntry
+from build_a_long.downloader.metadata import DownloadUrl, InstructionMetadata, PdfEntry
 
 LEGO_BASE = "https://www.lego.com"
 
@@ -53,7 +53,9 @@ def _get_building_instruction_data(
     return None
 
 
-def parse_set_metadata(html: str, set_number: str = "", locale: str = "") -> Metadata:
+def parse_set_metadata(
+    html: str, set_number: str = "", locale: str = ""
+) -> InstructionMetadata:
     """Parse a LEGO instructions HTML page and extract set metadata.
 
     Args:
@@ -62,19 +64,19 @@ def parse_set_metadata(html: str, set_number: str = "", locale: str = "") -> Met
         locale: Optional locale to include in metadata
 
     Returns:
-        Metadata object with extracted fields, or minimal Metadata if parsing fails
+        InstructionMetadata object with extracted fields, or minimal InstructionMetadata if parsing fails
     """
     next_data = _extract_next_data(html)
     if not next_data:
-        return Metadata(set=set_number, locale=locale)
+        return InstructionMetadata(set=set_number, locale=locale)
 
     apollo_state = _get_apollo_state(next_data)
     if not apollo_state:
-        return Metadata(set=set_number, locale=locale)
+        return InstructionMetadata(set=set_number, locale=locale)
 
     bi_data = _get_building_instruction_data(apollo_state)
     if not bi_data:
-        return Metadata(set=set_number, locale=locale)
+        return InstructionMetadata(set=set_number, locale=locale)
 
     # Extract name
     name = bi_data.get("name")
@@ -112,7 +114,7 @@ def parse_set_metadata(html: str, set_number: str = "", locale: str = "") -> Met
         if image_ref and image_ref in apollo_state:
             set_image_url = apollo_state[image_ref].get("src")
 
-    return Metadata(
+    return InstructionMetadata(
         set=set_number,
         locale=locale,
         name=name,
@@ -238,8 +240,8 @@ def parse_instruction_pdf_urls(html: str, base: str = LEGO_BASE) -> list[Downloa
 
 def build_metadata(
     html: str, set_number: str, locale: str, base: str = LEGO_BASE
-) -> Metadata:
-    """Construct a Metadata dataclass from the instructions HTML.
+) -> InstructionMetadata:
+    """Construct a InstructionMetadata dataclass from the instructions HTML.
 
     Parses both the set fields and the ordered list of instruction PDFs.
     """

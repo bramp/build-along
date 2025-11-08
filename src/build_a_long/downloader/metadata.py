@@ -11,7 +11,7 @@ from dataclass_wizard import JSONPyWizard
 
 
 @dataclass
-class File(JSONPyWizard):
+class DownloadedFile(JSONPyWizard):
     """Represents a downloaded file with its path, size, and hash."""
 
     class _(JSONPyWizard.Meta):
@@ -42,7 +42,7 @@ class PdfEntry(JSONPyWizard):
 
 
 @dataclass
-class Metadata(JSONPyWizard):
+class InstructionMetadata(JSONPyWizard):
     """Complete metadata for a LEGO set's instructions."""
 
     set: str
