@@ -49,16 +49,25 @@ def load_json_auto(path: Path) -> dict[str, Any]:
 
     Returns:
         Parsed JSON data
+
+    Raises:
+        ValueError: If the file contains invalid JSON
     """
-    if path.suffix == ".bz2":
-        with bz2.open(path, "rt", encoding="utf-8") as f:
-            return json.load(f)  # type: ignore[return-value]
-    elif path.suffix == ".gz":
-        with gzip.open(path, "rt", encoding="utf-8") as f:
-            return json.load(f)  # type: ignore[return-value]
-    else:
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)  # type: ignore[return-value]
+    try:
+        if path.suffix == ".bz2":
+            with bz2.open(path, "rt", encoding="utf-8") as f:
+                return json.load(f)  # type: ignore[return-value]
+        elif path.suffix == ".gz":
+            with gzip.open(path, "rt", encoding="utf-8") as f:
+                return json.load(f)  # type: ignore[return-value]
+        else:
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)  # type: ignore[return-value]
+    except json.JSONDecodeError as e:
+        raise ValueError(
+            f"Failed to parse JSON from {path}: {e.msg} at line {e.lineno}, "
+            f"column {e.colno}"
+        ) from e
 
 
 # TODO I don't think this works, as it doesn't actually output the classified results
