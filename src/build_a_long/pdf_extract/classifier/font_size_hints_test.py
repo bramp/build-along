@@ -23,9 +23,10 @@ def test_from_pages_with_all_sizes() -> None:
             Text(bbox=BBox(10, 10, 20, 20), text="2x", font_size=10.0, id=1),
             Text(bbox=BBox(10, 30, 20, 40), text="3x", font_size=10.0, id=2),
             Text(bbox=BBox(10, 50, 20, 60), text="4x", font_size=10.0, id=3),
-            Text(bbox=BBox(10, 70, 20, 80), text="5x", font_size=12.0, id=4),
+            Text(bbox=BBox(10, 70, 20, 80), text="5x", font_size=10.0, id=4),
+            Text(bbox=BBox(10, 80, 20, 90), text="6x", font_size=10.0, id=5),
             Text(
-                bbox=BBox(30, 10, 40, 20), text="99", font_size=16.0, id=5
+                bbox=BBox(30, 10, 40, 20), text="99", font_size=16.0, id=6
             ),  # Integer not matching page ±1
         ],
     )
@@ -35,9 +36,7 @@ def test_from_pages_with_all_sizes() -> None:
         blocks=[
             Text(bbox=BBox(10, 10, 20, 20), text="1x", font_size=12.0, id=1),
             Text(bbox=BBox(10, 30, 20, 40), text="2x", font_size=12.0, id=2),
-            Text(bbox=BBox(10, 50, 20, 60), text="3x", font_size=14.0, id=3),
-            Text(bbox=BBox(10, 60, 20, 70), text="4x", font_size=14.0, id=4),
-            Text(bbox=BBox(10, 70, 20, 80), text="5x", font_size=14.0, id=5),
+            Text(bbox=BBox(10, 50, 20, 60), text="3x", font_size=12.0, id=3),
         ],
     )
     page3 = PageData(
@@ -46,14 +45,13 @@ def test_from_pages_with_all_sizes() -> None:
         blocks=[
             Text(bbox=BBox(10, 10, 20, 20), text="1x", font_size=14.0, id=1),
             Text(bbox=BBox(10, 30, 20, 40), text="2x", font_size=14.0, id=2),
+            Text(bbox=BBox(10, 50, 20, 60), text="3x", font_size=14.0, id=3),
         ],
     )
 
     hints = FontSizeHints.from_pages([page1, page2, page3])
 
-    assert (
-        hints.part_count_size == 10.0
-    )  # Most common in instruction pages (3 occurrences)
+    assert hints.part_count_size == 10.0  # Most common (5 occurrences)
     assert hints.step_number_size == 12.0  # 2nd most common (3 occurrences)
     assert hints.step_repeat_size == 14.0  # 3rd most common (3 occurrences)
 
@@ -189,7 +187,7 @@ def test_remaining_font_sizes_preserves_counts() -> None:
 
 def test_catalog_section_separation() -> None:
     """Test that catalog pages are analyzed separately from instruction pages."""
-    # Create 9 pages: first 6 are instructions (2/3), last 3 are catalog (1/3)
+    # Create instruction pages without catalog element IDs
     instruction_pages = [
         PageData(
             page_number=i,
@@ -203,19 +201,28 @@ def test_catalog_section_separation() -> None:
         for i in range(1, 7)
     ]
 
-    # Catalog pages with smaller font and higher frequency
+    # Catalog pages with >3 catalog element IDs (6-7 digit numbers)
+    # and smaller font for part counts
     catalog_pages = [
         PageData(
             page_number=i,
             bbox=BBox(0, 0, 100, 100),
             blocks=[
-                Text(
-                    bbox=BBox(10, j * 10, 20, j * 10 + 10),
-                    text=f"{j}x",
-                    font_size=8.0,
-                    id=j,
-                )
-                for j in range(1, 21)  # 20 part counts per catalog page
+                # Add 4 catalog element IDs to mark this as a catalog page
+                Text(bbox=BBox(5, 5, 10, 10), text="6055739", font_size=6.0, id=100),
+                Text(bbox=BBox(5, 15, 10, 20), text="6055740", font_size=6.0, id=101),
+                Text(bbox=BBox(5, 25, 10, 30), text="6055741", font_size=6.0, id=102),
+                Text(bbox=BBox(5, 35, 10, 40), text="6055742", font_size=6.0, id=103),
+                # Part counts on catalog pages
+                *[
+                    Text(
+                        bbox=BBox(10, j * 10, 20, j * 10 + 10),
+                        text=f"{j}x",
+                        font_size=8.0,
+                        id=j,
+                    )
+                    for j in range(1, 21)  # 20 part counts per catalog page
+                ],
             ],
         )
         for i in range(7, 10)
@@ -232,7 +239,7 @@ def test_catalog_section_separation() -> None:
 
 
 def test_catalog_size_validation() -> None:
-    """Test that catalog sizes larger than instruction sizes are rejected."""
+    """Test that catalog sizes larger than instruction sizes generate a warning."""
     # Instruction pages with smaller font
     instruction_pages = [
         PageData(
@@ -247,19 +254,28 @@ def test_catalog_size_validation() -> None:
         for i in range(1, 7)
     ]
 
-    # Catalog pages with LARGER font (unusual, should be rejected)
+    # Catalog pages with >3 catalog element IDs and LARGER font
+    # (unusual, but we still keep the value and just warn)
     catalog_pages = [
         PageData(
             page_number=i,
             bbox=BBox(0, 0, 100, 100),
             blocks=[
-                Text(
-                    bbox=BBox(10, j * 10, 20, j * 10 + 10),
-                    text=f"{j}x",
-                    font_size=12.0,
-                    id=j,
-                )
-                for j in range(1, 11)
+                # Add 4 catalog element IDs to mark this as a catalog page
+                Text(bbox=BBox(5, 5, 10, 10), text="6055739", font_size=6.0, id=100),
+                Text(bbox=BBox(5, 15, 10, 20), text="6055740", font_size=6.0, id=101),
+                Text(bbox=BBox(5, 25, 10, 30), text="6055741", font_size=6.0, id=102),
+                Text(bbox=BBox(5, 35, 10, 40), text="6055742", font_size=6.0, id=103),
+                # Part counts with larger font
+                *[
+                    Text(
+                        bbox=BBox(10, j * 10, 20, j * 10 + 10),
+                        text=f"{j}x",
+                        font_size=12.0,
+                        id=j,
+                    )
+                    for j in range(1, 11)
+                ],
             ],
         )
         for i in range(7, 10)
@@ -269,8 +285,8 @@ def test_catalog_size_validation() -> None:
     hints = FontSizeHints.from_pages(all_pages)
 
     assert hints.part_count_size == 8.0
-    # Catalog size should be None because 12.0 > 8.0 (invalid)
-    assert hints.catalog_part_count_size is None
+    # Catalog size is kept even though 12.0 > 8.0 (just generates a warning)
+    assert hints.catalog_part_count_size == 12.0
 
 
 class TestFontSizeHintsGolden:

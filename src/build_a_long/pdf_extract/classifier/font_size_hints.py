@@ -53,18 +53,17 @@ class FontSizeHints(JSONPyWizard):
 
     @classmethod
     def from_pages(cls, pages: list[PageData]) -> FontSizeHints:
-        """Extract font size hints from multiple pages with spatial awareness.
+        """Extract font size hints from multiple pages.
 
-        This method uses a section-based approach to handle LEGO instruction booklets:
-        - Instruction pages (first 2/3): Used for main part counts and step numbers
-        - Catalog pages (last 1/3): Used for catalog-specific sizes (if present)
-
-        This prevents catalog pages from overwhelming instruction page statistics
-        due to their higher density of part counts and smaller font sizes.
+        This method analyzes pages to distinguish between instruction pages and
+        catalog pages based on the presence of catalog element IDs:
+        - Pages with >3 catalog element IDs are considered catalog pages
+        - Part counts on catalog pages become catalog_part_count_size
+        - Part counts on instruction pages become part_count_size
 
         The method:
-        1. Splits pages into instruction and catalog sections
-        2. Analyzes each section separately
+        1. Separates pages into instruction and catalog based on element ID count
+        2. Analyzes each type separately
         3. Extracts main sizes from instruction pages
         4. Extracts catalog-specific sizes from catalog pages
         5. Validates that catalog sizes are smaller than instruction sizes
@@ -78,7 +77,7 @@ class FontSizeHints(JSONPyWizard):
         """
         if not pages:
             # Handle empty page list
-            return cls(
+            return FontSizeHints(
                 part_count_size=None,
                 catalog_part_count_size=None,
                 catalog_element_id_size=None,
@@ -88,96 +87,103 @@ class FontSizeHints(JSONPyWizard):
                 remaining_font_sizes={},
             )
 
-        # Split pages into instruction section (first 2/3) and catalog
-        # section (last 1/3). Catalog pages appear at the end of LEGO
-        # instruction booklets
-        split_point = len(pages) * 2 // 3
-        instruction_pages = pages[:split_point] if split_point > 0 else pages
-        catalog_pages = pages[split_point:] if split_point < len(pages) else []
+        # Build histograms page by page to classify instruction vs catalog pages
+        # If a page has any element_id_font_sizes, it's a catalog page
+        instruction_histogram = TextHistogram.empty()
+        catalog_histogram = TextHistogram.empty()
+        all_histogram = TextHistogram.empty()
+
+        instruction_page_count = 0
+        catalog_page_count = 0
+
+        for page in pages:
+            page_histogram = TextHistogram.from_pages([page])
+
+            # Always add to all_histogram
+            all_histogram.update(page_histogram)
+
+            # If page has any element IDs, classify as catalog
+            if sum(page_histogram.element_id_font_sizes.values()) > 3:
+                catalog_histogram.update(page_histogram)
+                catalog_page_count += 1
+            else:
+                instruction_histogram.update(page_histogram)
+                instruction_page_count += 1
 
         logger.debug(
             f"Analyzing {len(pages)} pages: "
-            f"{len(instruction_pages)} instruction pages, "
-            f"{len(catalog_pages)} catalog pages"
-        )
-
-        # Build separate histograms for each section
-        instruction_histogram = TextHistogram.from_pages(instruction_pages)
-        catalog_histogram = (
-            TextHistogram.from_pages(catalog_pages) if catalog_pages else None
+            f"{instruction_page_count} instruction pages, "
+            f"{catalog_page_count} catalog pages"
         )
 
         # Extract part_count_size from instruction pages (most reliable)
         # This is the main font size used for part counts like "2x", "3x" in build steps
-        part_count_size = cls._extract_size_with_minimum(
-            instruction_histogram.part_count_font_sizes, "part_count"
-        )
+        part_count_size = None
+        step_number_size = None
+        step_repeat_size = None
 
-        # Extract step_number_size from instruction pages
-        # Look for the second most common part count size as it often
-        # represents step numbers
-        top_instruction_sizes = instruction_histogram.part_count_font_sizes.most_common(
-            4
-        )
-        step_number_size = cls._extract_nth_size_with_minimum(
-            top_instruction_sizes, 1, "step_number"
-        )
-        step_repeat_size = cls._extract_nth_size_with_minimum(
-            top_instruction_sizes, 2, "step_repeat"
-        )
+        if instruction_page_count > 0:
+            part_count_size = cls._extract_size_with_minimum(
+                instruction_histogram.part_count_font_sizes, "part_count"
+            )
 
-        # Extract catalog-specific sizes from catalog section
+            # Extract step_number_size from instruction pages
+            # Look for the second most common part count size as it often
+            # represents step numbers
+            top_instruction_sizes = (
+                instruction_histogram.part_count_font_sizes.most_common(4)
+            )
+            step_number_size = cls._extract_nth_size_with_minimum(
+                top_instruction_sizes, 1, "step_number"
+            )
+            step_repeat_size = cls._extract_nth_size_with_minimum(
+                top_instruction_sizes, 2, "step_repeat"
+            )
+
+        # Extract catalog-specific sizes from catalog pages
         catalog_part_count_size = None
         catalog_element_id_size = None
 
-        if catalog_histogram:
-            # Get the most common part count size in catalog section
+        if catalog_page_count > 0:
+            # Get the most common part count size in catalog pages
             candidate_catalog_size = cls._extract_size_with_minimum(
                 catalog_histogram.part_count_font_sizes, "catalog_part_count"
             )
 
             # Validate that catalog sizes are typically smaller than instruction sizes
             # This prevents misidentification when catalog has different layout
-            if candidate_catalog_size and part_count_size:
-                if candidate_catalog_size <= part_count_size:
-                    catalog_part_count_size = candidate_catalog_size
-                else:
-                    logger.warning(
-                        f"Catalog part count size ({candidate_catalog_size}) is larger "
-                        f"than instruction part count size ({part_count_size}). "
-                        f"Ignoring catalog size as it may be misidentified."
-                    )
-            else:
-                catalog_part_count_size = candidate_catalog_size
+            catalog_part_count_size = candidate_catalog_size
+            if (
+                candidate_catalog_size
+                and part_count_size
+                and candidate_catalog_size > part_count_size
+            ):
+                logger.warning(
+                    f"Catalog part count size ({candidate_catalog_size}) is larger "
+                    f"than instruction part count size ({part_count_size}). "
+                    f"This may indicate misidentification."
+                )
 
             # Extract element ID size from catalog
             catalog_element_id_size = cls._extract_size_with_minimum(
                 catalog_histogram.element_id_font_sizes, "catalog_element_id"
             )
 
-        # Extract page number size from full document
-        # Use instruction pages primarily, fall back to catalog if needed
+        # Extract page number size and remaining font sizes from all pages
         page_number_size = cls._extract_size_with_minimum(
-            instruction_histogram.page_number_font_sizes, "page_number"
+            all_histogram.page_number_font_sizes, "page_number"
         )
-        if not page_number_size and catalog_histogram:
-            page_number_size = cls._extract_size_with_minimum(
-                catalog_histogram.page_number_font_sizes, "page_number"
-            )
-
-        # Build combined remaining font sizes from instruction pages
-        # (catalog pages are less relevant for other classifications)
-        remaining_font_sizes = instruction_histogram.remaining_font_sizes.copy()
+        remaining_font_sizes = all_histogram.remaining_font_sizes.copy()
 
         # Log the extracted hints for debugging
         part_count_samples = (
             instruction_histogram.part_count_font_sizes.get(part_count_size, 0)
-            if part_count_size
+            if instruction_page_count > 0 and part_count_size
             else 0
         )
         catalog_part_count_samples = (
             catalog_histogram.part_count_font_sizes.get(catalog_part_count_size, 0)
-            if catalog_histogram and catalog_part_count_size
+            if catalog_page_count > 0 and catalog_part_count_size
             else 0
         )
 
