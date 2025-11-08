@@ -202,3 +202,56 @@ class TestMain:
         assert len(draw_call_args.args) == 3
         assert isinstance(draw_call_args.args[1], ClassificationResult)
         assert isinstance(draw_call_args.args[2], Path)
+
+    @patch("build_a_long.pdf_extract.main.pymupdf.open")
+    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    @patch("build_a_long.pdf_extract.main.draw_and_save_bboxes")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.mkdir")
+    @patch("builtins.open", new_callable=mock_open)
+    @patch(
+        "sys.argv", ["main.py", "/path/to/test.pdf", "--include-types", "text,image"]
+    )
+    def test_main_with_custom_block_types(
+        self,
+        mock_file_open,
+        mock_mkdir,
+        mock_exists,
+        mock_draw_and_save_bboxes,
+        mock_extract_bounding_boxes,
+        mock_pymupdf_open,
+    ):
+        """Test that custom block types are passed to extract_bounding_boxes."""
+        mock_exists.return_value = True
+
+        # Mock the extractor to return structured data
+        step_block = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
+        page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
+        page_data = PageData(
+            page_number=1,
+            blocks=[step_block],
+            bbox=page_bbox,
+        )
+        mock_extract_bounding_boxes.return_value = [page_data]
+
+        # Mock the PDF document
+        mock_page = MagicMock()
+        mock_doc = MagicMock()
+        mock_doc.__getitem__.return_value = mock_page
+        mock_doc.__enter__.return_value = mock_doc
+        mock_doc.__exit__.return_value = None
+        mock_doc.__len__.return_value = 1
+        mock_pymupdf_open.return_value = mock_doc
+
+        # Run main
+        result = main()
+
+        # Assert success
+        assert result == 0
+
+        # Assert extract_bounding_boxes was called with custom types
+        mock_extract_bounding_boxes.assert_called_once()
+        call_args = mock_extract_bounding_boxes.call_args
+        assert call_args[0][0] == mock_doc  # First arg is the document
+        # Third argument should be the set of types
+        assert call_args[1]["include_types"] == {"text", "image"}

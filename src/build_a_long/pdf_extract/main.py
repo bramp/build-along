@@ -143,7 +143,11 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--include-types",
         type=str,
-        help="Comma-separated list of element types to include. Defaults to all types.",
+        help=(
+            "Comma-separated list of block types to decode from PDF. "
+            "Valid types: text, image, drawing. "
+            "Examples: 'text', 'text,image', or 'text,image,drawing' (default: all types)."
+        ),
         default="text,image,drawing",
     )
     # Summary controls
@@ -589,7 +593,8 @@ def main() -> int:
     output_dir = args.output_dir if args.output_dir else pdf_path.parent
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    include_types = args.include_types.split(",")
+    # Parse block types (validation handled by extract_bounding_boxes)
+    include_types = set(t.strip() for t in args.include_types.split(","))
 
     logging.info("Processing PDF: %s", pdf_path)
 
