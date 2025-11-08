@@ -52,6 +52,27 @@ class FontSizeHints(JSONPyWizard):
     """Font size distribution after removing known sizes (float keys as strings)"""
 
     @classmethod
+    def empty(cls) -> FontSizeHints:
+        """Create an empty FontSizeHints with no hints.
+
+        This is useful as a default when no pages are available for analysis.
+
+        Returns:
+            FontSizeHints with all sizes set to None
+        """
+        return FontSizeHints(
+            part_count_size=None,
+            catalog_part_count_size=None,
+            catalog_element_id_size=None,
+            step_number_size=None,
+            step_repeat_size=None,
+            page_number_size=None,
+            remaining_font_sizes={},
+        )
+
+    # TODO add a default() method that returns a hint with reasonable values.
+
+    @classmethod
     def from_pages(cls, pages: list[PageData]) -> FontSizeHints:
         """Extract font size hints from multiple pages.
 
@@ -77,15 +98,7 @@ class FontSizeHints(JSONPyWizard):
         """
         if not pages:
             # Handle empty page list
-            return FontSizeHints(
-                part_count_size=None,
-                catalog_part_count_size=None,
-                catalog_element_id_size=None,
-                step_number_size=None,
-                step_repeat_size=None,
-                page_number_size=None,
-                remaining_font_sizes={},
-            )
+            return FontSizeHints.empty()
 
         # Build histograms page by page to classify instruction vs catalog pages
         # If a page has any element_id_font_sizes, it's a catalog page
@@ -198,7 +211,7 @@ class FontSizeHints(JSONPyWizard):
             f"page_number={page_number_size}"
         )
 
-        return cls(
+        return FontSizeHints(
             part_count_size=part_count_size,
             catalog_part_count_size=catalog_part_count_size,
             catalog_element_id_size=catalog_element_id_size,

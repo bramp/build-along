@@ -40,12 +40,28 @@ class _PartCountScore:
     text_score: float
     """Score based on how well the text matches part count patterns (0.0-1.0)."""
 
+    font_size_score: float
+    """Score based on font size match to expected part count size (0.0-1.0)."""
+
     def combined_score(self, config: ClassifierConfig) -> float:
         """Calculate final weighted score from components.
 
-        For part count, we only have text_score, so just return it directly.
+        Combines text matching and font size matching with text weighted more heavily.
         """
-        return self.text_score
+        # Determine font size weight based on whether hints are available
+        font_size_weight = config.part_count_font_size_weight
+        if config.font_size_hints.part_count_size is None:
+            # No hint available, zero out the font size weight
+            font_size_weight = 0.0
+
+        # Sum the weighted components
+        score = (
+            config.part_count_text_weight * self.text_score
+            + font_size_weight * self.font_size_score
+        )
+        # Normalize by the sum of weights to keep score in [0, 1]
+        total_weight = config.part_count_text_weight + font_size_weight
+        return score / total_weight if total_weight > 0 else 0.0
 
 
 class PartCountClassifier(LabelClassifier):
@@ -79,16 +95,24 @@ class PartCountClassifier(LabelClassifier):
             if not isinstance(block, Text):
                 continue
 
-            text_score = PartCountClassifier._score_part_count_text(block.text)
+            text_score = self._score_part_count_text(block.text)
+            font_size_score = self._score_font_size(
+                block, self.config.font_size_hints.part_count_size
+            )
 
             # Store detailed score object
-            detail_score = _PartCountScore(text_score=text_score)
+            detail_score = _PartCountScore(
+                text_score=text_score, font_size_score=font_size_score
+            )
 
             if self._debug_enabled:
                 log.debug(
-                    "[part_count] match text=%r score=%.2f bbox=%s",
+                    "[part_count] match text=%r text_score=%.2f "
+                    "font_size_score=%.2f combined=%.2f bbox=%s",
                     block.text,
                     text_score,
+                    font_size_score,
+                    detail_score.combined_score(self.config),
                     block.bbox,
                 )
 
@@ -150,8 +174,7 @@ class PartCountClassifier(LabelClassifier):
                 page_data, candidate.source_block, result
             )
 
-    @staticmethod
-    def _score_part_count_text(text: str) -> float:
+    def _score_part_count_text(self, text: str) -> float:
         """Score text based on how well it matches part count patterns.
 
         Returns:
