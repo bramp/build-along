@@ -24,7 +24,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 from build_a_long.pdf_extract.parser import parse_page_ranges
 from build_a_long.pdf_extract.parser.page_ranges import PageRanges
 
-logging.basicConfig(level=logging.DEBUG)
+# Logging will be configured in main() based on command-line arguments
 logger = logging.getLogger(__name__)
 
 
@@ -183,6 +183,13 @@ def parse_arguments() -> argparse.Namespace:
         dest="draw",
         action="store_false",
         help="Do not draw annotated images.",
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Set the logging level (default: INFO).",
     )
     parser.set_defaults(
         summary=True, summary_detailed=False, draw_deleted=False, draw=True
@@ -566,6 +573,12 @@ def main() -> int:
         Exit code (0 for success, non-zero for error)
     """
     args = parse_arguments()
+
+    # Configure logging based on command-line argument
+    logging.basicConfig(
+        level=getattr(logging, args.log_level),
+        format="%(levelname)s:%(name)s:%(message)s",
+    )
 
     pdf_path = Path(args.pdf_path)
     if not pdf_path.exists():
