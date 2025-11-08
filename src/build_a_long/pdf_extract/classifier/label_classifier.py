@@ -10,6 +10,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassifierConfig,
 )
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classifier import Classifier
@@ -32,6 +33,39 @@ class LabelClassifier(ABC):
     def __init__(self, config: ClassifierConfig, classifier: Classifier):
         self.config = config
         self.classifier = classifier
+
+    def _score_font_size(self, element: Text, expected_size: float | None) -> float:
+        """Score based on how well font size matches an expected size.
+
+        Returns 1.0 if font size matches the expected size exactly, scaling down
+        based on the difference. Returns 0.5 if no expected size is provided or
+        if the element has no font size metadata.
+
+        Args:
+            element: Text element to score
+            expected_size: Expected font size, or None if no hint available
+
+        Returns:
+            Score from 0.0 to 1.0
+        """
+        # Use the font_size from the PDF metadata, not bbox height
+        actual_size = element.font_size
+        if actual_size is None or expected_size is None:
+            # No font size metadata or no hint available, return neutral score
+            return 0.5
+
+        # Exact match gets score of 1.0
+        if abs(actual_size - expected_size) < 0.01:
+            return 1.0
+
+        # Calculate relative difference
+        diff_ratio = abs(actual_size - expected_size) / expected_size
+
+        # Score decreases as difference increases
+        # Within 10% difference: score > 0.8
+        # Within 20% difference: score > 0.6
+        # Within 50% difference: score > 0.0
+        return max(0.0, 1.0 - (diff_ratio * 2.0))
 
     @abstractmethod
     def evaluate(

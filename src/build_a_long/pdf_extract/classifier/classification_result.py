@@ -111,11 +111,15 @@ class ClassifierConfig(JSONPyWizard):
     page_number_position_weight: float = 0.3
     page_number_position_scale: float = 50.0
     page_number_page_value_weight: float = 1.0
+    page_number_font_size_weight: float = 0.1
 
-    step_number_text_weight: float = 0.8
-    step_number_size_weight: float = 0.2
+    step_number_text_weight: float = 0.7
+    step_number_font_size_weight: float = 0.3
 
-    font_size_hints: FontSizeHints | None = None
+    part_count_text_weight: float = 0.7
+    part_count_font_size_weight: float = 0.3
+
+    font_size_hints: FontSizeHints = field(default_factory=FontSizeHints.empty)
     """Font size hints derived from analyzing all pages"""
 
     def __post_init__(self) -> None:

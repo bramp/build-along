@@ -37,20 +37,31 @@ class _PageNumberScore:
     """Score based on how well the text matches the expected page number
     (0.0-1.0)."""
 
+    font_size_score: float
+    """Score based on font size match to expected page number size (0.0-1.0)."""
+
     # TODO Test this score is always between 0.0 and 1.0
     def combined_score(self, config: ClassifierConfig) -> float:
         """Calculate final weighted score from components."""
+        # Determine font size weight based on whether hints are available
+        font_size_weight = config.page_number_font_size_weight
+        if config.font_size_hints.page_number_size is None:
+            # No hint available, zero out the font size weight
+            font_size_weight = 0.0
+
         # Sum the weighted components
         score = (
             config.page_number_text_weight * self.text_score
             + config.page_number_position_weight * self.position_score
             + config.page_number_page_value_weight * self.page_value_score
+            + font_size_weight * self.font_size_score
         )
         # Normalize by the sum of weights to keep score in [0, 1]
         total_weight = (
             config.page_number_text_weight
             + config.page_number_position_weight
             + config.page_number_page_value_weight
+            + font_size_weight
         )
         return score / total_weight if total_weight > 0 else 0.0
 
@@ -85,12 +96,16 @@ class PageNumberClassifier(LabelClassifier):
             page_value_score = self._score_page_number(
                 block.text, page_data.page_number
             )
+            font_size_score = self._score_font_size(
+                block, self.config.font_size_hints.page_number_size
+            )
 
             # Create detailed score object
             score = _PageNumberScore(
                 text_score=text_score,
                 position_score=position_score,
                 page_value_score=page_value_score,
+                font_size_score=font_size_score,
             )
 
             # Try to construct the LegoElement (parse the text)
