@@ -142,9 +142,19 @@ Once the classifier issues are fixed:
 
 ### LEGO® Sets Represented
 
-- **`6055741_*`** files are from set **10237** LEGO® The Lord of the Rings™ The Tower of Orthanc
-- **`6509377_*`** files are from set **75375** LEGO® Star Wars™ Millennium Falcon™
-- **`6580053_*`** files are from set (TBD - identify set number)
+- **10237** The Lord of the Rings™ The Tower of Orthanc
+  - 2359 pieces, released in 2013
+  - **`6055739_*`** Manual 1 of 3
+  - **`6055740_*`** Manual 2 of 3
+  - **`6055741_*`** Manual 3 of 3
+
+- **75375** Star Wars™ Millennium Falcon™
+  - 921 pieces, released in 2024
+  - **`6509377_*`** Manual 1 of 1
+
+- **75406** Star Wars™ Kylo Ren's Command Shuttle
+  - 386 pieces, released in 2025
+  - **`6580053_*`** Manual 1 of 1
 
 ### File Naming Convention
 

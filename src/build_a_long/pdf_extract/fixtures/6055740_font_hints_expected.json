@@ -1,0 +1,16 @@
+{
+  "catalog_element_id_size": null,
+  "catalog_part_count_size": null,
+  "page_number_size": 10.0,
+  "part_count_size": 8.0,
+  "remaining_font_sizes": {
+    "18.0": 34,
+    "23.0": 1,
+    "24.0": 1,
+    "30.0": 60,
+    "36.0": 6,
+    "38.0": 48
+  },
+  "step_number_size": 16.0,
+  "step_repeat_size": null
+}

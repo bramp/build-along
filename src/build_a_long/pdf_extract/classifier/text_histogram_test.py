@@ -396,3 +396,36 @@ class TestTextHistogram:
         # Page 2 matches: "1" (8.0), "2" (8.0), "3" (10.0)
         assert histogram.page_number_font_sizes[8.0] == 2
         assert histogram.page_number_font_sizes[10.0] == 1
+
+    def test_empty_histogram(self) -> None:
+        """Test creating an empty histogram."""
+        histogram = TextHistogram.empty()
+
+        assert len(histogram.font_name_counts) == 0
+        assert len(histogram.part_count_font_sizes) == 0
+        assert len(histogram.page_number_font_sizes) == 0
+        assert len(histogram.element_id_font_sizes) == 0
+        assert len(histogram.remaining_font_sizes) == 0
+
+    def test_update_histogram(self) -> None:
+        """Test updating one histogram with another."""
+        # Create first histogram
+        histogram1 = TextHistogram.empty()
+        histogram1.part_count_font_sizes[12.0] = 5
+        histogram1.font_name_counts["Arial"] = 10
+
+        # Create second histogram
+        histogram2 = TextHistogram.empty()
+        histogram2.part_count_font_sizes[12.0] = 3
+        histogram2.part_count_font_sizes[14.0] = 2
+        histogram2.font_name_counts["Arial"] = 5
+        histogram2.font_name_counts["Times"] = 8
+
+        # Update first with second
+        histogram1.update(histogram2)
+
+        # Verify counts are combined
+        assert histogram1.part_count_font_sizes[12.0] == 8  # 5 + 3
+        assert histogram1.part_count_font_sizes[14.0] == 2
+        assert histogram1.font_name_counts["Arial"] == 15  # 10 + 5
+        assert histogram1.font_name_counts["Times"] == 8
