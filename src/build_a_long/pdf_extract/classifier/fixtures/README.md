@@ -86,4 +86,6 @@ Once the classifier issues are fixed:
 
 ## Fixture Details
 
-- `6509377_*` files are from set 75375 LEGO® Star Wars™ Millennium Falcon™
+- `6509377_*` files are from set 75375 LEGO® Star Wars™ - Millennium Falcon™
+
+- `6055741_*` files are from set 10237 LEGO® The Lord of the Rings™ The Tower of Orthanc
