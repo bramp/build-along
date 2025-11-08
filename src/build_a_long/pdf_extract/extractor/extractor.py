@@ -226,7 +226,7 @@ class Extractor:
         Returns:
             PageData with all extracted blocks (with sequential IDs)
         """
-        logger.info("Processing page %s", page_num)
+        logger.debug("Processing page %s", page_num)
 
         # Get raw dictionary with text and image blocks
         raw: RawDict = page.get_text("rawdict")  # type: ignore[assignment]

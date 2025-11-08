@@ -6,10 +6,12 @@ from pathlib import Path
 import pymupdf
 
 from build_a_long.pdf_extract.classifier import classify_pages
+from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.cli import (
     ProcessingConfig,
     parse_arguments,
     print_classification_debug,
+    print_font_hints,
     print_histogram,
     print_label_counts,
     render_annotated_images,
@@ -103,6 +105,11 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         # Save raw JSON if requested
         if config.save_raw_json:
             save_raw_json(pages, output_dir, pdf_path)
+
+        # Print font hints if requested (before classification)
+        if config.print_font_hints:
+            font_hints = FontSizeHints.from_pages(pages)
+            print_font_hints(font_hints)
 
         # Classify elements
         batch_result = classify_pages(pages)

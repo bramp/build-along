@@ -73,9 +73,7 @@ def classify_elements(page: PageData) -> ClassificationResult:
     return classifier.classify(page)
 
 
-def classify_pages(
-    pages: list[PageData], max_iterations: int = 1
-) -> BatchClassificationResult:
+def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
     """Classify and label elements across multiple pages using rule-based heuristics.
 
     This function performs a three-phase process:

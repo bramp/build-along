@@ -4,6 +4,7 @@ from .config import ProcessingConfig, parse_arguments
 from .io import render_annotated_images, save_classified_json, save_raw_json
 from .reporting import (
     print_classification_debug,
+    print_font_hints,
     print_histogram,
     print_label_counts,
     print_page_hierarchy,
@@ -17,6 +18,7 @@ __all__ = [
     "save_classified_json",
     "save_raw_json",
     "print_classification_debug",
+    "print_font_hints",
     "print_histogram",
     "print_label_counts",
     "print_page_hierarchy",
