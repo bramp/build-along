@@ -1,7 +1,12 @@
 """CLI support for PDF extraction tool."""
 
 from .config import ProcessingConfig, parse_arguments
-from .io import render_annotated_images, save_classified_json, save_raw_json
+from .io import (
+    load_json_auto,
+    render_annotated_images,
+    save_classified_json,
+    save_raw_json,
+)
 from .reporting import (
     print_classification_debug,
     print_font_hints,
@@ -14,6 +19,7 @@ from .reporting import (
 __all__ = [
     "ProcessingConfig",
     "parse_arguments",
+    "load_json_auto",
     "render_annotated_images",
     "save_classified_json",
     "save_raw_json",

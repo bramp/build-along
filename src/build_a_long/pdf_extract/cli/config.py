@@ -20,6 +20,7 @@ class ProcessingConfig:
     save_summary: bool = True
     summary_detailed: bool = False
     save_raw_json: bool = False
+    compress_json: bool = False
     draw_images: bool = True
     draw_deleted: bool = False
 
@@ -49,6 +50,7 @@ class ProcessingConfig:
             save_summary=args.summary,
             summary_detailed=args.summary_detailed,
             save_raw_json=args.debug_json,
+            compress_json=args.compress_json,
             draw_images=args.draw,
             draw_deleted=args.draw_deleted,
             debug_classification=args.debug_classification,
@@ -136,6 +138,11 @@ def parse_arguments() -> argparse.Namespace:
         help="Export raw page elements as a JSON document for debugging.",
     )
     debug_group.add_argument(
+        "--compress-json",
+        action="store_true",
+        help="Enable bz2 compression for JSON output (default: uncompressed).",
+    )
+    debug_group.add_argument(
         "--debug-classification",
         action="store_true",
         help="Print detailed classification debugging information for each page.",
@@ -159,6 +166,10 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.set_defaults(
-        summary=True, summary_detailed=False, draw_deleted=False, draw=True
+        summary=True,
+        summary_detailed=False,
+        draw_deleted=False,
+        draw=True,
+        compress_json=False,
     )
     return parser.parse_args()
