@@ -7,6 +7,7 @@ from typing import Any
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
@@ -197,6 +198,40 @@ def print_histogram(histogram: TextHistogram) -> None:
     else:
         print("(no font name data)")
 
+    print()
+
+
+def print_font_hints(hints: FontSizeHints) -> None:
+    """Print font size hints extracted from the document.
+
+    Args:
+        hints: FontSizeHints containing identified font sizes for different elements
+    """
+    print("=== Font Size Hints ===")
+    print()
+
+    def format_size(size: float | None) -> str:
+        """Format a font size for display."""
+        return f"{size:.1f}pt" if size is not None else "N/A"
+
+    print("Identified font sizes:")
+    print(f"  Part count size:         {format_size(hints.part_count_size)}")
+    print(f"  Catalog part count size: {format_size(hints.catalog_part_count_size)}")
+    print(f"  Step number size:        {format_size(hints.step_number_size)}")
+    print(f"  Step repeat size:        {format_size(hints.step_repeat_size)}")
+    print(f"  Catalog element ID size: {format_size(hints.catalog_element_id_size)}")
+    print(f"  Page number size:        {format_size(hints.page_number_size)}")
+
+    print()
+    print("Remaining font sizes after removing known patterns:")
+    if hints.remaining_font_sizes:
+        print(f"{'Size':>8} | {'Count':>6}")
+        print("-" * 20)
+        for size, count in hints.remaining_font_sizes.most_common(10):
+            print(f"{size:8.1f} | {count:6d}")
+        print(f"\nTotal unique sizes: {len(hints.remaining_font_sizes)}")
+    else:
+        print("  (no remaining font sizes)")
     print()
 
 

@@ -26,6 +26,7 @@ class ProcessingConfig:
     # Debug flags
     debug_classification: bool = False
     print_histogram: bool = False
+    print_font_hints: bool = False
 
     @classmethod
     def from_args(cls, args: argparse.Namespace) -> ProcessingConfig:
@@ -52,6 +53,7 @@ class ProcessingConfig:
             draw_deleted=args.draw_deleted,
             debug_classification=args.debug_classification,
             print_histogram=args.print_histogram,
+            print_font_hints=args.print_font_hints,
         )
 
 
@@ -142,6 +144,11 @@ def parse_arguments() -> argparse.Namespace:
         "--print-histogram",
         action="store_true",
         help="Print text histogram showing font size and name distributions.",
+    )
+    debug_group.add_argument(
+        "--print-font-hints",
+        action="store_true",
+        help="Print font size hints derived from text analysis.",
     )
     debug_group.add_argument(
         "--log-level",
