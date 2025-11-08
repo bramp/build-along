@@ -13,5 +13,5 @@ python_tests(
 
 files(
     name="fixtures",
-    sources=["fixtures/*.json"],
+    sources=["fixtures/*.json", "fixtures/*.json.bz2"],
 )

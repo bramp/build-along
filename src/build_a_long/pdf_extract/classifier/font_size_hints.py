@@ -6,6 +6,8 @@ import logging
 from collections import Counter
 from dataclasses import dataclass
 
+from dataclass_wizard import JSONPyWizard
+
 from build_a_long.pdf_extract.classifier.text_histogram import (
     TextHistogram,
 )
@@ -18,8 +20,8 @@ logger = logging.getLogger(__name__)
 MIN_SAMPLES = 3
 
 
-@dataclass(frozen=True)
-class FontSizeHints:
+@dataclass
+class FontSizeHints(JSONPyWizard):
     """Font size hints derived from text histogram analysis.
 
     This class analyzes the TextHistogram to identify the most common font sizes
@@ -46,8 +48,8 @@ class FontSizeHints:
     page_number_size: float | None
     """Most common font size for page numbers (catalog listings)"""
 
-    remaining_font_sizes: Counter[float]
-    """Font size distribution after removing known sizes"""
+    remaining_font_sizes: dict[str, int]
+    """Font size distribution after removing known sizes (float keys as strings)"""
 
     @classmethod
     def from_pages(cls, pages: list[PageData]) -> FontSizeHints:
@@ -83,7 +85,7 @@ class FontSizeHints:
                 step_number_size=None,
                 step_repeat_size=None,
                 page_number_size=None,
-                remaining_font_sizes=Counter(),
+                remaining_font_sizes={},
             )
 
         # Split pages into instruction section (first 2/3) and catalog
@@ -197,7 +199,7 @@ class FontSizeHints:
             step_number_size=step_number_size,
             step_repeat_size=step_repeat_size,
             page_number_size=page_number_size,
-            remaining_font_sizes=remaining_font_sizes,
+            remaining_font_sizes={str(k): v for k, v in remaining_font_sizes.items()},
         )
 
     @staticmethod

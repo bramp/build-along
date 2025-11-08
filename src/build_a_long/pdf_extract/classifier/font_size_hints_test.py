@@ -1,9 +1,13 @@
 """Tests for font_size_hints module."""
 
-from collections import Counter
+import json
+from pathlib import Path
+
+import pytest
 
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
-from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.cli.io import load_json_auto
+from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
@@ -54,7 +58,7 @@ def test_from_pages_with_all_sizes() -> None:
     assert hints.step_repeat_size == 14.0  # 3rd most common (3 occurrences)
 
     # Remaining should only have "other integers" (not part counts or page numbers)
-    assert hints.remaining_font_sizes == Counter({16.0: 1})
+    assert hints.remaining_font_sizes == {"16.0": 1}
 
 
 def test_from_pages_with_two_sizes() -> None:
@@ -91,7 +95,7 @@ def test_from_pages_with_two_sizes() -> None:
     assert hints.step_repeat_size is None  # Not enough data
 
     # Remaining should be empty since both sizes are known
-    assert hints.remaining_font_sizes == Counter()
+    assert hints.remaining_font_sizes == {}
 
 
 def test_from_pages_with_one_size() -> None:
@@ -124,7 +128,7 @@ def test_from_pages_with_one_size() -> None:
     assert hints.step_number_size is None
 
     # Remaining should be empty since the only size is known
-    assert hints.remaining_font_sizes == Counter()
+    assert hints.remaining_font_sizes == {}
 
 
 def test_from_pages_with_no_part_counts() -> None:
@@ -149,7 +153,7 @@ def test_from_pages_with_no_part_counts() -> None:
     assert hints.step_number_size is None
 
     # All "other integer" sizes should remain
-    assert hints.remaining_font_sizes == Counter({10.0: 1, 12.0: 1})
+    assert hints.remaining_font_sizes == {"10.0": 1, "12.0": 1}
 
 
 def test_remaining_font_sizes_preserves_counts() -> None:
@@ -180,7 +184,7 @@ def test_remaining_font_sizes_preserves_counts() -> None:
     hints = FontSizeHints.from_pages([page1, page2, page3])
 
     # Only "other integer" sizes should remain (not part counts)
-    assert hints.remaining_font_sizes == Counter({14.0: 2, 16.0: 1})
+    assert hints.remaining_font_sizes == {"14.0": 2, "16.0": 1}
 
 
 def test_catalog_section_separation() -> None:
@@ -267,3 +271,65 @@ def test_catalog_size_validation() -> None:
     assert hints.part_count_size == 8.0
     # Catalog size should be None because 12.0 > 8.0 (invalid)
     assert hints.catalog_part_count_size is None
+
+
+class TestFontSizeHintsGolden:
+    """Golden file tests for FontSizeHints.from_pages."""
+
+    @pytest.mark.parametrize(
+        "fixture_file",
+        [
+            "6055741_raw.json.bz2",
+            "6509377_raw.json.bz2",
+            "6580053_raw.json.bz2",
+        ],
+    )
+    def test_from_pages_matches_golden(self, fixture_file: str) -> None:
+        """Test that FontSizeHints.from_pages matches the golden file.
+
+        This test:
+        1. Loads a raw page fixture (compressed)
+        2. Runs FontSizeHints.from_pages
+        3. Compares against golden file
+
+        To generate golden files, run:
+            pants run \\
+                src/build_a_long/pdf_extract/classifier/ \\
+                tools:generate-font-hints-golden
+        """
+        fixtures_dir = Path(__file__).with_name("fixtures")
+        fixture_path = fixtures_dir / fixture_file
+
+        # Determine golden file path
+        golden_file = fixture_file.replace("_raw.json.bz2", "_font_hints_expected.json")
+        golden_path = fixtures_dir / golden_file
+
+        # Load the input fixture
+        json_data = load_json_auto(fixture_path)
+        extraction: ExtractionResult = ExtractionResult.from_json(json.dumps(json_data))  # type: ignore[assignment]
+
+        # Run FontSizeHints.from_pages
+        hints = FontSizeHints.from_pages(extraction.pages)
+
+        # Serialize the hints to dict using built-in to_dict()
+        actual = hints.to_dict()
+
+        # Check if golden file exists
+        if not golden_path.exists():
+            pytest.skip(
+                f"Golden file not found: {golden_file}\n"
+                "Run: pants run "
+                "src/build_a_long/pdf_extract/classifier/"
+                "tools:generate-font-hints-golden"
+            )
+
+        # Load expected results
+        with open(golden_path) as f:
+            expected = json.load(f)
+
+        # Compare results
+        assert actual == expected, (
+            f"FontSizeHints mismatch for {fixture_file}.\n"
+            f"Expected: {json.dumps(expected, indent=2, sort_keys=True)}\n"
+            f"Actual: {json.dumps(actual, indent=2, sort_keys=True)}"
+        )
