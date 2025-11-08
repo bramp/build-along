@@ -182,7 +182,7 @@ class TestClassifierRules:
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).with_name("fixtures")).glob("*.json")],
+        [f.name for f in (Path(__file__).parent.parent / "fixtures").glob("*.json")],
     )
     def test_parts_list_contains_at_least_one_part_image(
         self, fixture_file: str
@@ -192,7 +192,7 @@ class TestClassifierRules:
         This test runs on all JSON fixtures in the fixtures/ directory.
         """
 
-        fixture_path = Path(__file__).with_name("fixtures").joinpath(fixture_file)
+        fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
         page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
 
         # Run the full classification pipeline on the page
@@ -296,7 +296,7 @@ class TestClassifierRules:
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).with_name("fixtures")).glob("*.json")],
+        [f.name for f in (Path(__file__).parent.parent / "fixtures").glob("*.json")],
     )
     def test_parts_lists_do_not_overlap(self, fixture_file: str) -> None:
         """No two parts lists should overlap.
@@ -304,7 +304,7 @@ class TestClassifierRules:
         Parts lists represent distinct areas of the page and should not
         have overlapping bounding boxes.
         """
-        fixture_path = Path(__file__).with_name("fixtures").joinpath(fixture_file)
+        fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
         page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
 
         # Run the full classification pipeline on the page
@@ -323,14 +323,14 @@ class TestClassifierRules:
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).with_name("fixtures")).glob("*.json")],
+        [f.name for f in (Path(__file__).parent.parent / "fixtures").glob("*.json")],
     )
     def test_each_part_image_is_inside_a_parts_list(self, fixture_file: str) -> None:
         """Each part image must be inside at least one parts list.
 
         Every part_image should be contained within a parts_list's bounding box.
         """
-        fixture_path = Path(__file__).with_name("fixtures").joinpath(fixture_file)
+        fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
         page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
 
         # Run the full classification pipeline on the page
@@ -353,7 +353,7 @@ class TestClassifierRules:
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).with_name("fixtures")).glob("*.json")],
+        [f.name for f in (Path(__file__).parent.parent / "fixtures").glob("*.json")],
     )
     def test_no_labeled_element_is_deleted(self, fixture_file: str) -> None:
         """No element with a label should be marked as deleted.
@@ -361,7 +361,7 @@ class TestClassifierRules:
         If an element has been classified with a label, it should not be deleted.
         This ensures that the classification and deletion logic don't conflict.
         """
-        fixture_path = Path(__file__).with_name("fixtures").joinpath(fixture_file)
+        fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
         page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
 
         # Run the full classification pipeline on the page
@@ -389,7 +389,7 @@ class TestClassifierRules:
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).with_name("fixtures")).glob("*.json")],
+        [f.name for f in (Path(__file__).parent.parent / "fixtures").glob("*.json")],
     )
     def test_each_element_has_at_most_one_winner(self, fixture_file: str) -> None:
         """Each element should have at most one winner candidate across all labels.
@@ -398,7 +398,7 @@ class TestClassifierRules:
         one of them should be marked as a winner. This ensures classification
         decisions are unambiguous.
         """
-        fixture_path = Path(__file__).with_name("fixtures").joinpath(fixture_file)
+        fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
         page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
 
         # Run the full classification pipeline on the page

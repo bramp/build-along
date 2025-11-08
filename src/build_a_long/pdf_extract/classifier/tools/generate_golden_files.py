@@ -23,7 +23,7 @@ def main() -> None:
     """Generate golden files for all fixtures."""
 
     # TODO maybe be explict with the full path of the directory
-    fixtures_dir = Path("src/build_a_long/pdf_extract/classifier/fixtures")
+    fixtures_dir = Path("src/build_a_long/pdf_extract/fixtures")
 
     if not fixtures_dir.exists():
         log.error(f"Fixtures directory not found: {fixtures_dir}")

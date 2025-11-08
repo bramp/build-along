@@ -244,7 +244,10 @@ class TestClassifierGolden:
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).with_name("fixtures")).glob("*_raw.json")],
+        [
+            f.name
+            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
+        ],
     )
     def test_classification_matches_golden(self, fixture_file: str) -> None:
         """Test that classification output matches the golden file.
@@ -259,7 +262,7 @@ class TestClassifierGolden:
             pants run src/build_a_long/pdf_extract/classifier/
             tools:generate-golden-files
         """
-        fixtures_dir = Path(__file__).with_name("fixtures")
+        fixtures_dir = Path(__file__).parent.parent / "fixtures"
         fixture_path = fixtures_dir / fixture_file
 
         # Determine golden file path
