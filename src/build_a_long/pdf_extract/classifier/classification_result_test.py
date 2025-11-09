@@ -3,6 +3,7 @@
 import json
 
 import pytest
+from pydantic import ValidationError
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
@@ -23,11 +24,14 @@ class TestClassifierConfig:
     """Tests for ClassifierConfig."""
 
     def test_negative_weight_raises(self) -> None:
-        """Test that negative weights raise a ValueError."""
-        with pytest.raises(
-            ValueError, match="All weights must be greater than or equal to 0"
-        ):
+        """Test that negative weights raise a ValidationError."""
+        with pytest.raises(ValidationError, match=r"greater than or equal to 0"):
             ClassifierConfig(page_number_text_weight=-0.1)
+
+    def test_weight_above_one_raises(self) -> None:
+        """Test that weights above 1.0 raise a ValidationError."""
+        with pytest.raises(ValidationError, match=r"less than or equal to 1"):
+            ClassifierConfig(page_number_text_weight=1.5)
 
     def test_json_round_trip(self) -> None:
         """Test that ClassifierConfig can be serialized and deserialized."""
@@ -38,10 +42,10 @@ class TestClassifierConfig:
         )
 
         # Serialize
-        json_str = config.to_json()
+        json_str = config.model_dump_json()
 
         # Deserialize
-        config2: ClassifierConfig = ClassifierConfig.from_json(json_str)  # type: ignore[assignment]
+        config2: ClassifierConfig = ClassifierConfig.model_validate_json(json_str)
 
         # Verify all fields match
         assert config2.min_confidence_threshold == config.min_confidence_threshold
@@ -157,9 +161,9 @@ class TestClassificationResult:
         result.mark_winner(candidate2, constructed2)
 
         # Access the internal dict directly (keyed by block ID)
-        assert len(result._constructed_elements) == 2
-        assert result._constructed_elements[1] is constructed1
-        assert result._constructed_elements[2] is constructed2
+        assert len(result.constructed_elements) == 2
+        assert result.constructed_elements[1] is constructed1
+        assert result.constructed_elements[2] is constructed2
 
     def test_get_labeled_blocks(self) -> None:
         block1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
@@ -494,9 +498,9 @@ class TestClassificationResult:
         result.mark_winner(candidate, constructed)
 
         # Verify the internal _constructed_elements uses integer IDs as keys
-        assert isinstance(result._constructed_elements, dict)
-        assert 42 in result._constructed_elements
-        assert result._constructed_elements[42] is constructed
+        assert isinstance(result.constructed_elements, dict)
+        assert 42 in result.constructed_elements
+        assert result.constructed_elements[42] is constructed
 
         # Verify the public API still works correctly with block objects
         assert result.get_constructed_element(block) is constructed
@@ -504,7 +508,7 @@ class TestClassificationResult:
     def test_internal_dict_is_json_serializable(self) -> None:
         """Test that the internal _constructed_elements dict uses JSON-serializable keys.
 
-        Note: Full ClassificationResult.to_json() doesn't work due to the page_data
+        Note: Full ClassificationResult.model_dump_json() doesn't work due to the page_data
         field having a forward reference (PageData is in TYPE_CHECKING), but the
         _constructed_elements dict itself is now JSON-serializable since it uses
         int keys instead of block objects.
@@ -524,13 +528,13 @@ class TestClassificationResult:
         constructed2 = StepNumber(bbox=BBox(20, 20, 30, 30), value=2)
 
         # Manually populate the dict with integer keys (as mark_winner does)
-        result._constructed_elements[42] = constructed1
-        result._constructed_elements[99] = constructed2
+        result.constructed_elements[42] = constructed1
+        result.constructed_elements[99] = constructed2
 
         # Verify the dict itself is JSON serializable
         # This is the key improvement - before it used block objects as keys
         constructed_dict_json = json.dumps(
-            {k: v.to_dict() for k, v in result._constructed_elements.items()}
+            {k: v.model_dump() for k, v in result.constructed_elements.items()}
         )
 
         assert constructed_dict_json is not None

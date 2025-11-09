@@ -1,15 +1,19 @@
-"""Golden file tests for the PDF element classifier.
+"""Golden file tests for the classifier.
 
-This test suite validates that classification output matches expected golden files.
-Golden files are JSON snapshots of classification results that represent known-good
-output. When classification logic changes intentionally, golden files can be updated
-using the generate-golden-files script.
+We use "golden files" to validate that classifier output matches expected results.
+Golden files contain the expected serialized output for known inputs.
 
-Golden files are stored in fixtures/ with suffix '_expected.json'.
-Input fixtures are in fixtures/ with suffix '_raw.json'.
+How it works:
+1. Test loads a raw fixture (PageData from real PDF extraction)
+2. Runs the classifier to produce a ClassificationResult
+3. Serializes the result using model_dump()
+4. Compares against the expected golden file
 
-These tests also run all invariant checks from classifier_rules_test to ensure
-both correctness of output and adherence to fundamental rules.
+Note: We compare the serialized ClassificationResult.model_dump() output,
+not the object directly, to ensure JSON round-tripping works correctly.
+
+To update golden files:
+    pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-files
 """
 
 import json
@@ -40,7 +44,7 @@ def _compare_classification_results(
 
     Handles both single dict (one page) and list of dicts (multiple pages).
 
-    Note: We compare the serialized ClassificationResult.to_dict() output,
+    Note: We compare the serialized ClassificationResult.model_dump() output,
     which includes fields like:
     - _warnings: List of warning messages
     - _removal_reasons: Dict mapping element IDs to removal reasons
@@ -270,7 +274,7 @@ class TestClassifierGolden:
         golden_path = fixtures_dir / golden_file
 
         # Load the input fixture
-        extraction: ExtractionResult = ExtractionResult.from_json(
+        extraction: ExtractionResult = ExtractionResult.model_validate_json(
             fixture_path.read_text()
         )  # type: ignore[assignment]
 
@@ -278,7 +282,7 @@ class TestClassifierGolden:
         batch_result = classify_pages(extraction.pages)
 
         # Serialize the results using to_dict()
-        actual = [result.to_dict() for result in batch_result.results]
+        actual = [result.model_dump() for result in batch_result.results]
 
         # Check that golden file exists
         if not golden_path.exists():

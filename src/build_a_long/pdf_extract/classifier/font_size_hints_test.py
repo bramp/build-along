@@ -322,13 +322,15 @@ class TestFontSizeHintsGolden:
 
         # Load the input fixture
         json_data = load_json(fixture_path)
-        extraction: ExtractionResult = ExtractionResult.from_json(json.dumps(json_data))  # type: ignore[assignment]
+        extraction: ExtractionResult = ExtractionResult.model_validate_json(
+            json.dumps(json_data)
+        )  # type: ignore[assignment]
 
         # Run FontSizeHints.from_pages
         hints = FontSizeHints.from_pages(extraction.pages)
 
         # Serialize the hints to dict using built-in to_dict()
-        actual = hints.to_dict()
+        actual = hints.model_dump()
 
         # Check if golden file exists
         if not golden_path.exists():

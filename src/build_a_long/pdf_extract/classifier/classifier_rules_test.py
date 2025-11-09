@@ -107,7 +107,7 @@ class ClassifiedPage:
         # Use spatial containment, not hierarchy
         result = []
         for elem in self.page.blocks:
-            if id(elem) in self.result._removal_reasons:
+            if id(elem) in self.result.removal_reasons:
                 continue
             if label is not None and self.result.get_label(elem) != label:
                 continue
@@ -193,7 +193,7 @@ class TestClassifierRules:
         """
 
         fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
-        page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(fixture_path.read_text())
 
         # Run the full classification pipeline on the page
         result = classify_elements(page)
@@ -305,7 +305,7 @@ class TestClassifierRules:
         have overlapping bounding boxes.
         """
         fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
-        page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(fixture_path.read_text())
 
         # Run the full classification pipeline on the page
         result = classify_elements(page)
@@ -331,7 +331,7 @@ class TestClassifierRules:
         Every part_image should be contained within a parts_list's bounding box.
         """
         fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
-        page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(fixture_path.read_text())
 
         # Run the full classification pipeline on the page
         result = classify_elements(page)
@@ -362,7 +362,7 @@ class TestClassifierRules:
         This ensures that the classification and deletion logic don't conflict.
         """
         fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
-        page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(fixture_path.read_text())
 
         # Run the full classification pipeline on the page
         result = classify_elements(page)
@@ -399,7 +399,7 @@ class TestClassifierRules:
         decisions are unambiguous.
         """
         fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
-        page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(fixture_path.read_text())
 
         # Run the full classification pipeline on the page
         result = classify_elements(page)

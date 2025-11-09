@@ -1,22 +1,46 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Annotated
 
 from annotated_types import Ge
+from pydantic import BaseModel, ConfigDict
 
 # Type alias for non-negative floats
 NonNegativeFloat = Annotated[float, Ge(0)]
 
 
-@dataclass(frozen=True)
-class BBox:
+class BBox(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     x0: float
     y0: float
     x1: float
     y1: float
 
-    def __post_init__(self):
+    def __init__(
+        self,
+        x0: float | None = None,
+        y0: float | None = None,
+        x1: float | None = None,
+        y1: float | None = None,
+        /,
+        **kwargs,
+    ):
+        """Initialize BBox with positional or keyword arguments.
+
+        Supports both:
+        - BBox(0, 0, 10, 10)  # positional
+        - BBox(x0=0, y0=0, x1=10, y1=10)  # keyword
+        """
+        # If positional args are provided, use them
+        if x0 is not None and y0 is not None and x1 is not None and y1 is not None:
+            super().__init__(x0=x0, y0=y0, x1=x1, y1=y1, **kwargs)
+        else:
+            # Otherwise use keyword args
+            super().__init__(**kwargs)
+
+    def model_post_init(self, __context) -> None:
+        """Validate x0 <= x1 and y0 <= y1."""
         if self.x0 > self.x1:
             raise ValueError(f"x0 ({self.x0}) must not be greater than x1 ({self.x1})")
         if self.y0 > self.y1:
@@ -70,7 +94,8 @@ class BBox:
 
     def adjacent(self, other: BBox, tolerance: float = 1e-6) -> bool:
         """
-        Checks if this bounding box is adjacent to another bounding box (they are touching).
+        Checks if this bounding box is adjacent to another bounding box
+        (they are touching).
         A small tolerance is used for floating point comparisons.
         """
         # Check for horizontal adjacency

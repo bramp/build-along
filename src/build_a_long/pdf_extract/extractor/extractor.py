@@ -1,10 +1,9 @@
 import logging
 from collections.abc import Sequence
-from dataclasses import dataclass
 from typing import Any
 
 import pymupdf
-from dataclass_wizard import JSONPyWizard
+from pydantic import BaseModel
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
@@ -26,8 +25,7 @@ from build_a_long.pdf_extract.extractor.pymupdf_types import (
 logger = logging.getLogger("extractor")
 
 
-@dataclass
-class PageData(JSONPyWizard):
+class PageData(BaseModel):
     """Data extracted from a single PDF page.
 
     Attributes:
@@ -36,28 +34,13 @@ class PageData(JSONPyWizard):
         blocks: Flat list of all blocks on the page
     """
 
-    class _(JSONPyWizard.Meta):
-        # Enable auto-tagging for polymorphic Union types
-        auto_assign_tags = True
-        # Do not raise on unknown JSON keys to avoid conflicts with tag keys on
-        # nested elements
-        # TODO Change this to true.
-        raise_on_unknown_json_key = False
-
     page_number: int
     bbox: BBox
     blocks: list[Block]
 
 
-@dataclass
-class ExtractionResult(JSONPyWizard):
+class ExtractionResult(BaseModel):
     """Top-level container for extracted PDF data."""
-
-    class _(JSONPyWizard.Meta):
-        auto_assign_tags = True
-        # Do not raise on unknown JSON keys
-        # TODO Change this to true.
-        raise_on_unknown_json_key = False
 
     pages: list[PageData]
 

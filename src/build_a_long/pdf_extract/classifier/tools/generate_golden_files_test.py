@@ -28,13 +28,13 @@ def test_classification_result_serialization() -> None:
         return
 
     # Load the page data
-    page: PageData = PageData.from_json(raw_fixture.read_text())  # type: ignore[assignment]
+    page: PageData = PageData.model_validate_json(raw_fixture.read_text())
 
     # Run classification
     result = classify_elements(page)
 
     # This should not raise a NameError
-    golden_data = result.to_dict()
+    golden_data = result.model_dump()
 
     # Verify it's valid JSON
     json_str = json.dumps(golden_data)

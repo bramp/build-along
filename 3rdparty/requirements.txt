@@ -5,5 +5,5 @@ httpx~=0.28.1
 beautifulsoup4~=4.14.2
 PyMuPDF~=1.26.5
 Pillow~=12.0.0
-dataclass-wizard~=0.35.1
+pydantic~=2.12.4
 annotated-types~=0.7.0

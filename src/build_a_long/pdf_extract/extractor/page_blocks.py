@@ -13,13 +13,14 @@ hints to keep them easy to test and reason about.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, ConfigDict, Discriminator, Field
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
 
-@dataclass(eq=False, frozen=True)
-class _Block:
+class _Block(BaseModel):
     """Base class for raw blocks extracted from PDF.
 
     Contract:
@@ -27,19 +28,20 @@ class _Block:
       (same coordinate system produced by the extractor).
     - Every block must have a unique ID assigned by the Extractor.
     - Subclasses are small data holders.
+
+    Blocks are frozen (immutable) and hashable based on field values,
+    allowing use as dict keys. Two blocks with identical field values
+    are considered equal.
     """
 
+    model_config = ConfigDict(
+        frozen=True,  # pyright: ignore[reportUnhashable] - Pyright doesn't recognize Pydantic frozen models or discriminated unions as hashable
+    )
+
     bbox: BBox
-    id: int = field(kw_only=True)
-
-    def __hash__(self):
-        return id(self)
-
-    def __eq__(self, other):
-        return self is other
+    id: int
 
 
-@dataclass(eq=False, frozen=True)
 class Drawing(_Block):
     """A vector drawing block on the page.
 
@@ -47,7 +49,10 @@ class Drawing(_Block):
     when/if available.
     """
 
+    tag: Literal["Drawing"] = Field(default="Drawing", alias="__tag__", frozen=True)
     image_id: str | None = None
+
+    model_config = ConfigDict(frozen=True, populate_by_name=True)
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
@@ -55,16 +60,18 @@ class Drawing(_Block):
         return f"Drawing(bbox={str(self.bbox)}{image_str})"
 
 
-@dataclass(eq=False, frozen=True)
 class Text(_Block):
     """A text block on the page.
 
     Stores the actual text content extracted from the PDF.
     """
 
+    tag: Literal["Text"] = Field(default="Text", alias="__tag__", frozen=True)
     text: str
     font_name: str | None = None
     font_size: float | None = None
+
+    model_config = ConfigDict(frozen=True, populate_by_name=True)
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
@@ -72,14 +79,16 @@ class Text(_Block):
         return f'Text(bbox={str(self.bbox)}, text="{text_preview}")'
 
 
-@dataclass(eq=False, frozen=True)
 class Image(_Block):
     """An image block on the page (raster image from PDF).
 
     image_id can be used to tie back to a raster extracted by the pipeline.
     """
 
+    tag: Literal["Image"] = Field(default="Image", alias="__tag__", frozen=True)
     image_id: str | None = None
+
+    model_config = ConfigDict(frozen=True, populate_by_name=True)
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
@@ -87,5 +96,7 @@ class Image(_Block):
         return f"Image(bbox={str(self.bbox)}{image_str})"
 
 
-# A helpful alias for heterogeneous collections of page elements
-Block = Drawing | Text | Image
+# Discriminated union type for polymorphic deserialization
+# The Discriminator allows Pydantic to deserialize JSON into the correct
+# subclass based on the "tag" field
+Block = Annotated[Drawing | Text | Image, Discriminator("tag")]

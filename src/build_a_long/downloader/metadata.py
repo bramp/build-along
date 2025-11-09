@@ -1,37 +1,33 @@
 """Dataclasses for representing LEGO set metadata.
 
-This module uses dataclasses-json for (de)serialization so callers can use
-``.to_dict()``, ``.to_json()``, ``from_dict`` and ``from_json`` directly.
+This module uses Pydantic for (de)serialization so callers can use
+``.model_dump()``, ``.model_dump_json()``, ``model_validate`` and
+``model_validate_json`` directly.
 """
 
-from dataclasses import dataclass, field
 from pathlib import Path
 
-from dataclass_wizard import JSONPyWizard
+from pydantic import BaseModel, ConfigDict, Field
 
 
-@dataclass
-class DownloadedFile(JSONPyWizard):
+class DownloadedFile(BaseModel):
     """Represents a downloaded file with its path, size, and hash."""
 
-    class _(JSONPyWizard.Meta):
-        raise_on_unknown_json_key = True
+    model_config = ConfigDict(extra="forbid")
 
     path: Path
     size: int
     hash: str | None
 
 
-@dataclass
-class DownloadUrl(JSONPyWizard):
+class DownloadUrl(BaseModel):
     """Holds the URL and preview URL for a download."""
 
     url: str
     preview_url: str | None
 
 
-@dataclass
-class PdfEntry(JSONPyWizard):
+class PdfEntry(BaseModel):
     """Represents a single instruction PDF file."""
 
     url: str
@@ -41,8 +37,7 @@ class PdfEntry(JSONPyWizard):
     filehash: str | None = None  # SHA256 hash of the file content
 
 
-@dataclass
-class InstructionMetadata(JSONPyWizard):
+class InstructionMetadata(BaseModel):
     """Complete metadata for a LEGO set's instructions."""
 
     set: str
@@ -53,4 +48,4 @@ class InstructionMetadata(JSONPyWizard):
     pieces: int | None = None
     year: int | None = None
     set_image_url: str | None = None
-    pdfs: list[PdfEntry] = field(default_factory=list)
+    pdfs: list[PdfEntry] = Field(default_factory=list)
