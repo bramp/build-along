@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from enum import Enum
 
 from dataclass_wizard import JSONPyWizard
 
@@ -193,6 +194,13 @@ class Page(LegoPageElement):
         warnings: List of warnings generated during hierarchy building
         unprocessed_elements: Raw elements that were classified but couldn't be converted
     """
+
+    class Category(Enum):
+        INFO = 1
+        INSTRUCTION = 2
+        CATALOG = 3
+
+    category: Category | None = field(default=None, kw_only=True)
 
     page_number: PageNumber | None = field(default=None, kw_only=True)
     steps: list[Step] = field(default_factory=list, kw_only=True)
