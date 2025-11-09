@@ -13,6 +13,7 @@ hints to keep them easy to test and reason about.
 
 from __future__ import annotations
 
+from abc import ABC
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Discriminator, Field
@@ -20,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, Discriminator, Field
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
 
-class _Block(BaseModel):
+class _Block(BaseModel, ABC):
     """Base class for raw blocks extracted from PDF.
 
     Contract:

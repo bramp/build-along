@@ -1,14 +1,15 @@
+from abc import ABC
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from annotated_types import Ge, Gt
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Discriminator, Field
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 
-class LegoPageElement(BaseModel):
+class _LegoPageElement(BaseModel, ABC):
     """Base class for LEGO-specific structured elements constructed by classifiers.
 
     LegoPageElements are typically constructed from one or more Blocks during
@@ -24,7 +25,7 @@ class LegoPageElement(BaseModel):
     """
 
     # Note: page_data is excluded from serialization at dump time, not in config
-    model_config = ConfigDict()
+    model_config = ConfigDict(populate_by_name=True)
 
     bbox: BBox
 
@@ -33,9 +34,12 @@ class LegoPageElement(BaseModel):
         return f"{self.__class__.__name__}(bbox={str(self.bbox)})"
 
 
-class PageNumber(LegoPageElement):
+class PageNumber(_LegoPageElement):
     """The page number, usually a small integer on the page."""
 
+    tag: Literal["PageNumber"] = Field(
+        default="PageNumber", alias="__tag__", frozen=True
+    )
     value: Annotated[int, Ge(0)]
 
     def __str__(self) -> str:
@@ -43,9 +47,12 @@ class PageNumber(LegoPageElement):
         return f"PageNumber(value={self.value})"
 
 
-class StepNumber(LegoPageElement):
+class StepNumber(_LegoPageElement):
     """A step number label."""
 
+    tag: Literal["StepNumber"] = Field(
+        default="StepNumber", alias="__tag__", frozen=True
+    )
     value: Annotated[int, Gt(0)]
 
     def __str__(self) -> str:
@@ -53,9 +60,10 @@ class StepNumber(LegoPageElement):
         return f"StepNumber(value={self.value})"
 
 
-class PartCount(LegoPageElement):
+class PartCount(_LegoPageElement):
     """The visual count label associated with a part entry (e.g., '2x')."""
 
+    tag: Literal["PartCount"] = Field(default="PartCount", alias="__tag__", frozen=True)
     count: Annotated[int, Ge(0)]
 
     # TODO We may wish to add the part this count refers to.
@@ -65,9 +73,10 @@ class PartCount(LegoPageElement):
         return f"PartCount(count={self.count}x)"
 
 
-class Part(LegoPageElement):
+class Part(_LegoPageElement):
     """A single part entry within a parts list."""
 
+    tag: Literal["Part"] = Field(default="Part", alias="__tag__", frozen=True)
     count: PartCount
     diagram: Drawing | None = None
 
@@ -85,9 +94,10 @@ class Part(LegoPageElement):
         return f"Part(count={self.count.count}x, name={name_str}, number={number_str})"
 
 
-class PartsList(LegoPageElement):
+class PartsList(_LegoPageElement):
     """A container of multiple parts for the page's parts list."""
 
+    tag: Literal["PartsList"] = Field(default="PartsList", alias="__tag__", frozen=True)
     parts: list[Part]
 
     @property
@@ -105,9 +115,10 @@ class PartsList(LegoPageElement):
         return f"PartsList(parts={len(self.parts)}, total_items={self.total_items})"
 
 
-class BagNumber(LegoPageElement):
+class BagNumber(_LegoPageElement):
     """The bag number, usually a small integer on the page."""
 
+    tag: Literal["BagNumber"] = Field(default="BagNumber", alias="__tag__", frozen=True)
     value: Annotated[int, Gt(0)]
 
     def __str__(self) -> str:
@@ -115,9 +126,10 @@ class BagNumber(LegoPageElement):
         return f"BagNumber(value={self.value})"
 
 
-class NewBag(LegoPageElement):
+class NewBag(_LegoPageElement):
     """The graphic showing a new bag icon on the page."""
 
+    tag: Literal["NewBag"] = Field(default="NewBag", alias="__tag__", frozen=True)
     bag: BagNumber
 
     def __str__(self) -> str:
@@ -125,17 +137,20 @@ class NewBag(LegoPageElement):
         return f"NewBag(bag={self.bag.value})"
 
 
-class Diagram(LegoPageElement):
+class Diagram(_LegoPageElement):
     """The graphic showing how to complete the step."""
+
+    tag: Literal["Diagram"] = Field(default="Diagram", alias="__tag__", frozen=True)
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"Diagram(bbox={str(self.bbox)})"
 
 
-class Step(LegoPageElement):
+class Step(_LegoPageElement):
     """A single instruction step on the page."""
 
+    tag: Literal["Step"] = Field(default="Step", alias="__tag__", frozen=True)
     step_number: StepNumber
     parts_list: PartsList
     diagram: Diagram  # TODO maybe this should be a list?
@@ -149,7 +164,7 @@ class Step(LegoPageElement):
         )
 
 
-class Page(LegoPageElement):
+class Page(_LegoPageElement):
     """A complete page of LEGO instructions.
 
     This is the top-level element that contains all other elements on a page.
@@ -170,6 +185,7 @@ class Page(LegoPageElement):
         INSTRUCTION = 2
         CATALOG = 3
 
+    tag: Literal["Page"] = Field(default="Page", alias="__tag__", frozen=True)
     category: Category | None = None
 
     page_number: PageNumber | None = None
@@ -190,6 +206,21 @@ class Page(LegoPageElement):
             f"Page(number={page_num}, steps={len(self.steps)}, "
             f"parts_lists={len(self.parts_lists)}, warnings={len(self.warnings)})"
         )
+
+
+LegoPageElement = Annotated[
+    PageNumber
+    | StepNumber
+    | PartCount
+    | Part
+    | PartsList
+    | BagNumber
+    | NewBag
+    | Diagram
+    | Step
+    | Page,
+    Discriminator("tag"),
+]
 
 
 # TODO Add sub-assembly (or sub-step) element.
