@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
-from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -45,8 +45,17 @@ def main() -> None:
 
         log.info(f"Processing {fixture_path.name}...")
 
-        # Load the input fixture
-        page: PageData = PageData.from_json(fixture_path.read_text())  # type: ignore[assignment]
+        # Load the input fixture (which is an ExtractionResult with pages)
+        extraction_result: ExtractionResult = ExtractionResult.from_json(
+            fixture_path.read_text()
+        )  # type: ignore[assignment]
+
+        # Get the first (and usually only) page
+        if not extraction_result.pages:
+            log.warning(f"  Skipping {fixture_path.name} - no pages found")
+            continue
+
+        page: PageData = extraction_result.pages[0]
 
         # Run classification
         result = classify_elements(page)

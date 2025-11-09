@@ -44,7 +44,7 @@ Example files:
 
 - **Format**: JSON serialization of `FontSizeHints` objects
 - **Usage**: Expected output for font size hint extraction testing
-- **Generation**: Created/updated using the `generate-font-hints-golden` script
+- **Generation**: Created/updated using the `generate-golden-font-hints` script
 
 ## Test Files Using These Fixtures
 
@@ -59,7 +59,7 @@ Tests universal rules that must always hold:
 
 **Status**: Currently skipped due to known classifier issues.
 
-**Usage**: `pants test src/build_a_long/pdf_extract/classifier:classifier_rules_test`
+**Usage**: `pants test src/build_a_long/pdf_extract/classifier/classifier_rules_test.py`
 
 ### `classifier_golden_test.py` - Golden File Tests
 
@@ -75,7 +75,7 @@ Tests that classification output matches expected golden files:
 
 ```bash
 # Run tests (compare against golden files)
-pants test src/build_a_long/pdf_extract/classifier:classifier_golden_test
+pants test src/build_a_long/pdf_extract/classifier/classifier_golden_test.py
 ```
 
 ### `font_size_hints_test.py` - Font Size Hints Tests
@@ -125,7 +125,7 @@ When you intentionally change classifier logic and want to update the expected o
 pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-files
 
 # Generate/update font hints golden files
-pants run src/build_a_long/pdf_extract/classifier/tools:generate-font-hints-golden
+pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-font-hints
 ```
 
 These scripts run without sandboxing, allowing them to write files directly to the `fixtures/` directory.
