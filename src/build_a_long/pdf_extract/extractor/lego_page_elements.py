@@ -1,14 +1,14 @@
-from dataclasses import dataclass, field
 from enum import Enum
+from typing import Annotated
 
-from dataclass_wizard import JSONPyWizard
+from annotated_types import Ge, Gt
+from pydantic import BaseModel, ConfigDict, Field
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 
-@dataclass
-class LegoPageElement(JSONPyWizard):
+class LegoPageElement(BaseModel):
     """Base class for LEGO-specific structured elements constructed by classifiers.
 
     LegoPageElements are typically constructed from one or more Blocks during
@@ -18,16 +18,13 @@ class LegoPageElement(JSONPyWizard):
     - Every element has exactly one bounding box in page coordinates
       (same coordinate system produced by the extractor).
     - Subclasses are small data holders.
-    - Inherits from JSONPyWizard to get automatic to_dict(), to_json(),
-      from_dict(), from_json() methods.
-    - Uses auto_assign_tags to add __tag__ field for polymorphic serialization.
+    - Inherits from Pydantic BaseModel to get automatic model_dump(), model_dump_json(),
+      model_validate(), model_validate_json() methods.
+    - Uses discriminated unions to add __tag__ field for polymorphic serialization.
     """
 
-    class _(JSONPyWizard.Meta):
-        # Enable auto-tagging for polymorphic serialization
-        auto_assign_tags = True
-        # Exclude page_data from serialization to avoid circular references
-        dump_exclude = {"page_data"}
+    # Note: page_data is excluded from serialization at dump time, not in config
+    model_config = ConfigDict()
 
     bbox: BBox
 
@@ -36,65 +33,47 @@ class LegoPageElement(JSONPyWizard):
         return f"{self.__class__.__name__}(bbox={str(self.bbox)})"
 
 
-@dataclass
 class PageNumber(LegoPageElement):
     """The page number, usually a small integer on the page."""
 
-    value: int = field(kw_only=True)
-
-    def __post_init__(self) -> None:
-        if self.value < 0:
-            raise ValueError("PageNumber.value must be non-negative")
+    value: Annotated[int, Ge(0)]
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"PageNumber(value={self.value})"
 
 
-@dataclass
 class StepNumber(LegoPageElement):
     """A step number label."""
 
-    value: int = field(kw_only=True)
-
-    def __post_init__(self) -> None:
-        if self.value <= 0:
-            raise ValueError("StepNumber.value must be positive")
+    value: Annotated[int, Gt(0)]
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"StepNumber(value={self.value})"
 
 
-@dataclass
 class PartCount(LegoPageElement):
     """The visual count label associated with a part entry (e.g., '2x')."""
 
-    count: int = field(kw_only=True)
+    count: Annotated[int, Ge(0)]
 
     # TODO We may wish to add the part this count refers to.
-
-    def __post_init__(self) -> None:
-        if self.count < 0:
-            raise ValueError("PartCount.count must be non-negative")
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"PartCount(count={self.count}x)"
 
 
-@dataclass
 class Part(LegoPageElement):
     """A single part entry within a parts list."""
 
-    count: PartCount = field(kw_only=True)
-    diagram: Drawing | None = field(
-        default=None, kw_only=True
-    )  # TODO Make this required
+    count: PartCount
+    diagram: Drawing | None = None
 
     # Name and Number are not directly extracted, but may be filled in later
-    name: str | None = field(default=None, kw_only=True)
-    number: str | None = field(default=None, kw_only=True)
+    name: str | None = None
+    number: str | None = None
 
     # TODO maybe add color?
     # TODO Some parts have a "shiny" highlight - maybe reference that image
@@ -106,11 +85,10 @@ class Part(LegoPageElement):
         return f"Part(count={self.count.count}x, name={name_str}, number={number_str})"
 
 
-@dataclass
 class PartsList(LegoPageElement):
     """A container of multiple parts for the page's parts list."""
 
-    parts: list[Part] = field(kw_only=True)
+    parts: list[Part]
 
     @property
     def total_items(self) -> int:
@@ -127,33 +105,26 @@ class PartsList(LegoPageElement):
         return f"PartsList(parts={len(self.parts)}, total_items={self.total_items})"
 
 
-@dataclass
 class BagNumber(LegoPageElement):
     """The bag number, usually a small integer on the page."""
 
-    value: int = field(kw_only=True)
-
-    def __post_init__(self) -> None:
-        if self.value <= 0:
-            raise ValueError("BagNumber.value must be positive")
+    value: Annotated[int, Gt(0)]
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"BagNumber(value={self.value})"
 
 
-@dataclass
 class NewBag(LegoPageElement):
     """The graphic showing a new bag icon on the page."""
 
-    bag: BagNumber = field(kw_only=True)
+    bag: BagNumber
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"NewBag(bag={self.bag.value})"
 
 
-@dataclass
 class Diagram(LegoPageElement):
     """The graphic showing how to complete the step."""
 
@@ -162,13 +133,12 @@ class Diagram(LegoPageElement):
         return f"Diagram(bbox={str(self.bbox)})"
 
 
-@dataclass
 class Step(LegoPageElement):
     """A single instruction step on the page."""
 
-    step_number: StepNumber = field(kw_only=True)
-    parts_list: PartsList = field(kw_only=True)
-    diagram: Diagram = field(kw_only=True)  # TODO maybe this should be a list?
+    step_number: StepNumber
+    parts_list: PartsList
+    diagram: Diagram  # TODO maybe this should be a list?
 
     # TODO add other interesting callouts (such as rotate the element)
 
@@ -179,7 +149,6 @@ class Step(LegoPageElement):
         )
 
 
-@dataclass
 class Page(LegoPageElement):
     """A complete page of LEGO instructions.
 
@@ -192,7 +161,8 @@ class Page(LegoPageElement):
         steps: List of Step elements on the page
         parts_lists: List of standalone PartsList elements (not within a Step)
         warnings: List of warnings generated during hierarchy building
-        unprocessed_elements: Raw elements that were classified but couldn't be converted
+        unprocessed_elements: Raw elements that were classified but couldn't
+            be converted
     """
 
     class Category(Enum):
@@ -200,17 +170,17 @@ class Page(LegoPageElement):
         INSTRUCTION = 2
         CATALOG = 3
 
-    category: Category | None = field(default=None, kw_only=True)
+    category: Category | None = None
 
-    page_number: PageNumber | None = field(default=None, kw_only=True)
-    steps: list[Step] = field(default_factory=list, kw_only=True)
-    parts_lists: list[PartsList] = field(default_factory=list, kw_only=True)
+    page_number: PageNumber | None = None
+    steps: list[Step] = Field(default_factory=list)
+    parts_lists: list[PartsList] = Field(default_factory=list)
 
     # Metadata about the conversion process
-    warnings: list[str] = field(default_factory=list, kw_only=True)
+    warnings: list[str] = Field(default_factory=list)
     # Keep reference to raw elements that weren't converted (for debugging/analysis)
-    unprocessed_elements: list = field(
-        default_factory=list, kw_only=True
+    unprocessed_elements: list = Field(
+        default_factory=list
     )  # List[Element] but avoiding import
 
     def __str__(self) -> str:

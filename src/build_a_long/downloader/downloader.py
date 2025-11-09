@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from collections.abc import Callable, Iterable
+from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import Any, ContextManager
+from typing import Any
 
 import httpx
 
@@ -24,7 +24,7 @@ __all__ = [
 
 
 def read_metadata(path: Path) -> InstructionMetadata | None:
-    """Read a metadata.json file from disk using dataclasses-json.
+    """Read a metadata.json file from disk using Pydantic.
 
     Args:
         path: Path to the metadata.json file.
@@ -33,17 +33,10 @@ def read_metadata(path: Path) -> InstructionMetadata | None:
         The parsed InstructionMetadata object if successful; otherwise None.
     """
     try:
-        with open(path, encoding="utf-8") as f:
-            raw = json.load(f)
-        if not isinstance(raw, dict):
-            print(f"Warning: Metadata at {path} is not a JSON object; ignoring")
-            return None
-        return InstructionMetadata.from_dict(raw)
+        text = path.read_text(encoding="utf-8")
+        return InstructionMetadata.model_validate_json(text)
     except (
-        json.JSONDecodeError,
         OSError,
-        KeyError,
-        TypeError,
         ValueError,
     ) as e:
         print(f"Warning: Could not read existing metadata ({e}); ignoring")
@@ -64,8 +57,7 @@ def write_metadata(path: Path, data: InstructionMetadata) -> None:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(path.suffix + ".tmp")
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(data.to_dict(), f, indent=2, ensure_ascii=False)
+        tmp.write_text(data.model_dump_json(indent=2), encoding="utf-8")
         tmp.replace(path)
         print(f"Wrote metadata: {path}")
     except Exception as e:  # pragma: no cover - non-fatal write error
@@ -148,7 +140,7 @@ class LegoInstructionDownloader:
         dest_dir: Path,
         *,
         progress_prefix: str = "",
-        stream_fn: Callable[..., ContextManager[Any]] | None = None,
+        stream_fn: Callable[..., AbstractContextManager[Any]] | None = None,
         chunk_iter: Callable[[Any, int], Iterable[bytes]] | None = None,
     ) -> DownloadedFile:
         """Download a URL to a directory.

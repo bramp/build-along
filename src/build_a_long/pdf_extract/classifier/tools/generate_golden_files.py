@@ -46,7 +46,7 @@ def main() -> None:
         log.info(f"Processing {fixture_path.name}...")
 
         # Load the input fixture (which is an ExtractionResult with pages)
-        extraction_result: ExtractionResult = ExtractionResult.from_json(
+        extraction_result: ExtractionResult = ExtractionResult.model_validate_json(
             fixture_path.read_text()
         )  # type: ignore[assignment]
 
@@ -60,8 +60,8 @@ def main() -> None:
         # Run classification
         result = classify_elements(page)
 
-        # Serialize the results using to_dict()
-        golden_data = result.to_dict()
+        # Serialize with by_alias=True to use __tag__ instead of tag
+        golden_data = result.model_dump(by_alias=True)
 
         # Write golden file
         golden_path.write_text(json.dumps(golden_data, indent=2) + "\n")

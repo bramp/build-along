@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import logging
 from collections import Counter
-from dataclasses import dataclass
 
-from dataclass_wizard import JSONPyWizard
+from pydantic import BaseModel
 
 from build_a_long.pdf_extract.classifier.text_histogram import (
     TextHistogram,
@@ -20,8 +19,7 @@ logger = logging.getLogger(__name__)
 MIN_SAMPLES = 3
 
 
-@dataclass
-class FontSizeHints(JSONPyWizard):
+class FontSizeHints(BaseModel):
     """Font size hints derived from text histogram analysis.
 
     This class analyzes the TextHistogram to identify the most common font sizes

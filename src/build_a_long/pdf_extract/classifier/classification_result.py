@@ -4,27 +4,27 @@ Data classes for the classifier.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import Annotated, Any
 
-from dataclass_wizard import JSONPyWizard
+from annotated_types import Ge, Le
+from pydantic import BaseModel, Field, model_validator
 
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
+from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
 from build_a_long.pdf_extract.extractor.page_blocks import Block
 
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
-
 # Score key can be either a single Block or a tuple of Blocks (for pairings)
 ScoreKey = Block | tuple[Block, ...]
 
+# Weight value constrained to [0.0, 1.0] range
+Weight = Annotated[float, Ge(0), Le(1)]
+
 
 # TODO Make this JSON serializable
-@dataclass
-class BatchClassificationResult(JSONPyWizard):
+class BatchClassificationResult(BaseModel):
     """Results from classifying multiple pages together.
 
     This class holds both the per-page classification results and the
@@ -38,8 +38,7 @@ class BatchClassificationResult(JSONPyWizard):
     """Global text histogram computed across all pages"""
 
 
-@dataclass
-class RemovalReason(JSONPyWizard):
+class RemovalReason(BaseModel):
     """Tracks why a block was removed during classification."""
 
     reason_type: str
@@ -49,8 +48,7 @@ class RemovalReason(JSONPyWizard):
     """The block that caused this removal"""
 
 
-@dataclass
-class Candidate(JSONPyWizard):
+class Candidate(BaseModel):
     """A candidate block with its score and constructed LegoElement.
 
     Represents a single block that was considered for a particular label,
@@ -100,67 +98,69 @@ class Candidate(JSONPyWizard):
     """
 
 
-@dataclass
-class ClassifierConfig(JSONPyWizard):
+class ClassifierConfig(BaseModel):
     """Configuration for the classifier."""
 
     # TODO Not sure what this value is used for
     min_confidence_threshold: float = 0.5
 
-    page_number_text_weight: float = 0.7
-    page_number_position_weight: float = 0.3
+    page_number_text_weight: Weight = 0.7
+    page_number_position_weight: Weight = 0.3
     page_number_position_scale: float = 50.0
-    page_number_page_value_weight: float = 1.0
-    page_number_font_size_weight: float = 0.1
+    page_number_page_value_weight: Weight = 1.0
+    page_number_font_size_weight: Weight = 0.1
 
-    step_number_text_weight: float = 0.7
-    step_number_font_size_weight: float = 0.3
+    step_number_text_weight: Weight = 0.7
+    step_number_font_size_weight: Weight = 0.3
 
-    part_count_text_weight: float = 0.7
-    part_count_font_size_weight: float = 0.3
+    part_count_text_weight: Weight = 0.7
+    part_count_font_size_weight: Weight = 0.3
 
-    font_size_hints: FontSizeHints = field(default_factory=FontSizeHints.empty)
+    font_size_hints: FontSizeHints = Field(default_factory=FontSizeHints.empty)
     """Font size hints derived from analyzing all pages"""
 
-    def __post_init__(self) -> None:
-        for key, weight in self.__dict__.items():
-            if key == "font_size_hints":
-                continue
-            if weight < 0:
-                raise ValueError("All weights must be greater than or equal to 0.")
 
+class ClassificationResult(BaseModel):
+    """Result of classifying a single page.
 
-@dataclass
-class ClassificationResult(JSONPyWizard):
-    """Represents the outcome of a single classification run.
+    This class stores both the results and intermediate artifacts for a page
+    classification. It provides structured access to:
+    - Labels assigned to blocks
+    - LegoPageElements constructed from blocks
+    - Removal reasons for filtered blocks
+    - All candidates considered (including rejected ones)
 
-    This class encapsulates the results of element classification, including
-    labels, scores, and removal information. The candidates field is now the
-    primary source of truth for classification results, containing all scored
-    elements, their constructed LegoPageElements, and winner information.
+    The use of dictionaries keyed by block IDs (int) instead of Block objects
+    ensures JSON serializability and consistent equality semantics.
 
-    ClassificationResult is passed through the classifier pipeline, with each
-    classifier adding its candidates and marking winners. This allows later
-    classifiers to query the current state and make decisions based on earlier
-    results.
+    # TODO: Consider refactoring to separate DAO (Data Access Object) representation
+    # from the business logic. The public fields below are used for serialization
+    # but external code should prefer using the accessor methods to maintain
+    # encapsulation and allow future refactoring.
 
-    External code should use the accessor methods rather than accessing internal
+    External code should use the accessor methods rather than accessing these
     fields directly to maintain encapsulation.
     """
 
     page_data: PageData
     """The original page data being classified"""
 
-    _warnings: list[str] = field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    """Warning messages generated during classification.
+    
+    Public for serialization. Prefer using add_warning() and get_warnings() methods.
+    """
 
-    _removal_reasons: dict[int, RemovalReason] = field(default_factory=dict)
+    removal_reasons: dict[int, RemovalReason] = Field(default_factory=dict)
     """Maps block IDs (block.id, not id(block)) to the reason they were removed.
     
     Keys are block IDs (int) instead of Block objects to ensure JSON serializability
-    and consistency with _constructed_elements.
+    and consistency with constructed_elements.
+    
+    Public for serialization. Prefer using accessor methods.
     """
 
-    _constructed_elements: dict[int, LegoPageElement] = field(default_factory=dict)
+    constructed_elements: dict[int, LegoPageElement] = Field(default_factory=dict)
     """Maps source block IDs to their constructed LegoPageElements.
     
     Only contains elements that were successfully labeled and constructed.
@@ -168,9 +168,11 @@ class ClassificationResult(JSONPyWizard):
     re-parsing the source blocks.
     
     Keys are block IDs (int) instead of Block objects to ensure JSON serializability.
+    
+    Public for serialization. Prefer using get_constructed_element() method.
     """
 
-    _candidates: dict[str, list[Candidate]] = field(default_factory=dict)
+    candidates: dict[str, list[Candidate]] = Field(default_factory=dict)
     """Maps label names to lists of all candidates considered for that label.
     
     Each candidate includes:
@@ -184,16 +186,21 @@ class ClassificationResult(JSONPyWizard):
     - Re-evaluation with hints (exclude specific candidates)
     - Debugging (see why each candidate won/lost)
     - UI support (show users alternatives)
+    
+    Public for serialization. Prefer using get_* accessor methods.
     """
 
-    _block_winners: dict[int, tuple[str, Candidate]] = field(default_factory=dict)
+    block_winners: dict[int, tuple[str, Candidate]] = Field(default_factory=dict)
     """Maps block IDs to their winning (label, candidate) tuple.
     
     Ensures each block has at most one winning candidate across all labels.
     Keys are block IDs (int) for JSON serializability.
+    
+    Public for serialization. Prefer using get_label() and related methods.
     """
 
-    def __post_init__(self) -> None:
+    @model_validator(mode="after")
+    def validate_unique_block_ids(self) -> ClassificationResult:
         """Validate PageData blocks have unique IDs (if present).
 
         Blocks may have None IDs, but blocks with IDs must have unique IDs.
@@ -208,6 +215,7 @@ class ClassificationResult(JSONPyWizard):
                 f"PageData blocks must have unique IDs. "
                 f"Found duplicates: {set(duplicates)}"
             )
+        return self
 
     def _validate_block_in_page_data(
         self, block: Block | None, param_name: str = "block"
@@ -239,7 +247,7 @@ class ClassificationResult(JSONPyWizard):
         Args:
             warning: The warning message to add
         """
-        self._warnings.append(warning)
+        self.warnings.append(warning)
 
     def get_warnings(self) -> list[str]:
         """Get all warnings generated during classification.
@@ -247,18 +255,18 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             List of warning messages
         """
-        return self._warnings.copy()
+        return self.warnings.copy()
 
     def get_constructed_element(self, block: Block) -> LegoPageElement | None:
         """Get the constructed LegoPageElement for a source block.
 
         Args:
-            block: The source block
+            block: The source block to look up
 
         Returns:
-            The constructed LegoPageElement if it exists, None otherwise
+            The constructed LegoPageElement if it exists, otherwise None
         """
-        return self._constructed_elements.get(block.id)
+        return self.constructed_elements.get(block.id)
 
     # TODO maybe add a parameter to fitler out winners/non-winners
     def get_candidates(self, label: str) -> list[Candidate]:
@@ -271,7 +279,7 @@ class ClassificationResult(JSONPyWizard):
             List of candidates for that label (returns copy to prevent
             external modification)
         """
-        return self._candidates.get(label, []).copy()
+        return self.candidates.get(label, []).copy()
 
     def get_all_candidates(self) -> dict[str, list[Candidate]]:
         """Get all candidates across all labels.
@@ -279,7 +287,7 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             Dictionary mapping labels to their candidates (returns deep copy)
         """
-        return {label: cands.copy() for label, cands in self._candidates.items()}
+        return {label: cands.copy() for label, cands in self.candidates.items()}
 
     def add_candidate(self, label: str, candidate: Candidate) -> None:
         """Add a single candidate for a specific label.
@@ -295,9 +303,9 @@ class ClassificationResult(JSONPyWizard):
             candidate.source_block, "candidate.source_block"
         )
 
-        if label not in self._candidates:
-            self._candidates[label] = []
-        self._candidates[label].append(candidate)
+        if label not in self.candidates:
+            self.candidates[label] = []
+        self.candidates[label].append(candidate)
 
     def mark_winner(
         self,
@@ -321,8 +329,8 @@ class ClassificationResult(JSONPyWizard):
         # Check if this block already has a winner
         if candidate.source_block is not None:
             block_id = candidate.source_block.id
-            if block_id in self._block_winners:
-                existing_label, existing_candidate = self._block_winners[block_id]
+            if block_id in self.block_winners:
+                existing_label, existing_candidate = self.block_winners[block_id]
                 raise ValueError(
                     f"Block {block_id} already has a winner candidate for "
                     f"label '{existing_label}'. Cannot mark as winner for "
@@ -333,8 +341,8 @@ class ClassificationResult(JSONPyWizard):
         candidate.is_winner = True
         # Store the constructed element for this source element
         if candidate.source_block is not None:
-            self._constructed_elements[candidate.source_block.id] = constructed
-            self._block_winners[candidate.source_block.id] = (
+            self.constructed_elements[candidate.source_block.id] = constructed
+            self.block_winners[candidate.source_block.id] = (
                 candidate.label,
                 candidate,
             )
@@ -350,7 +358,7 @@ class ClassificationResult(JSONPyWizard):
             ValueError: If block is not in PageData
         """
         self._validate_block_in_page_data(block, "block")
-        self._removal_reasons[block.id] = reason
+        self.removal_reasons[block.id] = reason
 
     # TODO Consider removing this method.
     def get_labeled_blocks(self) -> dict[Block, str]:
@@ -360,7 +368,7 @@ class ClassificationResult(JSONPyWizard):
             Dictionary mapping blocks to their labels (excludes synthetic candidates)
         """
         labeled: dict[Block, str] = {}
-        for label, label_candidates in self._candidates.items():
+        for label, label_candidates in self.candidates.items():
             for candidate in label_candidates:
                 if candidate.is_winner and candidate.source_block is not None:
                     labeled[candidate.source_block] = label
@@ -376,7 +384,7 @@ class ClassificationResult(JSONPyWizard):
             The label string if found, None otherwise
         """
         # Search through all candidates to find the winning label for this block
-        for label, label_candidates in self._candidates.items():
+        for label, label_candidates in self.candidates.items():
             for candidate in label_candidates:
                 if candidate.source_block is block and candidate.is_winner:
                     return label
@@ -392,7 +400,7 @@ class ClassificationResult(JSONPyWizard):
             List of blocks with that label. For constructed blocks (e.g., Part),
             returns the constructed object; for regular blocks, returns source_block.
         """
-        label_candidates = self._candidates.get(label, [])
+        label_candidates = self.candidates.get(label, [])
         blocks = []
         for c in label_candidates:
             if c.is_winner:
@@ -412,7 +420,7 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             True if the block is marked for removal, False otherwise
         """
-        return block.id in self._removal_reasons
+        return block.id in self.removal_reasons
 
     def get_removal_reason(self, block: Block) -> RemovalReason | None:
         """Get the reason why a block was removed.
@@ -423,7 +431,7 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             The RemovalReason if the block was removed, None otherwise
         """
-        return self._removal_reasons.get(block.id)
+        return self.removal_reasons.get(block.id)
 
     def get_scores_for_label(self, label: str) -> dict[ScoreKey, Any]:
         """Get all scores for a specific label.
@@ -435,7 +443,7 @@ class ClassificationResult(JSONPyWizard):
             Dictionary mapping elements to score objects for that label
             (excludes synthetic candidates without source_block)
         """
-        label_candidates = self._candidates.get(label, [])
+        label_candidates = self.candidates.get(label, [])
         return {
             c.source_block: c.score_details
             for c in label_candidates
@@ -451,7 +459,7 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             True if at least one element has this label, False otherwise
         """
-        label_candidates = self._candidates.get(label, [])
+        label_candidates = self.candidates.get(label, [])
         return any(c.is_winner for c in label_candidates)
 
     def get_best_candidate(self, label: str) -> Candidate | None:
@@ -464,7 +472,7 @@ class ClassificationResult(JSONPyWizard):
             The candidate with the highest score that successfully constructed,
             or None if no valid candidates exist
         """
-        label_candidates = self._candidates.get(label, [])
+        label_candidates = self.candidates.get(label, [])
         valid = [c for c in label_candidates if c.constructed is not None]
         return max(valid, key=lambda c: c.score) if valid else None
 
@@ -480,7 +488,7 @@ class ClassificationResult(JSONPyWizard):
         Returns:
             List of candidates sorted by score (highest first)
         """
-        label_candidates = self._candidates.get(label, [])
+        label_candidates = self.candidates.get(label, [])
         if exclude_winner:
             winner_blocks = self.get_blocks_by_label(label)
             if winner_blocks:

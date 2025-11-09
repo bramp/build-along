@@ -49,13 +49,15 @@ def main() -> None:
 
         # Load the input fixture
         json_data = load_json(fixture_path)
-        extraction: ExtractionResult = ExtractionResult.from_json(json.dumps(json_data))  # type: ignore[assignment]
+        extraction: ExtractionResult = ExtractionResult.model_validate_json(
+            json.dumps(json_data)
+        )  # type: ignore[assignment]
 
         # Run FontSizeHints.from_pages
         hints = FontSizeHints.from_pages(extraction.pages)
 
-        # Serialize the hints to dict using built-in to_dict()
-        golden_data = hints.to_dict()
+        # Serialize the hints to dict using built-in model_dump()
+        golden_data = hints.model_dump()
 
         # Write golden file
         golden_path.write_text(json.dumps(golden_data, indent=2, sort_keys=True) + "\n")

@@ -6,7 +6,7 @@ from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 
 fixture = Path("data/75375/6509377_page_014_raw.json")
-page_data = PageData.from_json(fixture.read_text())
+page_data = PageData.model_validate_json(fixture.read_text())
 assert isinstance(page_data, PageData), "Expected single PageData, got list"
 page: PageData = page_data
 

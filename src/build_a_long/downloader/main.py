@@ -1,5 +1,4 @@
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -45,7 +44,8 @@ def _parse_args() -> argparse.Namespace:
     """Parse command-line arguments for the downloader script.
 
     Returns:
-        Parsed arguments with set_number, stdin flag, locale, out_dir, dry_run, and force options.
+        Parsed arguments with set_number, stdin flag, locale, out_dir,
+        dry_run, and force options.
     """
     parser = argparse.ArgumentParser(description="Download LEGO instruction manuals.")
 
@@ -107,7 +107,7 @@ def main() -> int:
                 try:
                     html = downloader.fetch_instructions_page(set_number)
                     meta = build_metadata(html, set_number, args.locale, base=LEGO_BASE)
-                    print(json.dumps(meta.to_dict(), indent=2, ensure_ascii=False))
+                    print(meta.model_dump_json(indent=2))
                 except Exception as e:
                     print(
                         f"Error fetching metadata for set {set_number}: {e}",

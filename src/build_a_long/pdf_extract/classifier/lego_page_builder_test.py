@@ -1,7 +1,13 @@
 """Tests for the lego_page_builder module."""
 
+# Block objects are hashable at runtime (Pydantic frozen=True provides __hash__),
+# but Pyright doesn't recognize Pydantic BaseModel with frozen=True as hashable.
+# This is a known Pyright limitation with Pydantic models.
+# pyright: reportUnhashable=false
+
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
+    RemovalReason,
 )
 from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.classifier.test_helpers import make_candidates
@@ -40,7 +46,7 @@ class TestPageNumberExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates({page_number_text: "page_number"}),
+            candidates=make_candidates({page_number_text: "page_number"}),
         )
 
         page = build_page(page_data, result)
@@ -82,7 +88,7 @@ class TestPageNumberExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates(
+            candidates=make_candidates(
                 {
                     page_number_1: "page_number",
                     page_number_2: "page_number",
@@ -112,7 +118,7 @@ class TestPageNumberExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates({page_number_text: "page_number"}),
+            candidates=make_candidates({page_number_text: "page_number"}),
         )
 
         page = build_page(page_data, result)
@@ -141,7 +147,7 @@ class TestStepExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates({step_number_text: "step_number"}),
+            candidates=make_candidates({step_number_text: "step_number"}),
         )
 
         page = build_page(page_data, result)
@@ -169,7 +175,7 @@ class TestStepExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates(
+            candidates=make_candidates(
                 {
                     step_1: "step_number",
                     step_2: "step_number",
@@ -198,7 +204,7 @@ class TestStepExtraction:
         step_text = page_data.blocks[0]
 
         result = ClassificationResult(
-            page_data=page_data, _candidates=make_candidates({step_text: "step_number"})
+            page_data=page_data, candidates=make_candidates({step_text: "step_number"})
         )
 
         page = build_page(page_data, result)
@@ -227,7 +233,7 @@ class TestPartsListExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates({parts_list_drawing: "parts_list"}),
+            candidates=make_candidates({parts_list_drawing: "parts_list"}),
         )
 
         page = build_page(page_data, result)
@@ -266,7 +272,7 @@ class TestPartsListExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates(
+            candidates=make_candidates(
                 {
                     parts_list_drawing: "parts_list",
                     part_count_1: "part_count",
@@ -329,7 +335,7 @@ class TestPartsListExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates(
+            candidates=make_candidates(
                 {
                     parts_list_drawing: "parts_list",
                     part_count_inside: "part_count",
@@ -374,7 +380,7 @@ class TestPartExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates(
+            candidates=make_candidates(
                 {
                     parts_list: "parts_list",
                     part_count: "part_count",
@@ -410,7 +416,7 @@ class TestPartExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates(
+            candidates=make_candidates(
                 {
                     parts_list: "parts_list",
                     part_count: "part_count",
@@ -446,7 +452,7 @@ class TestPartExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates(
+            candidates=make_candidates(
                 {
                     parts_list: "parts_list",
                     part_count: "part_count",
@@ -482,7 +488,7 @@ class TestPartExtraction:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates(
+            candidates=make_candidates(
                 {
                     parts_list: "parts_list",
                     part_count: "part_count",
@@ -520,10 +526,15 @@ class TestUnprocessedElements:
         # Use elements from page_data since PageData may reassign IDs
         removed_text, kept_text = page_data.blocks
 
+        # Create a proper RemovalReason for the removed block
+        removal_reason = RemovalReason(
+            reason_type="similar_bbox", target_block=kept_text
+        )
+
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates({kept_text: "some_label"}),
-            _removal_reasons={removed_text.id: None},  # type: ignore
+            candidates=make_candidates({kept_text: "some_label"}),
+            removal_reasons={removed_text.id: removal_reason},
         )
 
         page = build_page(page_data, result)
@@ -550,7 +561,7 @@ class TestUnprocessedElements:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates({labeled_text: "some_label"}),
+            candidates=make_candidates({labeled_text: "some_label"}),
         )
 
         page = build_page(page_data, result)
@@ -602,7 +613,7 @@ class TestIntegration:
 
         result = ClassificationResult(
             page_data=page_data,
-            _candidates=make_candidates(
+            candidates=make_candidates(
                 {
                     page_num: "page_number",
                     step_1_num: "step_number",

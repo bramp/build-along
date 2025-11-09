@@ -12,7 +12,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 
 
 class TestPageDataJsonSerialization:
-    """Tests for PageData.from_json() handling of polymorphic element types."""
+    """Tests for PageData.model_validate_json() handling of polymorphic element types."""
 
     def test_from_json_with_text_elements(self) -> None:
         """Verify Text elements are correctly deserialized from JSON."""
@@ -39,7 +39,7 @@ class TestPageDataJsonSerialization:
             }
         )
 
-        page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(json_str)
 
         assert page.page_number == 1
         assert page.bbox == BBox(0, 0, 100, 200)
@@ -73,7 +73,7 @@ class TestPageDataJsonSerialization:
             }
         )
 
-        page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(json_str)
 
         assert page.page_number == 2
         assert len(page.blocks) == 2
@@ -104,7 +104,7 @@ class TestPageDataJsonSerialization:
             }
         )
 
-        page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(json_str)
 
         assert page.page_number == 3
         assert len(page.blocks) == 2
@@ -168,7 +168,7 @@ class TestPageDataJsonSerialization:
             }
         )
 
-        page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(json_str)
 
         assert page.page_number == 10
         assert page.bbox == BBox(0.0, 0.0, 552.75, 496.06)
@@ -212,7 +212,7 @@ class TestPageDataJsonSerialization:
             }
         )
 
-        page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(json_str)
 
         assert page.page_number == 5
         assert page.bbox == BBox(0.0, 0.0, 100.0, 200.0)
@@ -245,7 +245,7 @@ class TestPageDataJsonSerialization:
         # Unknown tag should cause parsing error
         raised = False
         try:
-            _ = PageData.from_json(json_str)
+            _ = PageData.model_validate_json(json_str)
         except Exception:
             # TODO Check for the correct exception type and message
             raised = True
@@ -263,8 +263,8 @@ class TestPageDataJsonSerialization:
             ],
         )
 
-        json_str = original.to_json()  # type: ignore
-        restored: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
+        json_str = original.model_dump_json()  # type: ignore
+        restored: PageData = PageData.model_validate_json(json_str)
 
         assert restored.page_number == original.page_number
         assert restored.bbox == original.bbox
@@ -293,7 +293,7 @@ class TestPageDataJsonSerialization:
         )
 
         # Unknown top-level fields are ignored in current configuration
-        page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(json_str)
         assert page.page_number == 1
         assert len(page.blocks) == 0
 
@@ -320,6 +320,6 @@ class TestPageDataJsonSerialization:
         )
 
         # Unknown fields on elements are ignored in current configuration
-        page: PageData = PageData.from_json(json_str)  # type: ignore[assignment]
+        page: PageData = PageData.model_validate_json(json_str)
         assert len(page.blocks) == 1
         assert isinstance(page.blocks[0], Text)

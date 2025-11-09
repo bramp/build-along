@@ -106,7 +106,7 @@ def save_classified_json(
         output_dir: Directory where JSON should be saved
         pdf_path: Original PDF path (used for naming the JSON file)
     """
-    json_data = ExtractionResult(pages=pages).to_dict()
+    json_data = ExtractionResult(pages=pages).model_dump()
     output_json_path = output_dir / (pdf_path.stem + ".json")
     with open(output_json_path, "w") as f:
         json.dump(json_data, f, indent=4)
@@ -157,7 +157,7 @@ def save_raw_json(
     if per_page:
         # Save individual JSON files for each page
         for page_data in pages:
-            json_data = ExtractionResult(pages=[page_data]).to_dict()
+            json_data = ExtractionResult(pages=[page_data]).model_dump()
             page_num = page_data.page_number
             output_path = (
                 output_dir / f"{pdf_path.stem}_page_{page_num:03d}_raw{suffix}"
@@ -165,7 +165,7 @@ def save_raw_json(
             _save_json_file(json_data, output_path, f"page {page_num}")
     else:
         # Save all pages in a single JSON file
-        json_data = ExtractionResult(pages=pages).to_dict()
+        json_data = ExtractionResult(pages=pages).model_dump()
         output_path = output_dir / f"{pdf_path.stem}_raw{suffix}"
         _save_json_file(json_data, output_path, f"{len(pages)} pages")
 
