@@ -134,7 +134,8 @@ class TestClassifierGolden:
                 + "\n".join(f"  - {e}" for e in comparison_errors)
                 + "\n\nTo update golden files, run: "
                 "pants run src/build_a_long/pdf_extract/classifier/"
-                "tools:generate-golden-files"
+                "tools:generate-golden-files",
+                pytrace=False,
             )
 
         # Log success

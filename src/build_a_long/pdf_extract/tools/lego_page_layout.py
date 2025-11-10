@@ -152,10 +152,6 @@ def draw_page(page: Page, output_path: str = "lego_page_layout.png") -> None:
     for step in page.steps:
         draw_step(draw, step)
 
-    # Draw standalone parts lists
-    for parts_list in page.parts_lists:
-        draw_parts_list(draw, parts_list)
-
     # Save the image
     img.save(output_path)
     print(f"Diagram saved to {output_path}")
