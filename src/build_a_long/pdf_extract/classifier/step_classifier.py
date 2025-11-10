@@ -260,7 +260,6 @@ class StepClassifier(LabelClassifier):
         # Create a bbox for the diagram region
         return BBox(x0=x0, y0=y0, x1=x1, y1=y1)
 
-    # TODO This seems a useful union function for the bbox element.
     def _compute_step_bbox(
         self,
         step_num: StepNumber,
@@ -283,12 +282,7 @@ class StepClassifier(LabelClassifier):
         if parts_list:
             bboxes.append(parts_list.bbox)
 
-        x0 = min(b.x0 for b in bboxes)
-        y0 = min(b.y0 for b in bboxes)
-        x1 = max(b.x1 for b in bboxes)
-        y1 = max(b.y1 for b in bboxes)
-
-        return BBox(x0=x0, y0=y0, x1=x1, y1=y1)
+        return BBox.union_all(bboxes)
 
     def classify(self, page_data: PageData, result: ClassificationResult) -> None:
         """Greedily select the best Step candidates.
