@@ -4,7 +4,7 @@ Base class for label classifiers.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
@@ -12,9 +12,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_blocks import Text
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.classifier import Classifier
 
 # TODO Maybe classifers need a interface, where they have
 #      either scoring functions, or filter functions.
@@ -30,15 +27,9 @@ class LabelClassifier(ABC):
     Classifiers are frozen dataclasses to enforce statelessness - they cannot
     modify their attributes after initialization. All state must be stored in
     ClassificationResult.
-
-    The frozen=True ensures that:
-    - self.config and self.classifier cannot be modified after __init__
-    - No new attributes can be added to instances
-    - Subclasses inherit this immutability
     """
 
     config: ClassifierConfig
-    classifier: Classifier
 
     # Class-level metadata to declare pipeline dependencies.
     # Subclasses should override these at the class level

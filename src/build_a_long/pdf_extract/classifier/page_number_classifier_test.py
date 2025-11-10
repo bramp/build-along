@@ -18,7 +18,7 @@ class TestScorePageNumberText:
 
     def test_simple_numbers(self) -> None:
         """Test simple numeric page numbers."""
-        pn = PageNumberClassifier(ClassifierConfig(), classifier=None)  # type: ignore[arg-type]
+        pn = PageNumberClassifier(ClassifierConfig())  # type: ignore[arg-type]
         assert pn._score_page_number_text("1") == 1.0
         assert pn._score_page_number_text("5") == 1.0
         assert pn._score_page_number_text("42") == 1.0
@@ -26,20 +26,20 @@ class TestScorePageNumberText:
 
     def test_leading_zeros(self) -> None:
         """Test page numbers with leading zeros."""
-        pn = PageNumberClassifier(ClassifierConfig(), classifier=None)  # type: ignore[arg-type]
+        pn = PageNumberClassifier(ClassifierConfig())  # type: ignore[arg-type]
         assert pn._score_page_number_text("01") == 0.95
         assert pn._score_page_number_text("001") == 0.95
         assert pn._score_page_number_text("005") == 0.95
 
     def test_whitespace_handling(self) -> None:
         """Test that whitespace is properly handled."""
-        pn = PageNumberClassifier(ClassifierConfig(), classifier=None)  # type: ignore[arg-type]
+        pn = PageNumberClassifier(ClassifierConfig())  # type: ignore[arg-type]
         assert pn._score_page_number_text("  5  ") == 1.0
         assert pn._score_page_number_text("\t42\n") == 1.0
 
     def test_non_page_numbers(self) -> None:
         """Test that non-page-number text is rejected."""
-        pn = PageNumberClassifier(ClassifierConfig(), classifier=None)  # type: ignore[arg-type]
+        pn = PageNumberClassifier(ClassifierConfig())  # type: ignore[arg-type]
         assert pn._score_page_number_text("hello") == 0.0
         assert pn._score_page_number_text("Step 3") == 0.0
         assert pn._score_page_number_text("1234") == 0.0  # Too many digits

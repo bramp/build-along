@@ -72,8 +72,8 @@ class PartsClassifier(LabelClassifier):
     outputs = {"part"}
     requires = {"part_count"}
 
-    def __init__(self, config: ClassifierConfig, classifier):
-        super().__init__(config, classifier)
+    def __init__(self, config: ClassifierConfig):
+        super().__init__(config)
         self._candidate_edges: list[_PartPairScore] = []
 
     def evaluate(

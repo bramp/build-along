@@ -81,11 +81,7 @@ class _StepScore:
 
 @dataclass(frozen=True)
 class StepClassifier(LabelClassifier):
-    """Classifier for complete Step structures.
-
-    Frozen dataclass to enforce statelessness - no instance attributes can be
-    modified after initialization.
-    """
+    """Classifier for complete Step structures."""
 
     outputs = {"step"}
     requires = {"step_number", "parts_list"}

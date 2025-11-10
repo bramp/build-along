@@ -25,6 +25,7 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from build_a_long.pdf_extract.classifier.block_filter import remove_similar_bboxes
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -49,12 +50,12 @@ log = logging.getLogger(__name__)
 class _PartsListScore:
     """Internal score representation for parts list classification."""
 
-    has_parts: bool
+    parts: int
     """Whether this drawing contains any parts."""
 
     def combined_score(self) -> float:
         """Calculate final score (simply 1.0 if has parts, 0.0 otherwise)."""
-        return 1.0 if self.has_parts else 0.0
+        return 1.0 if self.parts > 0 else 0.0
 
 
 class PartsListClassifier(LabelClassifier):
@@ -107,10 +108,10 @@ class PartsListClassifier(LabelClassifier):
             contained = self._score_containing_parts(drawing, parts)
 
             # Create score
-            score = _PartsListScore(has_parts=len(contained) > 0)
+            score = _PartsListScore(parts=len(contained))
 
             # Only create candidates for drawings that have parts
-            if not score.has_parts:
+            if not score.parts > 0:
                 continue
 
             constructed = PartsList(
@@ -173,6 +174,4 @@ class PartsListClassifier(LabelClassifier):
 
             # Remove similar/overlapping drawings
             if candidate.source_block is not None:
-                self.classifier._remove_similar_bboxes(
-                    page_data, candidate.source_block, result
-                )
+                remove_similar_bboxes(candidate.source_block, result)
