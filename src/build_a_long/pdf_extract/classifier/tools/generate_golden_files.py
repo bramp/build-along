@@ -7,7 +7,6 @@ Usage:
     pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-files
 """
 
-import json
 import logging
 import sys
 from pathlib import Path
@@ -65,10 +64,11 @@ def main() -> None:
         page_element = build_page(result)
 
         # Serialize with by_alias=True to use __tag__ instead of tag
-        golden_data = page_element.model_dump(by_alias=True)
+        # Use Pydantic's JSON encoder for consistent serialization
+        golden_json = page_element.model_dump_json(by_alias=True, indent=2) + "\n"
 
         # Write golden file
-        golden_path.write_text(json.dumps(golden_data, indent=2) + "\n")
+        golden_path.write_text(golden_json)
         log.info(f"  Wrote {golden_path.absolute()}")
 
     log.info(f"✓ Generated {len(raw_fixtures)} golden files")

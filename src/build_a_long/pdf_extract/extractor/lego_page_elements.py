@@ -227,7 +227,6 @@ class Page(_LegoPageElement):
     Attributes:
         page_number: The page number element, if found
         steps: List of Step elements on the page
-        parts_lists: List of standalone PartsList elements (not within a Step)
         warnings: List of warnings generated during hierarchy building
         unprocessed_elements: Raw elements that were classified but couldn't
             be converted
@@ -243,7 +242,6 @@ class Page(_LegoPageElement):
 
     page_number: PageNumber | None = None
     steps: list[Step] = Field(default_factory=list)
-    parts_lists: list[PartsList] = Field(default_factory=list)
 
     # Metadata about the conversion process
     warnings: list[str] = Field(default_factory=list)
@@ -257,7 +255,7 @@ class Page(_LegoPageElement):
         page_num = self.page_number.value if self.page_number else "unknown"
         return (
             f"Page(number={page_num}, steps={len(self.steps)}, "
-            f"parts_lists={len(self.parts_lists)}, warnings={len(self.warnings)})"
+            f"warnings={len(self.warnings)})"
         )
 
 

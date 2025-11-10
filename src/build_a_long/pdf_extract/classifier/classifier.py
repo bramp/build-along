@@ -10,9 +10,10 @@ labels produced by earlier stages:
 2) PartCountClassifier  → outputs: "part_count"
 3) StepNumberClassifier → outputs: "step_number" (uses page_number size)
 4) PartsClassifier      → outputs: "part" (requires part_count, pairs with images)
-5) PartsListClassifier  → outputs: "parts_list" (requires step_number and part)
+5) PartsListClassifier  → outputs: "parts_list" (requires part)
 6) PartsImageClassifier → outputs: "part_image" (requires parts_list, part_count)
 7) StepClassifier       → outputs: "step" (requires step_number and parts_list)
+8) PageClassifier       → outputs: "page" (requires page_number and step)
 
 If the order is changed such that a classifier runs before its requirements
 are available, a ValueError will be raised at initialization time.
@@ -30,6 +31,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     RemovalReason,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
+from build_a_long.pdf_extract.classifier.page_classifier import PageClassifier
 from build_a_long.pdf_extract.classifier.page_number_classifier import (
     PageNumberClassifier,
 )
@@ -132,6 +134,7 @@ type Classifiers = (
     | PartsListClassifier
     | PartsImageClassifier
     | StepClassifier
+    | PageClassifier
 )
 
 
@@ -151,6 +154,7 @@ class Classifier:
             PartsListClassifier(config, self),
             PartsImageClassifier(config, self),
             StepClassifier(config, self),
+            PageClassifier(config, self),
         ]
 
         # TODO Create a directed graph, and run it in order.
