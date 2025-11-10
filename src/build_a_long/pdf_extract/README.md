@@ -142,6 +142,8 @@ Defines the high-level, domain-specific data model representing the logical stru
 - `PartCount`: The quantity of a part (e.g., "2x")
 - `Diagram`: An illustration showing how to assemble parts
 
+[LEGO Page Elements Layout Diagram](lego_page_layout.png): Visual diagram showing the hierarchical structure and spatial arrangement of LEGO page elements. See [lego_page_elements.py](src/build_a_long/pdf_extract/extractor/lego_page_elements.py) for detailed type definitions with positional context. To regenerate: `pants run src/build_a_long/pdf_extract/tools/lego_page_layout.py`
+
 ### Pipeline Flow
 
 1. **PDF Extraction**: The `extractor` submodule uses PyMuPDF to parse the PDF and extract raw page blocks (text blocks, images, drawings) along with their bounding boxes.
