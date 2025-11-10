@@ -245,6 +245,7 @@ class Page(_LegoPageElement):
 
     # Metadata about the conversion process
     warnings: list[str] = Field(default_factory=list)
+
     # Keep reference to raw elements that weren't converted (for debugging/analysis)
     unprocessed_elements: list = Field(
         default_factory=list

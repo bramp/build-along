@@ -409,12 +409,6 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
 
             print(f"      Diagram: {step.diagram.bbox}")
 
-    if page.parts_lists:
-        print(f"  ✓ Unassigned Parts Lists: {len(page.parts_lists)}")
-        for pl in page.parts_lists:
-            total_items = sum(p.count.count for p in pl.parts)
-            print(f"    - {len(pl.parts)} part types, {total_items} total items")
-
     if page.warnings:
         print(f"  ⚠ Warnings: {len(page.warnings)}")
         for warning in page.warnings:
