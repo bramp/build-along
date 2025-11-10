@@ -17,13 +17,12 @@ Heuristic
 
 Debugging
 ---------
-Enable with CLASSIFIER_DEBUG=parts or =all for structured logs.
+Enable with `LOG_LEVEL=DEBUG` for structured logs.
 """
 
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -73,10 +72,6 @@ class PartsClassifier(LabelClassifier):
 
     def __init__(self, config: ClassifierConfig, classifier):
         super().__init__(config, classifier)
-        self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
-            "parts",
-            "all",
-        )
         self._candidate_edges: list[_PartPairScore] = []
 
     def evaluate(
@@ -114,15 +109,6 @@ class PartsClassifier(LabelClassifier):
         self._candidate_edges = self._build_candidate_edges(
             part_counts, images, page_data.bbox.width if page_data.bbox else 100.0
         )
-
-        if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
-            log.debug(
-                "[parts] page=%s part_counts=%d images=%d candidate_pairs=%d",
-                page_data.page_number,
-                len(part_counts),
-                len(images),
-                len(self._candidate_edges),
-            )
 
     def _build_candidate_edges(
         self,
@@ -204,16 +190,4 @@ class PartsClassifier(LabelClassifier):
                     failure_reason=None,
                     is_winner=True,  # All matched pairs are winners
                 ),
-            )
-
-        if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
-            all_counts = [s.part_count for s in self._candidate_edges]
-            all_images = [s.image for s in self._candidate_edges]
-            unmatched_c = [pc for pc in all_counts if id(pc) not in matched_counts]
-            unmatched_i = [im for im in all_images if id(im) not in matched_images]
-            log.debug(
-                "[parts] matched=%d unmatched_counts=%d unmatched_images=%d",
-                len(matched_counts),
-                len(set(id(pc) for pc in unmatched_c)),
-                len(set(id(im) for im in unmatched_i)),
             )

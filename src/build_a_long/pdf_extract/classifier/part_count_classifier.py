@@ -7,8 +7,7 @@ Detect part-count text like "2x", "3X", or "5×".
 
 Debugging
 ---------
-Enable DEBUG logs with LOG_LEVEL=DEBUG. Heavier trace can be enabled when
-CLASSIFIER_DEBUG is set to "part_count" or "all".
+Enable DEBUG logs with LOG_LEVEL=DEBUG.
 """
 
 import logging
@@ -70,14 +69,6 @@ class PartCountClassifier(LabelClassifier):
     outputs = {"part_count"}
     requires = set()
 
-    def __init__(self, config: ClassifierConfig, classifier):
-        super().__init__(config, classifier)
-        # Can the following go into the parent, and use "outputs" as identifier?
-        self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
-            "part_count",
-            "all",
-        )
-
     def evaluate(
         self,
         page_data: PageData,
@@ -104,17 +95,6 @@ class PartCountClassifier(LabelClassifier):
             detail_score = _PartCountScore(
                 text_score=text_score, font_size_score=font_size_score
             )
-
-            if self._debug_enabled:
-                log.debug(
-                    "[part_count] match text=%r text_score=%.2f "
-                    "font_size_score=%.2f combined=%.2f bbox=%s",
-                    block.text,
-                    text_score,
-                    font_size_score,
-                    detail_score.combined_score(self.config),
-                    block.bbox,
-                )
 
             # Try to construct (parse part count value)
             value = extract_part_count_value(block.text)

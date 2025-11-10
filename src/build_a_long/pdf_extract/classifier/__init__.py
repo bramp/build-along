@@ -7,10 +7,6 @@ configuration based on environment variables:
         is not already configured by the application, configure a basic
         handler at this level.
 
-- CLASSIFIER_DEBUG: Topic-specific debug selector. Supported values:
-        "page_number", "part_count", "step_number", "parts_list", "part_image", or "all".
-        Each classifier module checks this to emit richer, structured debug logs.
-
 Classifier pipeline order
 -------------------------
 The classifier pipeline runs in a fixed order, enforced at initialization:

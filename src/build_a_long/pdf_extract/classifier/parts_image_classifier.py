@@ -18,19 +18,17 @@ Heuristic
 
 Debugging
 ---------
-Enable with CLASSIFIER_DEBUG=part_image or =all for structured logs.
+Enable with `LOG_LEVEL=DEBUG` for structured logs.
 """
 
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
-    ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -68,13 +66,6 @@ class PartsImageClassifier(LabelClassifier):
 
     outputs = {"part_image"}
     requires = {"parts_list", "part_count"}
-
-    def __init__(self, config: ClassifierConfig, classifier):
-        super().__init__(config, classifier)
-        self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
-            "part_image",
-            "all",
-        )
 
     def evaluate(
         self,
@@ -145,7 +136,7 @@ class PartsImageClassifier(LabelClassifier):
                     ),
                 )
 
-        if self._debug_enabled and log.isEnabledFor(logging.DEBUG):
+        if log.isEnabledFor(logging.DEBUG):
             unmatched_c = [pc for pc in part_counts if id(pc) not in matched_counts]
             unmatched_i = [im for im in images if id(im) not in matched_images]
             if unmatched_c:
