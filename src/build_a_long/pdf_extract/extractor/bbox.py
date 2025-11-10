@@ -166,3 +166,45 @@ class BBox(BaseModel):
         Useful for interfacing with PIL and other libraries that expect tuples.
         """
         return (self.x0, self.y0, self.x1, self.y1)
+
+    def union(self, other: BBox) -> BBox:
+        """Return the bounding box that encompasses both this bbox and another.
+
+        Args:
+            other: The other BBox to union with.
+
+        Returns:
+            A new BBox that contains both bounding boxes.
+        """
+        return BBox(
+            x0=min(self.x0, other.x0),
+            y0=min(self.y0, other.y0),
+            x1=max(self.x1, other.x1),
+            y1=max(self.y1, other.y1),
+        )
+
+    @classmethod
+    def union_all(cls, bboxes: list[BBox]) -> BBox:
+        """Return the bounding box that encompasses all provided bboxes.
+
+        Args:
+            bboxes: List of BBox objects to union. Must be non-empty.
+
+        Returns:
+            A new BBox that contains all bounding boxes.
+
+        Raises:
+            ValueError: If bboxes list is empty.
+        """
+        if not bboxes:
+            raise ValueError("Cannot compute union of empty list of bboxes")
+
+        if len(bboxes) == 1:
+            return bboxes[0]
+
+        return BBox(
+            x0=min(b.x0 for b in bboxes),
+            y0=min(b.y0 for b in bboxes),
+            x1=max(b.x1 for b in bboxes),
+            y1=max(b.y1 for b in bboxes),
+        )

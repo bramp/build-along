@@ -44,3 +44,55 @@ def test_adjacent():
     assert not bbox1.adjacent(bbox4)
     assert not bbox1.adjacent(bbox5)
     assert not bbox1.adjacent(bbox6)
+
+
+def test_union():
+    bbox1 = BBox(0, 0, 10, 10)
+    bbox2 = BBox(5, 5, 15, 15)
+    bbox3 = BBox(20, 20, 30, 30)
+
+    # Test overlapping boxes
+    union_12 = bbox1.union(bbox2)
+    assert union_12.x0 == 0
+    assert union_12.y0 == 0
+    assert union_12.x1 == 15
+    assert union_12.y1 == 15
+
+    # Test non-overlapping boxes
+    union_13 = bbox1.union(bbox3)
+    assert union_13.x0 == 0
+    assert union_13.y0 == 0
+    assert union_13.x1 == 30
+    assert union_13.y1 == 30
+
+    # Test union is commutative
+    assert bbox1.union(bbox2) == bbox2.union(bbox1)
+
+
+def test_union_all():
+    bbox1 = BBox(0, 0, 10, 10)
+    bbox2 = BBox(5, 5, 15, 15)
+    bbox3 = BBox(20, 20, 30, 30)
+
+    # Test with multiple boxes
+    union = BBox.union_all([bbox1, bbox2, bbox3])
+    assert union.x0 == 0
+    assert union.y0 == 0
+    assert union.x1 == 30
+    assert union.y1 == 30
+
+    # Test with single box
+    union_single = BBox.union_all([bbox1])
+    assert union_single == bbox1
+
+    # Test with two boxes
+    union_two = BBox.union_all([bbox1, bbox2])
+    assert union_two == bbox1.union(bbox2)
+
+
+def test_union_all_empty():
+    import pytest
+
+    # Test empty list raises ValueError
+    with pytest.raises(ValueError, match="Cannot compute union of empty list"):
+        BBox.union_all([])
