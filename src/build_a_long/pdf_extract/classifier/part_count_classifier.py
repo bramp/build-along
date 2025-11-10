@@ -148,8 +148,13 @@ class PartCountClassifier(LabelClassifier):
             # This is a winner!
             assert isinstance(candidate.constructed, PartCount)
             result.mark_winner(candidate, candidate.constructed)
-            # Note: Do NOT remove child bboxes - paired images might be nearby
+
             self.classifier._remove_similar_bboxes(
+                page_data, candidate.source_block, result
+            )
+
+            # There should be no blocks inside this part count bbox
+            self.classifier._remove_child_bboxes(
                 page_data, candidate.source_block, result
             )
 
