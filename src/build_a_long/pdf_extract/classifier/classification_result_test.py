@@ -506,12 +506,12 @@ class TestClassificationResult:
         assert result.get_constructed_element(block) is constructed
 
     def test_internal_dict_is_json_serializable(self) -> None:
-        """Test that the internal _constructed_elements dict uses JSON-serializable keys.
+        """Test that the internal dict uses JSON-serializable keys.
 
-        Note: Full ClassificationResult.model_dump_json() doesn't work due to the page_data
-        field having a forward reference (PageData is in TYPE_CHECKING), but the
-        _constructed_elements dict itself is now JSON-serializable since it uses
-        int keys instead of block objects.
+        Note: Full ClassificationResult.model_dump_json() does not work due
+        to the page_data field having a forward reference (PageData is in
+        TYPE_CHECKING), but the _constructed_elements dict itself is now
+        JSON-serializable since it uses int keys instead of block objects.
         """
         # Create a result with constructed blocks
         page_data = PageData(

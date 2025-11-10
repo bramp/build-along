@@ -200,10 +200,12 @@ def test_process_set_uses_existing_metadata_and_skips_fetch(
     assert exit_code == 0
 
     # Should not have attempted to fetch instructions page again
-    # We expect only download calls, the initial client.get used in _make_mock_httpx_client
-    # should not be invoked by process_set path that uses existing metadata
+    # We expect only download calls, the initial client.get used in
+    # _make_mock_httpx_client should not be invoked by process_set path that uses
+    # existing metadata
     # So ensure we didn't build a new URL call
-    # (we can't assert exact call count reliably due to earlier tests, so check printed output)
+    # (we can't assert exact call count reliably due to earlier tests, so check
+    # printed output)
     out = capsys.readouterr().out
     assert "Processing set: 99999 [cached]" in out
     assert "Found 2 PDF(s) for set 99999" in out

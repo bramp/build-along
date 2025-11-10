@@ -67,7 +67,8 @@ def parse_arguments() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         description=(
-            "Extract bounding boxes from PDF files and export images/JSON for debugging."
+            "Extract bounding boxes from PDF files and export images/JSON for "
+            "debugging."
         )
     )
 
@@ -80,16 +81,19 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        help="Directory to save images and JSON files. Defaults to same directory as PDF.",
+        help="Directory to save images and JSON files. Defaults to same directory as "
+        "PDF.",
     )
     parser.add_argument(
         "--pages",
         type=str,
         help=(
             "Pages to process (1-indexed). Accepts single pages and ranges, "
-            "optionally comma-separated. Examples: '5', '5-10', '10-' (from 10 to end), "
-            "'-5' (from 1 to 5), or '10-20,180' for multiple segments. Defaults to all pages."
+            "optionally comma-separated. Examples: '5', '5-10', '10-' (from 10 to "
+            "end), '-5' (from 1 to 5), or '10-20,180' for multiple segments. "
+            "(default: all)"
         ),
+        default="all",
     )
     parser.add_argument(
         "--include-types",
@@ -97,7 +101,8 @@ def parse_arguments() -> argparse.Namespace:
         help=(
             "Comma-separated list of block types to decode from PDF. "
             "Valid types: text, image, drawing. "
-            "Examples: 'text', 'text,image', or 'text,image,drawing' (default: all types)."
+            "Examples: 'text', 'text,image', or 'text,image,drawing' "
+            "(default: text,image,drawing)."
         ),
         default="text,image,drawing",
     )

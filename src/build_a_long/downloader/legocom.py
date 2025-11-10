@@ -7,6 +7,7 @@ including URL construction, PDF extraction, and metadata parsing.
 import json
 import logging
 import re
+from contextlib import suppress
 from typing import Any
 
 from bs4 import BeautifulSoup
@@ -64,7 +65,8 @@ def parse_set_metadata(
         locale: Optional locale to include in metadata
 
     Returns:
-        InstructionMetadata object with extracted fields, or minimal InstructionMetadata if parsing fails
+        InstructionMetadata object with extracted fields, or minimal InstructionMetadata
+        if parsing fails
     """
     next_data = _extract_next_data(html)
     if not next_data:
@@ -94,18 +96,14 @@ def parse_set_metadata(
     # Extract piece count
     pieces = None
     if bi_data.get("setPieceCount"):
-        try:
+        with suppress(ValueError, TypeError):
             pieces = int(bi_data["setPieceCount"])
-        except (ValueError, TypeError):
-            pass
 
     # Extract year
     year = None
     if bi_data.get("year"):
-        try:
+        with suppress(ValueError, TypeError):
             year = int(bi_data["year"])
-        except (ValueError, TypeError):
-            pass
 
     # Extract set image URL
     set_image_url = None

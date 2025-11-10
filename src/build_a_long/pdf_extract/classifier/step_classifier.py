@@ -27,7 +27,6 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
-    ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,

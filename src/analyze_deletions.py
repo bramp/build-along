@@ -64,21 +64,24 @@ for del_elem in deleted_labeled:
 
     if exact:
         print(
-            f'  ✓ ID {del_elem.id} ({del_label} "{del_text}") has {len(exact)} EXACT duplicates: IDs {[e.id for e in exact]}'
+            f'  ✓ ID {del_elem.id} ({del_label} "{del_text}") has {len(exact)} '
+            f"EXACT duplicates: IDs {[e.id for e in exact]}"
         )
         for e in exact:
             e_text = getattr(e, "text", "N/A")
             print(f'      → ID {e.id}: "{e_text}"')
     elif near:
         print(
-            f'  ~ ID {del_elem.id} ({del_label} "{del_text}") has {len(near)} SIMILAR blocks (IOU > 0.7):'
+            f'  ~ ID {del_elem.id} ({del_label} "{del_text}") has {len(near)} '
+            "SIMILAR blocks (IOU > 0.7):"
         )
         for e, iou in near:
             e_text = getattr(e, "text", "N/A")
             print(f'      → ID {e.id}: "{e_text}" at {e.bbox} (IOU={iou:.2f})')
     else:
         print(
-            f'  ✗ ID {del_elem.id} ({del_label} "{del_text}") has NO duplicate - THIS IS THE BUG!'
+            f'  ✗ ID {del_elem.id} ({del_label} "{del_text}") has NO duplicate - '
+            "THIS IS THE BUG!"
         )
         # Let's see what's nearby
         print(f"      Looking for other {del_label} blocks:")

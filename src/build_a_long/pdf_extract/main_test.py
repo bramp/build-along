@@ -107,7 +107,8 @@ class TestMain:
         mock_extract_bounding_boxes,
         mock_pymupdf_open,
     ):
-        """--pages supports comma-separated segments and calls extractor once with ranges list."""
+        """--pages supports comma-separated segments and calls extractor once with
+        ranges list."""
         mock_exists.return_value = True
 
         # Prepare combined return: pages 10-12 and page 15
@@ -124,7 +125,8 @@ class TestMain:
         # Mock the PDF document
         mock_page = MagicMock()
         mock_doc = MagicMock()
-        # Set a realistic length so PageRanges.to_page_numbers(len(doc)) expands correctly
+        # Set a realistic length so PageRanges.to_page_numbers(len(doc)) expands
+        # correctly
         mock_doc.__len__.return_value = 200
         mock_doc.__getitem__.return_value = mock_page
         mock_doc.__enter__.return_value = mock_doc

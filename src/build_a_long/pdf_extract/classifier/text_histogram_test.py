@@ -80,9 +80,12 @@ class TestTextHistogram:
         # Build the histogram
         histogram = TextHistogram.from_pages(pages)
 
-        # Verify font size counts (only includes "other integers" - not part counts or page numbers)
-        # In this test: page numbers (str(i)) match page ±1, so they're in page_number_font_sizes
-        # Step numbers (i*2) are integers but NOT within ±1 of page number, so they're in font_size_counts
+        # Verify font size counts (only includes "other integers" - not part
+        # counts or page numbers)
+        # In this test: page numbers (str(i)) match page ±1, so they're in
+        # page_number_font_sizes
+        # Step numbers (i*2) are integers but NOT within ±1 of page number,
+        # so they're in font_size_counts
         assert len(histogram.remaining_font_sizes) == 1
         assert (
             histogram.remaining_font_sizes[24.0] == 2

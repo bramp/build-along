@@ -11,7 +11,6 @@ Enable DEBUG logs with LOG_LEVEL=DEBUG.
 """
 
 import logging
-import os
 from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.classification_result import (

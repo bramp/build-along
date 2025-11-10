@@ -387,7 +387,8 @@ class TestExtractorMethods:
         assert result[1].id == 1
 
     def test_extract_drawing_blocks(self):
-        """Test Extractor._extract_drawing_blocks extracts drawings from page.get_drawings()."""
+        """Test Extractor._extract_drawing_blocks extracts drawings from
+        page.get_drawings()."""
         extractor = Extractor()
         # Create mock rectangle objects
         rect1 = MagicMock()
@@ -433,7 +434,8 @@ class TestExtractorMethods:
         assert result is True
 
     def test_warn_unknown_block_types_invalid(self):
-        """Test Extractor._warn_unknown_block_types returns False and logs warning for unknown types."""
+        """Test Extractor._warn_unknown_block_types returns False and logs warning for
+        unknown types."""
         extractor = Extractor()
         blocks = [
             {"type": 0, "number": 1},

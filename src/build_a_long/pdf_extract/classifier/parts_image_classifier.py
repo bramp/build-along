@@ -121,7 +121,8 @@ class PartsImageClassifier(LabelClassifier):
             matched_images.add(id(img))
             # Label the image as part_image (only once per image)
             if result.get_label(img) != "part_image":
-                # Create a candidate for tracking with the score containing the pair relationship
+                # Create a candidate for tracking with the score
+                # containing the pair relationship
                 result.add_candidate(
                     "part_image",
                     Candidate(

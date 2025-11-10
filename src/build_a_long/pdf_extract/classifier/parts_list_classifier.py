@@ -23,7 +23,6 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
-    ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -207,8 +206,8 @@ class PartsListClassifier(LabelClassifier):
             steps: List of step numbers on the page
 
         Returns:
-            Tuple of (closest_step, distance_to_step) if drawing is above at least one step,
-            None if drawing is not above any step.
+            Tuple of (closest_step, distance_to_step) if drawing is above
+            at least one step, None if drawing is not above any step.
         """
         # Find all steps that this drawing is above
         relevant_steps = []
@@ -255,7 +254,8 @@ class PartsListClassifier(LabelClassifier):
             result: Classification result containing part_image_pairs
 
         Returns:
-            A PartsList object containing all Part entries, or None if construction fails
+            A PartsList object containing all Part entries, or None if
+            construction fails
         """
         parts: list[Part] = []
 

@@ -167,7 +167,8 @@ class TestClassifyPageNumber:
         assert result.get_label(txt6) is None
 
     def test_remove_near_duplicate_bboxes(self) -> None:
-        """After choosing page number, remove nearly identical shadow/duplicate elements."""
+        """After choosing page number, remove nearly identical
+        shadow/duplicate elements."""
         page_bbox = BBox(0, 0, 100, 200)
         # Chosen page number
         pn = Text(id=0, bbox=BBox(10, 190, 14, 196), text="3")
