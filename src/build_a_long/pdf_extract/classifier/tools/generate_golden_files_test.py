@@ -7,17 +7,15 @@ import json
 from pathlib import Path
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
+from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.classifier.tools.generate_golden_files import main
 from build_a_long.pdf_extract.extractor import PageData
 
 
-def test_classification_result_serialization() -> None:
-    """Test that ClassificationResult can be serialized to JSON.
+def test_page_serialization() -> None:
+    """Test that Page can be serialized to JSON.
 
     This is a regression test for the generate_golden_files script.
-    The script previously failed because PageData and LegoPageElement
-    were imported only for TYPE_CHECKING, making them unavailable at
-    runtime for serialization.
     """
     # Load a simple fixture
     fixtures_dir = Path(__file__).parent.parent / "fixtures"
@@ -33,8 +31,11 @@ def test_classification_result_serialization() -> None:
     # Run classification
     result = classify_elements(page)
 
-    # This should not raise a NameError
-    golden_data = result.model_dump()
+    # Build the Page
+    page_element = build_page(result)
+
+    # This should not raise an error
+    golden_data = page_element.model_dump(by_alias=True)
 
     # Verify it's valid JSON
     json_str = json.dumps(golden_data)
@@ -43,7 +44,8 @@ def test_classification_result_serialization() -> None:
     # Verify we can parse it back
     parsed = json.loads(json_str)
     assert isinstance(parsed, dict)
-    assert "page_data" in parsed
+    assert "__tag__" in parsed
+    assert parsed["__tag__"] == "Page"
 
 
 def test_generate_golden_files_main() -> None:
@@ -75,4 +77,5 @@ def test_generate_golden_files_main() -> None:
         # Verify the golden file is valid JSON
         golden_data = json.loads(expected_path.read_text())
         assert isinstance(golden_data, dict)
-        assert "page_data" in golden_data
+        assert "__tag__" in golden_data
+        assert golden_data["__tag__"] == "Page"

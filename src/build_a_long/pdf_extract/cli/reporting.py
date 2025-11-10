@@ -436,5 +436,5 @@ def build_and_print_page_hierarchy(
     print("Building LEGO page hierarchy...")
 
     for page_data, result in zip(pages, results, strict=True):
-        page = build_page(page_data, result)
+        page = build_page(result)
         print_page_hierarchy(page_data, page)

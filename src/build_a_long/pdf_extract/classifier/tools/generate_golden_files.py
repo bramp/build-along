@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
+from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 
 logging.basicConfig(level=logging.INFO)
@@ -60,8 +61,11 @@ def main() -> None:
         # Run classification
         result = classify_elements(page)
 
+        # Build the Page from classification results
+        page_element = build_page(result)
+
         # Serialize with by_alias=True to use __tag__ instead of tag
-        golden_data = result.model_dump(by_alias=True)
+        golden_data = page_element.model_dump(by_alias=True)
 
         # Write golden file
         golden_path.write_text(json.dumps(golden_data, indent=2) + "\n")
