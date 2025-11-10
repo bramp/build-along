@@ -211,6 +211,11 @@ class Step(_LegoPageElement):
             f"Step(number={self.step_number.value}, parts={len(self.parts_list.parts)})"
         )
 
+    @property
+    def value(self) -> int:
+        """Return the step number value for convenience."""
+        return self.step_number.value
+
 
 class Page(_LegoPageElement):
     """A complete page of LEGO instructions.
