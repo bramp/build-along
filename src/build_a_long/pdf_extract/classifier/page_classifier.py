@@ -73,6 +73,9 @@ class PageClassifier(LabelClassifier):
             ):
                 steps.append(candidate.constructed)
 
+        # Sort steps by their step_number value
+        steps.sort(key=lambda step: step.step_number.value)
+
         log.debug(
             "[page] page=%s page_number=%s steps=%d",
             page_data.page_number,
