@@ -177,3 +177,65 @@ class TestStepClassification:
         assert isinstance(step2, Step)
         assert step1.step_number.value == 1
         assert step2.step_number.value == 2
+
+    def test_duplicate_step_numbers_only_match_one_step(self) -> None:
+        """When there are duplicate step numbers (same value), only one Step
+        should be created. The StepClassifier should prefer the best-scoring
+        StepNumber and skip subsequent ones with the same value.
+
+        This test verifies that the uniqueness constraint is enforced at the
+        Step level, not the PartsList level.
+        """
+        page_bbox = BBox(0, 0, 600, 400)
+
+        # Page number
+        page_number = Text(id=0, bbox=BBox(10, 380, 20, 390), text="1")
+
+        # Two step numbers with the SAME value (both are "1")
+        step1 = Text(id=1, bbox=BBox(50, 150, 70, 180), text="1")
+        step2 = Text(id=2, bbox=BBox(50, 300, 70, 330), text="1")  # Duplicate value
+
+        # Two drawings, each above one of the step numbers
+        d1 = Drawing(id=3, bbox=BBox(30, 80, 170, 140))  # Above step1
+        d2 = Drawing(id=4, bbox=BBox(30, 230, 170, 290))  # Above step2
+
+        # Part counts inside d1
+        pc1 = Text(id=5, bbox=BBox(40, 100, 55, 110), text="2x")
+        img1 = Image(id=6, bbox=BBox(40, 85, 55, 95))
+
+        # Part counts inside d2
+        pc2 = Text(id=7, bbox=BBox(40, 250, 55, 260), text="3x")
+        img2 = Image(id=8, bbox=BBox(40, 235, 55, 245))
+
+        page = PageData(
+            page_number=1,
+            blocks=[page_number, step1, step2, d1, d2, pc1, img1, pc2, img2],
+            bbox=page_bbox,
+        )
+
+        result = classify_elements(page)
+
+        # Both step numbers should be labeled
+        assert result.get_label(step1) == "step_number"
+        assert result.get_label(step2) == "step_number"
+
+        # Both parts lists should be marked as winners (no uniqueness at PartsList level)
+        parts_list_candidates = result.get_candidates("parts_list")
+        winning_parts_lists = [c for c in parts_list_candidates if c.is_winner]
+        assert len(winning_parts_lists) == 2, (
+            f"Expected 2 parts list winners, got {len(winning_parts_lists)}"
+        )
+
+        # But only ONE step should be created (uniqueness enforced at Step level)
+        step_candidates = result.get_candidates("step")
+        winning_steps = [c for c in step_candidates if c.is_winner]
+
+        assert len(winning_steps) == 1, (
+            f"Expected exactly 1 step winner, got {len(winning_steps)}. "
+            "Each step number value should only create one Step."
+        )
+
+        # Verify the winning step has value 1
+        winning_step = winning_steps[0].constructed
+        assert isinstance(winning_step, Step)
+        assert winning_step.step_number.value == 1
