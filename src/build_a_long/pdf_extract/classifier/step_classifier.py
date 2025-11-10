@@ -18,14 +18,9 @@ Set environment variables to aid investigation without code changes:
 
 - LOG_LEVEL=DEBUG
     Enables DEBUG-level logging (if not already configured by caller).
-
-- CLASSIFIER_DEBUG=step (or "all")
-    Enables more verbose, structured logs in this classifier, including
-    candidate enumeration and rejection reasons.
 """
 
 import logging
-import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -82,13 +77,6 @@ class StepClassifier(LabelClassifier):
     outputs = {"step"}
     requires = {"step_number", "parts_list"}
 
-    def __init__(self, config: ClassifierConfig, classifier):
-        super().__init__(config, classifier)
-        self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
-            "step",
-            "all",
-        )
-
     def evaluate(self, page_data: PageData, result: ClassificationResult) -> None:
         """Evaluate elements and create candidates for complete Step structures.
 
@@ -127,15 +115,14 @@ class StepClassifier(LabelClassifier):
             e for e in page_data.blocks if isinstance(e, Drawing)
         ]
 
-        if self._debug_enabled:
-            log.debug(
-                "[step] page=%s blocks=%d steps=%d parts_lists=%d drawings=%d",
-                page_data.page_number,
-                len(page_data.blocks),
-                len(steps),
-                len(parts_lists),
-                len(drawings),
-            )
+        log.debug(
+            "[step] page=%s blocks=%d steps=%d parts_lists=%d drawings=%d",
+            page_data.page_number,
+            len(page_data.blocks),
+            len(steps),
+            len(parts_lists),
+            len(drawings),
+        )
 
         # Build a Step for each step_number
         for step_num in steps:

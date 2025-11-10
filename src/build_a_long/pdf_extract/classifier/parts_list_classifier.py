@@ -14,14 +14,9 @@ Set environment variables to aid investigation without code changes:
 
 - LOG_LEVEL=DEBUG
     Enables DEBUG-level logging (if not already configured by caller).
-
-- CLASSIFIER_DEBUG=parts_list (or "all")
-    Enables more verbose, structured logs in this classifier, including
-    candidate enumeration and rejection reasons.
 """
 
 import logging
-import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -86,13 +81,6 @@ class PartsListClassifier(LabelClassifier):
     outputs = {"parts_list"}
     requires = {"step_number", "part"}
 
-    def __init__(self, config: ClassifierConfig, classifier):
-        super().__init__(config, classifier)
-        self._debug_enabled = os.getenv("CLASSIFIER_DEBUG", "").lower() in (
-            "parts_list",
-            "all",
-        )
-
     def evaluate(
         self,
         page_data: PageData,
@@ -139,15 +127,14 @@ class PartsListClassifier(LabelClassifier):
         if not drawings:
             return
 
-        if self._debug_enabled:
-            log.debug(
-                "[parts_list] page=%s blocks=%d steps=%d drawings=%d parts=%d",
-                page_data.page_number,
-                len(page_data.blocks),
-                len(steps),
-                len(drawings),
-                len(parts),
-            )
+        log.debug(
+            "[parts_list] page=%s blocks=%d steps=%d drawings=%d parts=%d",
+            page_data.page_number,
+            len(page_data.blocks),
+            len(steps),
+            len(drawings),
+            len(parts),
+        )
 
         # Score each drawing relative to all steps
         # For each drawing, find the closest step to determine its score
@@ -305,20 +292,18 @@ class PartsListClassifier(LabelClassifier):
         """
         # Extract count value from part_count block
         if not isinstance(part_count_elem, Text):
-            if self._debug_enabled:
-                log.debug(
-                    "[parts_list] part_count block is not Text: %s",
-                    type(part_count_elem).__name__,
-                )
+            log.debug(
+                "[parts_list] part_count block is not Text: %s",
+                type(part_count_elem).__name__,
+            )
             return None
 
         count_value = extract_part_count_value(part_count_elem.text)
         if count_value is None:
-            if self._debug_enabled:
-                log.debug(
-                    "[parts_list] Could not parse part count from text: '%s'",
-                    part_count_elem.text,
-                )
+            log.debug(
+                "[parts_list] Could not parse part count from text: '%s'",
+                part_count_elem.text,
+            )
             return None
 
         # Create PartCount object
