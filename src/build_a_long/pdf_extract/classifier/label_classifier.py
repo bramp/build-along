@@ -3,7 +3,8 @@ Base class for label classifiers.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, ClassVar
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
@@ -22,17 +23,27 @@ if TYPE_CHECKING:
 #      Then we can abstract out common code/functions, to keep the code DRY.
 
 
+@dataclass(frozen=True)
 class LabelClassifier(ABC):
-    """Abstract base class for a single label classifier."""
+    """Abstract base class for a single label classifier.
 
-    # Class-level metadata to declare pipeline dependencies. Subclasses should
-    # override these to advertise what labels they produce and require.
-    outputs: set[str] = set()
-    requires: set[str] = set()
+    Classifiers are frozen dataclasses to enforce statelessness - they cannot
+    modify their attributes after initialization. All state must be stored in
+    ClassificationResult.
 
-    def __init__(self, config: ClassifierConfig, classifier: Classifier):
-        self.config = config
-        self.classifier = classifier
+    The frozen=True ensures that:
+    - self.config and self.classifier cannot be modified after __init__
+    - No new attributes can be added to instances
+    - Subclasses inherit this immutability
+    """
+
+    config: ClassifierConfig
+    classifier: Classifier
+
+    # Class-level metadata to declare pipeline dependencies.
+    # Subclasses should override these at the class level
+    outputs: ClassVar[set[str]] = set()
+    requires: ClassVar[set[str]] = set()
 
     def _score_font_size(self, element: Text, expected_size: float | None) -> float:
         """Score based on how well font size matches an expected size.

@@ -133,5 +133,28 @@ def draw_and_save_bboxes(
             text_position = (scaled_bbox[2] - text_width, scaled_bbox[3] + 2)
             draw.text(text_position, label, fill=color)
 
+    # Draw all winning candidates that are synthetic (no source_block)
+    synthetic_winner_color = "magenta"
+    for _, candidates in result.get_all_candidates().items():
+        for candidate in candidates:
+            if candidate.is_winner and candidate.source_block is None:
+                bbox = candidate.bbox
+
+                # Scale the bounding box
+                scaled_bbox = (
+                    bbox.x0 * scale_x,
+                    bbox.y0 * scale_y,
+                    bbox.x1 * scale_x,
+                    bbox.y1 * scale_y,
+                )
+
+                # Draw outline for synthetic winners
+                draw.rectangle(scaled_bbox, outline=synthetic_winner_color, width=2)
+
+                # Draw the label and score
+                label = f"SYNTHETIC WINNER: {candidate.label} (Score: {candidate.score:.2f})"
+                text_position = (scaled_bbox[0], scaled_bbox[1] - 12)  # Above top-left
+                draw.text(text_position, label, fill=synthetic_winner_color)
+
     img.save(output_path)
     logger.info("Saved image with bboxes to %s", output_path)
