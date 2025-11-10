@@ -159,3 +159,10 @@ class BBox(BaseModel):
     def center(self) -> tuple[float, float]:
         """Return the (x, y) center point of the bbox."""
         return ((self.x0 + self.x1) / 2.0, (self.y0 + self.y1) / 2.0)
+
+    def to_tuple(self) -> tuple[float, float, float, float]:
+        """Convert BBox to tuple (x0, y0, x1, y1).
+
+        Useful for interfacing with PIL and other libraries that expect tuples.
+        """
+        return (self.x0, self.y0, self.x1, self.y1)
