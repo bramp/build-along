@@ -33,8 +33,8 @@ class LabelClassifier(ABC):
 
     # Class-level metadata to declare pipeline dependencies.
     # Subclasses should override these at the class level
-    outputs: ClassVar[set[str]] = set()
-    requires: ClassVar[set[str]] = set()
+    outputs: ClassVar[frozenset[str]] = frozenset()
+    requires: ClassVar[frozenset[str]] = frozenset()
 
     def _score_font_size(self, element: Text, expected_size: float | None) -> float:
         """Score based on how well font size matches an expected size.

@@ -55,11 +55,12 @@ class _StepNumberScore:
         return score / total_weight if total_weight > 0 else 0.0
 
 
+@dataclass(frozen=True)
 class StepNumberClassifier(LabelClassifier):
     """Classifier for step numbers."""
 
-    outputs = {"step_number"}
-    requires = set()
+    outputs = frozenset({"step_number"})
+    requires = frozenset()
 
     def evaluate(
         self,

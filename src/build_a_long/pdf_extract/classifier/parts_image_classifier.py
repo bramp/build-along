@@ -61,11 +61,12 @@ class _PartImageScore:
         return self.distance
 
 
+@dataclass(frozen=True)
 class PartsImageClassifier(LabelClassifier):
     """Classifier for part images paired with part count texts."""
 
-    outputs = {"part_image"}
-    requires = {"parts_list", "part_count"}
+    outputs = frozenset({"part_image"})
+    requires = frozenset({"parts_list", "part_count"})
 
     def evaluate(
         self,
@@ -95,10 +96,15 @@ class PartsImageClassifier(LabelClassifier):
         if not images:
             return
 
-        # Store candidate pairings internally
-        self._candidate_edges = self._build_candidate_edges(
+        # Build candidate pairings and match them directly
+        candidate_edges = self._build_candidate_edges(
             part_counts, images, page_data.bbox.width if page_data.bbox else 100.0
         )
+        self._match_and_label_parts(candidate_edges, part_counts, images, result)
+
+    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
+        """No-op: All work done in evaluate()."""
+        pass
 
     def _match_and_label_parts(
         self,
@@ -184,28 +190,3 @@ class PartsImageClassifier(LabelClassifier):
             for e in page_data.blocks
             if isinstance(e, Image) and inside_any_parts_list(e)
         ]
-
-    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
-        labeled_blocks = result.get_labeled_blocks()
-        part_counts: list[Text] = [
-            e
-            for e, label in labeled_blocks.items()
-            if label == "part_count" and isinstance(e, Text)
-        ]
-        parts_lists: list[Drawing] = [
-            e
-            for e, label in labeled_blocks.items()
-            if label == "parts_list" and isinstance(e, Drawing)
-        ]
-        if not part_counts or not parts_lists:
-            return
-
-        images = self._get_images_in_parts_lists(page_data, parts_lists)
-        if not images:
-            return
-
-        # Use candidate edges computed in evaluate()
-        if not self._candidate_edges:
-            return
-
-        self._match_and_label_parts(self._candidate_edges, part_counts, images, result)

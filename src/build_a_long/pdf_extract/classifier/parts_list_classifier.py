@@ -58,11 +58,12 @@ class _PartsListScore:
         return 1.0 if self.parts > 0 else 0.0
 
 
+@dataclass(frozen=True)
 class PartsListClassifier(LabelClassifier):
     """Classifier for parts lists."""
 
-    outputs = {"parts_list"}
-    requires = {"part"}
+    outputs = frozenset({"parts_list"})
+    requires = frozenset({"part"})
 
     def evaluate(
         self,
