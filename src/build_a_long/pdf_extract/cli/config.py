@@ -69,7 +69,8 @@ def parse_arguments() -> argparse.Namespace:
         description=(
             "Extract bounding boxes from PDF files and export images/JSON for "
             "debugging."
-        )
+        ),
+        allow_abbrev=False,
     )
 
     # Basic arguments
@@ -110,10 +111,10 @@ def parse_arguments() -> argparse.Namespace:
     # Output options group
     output_group = parser.add_argument_group("output options")
     output_group.add_argument(
-        "--no-summary",
-        dest="summary",
-        action="store_false",
-        help="Do not print a classification summary to stdout.",
+        "--summary",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Print a classification summary to stdout.",
     )
     output_group.add_argument(
         "--summary-detailed",
@@ -124,14 +125,15 @@ def parse_arguments() -> argparse.Namespace:
         ),
     )
     output_group.add_argument(
-        "--no-draw",
-        dest="draw",
-        action="store_false",
-        help="Do not draw annotated images.",
+        "--draw",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Draw annotated images.",
     )
     output_group.add_argument(
         "--draw-deleted",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
+        default=False,
         help="Draw bounding boxes for elements marked as deleted.",
     )
 
@@ -170,11 +172,4 @@ def parse_arguments() -> argparse.Namespace:
         help="Set the logging level (default: INFO).",
     )
 
-    parser.set_defaults(
-        summary=True,
-        summary_detailed=False,
-        draw_deleted=False,
-        draw=True,
-        compress_json=False,
-    )
     return parser.parse_args()
