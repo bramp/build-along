@@ -49,7 +49,7 @@ class TestPageNumberExtraction:
             candidates=make_candidates({page_number_text: "page_number"}),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert isinstance(page, Page)
         assert page.page_number is not None
@@ -70,7 +70,7 @@ class TestPageNumberExtraction:
 
         result = ClassificationResult(page_data=page_data)
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert page.page_number is None
 
@@ -96,7 +96,7 @@ class TestPageNumberExtraction:
             ),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert page.page_number is not None
         assert len(page.warnings) > 0
@@ -121,7 +121,7 @@ class TestPageNumberExtraction:
             candidates=make_candidates({page_number_text: "page_number"}),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert page.page_number is None
         assert len(page.warnings) > 0
@@ -150,7 +150,7 @@ class TestStepExtraction:
             candidates=make_candidates({step_number_text: "step_number"}),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert len(page.steps) == 1
         step = page.steps[0]
@@ -183,7 +183,7 @@ class TestStepExtraction:
             ),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert len(page.steps) == 2
         assert page.steps[0].step_number.value == 1
@@ -207,7 +207,7 @@ class TestStepExtraction:
             page_data=page_data, candidates=make_candidates({step_text: "step_number"})
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert len(page.steps) == 0
         assert len(page.warnings) > 0
@@ -236,7 +236,7 @@ class TestPartsListExtraction:
             candidates=make_candidates({parts_list_drawing: "parts_list"}),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert len(page.parts_lists) == 1
         parts_list = page.parts_lists[0]
@@ -287,7 +287,7 @@ class TestPartsListExtraction:
             ),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert len(page.parts_lists) == 1
         parts_list = page.parts_lists[0]
@@ -350,7 +350,7 @@ class TestPartsListExtraction:
             ),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert len(page.parts_lists) == 1
         parts_list = page.parts_lists[0]
@@ -390,7 +390,7 @@ class TestPartExtraction:
             ),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert len(page.parts_lists) == 1
         assert len(page.parts_lists[0].parts) == 1
@@ -426,7 +426,7 @@ class TestPartExtraction:
             ),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         # Should fail to parse the part count without 'x' suffix
         assert len(page.parts_lists) == 1
@@ -462,7 +462,7 @@ class TestPartExtraction:
             ),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         assert len(page.parts_lists) == 1
         # Part should not be created due to invalid count
@@ -498,7 +498,7 @@ class TestPartExtraction:
             ),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         part = page.parts_lists[0].parts[0]
         # BBox should be the union of part_count and part_image
@@ -537,7 +537,7 @@ class TestUnprocessedElements:
             removal_reasons={removed_text.id: removal_reason},
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         # removed_text should not be in unprocessed
         assert removed_text not in page.unprocessed_elements
@@ -564,7 +564,7 @@ class TestUnprocessedElements:
             candidates=make_candidates({labeled_text: "some_label"}),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         # unlabeled_text should not be in unprocessed
         assert unlabeled_text not in page.unprocessed_elements
@@ -626,7 +626,7 @@ class TestIntegration:
             ),
         )
 
-        page = build_page(page_data, result)
+        page = build_page(result)
 
         # Verify page number
         assert page.page_number is not None

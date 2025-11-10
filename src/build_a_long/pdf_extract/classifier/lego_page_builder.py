@@ -19,7 +19,6 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_part_count_value,
     extract_step_number_value,
 )
-from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
@@ -329,8 +328,8 @@ class LegoPageBuilder:
             self.unprocessed.append(block)
 
 
+# TODO Is this the right API, so we accept a PageData, or something higher level
 def build_page(
-    page_data: PageData,
     result: ClassificationResult,
 ) -> Page:
     """Build a Page (LegoPageElement) from classification results.
