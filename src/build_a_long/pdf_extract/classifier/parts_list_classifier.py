@@ -5,7 +5,13 @@ Purpose
 -------
 Identify the drawing region(s) that represent the page's parts list.
 We look for drawings that contain one or more Part elements.
-Among candidates, we prefer more parts and smaller area.
+
+Scoring is based solely on whether the drawing contains parts:
+- 1.0 if the drawing contains parts
+- 0.0 if the drawing has no parts
+
+PartsListClassifier does NOT consider StepNumber proximity or alignment - that
+scoring is done by StepClassifier when it pairs PartsLists with StepNumbers.
 
 Debugging
 ---------
@@ -22,6 +28,7 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
+    ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -30,6 +37,7 @@ from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartsList,
+    StepNumber,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
@@ -39,23 +47,16 @@ log = logging.getLogger(__name__)
 
 
 @dataclass
+@dataclass
 class _PartsListScore:
     """Internal score representation for parts list classification."""
 
-    part_count: int
-    """Number of Part elements contained in the bounding box."""
+    has_parts: bool
+    """Whether this drawing contains any parts."""
 
-    area: float
-    """Area of the bounding box."""
-
-    def sort_key(self) -> tuple[int, float]:
-        """Return a tuple for sorting candidates.
-
-        We prefer:
-        1. More parts (higher is better, so negate for sorting)
-        2. Smaller area (lower is better)
-        """
-        return (-self.part_count, self.area)
+    def combined_score(self) -> float:
+        """Calculate final score (simply 1.0 if has parts, 0.0 otherwise)."""
+        return 1.0 if self.has_parts else 0.0
 
 
 class PartsListClassifier(LabelClassifier):
@@ -71,13 +72,12 @@ class PartsListClassifier(LabelClassifier):
     ) -> None:
         """Evaluate elements and create candidates for potential parts list drawings.
 
-        Scores drawings based on the number of Part elements they contain.
-        Creates candidates for all viable parts list drawings.
+        Scores drawings based solely on whether they contain Part elements.
+        Does NOT consider StepNumber proximity - that's done by StepClassifier.
         """
 
         # Get part candidates and their constructed Part elements
         part_candidates = result.get_candidates("part")
-        # Use constructed Part elements instead of source elements
         parts: list[Part] = []
         for candidate in part_candidates:
             if (
@@ -103,19 +103,17 @@ class PartsListClassifier(LabelClassifier):
             len(parts),
         )
 
-        # Score each drawing based on parts contained
+        # Score each drawing based on whether it contains parts
         for drawing in drawings:
             # Find all parts contained in this drawing
             contained = self._score_containing_parts(drawing, parts)
-            if not contained:
-                # Drawing contains no parts, skip it
-                continue
 
-            # Create score object
-            score = _PartsListScore(
-                part_count=len(contained),
-                area=drawing.bbox.area,
-            )
+            # Create score
+            score = _PartsListScore(has_parts=len(contained) > 0)
+
+            # Only create candidates for drawings that have parts
+            if not score.has_parts:
+                continue
 
             constructed = PartsList(
                 bbox=drawing.bbox,
@@ -128,7 +126,7 @@ class PartsListClassifier(LabelClassifier):
                 Candidate(
                     bbox=drawing.bbox,
                     label="parts_list",
-                    score=1.0,  # Parts list uses ranking rather than scores
+                    score=score.combined_score(),
                     score_details=score,
                     constructed=constructed,
                     source_block=drawing,
@@ -154,33 +152,28 @@ class PartsListClassifier(LabelClassifier):
         return contained
 
     def classify(self, page_data: PageData, result: ClassificationResult) -> None:
-        # Get pre-built candidates
+        """Mark all parts list candidates with parts as winners.
+
+        All PartsList candidates created in evaluate() have parts, so we mark
+        them all as winners. StepClassifier will later decide which PartsList
+        to pair with which StepNumber.
+        """
         candidate_list = result.get_candidates("parts_list")
 
-        # Sort the candidates based on our scoring criteria
-        sorted_candidates = sorted(
-            candidate_list,
-            key=lambda c: (c.score_details.sort_key()),
-        )
-
-        # Mark winners (all successfully constructed candidates)
-        for candidate in sorted_candidates:
+        for candidate in sorted(candidate_list, key=lambda c: c.score, reverse=True):
             if candidate.constructed is None:
-                # Already has failure_reason from calculate_scores
                 continue
 
-            assert isinstance(candidate.constructed, PartsList)
-
-            # Check if this candidate has been removed due to overlap with a
-            # previous winner (skip synthetic candidates without source_block)
+            # Check if removed by overlap
             if candidate.source_block is not None and result.is_removed(
                 candidate.source_block
             ):
                 continue
 
-            # This is a winner!
+            # Mark as winner
             result.mark_winner(candidate, candidate.constructed)
-            # Note: Do NOT remove child bboxes - Parts are contained within
+
+            # Remove similar/overlapping drawings
             if candidate.source_block is not None:
                 self.classifier._remove_similar_bboxes(
                     page_data, candidate.source_block, result
