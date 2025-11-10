@@ -30,7 +30,6 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
-    ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -66,15 +65,12 @@ class _PartPairScore:
         return self.distance
 
 
+@dataclass(frozen=True)
 class PartsClassifier(LabelClassifier):
     """Classifier for Part elements (pairs of part_count + image)."""
 
-    outputs = {"part"}
-    requires = {"part_count"}
-
-    def __init__(self, config: ClassifierConfig):
-        super().__init__(config)
-        self._candidate_edges: list[_PartPairScore] = []
+    outputs = frozenset({"part"})
+    requires = frozenset({"part_count"})
 
     def evaluate(
         self,
@@ -107,10 +103,17 @@ class PartsClassifier(LabelClassifier):
         if not images:
             return
 
-        # Build candidate pairings
-        self._candidate_edges = self._build_candidate_edges(
+        # Build candidate pairings and match them directly
+        candidate_edges = self._build_candidate_edges(
             part_counts, images, page_data.bbox.width if page_data.bbox else 100.0
         )
+
+        # Match and create Part candidates
+        self._match_and_create_parts(candidate_edges, result)
+
+    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
+        """No-op: All work done in evaluate()."""
+        pass
 
     def _build_candidate_edges(
         self,
@@ -141,18 +144,25 @@ class PartsClassifier(LabelClassifier):
                     edges.append(score)
         return edges
 
-    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
-        """Match part counts with images and create Part candidates."""
-        if not self._candidate_edges:
+    def _match_and_create_parts(
+        self, candidate_edges: list[_PartPairScore], result: ClassificationResult
+    ) -> None:
+        """Match part counts with images and create Part candidates.
+
+        Args:
+            candidate_edges: List of candidate pairings to consider
+            result: Classification result to add Part candidates to
+        """
+        if not candidate_edges:
             return
 
         # Sort by distance (closest pairs first)
-        self._candidate_edges.sort(key=lambda score: score.sort_key())
+        candidate_edges.sort(key=lambda score: score.sort_key())
 
         matched_counts: set[int] = set()
         matched_images: set[int] = set()
 
-        for score in self._candidate_edges:
+        for score in candidate_edges:
             pc = score.part_count
             img = score.image
 

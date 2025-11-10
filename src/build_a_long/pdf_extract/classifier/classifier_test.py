@@ -72,7 +72,9 @@ class TestPipelineEnforcement:
         original_requires = StepNumberClassifier.requires
         try:
             # Inject an impossible requirement to trigger the enforcement failure.
-            StepNumberClassifier.requires = {"page_number", "__missing_label__"}
+            StepNumberClassifier.requires = frozenset(
+                {"page_number", "__missing_label__"}
+            )
             raised = False
             try:
                 _ = Classifier(ClassifierConfig())

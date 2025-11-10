@@ -83,8 +83,8 @@ class _StepScore:
 class StepClassifier(LabelClassifier):
     """Classifier for complete Step structures."""
 
-    outputs = {"step"}
-    requires = {"step_number", "parts_list"}
+    outputs = frozenset({"step"})
+    requires = frozenset({"step_number", "parts_list"})
 
     def evaluate(self, page_data: PageData, result: ClassificationResult) -> None:
         """Evaluate elements and create Step candidates for all possible pairings.

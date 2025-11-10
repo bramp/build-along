@@ -70,11 +70,12 @@ class _PageNumberScore:
         return score / total_weight if total_weight > 0 else 0.0
 
 
+@dataclass(frozen=True)
 class PageNumberClassifier(LabelClassifier):
     """Classifier for page numbers."""
 
-    outputs = {"page_number"}
-    requires = set()
+    outputs = frozenset({"page_number"})
+    requires = frozenset()
 
     def evaluate(
         self,

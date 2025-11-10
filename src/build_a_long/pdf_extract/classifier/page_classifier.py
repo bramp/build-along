@@ -15,6 +15,7 @@ Set environment variables to aid investigation without code changes:
 """
 
 import logging
+from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
@@ -33,11 +34,12 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 log = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
 class PageClassifier(LabelClassifier):
     """Classifier for building the complete Page element."""
 
-    outputs = {"page"}
-    requires = {"page_number", "step"}
+    outputs = frozenset({"page"})
+    requires = frozenset({"page_number", "step"})
 
     def evaluate(
         self,

@@ -66,11 +66,12 @@ class _PartCountScore:
         return score / total_weight if total_weight > 0 else 0.0
 
 
+@dataclass(frozen=True)
 class PartCountClassifier(LabelClassifier):
     """Classifier for part counts."""
 
-    outputs = {"part_count"}
-    requires = set()
+    outputs = frozenset({"part_count"})
+    requires = frozenset()
 
     def evaluate(
         self,
