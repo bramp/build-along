@@ -43,33 +43,6 @@ log = logging.getLogger(__name__)
 
 
 @dataclass
-class _StepPartsListPairingScore:
-    """Score for pairing a StepNumber with a PartsList."""
-
-    step_proximity_score: float
-    """Score based on proximity to the PartsList above (0.0-1.0).
-    1.0 for closest proximity, 0.0 if very far."""
-
-    step_alignment_score: float
-    """Score based on left-edge alignment with PartsList above (0.0-1.0).
-    1.0 is perfect alignment, 0.0 is very misaligned."""
-
-    parts_list: PartsList
-    """The PartsList being paired."""
-
-    step_number: StepNumber
-    """The StepNumber being paired."""
-
-    def combined_score(self) -> float:
-        """Calculate combined pairing score (average of proximity and alignment)."""
-        return (self.step_proximity_score + self.step_alignment_score) / 2.0
-
-    def sort_key(self) -> float:
-        """Return sort key for matching (higher is better)."""
-        return self.combined_score()
-
-
-@dataclass
 class _StepScore:
     """Internal score representation for step classification."""
 
@@ -79,36 +52,50 @@ class _StepScore:
     has_parts_list: bool
     """Whether this step has an associated parts list."""
 
+    step_proximity_score: float
+    """Score based on proximity to the PartsList above (0.0-1.0).
+    1.0 for closest proximity, 0.0 if very far. 0.0 if no parts list."""
+
+    step_alignment_score: float
+    """Score based on left-edge alignment with PartsList above (0.0-1.0).
+    1.0 is perfect alignment, 0.0 is very misaligned. 0.0 if no parts list."""
+
     diagram_area: float
     """Area of the diagram region."""
 
-    def sort_key(self) -> tuple[int, int, float]:
+    def pairing_score(self) -> float:
+        """Calculate pairing quality score (average of proximity and alignment)."""
+        if not self.has_parts_list:
+            return 0.0
+        return (self.step_proximity_score + self.step_alignment_score) / 2.0
+
+    def sort_key(self) -> tuple[float, int]:
         """Return a tuple for sorting candidates.
 
         We prefer:
-        1. Lower step number values (to maintain order)
-        2. Steps with parts lists over those without
-        3. Larger diagram areas (more content)
+        1. Higher pairing scores (better StepNumber-PartsList match)
+        2. Lower step number values (to break ties and maintain order)
         """
-        return (self.step_number.value, -int(self.has_parts_list), -self.diagram_area)
+        return (-self.pairing_score(), self.step_number.value)
 
 
+@dataclass(frozen=True)
 class StepClassifier(LabelClassifier):
-    """Classifier for complete Step structures."""
+    """Classifier for complete Step structures.
+
+    Frozen dataclass to enforce statelessness - no instance attributes can be
+    modified after initialization.
+    """
 
     outputs = {"step"}
     requires = {"step_number", "parts_list"}
 
-    def __init__(self, config, classifier):
-        super().__init__(config, classifier)
-        self._pairing_scores: list[_StepPartsListPairingScore] = []
-
     def evaluate(self, page_data: PageData, result: ClassificationResult) -> None:
-        """Evaluate elements and score all possible StepNumber-PartsList pairings.
+        """Evaluate elements and create Step candidates for all possible pairings.
 
-        Creates pairing scores for proximity and alignment between each StepNumber
-        and each PartsList. These scores will be used in classify() to greedily
-        select the best pairings.
+        Creates Step candidates for each StepNumber, scoring all possible pairings
+        with PartsLists. Candidates are stored in ClassificationResult, and the
+        best ones will be selected in classify().
         """
 
         # Get step_number candidates
@@ -145,65 +132,95 @@ class StepClassifier(LabelClassifier):
             len(parts_lists),
         )
 
-        # Score all possible pairings
-        self._pairing_scores = self._score_all_pairings(steps, parts_lists)
+        # Create Step candidates for all possible pairings
+        for step_num in steps:
+            # Create candidates for this StepNumber paired with each PartsList
+            for parts_list in parts_lists:
+                self._create_step_candidate(step_num, parts_list, page_data, result)
 
-        log.debug("[step] Created %d pairing scores", len(self._pairing_scores))
+            # Also create a candidate with no PartsList (fallback)
+            self._create_step_candidate(step_num, None, page_data, result)
 
-    def _score_all_pairings(
+        log.debug(
+            "[step] Created %d step candidates",
+            len(result.get_candidates("step")),
+        )
+
+    def _create_step_candidate(
         self,
-        steps: list[StepNumber],
-        parts_lists: list[PartsList],
-    ) -> list[_StepPartsListPairingScore]:
-        """Score all possible (StepNumber, PartsList) pairings.
+        step_num: StepNumber,
+        parts_list: PartsList | None,
+        page_data: PageData,
+        result: ClassificationResult,
+    ) -> None:
+        """Create a Step candidate for a StepNumber paired with a PartsList (or None).
 
-        Returns a list of pairing scores, one for each viable pairing.
+        Args:
+            step_num: The StepNumber for this candidate
+            parts_list: The PartsList to pair with (or None for no pairing)
+            page_data: The page data
+            result: Classification result to add the candidate to
         """
         ABOVE_EPS = 2.0  # Small epsilon for "above" check
         ALIGNMENT_THRESHOLD_MULTIPLIER = 1.0  # Max horizontal offset
         DISTANCE_THRESHOLD_MULTIPLIER = 1.0  # Max vertical distance
 
-        pairings: list[_StepPartsListPairingScore] = []
+        # Calculate pairing scores if there's a parts_list above the step
+        proximity_score = 0.0
+        alignment_score = 0.0
 
-        for step_num in steps:
-            for parts_list in parts_lists:
-                # Check if parts_list is above the step number
-                if parts_list.bbox.y1 > step_num.bbox.y0 + ABOVE_EPS:
-                    # PartsList is not above this step, skip
-                    continue
+        if (
+            parts_list is not None
+            and parts_list.bbox.y1 <= step_num.bbox.y0 + ABOVE_EPS
+        ):
+            # Calculate distance (how far apart vertically)
+            distance = step_num.bbox.y0 - parts_list.bbox.y1
 
-                # Calculate distance (how far apart vertically)
-                distance = step_num.bbox.y0 - parts_list.bbox.y1
+            # Calculate proximity score
+            max_distance = step_num.bbox.height * DISTANCE_THRESHOLD_MULTIPLIER
+            if max_distance > 0:
+                proximity_score = max(0.0, 1.0 - (distance / max_distance))
 
-                # Calculate proximity score
-                max_distance = step_num.bbox.height * DISTANCE_THRESHOLD_MULTIPLIER
-                if max_distance > 0:
-                    proximity = max(0.0, 1.0 - (distance / max_distance))
-                else:
-                    proximity = 0.0
+            # Calculate alignment score (how well left edges align)
+            max_alignment_diff = step_num.bbox.width * ALIGNMENT_THRESHOLD_MULTIPLIER
+            left_diff = abs(parts_list.bbox.x0 - step_num.bbox.x0)
+            if max_alignment_diff > 0:
+                alignment_score = max(0.0, 1.0 - (left_diff / max_alignment_diff))
 
-                # Calculate alignment score (how well left edges align)
-                max_alignment_diff = (
-                    step_num.bbox.width * ALIGNMENT_THRESHOLD_MULTIPLIER
-                )
-                left_diff = abs(parts_list.bbox.x0 - step_num.bbox.x0)
-                if max_alignment_diff > 0:
-                    alignment = max(0.0, 1.0 - (left_diff / max_alignment_diff))
-                else:
-                    alignment = 0.0
+        # Identify diagram region
+        diagram_bbox = self._identify_diagram_region(step_num, parts_list, page_data)
 
-                # Only create pairing if scores are reasonable
-                if proximity > 0.0 or alignment > 0.0:
-                    pairings.append(
-                        _StepPartsListPairingScore(
-                            step_proximity_score=proximity,
-                            step_alignment_score=alignment,
-                            parts_list=parts_list,
-                            step_number=step_num,
-                        )
-                    )
+        # Build Step
+        diagram = Diagram(bbox=diagram_bbox)
+        constructed = Step(
+            bbox=self._compute_step_bbox(step_num, parts_list, diagram),
+            step_number=step_num,
+            parts_list=parts_list or PartsList(bbox=step_num.bbox, parts=[]),
+            diagram=diagram,
+        )
 
-        return pairings
+        # Create score
+        score = _StepScore(
+            step_number=step_num,
+            has_parts_list=parts_list is not None,
+            step_proximity_score=proximity_score,
+            step_alignment_score=alignment_score,
+            diagram_area=diagram_bbox.area,
+        )
+
+        # Add candidate (not yet a winner)
+        step_candidate = Candidate(
+            bbox=constructed.bbox,
+            label="step",
+            score=score.pairing_score(),
+            score_details=score,
+            constructed=constructed,
+            source_block=None,
+            failure_reason=None,
+            is_winner=False,
+        )
+
+        result.add_candidate("step", step_candidate)
 
     def _identify_diagram_region(
         self,
@@ -278,104 +295,62 @@ class StepClassifier(LabelClassifier):
         return BBox(x0=x0, y0=y0, x1=x1, y1=y1)
 
     def classify(self, page_data: PageData, result: ClassificationResult) -> None:
-        """Greedily select the best StepNumber-PartsList pairings and create Steps.
+        """Greedily select the best Step candidates.
 
-        Uses the pairing scores created in evaluate() to select the best matches.
-        Ensures each StepNumber and each PartsList is used at most once.
+        Uses the candidates created in evaluate() to select the best pairings.
+        Ensures each StepNumber value and each PartsList is used at most once.
         """
-        # Sort pairing scores by quality (highest first)
-        sorted_pairings = sorted(
-            self._pairing_scores,
-            key=lambda p: p.sort_key(),
-            reverse=True,
+        # Get all Step candidates
+        candidate_list = result.get_candidates("step")
+
+        # Sort candidates by score (highest first)
+        sorted_candidates = sorted(
+            candidate_list,
+            key=lambda c: c.score_details.sort_key(),
         )
 
-        # Track which StepNumbers and PartsLists have been used
-        used_step_ids: set[int] = set()
+        # Track which StepNumber values and PartsLists have been used
+        used_step_values: set[int] = set()
         used_parts_list_ids: set[int] = set()
-        used_step_values: set[int] = set()  # Track by step VALUE for uniqueness
 
-        # Greedily select pairings
-        selected_pairings: dict[int, PartsList | None] = {}  # step_id -> PartsList
+        # Greedily select winners
+        for candidate in sorted_candidates:
+            if candidate.constructed is None:
+                continue
 
-        for pairing in sorted_pairings:
-            step_id = id(pairing.step_number)
-            parts_list_id = id(pairing.parts_list)
-            step_value = pairing.step_number.value
+            assert isinstance(candidate.constructed, Step)
+            step = candidate.constructed
+            step_value = step.step_number.value
+            parts_list = step.parts_list if len(step.parts_list.parts) > 0 else None
 
             # Skip if this step number value is already used
             if step_value in used_step_values:
-                continue
-
-            # Skip if this step or parts_list is already used
-            if step_id in used_step_ids or parts_list_id in used_parts_list_ids:
-                continue
-
-            # Use this pairing
-            selected_pairings[step_id] = pairing.parts_list
-            used_step_ids.add(step_id)
-            used_parts_list_ids.add(parts_list_id)
-            used_step_values.add(step_value)
-
-        # Get all StepNumbers (including those without pairings)
-        step_candidates = result.get_candidates("step_number")
-        all_steps: list[StepNumber] = []
-
-        for candidate in step_candidates:
-            if (
-                candidate.is_winner
-                and candidate.constructed is not None
-                and isinstance(candidate.constructed, StepNumber)
-            ):
-                all_steps.append(candidate.constructed)
-
-        # Create Step candidates for each StepNumber
-        for step_num in all_steps:
-            step_id = id(step_num)
-            step_value = step_num.value
-
-            # Skip if this step value was already used
-            if step_value in used_step_values and step_id not in selected_pairings:
                 log.debug(
-                    "[step] Skipping step %d - value already used",
+                    "[step] Skipping candidate for step %d - value already used",
                     step_value,
                 )
                 continue
 
-            # Get the paired PartsList (if any)
-            parts_list = selected_pairings.get(step_id)
+            # Skip if this parts_list is already used (if it has parts)
+            if parts_list is not None:
+                parts_list_id = id(parts_list)
+                if parts_list_id in used_parts_list_ids:
+                    log.debug(
+                        "[step] Skipping candidate for step %d - "
+                        "PartsList already used",
+                        step_value,
+                    )
+                    continue
+                # Claim this parts_list
+                used_parts_list_ids.add(parts_list_id)
 
-            # Identify diagram region
-            diagram_bbox = self._identify_diagram_region(
-                step_num, parts_list, page_data
+            # Mark this candidate as winner
+            result.mark_winner(candidate, step)
+            used_step_values.add(step_value)
+
+            log.debug(
+                "[step] Marking step %d as winner (parts_list=%s, pairing_score=%.2f)",
+                step_value,
+                "yes" if parts_list is not None else "no",
+                candidate.score_details.pairing_score(),
             )
-
-            # Build Step
-            diagram = Diagram(bbox=diagram_bbox)
-            constructed = Step(
-                bbox=self._compute_step_bbox(step_num, parts_list, diagram),
-                step_number=step_num,
-                parts_list=parts_list or PartsList(bbox=step_num.bbox, parts=[]),
-                diagram=diagram,
-            )
-
-            # Create and mark Step candidate as winner
-            score = _StepScore(
-                step_number=step_num,
-                has_parts_list=parts_list is not None,
-                diagram_area=diagram_bbox.area,
-            )
-
-            step_candidate = Candidate(
-                bbox=constructed.bbox,
-                label="step",
-                score=1.0,
-                score_details=score,
-                constructed=constructed,
-                source_block=None,
-                failure_reason=None,
-                is_winner=True,
-            )
-
-            result.add_candidate("step", step_candidate)
-            result.mark_winner(step_candidate, constructed)

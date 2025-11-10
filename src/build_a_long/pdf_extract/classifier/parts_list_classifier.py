@@ -28,7 +28,6 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
-    ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -37,7 +36,6 @@ from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartsList,
-    StepNumber,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,

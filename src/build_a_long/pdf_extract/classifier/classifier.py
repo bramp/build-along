@@ -187,6 +187,7 @@ class Classifier:
 
         return result
 
+    # TODO This should be a static helper function somewhere else
     def _remove_child_bboxes(
         self,
         page_data: PageData,
@@ -208,6 +209,7 @@ class Classifier:
                     ele, RemovalReason(reason_type="child_bbox", target_block=target)
                 )
 
+    # TODO This should be a static helper function somewhere else
     def _remove_similar_bboxes(
         self,
         page_data: PageData,

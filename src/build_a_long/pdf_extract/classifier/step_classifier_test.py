@@ -42,14 +42,13 @@ class TestStepClassification:
         # Check that step_number is still labeled as step_number
         assert result.get_label(step) == "step_number"
 
-        # Get the constructed Step element from candidates
+        # Get the constructed Step element from candidates (filter for winners)
         step_candidates = result.get_candidates("step")
-        assert len(step_candidates) == 1
+        winning_steps = [c for c in step_candidates if c.is_winner]
+        assert len(winning_steps) == 1
 
         # The step should be constructed as a Step object
-        step_candidates = result.get_candidates("step")
-        assert len(step_candidates) == 1
-        constructed = step_candidates[0].constructed
+        constructed = winning_steps[0].constructed
         assert isinstance(constructed, Step)
 
         # Verify the Step has the correct components
@@ -219,7 +218,8 @@ class TestStepClassification:
         assert result.get_label(step1) == "step_number"
         assert result.get_label(step2) == "step_number"
 
-        # Both parts lists should be marked as winners (no uniqueness at PartsList level)
+        # Both parts lists should be marked as winners
+        # (no uniqueness at PartsList level)
         parts_list_candidates = result.get_candidates("parts_list")
         winning_parts_lists = [c for c in parts_list_candidates if c.is_winner]
         assert len(winning_parts_lists) == 2, (
