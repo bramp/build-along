@@ -28,7 +28,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     BatchClassificationResult,
     ClassificationResult,
     ClassifierConfig,
-    RemovalReason,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.page_classifier import PageClassifier
@@ -147,14 +146,14 @@ class Classifier:
     def __init__(self, config: ClassifierConfig):
         self.config = config
         self.classifiers: list[Classifiers] = [
-            PageNumberClassifier(config, self),
-            PartCountClassifier(config, self),
-            StepNumberClassifier(config, self),
-            PartsClassifier(config, self),
-            PartsListClassifier(config, self),
-            PartsImageClassifier(config, self),
-            StepClassifier(config, self),
-            PageClassifier(config, self),
+            PageNumberClassifier(config),
+            PartCountClassifier(config),
+            StepNumberClassifier(config),
+            PartsClassifier(config),
+            PartsListClassifier(config),
+            PartsImageClassifier(config),
+            StepClassifier(config),
+            PageClassifier(config),
         ]
 
         # TODO Create a directed graph, and run it in order.
@@ -186,71 +185,6 @@ class Classifier:
             result.add_warning(warning)
 
         return result
-
-    # TODO This should be a static helper function somewhere else
-    def _remove_child_bboxes(
-        self,
-        page_data: PageData,
-        target,
-        result: ClassificationResult,
-        keep_ids: set[int] | None = None,
-    ) -> None:
-        if keep_ids is None:
-            keep_ids = set()
-
-        target_bbox = target.bbox
-
-        for ele in page_data.blocks:
-            if ele is target or id(ele) in keep_ids:
-                continue
-            b = ele.bbox
-            if b.fully_inside(target_bbox):
-                result.mark_removed(
-                    ele, RemovalReason(reason_type="child_bbox", target_block=target)
-                )
-
-    # TODO This should be a static helper function somewhere else
-    def _remove_similar_bboxes(
-        self,
-        page_data: PageData,
-        target,
-        result: ClassificationResult,
-        keep_ids: set[int] | None = None,
-    ) -> None:
-        if keep_ids is None:
-            keep_ids = set()
-
-        target_area = target.bbox.area
-        tx, ty = target.bbox.center
-
-        IOU_THRESHOLD = 0.8
-        CENTER_EPS = 1.5
-        AREA_TOL = 0.12
-
-        for ele in page_data.blocks:
-            if ele is target or id(ele) in keep_ids:
-                continue
-
-            b = ele.bbox
-            iou = target.bbox.iou(b)
-            if iou >= IOU_THRESHOLD:
-                result.mark_removed(
-                    ele,
-                    RemovalReason(reason_type="similar_bbox", target_block=target),
-                )
-                continue
-
-            cx, cy = b.center
-            if abs(cx - tx) <= CENTER_EPS and abs(cy - ty) <= CENTER_EPS:
-                area = b.area
-                if (
-                    target_area > 0
-                    and abs(area - target_area) / target_area <= AREA_TOL
-                ):
-                    result.mark_removed(
-                        ele,
-                        RemovalReason(reason_type="similar_bbox", target_block=target),
-                    )
 
     def _log_post_classification_warnings(
         self, page_data: PageData, result: ClassificationResult

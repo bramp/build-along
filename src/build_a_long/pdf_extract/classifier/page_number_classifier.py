@@ -6,6 +6,10 @@ import math
 import re
 from dataclasses import dataclass
 
+from build_a_long.pdf_extract.classifier.block_filter import (
+    remove_child_bboxes,
+    remove_similar_bboxes,
+)
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -157,11 +161,12 @@ class PageNumberClassifier(LabelClassifier):
 
         # Mark winner and store results
         assert isinstance(winner.constructed, PageNumber)
+        assert winner.source_block is not None
         result.mark_winner(winner, winner.constructed)
 
         # Cleanup: remove child/similar bboxes
-        self.classifier._remove_child_bboxes(page_data, winner.source_block, result)
-        self.classifier._remove_similar_bboxes(page_data, winner.source_block, result)
+        remove_child_bboxes(winner.source_block, result)
+        remove_similar_bboxes(winner.source_block, result)
 
     def _select_winner(self, candidate_list: list[Candidate]) -> Candidate | None:
         """Select the best candidate from the list.

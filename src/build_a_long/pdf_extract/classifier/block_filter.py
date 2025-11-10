@@ -7,8 +7,15 @@ created for visual effects like drop shadows in PDF rendering.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
+from build_a_long.pdf_extract.classifier.classification_result import RemovalReason
 from build_a_long.pdf_extract.extractor.page_blocks import Block
+
+if TYPE_CHECKING:
+    from build_a_long.pdf_extract.classifier.classification_result import (
+        ClassificationResult,
+    )
 
 
 def filter_duplicate_blocks(blocks: Sequence[Block]) -> list[Block]:
@@ -87,3 +94,86 @@ def filter_duplicate_blocks(blocks: Sequence[Block]) -> list[Block]:
     # Return blocks in their original order
     result_indices.sort()
     return [blocks[i] for i in result_indices]
+
+
+def remove_child_bboxes(
+    target: Block,
+    result: ClassificationResult,
+    keep_ids: set[int] | None = None,
+) -> None:
+    """Mark blocks fully inside target bbox as removed.
+
+    Removes all blocks that are completely contained within the target block's
+    bounding box, typically used to clean up text/drawings that overlap with
+    a classified element.
+
+    Args:
+        target: The target block whose bbox defines the region.
+        result: Classification result to mark removed blocks.
+        keep_ids: Optional set of block IDs to keep (not remove).
+    """
+    if keep_ids is None:
+        keep_ids = set()
+
+    target_bbox = target.bbox
+
+    for ele in result.page_data.blocks:
+        if ele is target or id(ele) in keep_ids:
+            continue
+        b = ele.bbox
+        if b.fully_inside(target_bbox):
+            result.mark_removed(
+                ele, RemovalReason(reason_type="child_bbox", target_block=target)
+            )
+
+
+def remove_similar_bboxes(
+    target: Block,
+    result: ClassificationResult,
+    keep_ids: set[int] | None = None,
+) -> None:
+    """Mark blocks with similar position/size to target as removed.
+
+    Removes blocks that are very similar to the target block based on:
+    - High IOU (Intersection over Union) ≥ 0.8
+    - Similar center position (within 1.5 pixels)
+    - Similar area (within 12% tolerance)
+
+    This is used to remove duplicates/shadows after a block has been classified.
+
+    Args:
+        target: The target block to compare against.
+        result: Classification result to mark removed blocks.
+        keep_ids: Optional set of block IDs to keep (not remove).
+    """
+    if keep_ids is None:
+        keep_ids = set()
+
+    target_area = target.bbox.area
+    tx, ty = target.bbox.center
+
+    IOU_THRESHOLD = 0.8
+    CENTER_EPS = 1.5
+    AREA_TOL = 0.12
+
+    for ele in result.page_data.blocks:
+        if ele is target or id(ele) in keep_ids:
+            continue
+
+        b = ele.bbox
+        iou = target.bbox.iou(b)
+        if iou >= IOU_THRESHOLD:
+            result.mark_removed(
+                ele,
+                RemovalReason(reason_type="similar_bbox", target_block=target),
+            )
+            continue
+
+        cx, cy = b.center
+        if abs(cx - tx) <= CENTER_EPS and abs(cy - ty) <= CENTER_EPS:
+            area = b.area
+            if target_area > 0 and abs(area - target_area) / target_area <= AREA_TOL:
+                result.mark_removed(
+                    ele,
+                    RemovalReason(reason_type="similar_bbox", target_block=target),
+                )

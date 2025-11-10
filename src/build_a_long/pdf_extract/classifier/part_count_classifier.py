@@ -13,6 +13,10 @@ Enable DEBUG logs with LOG_LEVEL=DEBUG.
 import logging
 from dataclasses import dataclass
 
+from build_a_long.pdf_extract.classifier.block_filter import (
+    remove_child_bboxes,
+    remove_similar_bboxes,
+)
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -147,16 +151,13 @@ class PartCountClassifier(LabelClassifier):
 
             # This is a winner!
             assert isinstance(candidate.constructed, PartCount)
+            assert candidate.source_block is not None
             result.mark_winner(candidate, candidate.constructed)
 
-            self.classifier._remove_similar_bboxes(
-                page_data, candidate.source_block, result
-            )
+            remove_similar_bboxes(candidate.source_block, result)
 
             # There should be no blocks inside this part count bbox
-            self.classifier._remove_child_bboxes(
-                page_data, candidate.source_block, result
-            )
+            remove_child_bboxes(candidate.source_block, result)
 
     def _score_part_count_text(self, text: str) -> float:
         """Score text based on how well it matches part count patterns.
