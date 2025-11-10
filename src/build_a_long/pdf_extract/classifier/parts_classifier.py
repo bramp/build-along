@@ -9,10 +9,12 @@ elements.
 
 Heuristic
 ---------
-- For each part_count Text, find candidate Images that are above (image.y1 <= count.y0 + VERT_EPS)
-  and roughly left-aligned (|image.x0 - count.x0| <= ALIGN_EPS).
-- Sort candidates by vertical distance (count.y0 - image.y1), then greedily match
-  to enforce one-to-one pairing between part counts and images.
+- For each part_count Text, find candidate Images that are above
+  (image.y1 <= count.y0 + VERT_EPS) and roughly left-aligned
+  (|image.x0 - count.x0| <= ALIGN_EPS).
+- Sort candidates by vertical distance (count.y0 - image.y1), then
+  greedily match to enforce one-to-one pairing between part counts and
+  images.
 - Create Part candidates with the paired PartCount and Drawing (image).
 
 Debugging

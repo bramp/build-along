@@ -12,7 +12,8 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 
 
 class TestPageDataJsonSerialization:
-    """Tests for PageData.model_validate_json() handling of polymorphic element types."""
+    """Tests for PageData.model_validate_json() handling of polymorphic element
+    types."""
 
     def test_from_json_with_text_elements(self) -> None:
         """Verify Text elements are correctly deserialized from JSON."""

@@ -96,7 +96,7 @@ class LabelClassifier(ABC):
 
         Args:
             page_data: The page data containing all elements
-            result: The classification result containing candidates and to update with winners
-            hints: Optional hints to guide classification (e.g., exclude specific elements)
+            result: The classification result containing candidates and to update
+                with winners
         """
         pass

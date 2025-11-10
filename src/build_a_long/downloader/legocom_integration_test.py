@@ -4,7 +4,8 @@ These tests make real HTTP requests to LEGO.com and are skipped by default.
 Run with: ENABLE_INTEGRATION_TESTS=true pants test src/build_a_long/downloader::
 
 HTTP interactions are recorded using VCR.py (pytest-recording) and stored in a
-local cache directory (see conftest; by default: ~/.cache/build-along/cassettes/downloader).
+local cache directory (see conftest; by default:
+~/.cache/build-along/cassettes/downloader).
 This means:
 - First run: Makes real HTTP requests and records them
 - Subsequent runs: Replays recorded responses (fast, no network needed)

@@ -5,12 +5,14 @@ for integration tests, making them fast and avoiding repeated requests to LEGO.c
 
 Enhancements:
 - Store cassettes in a persistent user cache directory (not in the repo)
-- Time-based refresh: delete cassettes older than N days before running (statically configured)
+- Time-based refresh: delete cassettes older than N days before running (statically
+  configured)
 """
 
 from __future__ import annotations
 
 import os
+from contextlib import suppress
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -36,16 +38,19 @@ CASSETTE_MAX_AGE_DAYS = 7  # Statically configured retention period
 def vcr_config(vcr_cassette_name: str):
     """Configure VCR for recording HTTP interactions.
 
-    Cassettes (recorded interactions) are stored in a persistent cache dir, not the repo.
+    Cassettes (recorded interactions) are stored in a persistent cache dir, not the
+    repo.
     They will be automatically created on first run and reused thereafter.
 
         Time-based refresh:
-        - If a cassette file exists and is older than CASSETTE_MAX_AGE_DAYS, it is deleted
+        - If a cassette file exists and is older than CASSETTE_MAX_AGE_DAYS, it is
+          deleted
             before the test runs so it will be re-recorded.
 
     To force-refresh all cassettes manually:
     - Delete the cassette directory, or
-    - Run with: pytest --record-mode=rewrite (or via Pants: pants test --pytest-args="--record-mode=rewrite")
+    - Run with: pytest --record-mode=rewrite (or via Pants:
+      pants test --pytest-args="--record-mode=rewrite")
     """
     cassette_dir = _resolve_cassette_dir()
     cassette_dir.mkdir(parents=True, exist_ok=True)
@@ -55,11 +60,8 @@ def vcr_config(vcr_cassette_name: str):
     if cassette_path.exists():
         mtime = datetime.fromtimestamp(cassette_path.stat().st_mtime)
         if datetime.now() - mtime > timedelta(days=CASSETTE_MAX_AGE_DAYS):
-            try:
+            with suppress(OSError):
                 cassette_path.unlink()
-            except OSError:
-                # If we cannot delete, fallback to rewrite mode for this run
-                pass
 
     return {
         # Store cassettes in a dedicated, persistent directory

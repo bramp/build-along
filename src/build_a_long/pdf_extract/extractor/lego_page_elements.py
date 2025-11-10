@@ -35,7 +35,13 @@ class _LegoPageElement(BaseModel, ABC):
 
 
 class PageNumber(_LegoPageElement):
-    """The page number, usually a small integer on the page."""
+    """The page number, usually a small integer on the page.
+
+    Positional context: Typically located in the lower-left or lower-right corner
+    of the page.
+
+    See layout diagram: lego_page_layout.png
+    """
 
     tag: Literal["PageNumber"] = Field(
         default="PageNumber", alias="__tag__", frozen=True
@@ -48,7 +54,13 @@ class PageNumber(_LegoPageElement):
 
 
 class StepNumber(_LegoPageElement):
-    """A step number label."""
+    """A step number label.
+
+    Positional context: Located below the PartsList within a Step, left-aligned
+    with the PartsList container.
+
+    See layout diagram: lego_page_layout.png
+    """
 
     tag: Literal["StepNumber"] = Field(
         default="StepNumber", alias="__tag__", frozen=True
@@ -61,7 +73,13 @@ class StepNumber(_LegoPageElement):
 
 
 class PartCount(_LegoPageElement):
-    """The visual count label associated with a part entry (e.g., '2x')."""
+    """The visual count label associated with a part entry (e.g., '2x').
+
+    Positional context: Positioned directly below the corresponding part image/diagram,
+    left-aligned with the part image.
+
+    See layout diagram: lego_page_layout.png
+    """
 
     tag: Literal["PartCount"] = Field(default="PartCount", alias="__tag__", frozen=True)
     count: Annotated[int, Ge(0)]
@@ -74,7 +92,13 @@ class PartCount(_LegoPageElement):
 
 
 class Part(_LegoPageElement):
-    """A single part entry within a parts list."""
+    """A single part entry within a parts list.
+
+    Positional context: The part image/diagram appears first, with the PartCount
+    label positioned directly below it, both left-aligned.
+
+    See layout diagram: lego_page_layout.png
+    """
 
     tag: Literal["Part"] = Field(default="Part", alias="__tag__", frozen=True)
     count: PartCount
@@ -95,7 +119,14 @@ class Part(_LegoPageElement):
 
 
 class PartsList(_LegoPageElement):
-    """A container of multiple parts for the page's parts list."""
+    """A container of multiple parts for the page's parts list.
+
+    Positional context: Contained within a Step. Located
+    at the top of the step area, typically on the left side. Individual parts are
+    arranged with their images first, followed by their count labels below.
+
+    See layout diagram: lego_page_layout.png
+    """
 
     tag: Literal["PartsList"] = Field(default="PartsList", alias="__tag__", frozen=True)
     parts: list[Part]
@@ -138,7 +169,14 @@ class NewBag(_LegoPageElement):
 
 
 class Diagram(_LegoPageElement):
-    """The graphic showing how to complete the step."""
+    """The graphic showing how to complete the step.
+
+    Positional context: The main diagram is positioned on the right side of the
+    step area, occupying most of the horizontal space. It shows the assembly
+    instructions for the step.
+
+    See layout diagram: lego_page_layout.png
+    """
 
     tag: Literal["Diagram"] = Field(default="Diagram", alias="__tag__", frozen=True)
 
@@ -148,9 +186,19 @@ class Diagram(_LegoPageElement):
 
 
 class Step(_LegoPageElement):
-    """A single instruction step on the page."""
+    """A single instruction step on the page.
+
+    Positional context: Steps are arranged vertically on the page, typically 1-2
+    per page. Within each step:
+    - PartsList is at the top-left
+    - StepNumber is below the PartsList (left-aligned)
+    - Main Diagram is on the right side, taking most of the space
+
+    See layout diagram: lego_page_layout.png
+    """
 
     tag: Literal["Step"] = Field(default="Step", alias="__tag__", frozen=True)
+
     step_number: StepNumber
     parts_list: PartsList
     diagram: Diagram  # TODO maybe this should be a list?

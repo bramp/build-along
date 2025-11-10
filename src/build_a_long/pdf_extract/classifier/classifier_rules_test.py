@@ -91,10 +91,11 @@ class ClassifiedPage:
     def children_of(self, parent: Block, label: str | None = None) -> list[Block]:
         """Return all non-deleted elements spatially contained within a parent element.
 
-        Note: This uses bbox containment, not ElementTree hierarchy, because the hierarchy
-        is based on "smallest containing bbox" which means there may be intermediate
-        unlabeled elements between a parent and its logical children. For validation
-        rules about spatial containment, bbox checking is more appropriate.
+        Note: This uses bbox containment, not ElementTree hierarchy, because
+        the hierarchy is based on "smallest containing bbox" which means there
+        may be intermediate unlabeled elements between a parent and its
+        logical children. For validation rules about spatial containment,
+        bbox checking is more appropriate.
 
         Args:
             parent: The parent element to search within
@@ -187,7 +188,8 @@ class TestClassifierRules:
     def test_parts_list_contains_at_least_one_part_image(
         self, fixture_file: str
     ) -> None:
-        """Every labeled parts list should include at least one part image inside its bbox.
+        """Every labeled parts list should include at least one part image
+        inside its bbox.
 
         This test runs on all JSON fixtures in the fixtures/ directory.
         """
@@ -210,7 +212,10 @@ class TestClassifierRules:
             "part_image", include_deleted=True
         )
         log.info(
-            f"Total on page: {len(parts_lists)} parts_lists, {len(part_images)} part_images (non-deleted), {len(all_part_images)} total part_images, {len(part_counts)} part_counts"
+            f"Total on page: {len(parts_lists)} parts_lists, "
+            f"{len(part_images)} part_images (non-deleted), "
+            f"{len(all_part_images)} total part_images, "
+            f"{len(part_counts)} part_counts"
         )
         if len(all_part_images) != len(part_images):
             deleted_count = len(all_part_images) - len(part_images)
@@ -229,7 +234,8 @@ class TestClassifierRules:
                         else "outside all parts_lists"
                     )
                     log.warning(
-                        f"    - Deleted PartImage id:{img.id} bbox:{img.bbox} ({location})"
+                        f"    - Deleted PartImage id:{img.id} "
+                        f"bbox:{img.bbox} ({location})"
                     )
 
         for parts_list in parts_lists:
@@ -245,7 +251,8 @@ class TestClassifierRules:
                     all_part_images_inside.append(elem)
 
             log.info(
-                f"{fixture_file} PartsList id:{parts_list.id} bbox:{parts_list.bbox} contains:"
+                f"{fixture_file} PartsList id:{parts_list.id} "
+                f"bbox:{parts_list.bbox} contains:"
             )
             for img in part_images_inside:
                 log.info(f" - PartImage id:{img.id} bbox:{img.bbox}")
@@ -261,7 +268,8 @@ class TestClassifierRules:
             ]
             if deleted_images:
                 log.warning(
-                    f"  WARNING: {len(deleted_images)} part_images DELETED inside parts_list {parts_list.id}:"
+                    f"  WARNING: {len(deleted_images)} part_images DELETED "
+                    f"inside parts_list {parts_list.id}:"
                 )
                 for img in deleted_images:
                     log.warning(
@@ -273,18 +281,19 @@ class TestClassifierRules:
                 log.info("  DEBUG: All part_images on page:")
                 for img in part_images:
                     log.info(
-                        f"  - PartImage id:{img.id} bbox:{img.bbox} inside:{img.bbox.fully_inside(parts_list.bbox)}"
+                        f"  - PartImage id:{img.id} bbox:{img.bbox} "
+                        f"inside:{img.bbox.fully_inside(parts_list.bbox)}"
                     )
-
             # Each parts_list must contain at least one part_image fully inside its bbox
             assert len(part_images_inside) >= 1, (
-                f"Parts list {parts_list.id} in {fixture_file} should contain at least one part image"
+                f"Parts list {parts_list.id} in {fixture_file} should contain "
+                f"at least one part image"
             )
 
             # No part_images inside a parts_list should be deleted
             assert len(deleted_images) == 0, (
-                f"Parts list {parts_list.id} in {fixture_file} has {len(deleted_images)} "
-                f"deleted part_images inside it (should be 0)"
+                f"Parts list {parts_list.id} in {fixture_file} has "
+                f"{len(deleted_images)} deleted part_images inside it (should be 0)"
             )
 
             # Each parts_list must contain the same number of part_counts as
@@ -318,7 +327,8 @@ class TestClassifierRules:
             for parts_list_b in parts_lists[i + 1 :]:
                 assert not parts_list_a.bbox.overlaps(parts_list_b.bbox), (
                     f"Parts lists {parts_list_a.id} (bbox:{parts_list_a.bbox}) and "
-                    f"{parts_list_b.id} (bbox:{parts_list_b.bbox}) in {fixture_file} overlap"
+                    f"{parts_list_b.id} (bbox:{parts_list_b.bbox}) in "
+                    f"{fixture_file} overlap"
                 )
 
     @pytest.mark.parametrize(
@@ -347,8 +357,8 @@ class TestClassifierRules:
             )
 
             assert inside_any_parts_list, (
-                f"Part image {part_image.id} (bbox:{part_image.bbox}) in {fixture_file} "
-                f"is not inside any parts_list"
+                f"Part image {part_image.id} (bbox:{part_image.bbox}) in "
+                f"{fixture_file} is not inside any parts_list"
             )
 
     @pytest.mark.parametrize(
@@ -379,12 +389,13 @@ class TestClassifierRules:
             )
             for elem in labeled_and_deleted:
                 log.error(
-                    f"  - {result.get_label(elem)} id:{elem.id} bbox:{elem.bbox} [DELETED]"
+                    f"  - {result.get_label(elem)} id:{elem.id} "
+                    f"bbox:{elem.bbox} [DELETED]"
                 )
 
         assert len(labeled_and_deleted) == 0, (
-            f"Found {len(labeled_and_deleted)} labeled elements that are deleted in {fixture_file}. "
-            f"Labeled elements should not be deleted."
+            f"Found {len(labeled_and_deleted)} labeled elements that are "
+            f"deleted in {fixture_file}. Labeled elements should not be deleted."
         )
 
     @pytest.mark.parametrize(
@@ -424,8 +435,9 @@ class TestClassifierRules:
                 if block_id in block_to_winning_label:
                     existing_label = block_to_winning_label[block_id]
                     pytest.fail(
-                        f"Block {block_id} in {fixture_file} has multiple winner candidates: "
-                        f"'{existing_label}' and '{label}'. Each block should have at most one winner."
+                        f"Block {block_id} in {fixture_file} has multiple "
+                        f"winner candidates: '{existing_label}' and '{label}'. "
+                        "Each block should have at most one winner."
                     )
 
                 block_to_winning_label[block_id] = label

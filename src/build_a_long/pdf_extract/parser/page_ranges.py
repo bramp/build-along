@@ -24,7 +24,8 @@ class PageRange:
         # Open end
         if self.start is not None and self.end is None:
             return f"{self.start}-"
-        # Explicit range (including potentially invalid where start>end, though parser prevents it)
+        # Explicit range (including potentially invalid where start>end, though parser
+        # prevents it)
         if self.start is not None and self.end is not None:
             return f"{self.start}-{self.end}"
         # Fallback (shouldn't happen)
@@ -123,7 +124,8 @@ def parse_page_range(page_str: str) -> tuple[int | None, int | None]:
                 )
             try:
                 end_page = int(end_str)
-                # Reject negative numbers - they look like "-5" but are actually negative
+                # Reject negative numbers - they look like "-5" but are actually
+                # negative
                 if end_str.startswith("-"):
                     raise ValueError(f"Page number must be >= 1, got {end_page}")
                 if end_page < 1:
@@ -165,7 +167,8 @@ def parse_page_range(page_str: str) -> tuple[int | None, int | None]:
             raise ValueError(f"End page must be >= 1, got {end_page}")
         if start_page > end_page:
             raise ValueError(
-                f"Start page ({start_page}) cannot be greater than end page ({end_page})"
+                f"Start page ({start_page}) cannot be greater than end page "
+                f"({end_page})"
             )
         return start_page, end_page
     else:
