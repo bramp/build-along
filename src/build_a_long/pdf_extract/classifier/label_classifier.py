@@ -72,7 +72,6 @@ class LabelClassifier(ABC):
     @abstractmethod
     def evaluate(
         self,
-        page_data: PageData,
         result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create candidates for the label.
@@ -83,7 +82,6 @@ class LabelClassifier(ABC):
         3. Store candidates (both successful and failed) with rejection reasons
 
         Args:
-            page_data: The page data containing all elements
             result: The classification result to populate with candidates
         """
         pass
@@ -91,13 +89,12 @@ class LabelClassifier(ABC):
     @abstractmethod
     def classify(
         self,
-        page_data: PageData,
         result: ClassificationResult,
     ) -> None:
         """Classify the elements for the label by selecting winners.
 
         Args:
-            page_data: The page data containing all elements
+            result: The classification result to populate with winners
             result: The classification result containing candidates and to update
                 with winners
         """

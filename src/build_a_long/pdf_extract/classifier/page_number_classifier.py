@@ -79,7 +79,6 @@ class PageNumberClassifier(LabelClassifier):
 
     def evaluate(
         self,
-        page_data: PageData,
         result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create candidates for page numbers.
@@ -87,6 +86,7 @@ class PageNumberClassifier(LabelClassifier):
         This method scores each text element, attempts to construct PageNumber objects,
         and stores all candidates with their scores and any failure reasons.
         """
+        page_data = result.page_data
         page_bbox = page_data.bbox
         assert page_bbox is not None
 
@@ -147,7 +147,7 @@ class PageNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
+    def classify(self, result: ClassificationResult) -> None:
         """Select the best page number candidate from pre-built candidates."""
         candidate_list = result.get_candidates("page_number")
 

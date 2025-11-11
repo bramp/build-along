@@ -50,7 +50,7 @@ def test_part_count_with_font_hints():
 
     # Classify
     result = ClassificationResult(page_data=page_data)
-    classifier.evaluate(page_data, result)
+    classifier.evaluate(result)
 
     candidates = result.get_candidates("part_count")
     assert len(candidates) == 2
@@ -103,7 +103,7 @@ def test_step_number_with_font_hints():
     )
 
     result = ClassificationResult(page_data=page_data)
-    classifier.evaluate(page_data, result)
+    classifier.evaluate(result)
 
     candidates = result.get_candidates("step_number")
     assert len(candidates) == 2
@@ -155,7 +155,7 @@ def test_page_number_with_font_hints():
     )
 
     result = ClassificationResult(page_data=page_data)
-    classifier.evaluate(page_data, result)
+    classifier.evaluate(result)
 
     candidates = result.get_candidates("page_number")
     assert len(candidates) == 2

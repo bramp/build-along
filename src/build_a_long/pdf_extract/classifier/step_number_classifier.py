@@ -64,7 +64,6 @@ class StepNumberClassifier(LabelClassifier):
 
     def evaluate(
         self,
-        page_data: PageData,
         result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create candidates for step numbers.
@@ -72,6 +71,7 @@ class StepNumberClassifier(LabelClassifier):
         This method scores each text element, attempts to construct StepNumber objects,
         and stores all candidates with their scores and any failure reasons.
         """
+        page_data = result.page_data
         if not page_data.blocks:
             return
 
@@ -137,7 +137,7 @@ class StepNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
+    def classify(self, result: ClassificationResult) -> None:
         """Select winning step numbers from pre-built candidates."""
         # Get pre-built candidates
         candidate_list = result.get_candidates("step_number")

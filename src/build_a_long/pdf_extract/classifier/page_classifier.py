@@ -43,13 +43,13 @@ class PageClassifier(LabelClassifier):
 
     def evaluate(
         self,
-        page_data: PageData,
         result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create a Page candidate.
 
         Collects page_number and step elements to build a complete Page.
         """
+        page_data = result.page_data
         # Get page_number candidate
         page_number_candidates = result.get_candidates("page_number")
         page_number: PageNumber | None = None
@@ -107,7 +107,7 @@ class PageClassifier(LabelClassifier):
             ),
         )
 
-    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
+    def classify(self, result: ClassificationResult) -> None:
         """Mark the Page candidate as winner."""
         candidate_list = result.get_candidates("page")
 
