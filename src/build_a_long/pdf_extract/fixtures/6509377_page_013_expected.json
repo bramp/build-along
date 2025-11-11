@@ -61,10 +61,10 @@
                 "y1": 51.53
               },
               "__tag__": "PartCount",
-              "count": 4
+              "count": 4,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           },
           {
@@ -83,10 +83,10 @@
                 "y1": 51.53
               },
               "__tag__": "PartCount",
-              "count": 4
+              "count": 4,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           }
         ]

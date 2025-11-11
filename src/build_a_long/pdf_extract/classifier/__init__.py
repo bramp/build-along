@@ -29,6 +29,7 @@ from .classifier import Classifier, classify_elements, classify_pages
 from .label_classifier import LabelClassifier
 from .page_number_classifier import PageNumberClassifier
 from .part_count_classifier import PartCountClassifier
+from .part_number_classifier import PartNumberClassifier
 from .parts_image_classifier import PartsImageClassifier
 from .parts_list_classifier import PartsListClassifier
 from .step_classifier import StepClassifier
@@ -45,6 +46,7 @@ __all__ = [
     "StepClassifier",
     "PageNumberClassifier",
     "PartCountClassifier",
+    "PartNumberClassifier",
     "StepNumberClassifier",
     "PartsListClassifier",
     "PartsImageClassifier",

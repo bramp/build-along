@@ -400,10 +400,8 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
             if step.parts_list.parts:
                 print("      Parts List:")
                 for part in step.parts_list.parts:
-                    print(
-                        f"        • {part.count.count}x {part.name or 'unnamed'} "
-                        f"({part.number or 'no number'})"
-                    )
+                    number_str = part.number.element_id if part.number else "no number"
+                    print(f"        • {part.count.count}x ({number_str})")
             else:
                 print("      Parts List: (empty)")
 

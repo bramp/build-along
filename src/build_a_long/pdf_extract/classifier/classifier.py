@@ -37,6 +37,9 @@ from build_a_long.pdf_extract.classifier.page_number_classifier import (
 from build_a_long.pdf_extract.classifier.part_count_classifier import (
     PartCountClassifier,
 )
+from build_a_long.pdf_extract.classifier.part_number_classifier import (
+    PartNumberClassifier,
+)
 from build_a_long.pdf_extract.classifier.parts_classifier import (
     PartsClassifier,
 )
@@ -128,6 +131,7 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
 type Classifiers = (
     PageNumberClassifier
     | PartCountClassifier
+    | PartNumberClassifier
     | StepNumberClassifier
     | PartsClassifier
     | PartsListClassifier
@@ -148,6 +152,7 @@ class Classifier:
         self.classifiers: list[Classifiers] = [
             PageNumberClassifier(config),
             PartCountClassifier(config),
+            PartNumberClassifier(config),
             StepNumberClassifier(config),
             PartsClassifier(config),
             PartsListClassifier(config),

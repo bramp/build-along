@@ -27,7 +27,7 @@ def test_drawing_optional_id():
 
 def test_part_and_count():
     cnt = PartCount(bbox=BBox(5, 5, 7, 7), count=2)
-    p = Part(bbox=BBox(0, 0, 10, 10), name=None, number=None, count=cnt)
+    p = Part(bbox=BBox(0, 0, 10, 10), count=cnt)
     assert p.count.count == 2
     assert p.bbox.x1 == 10
 
@@ -35,14 +35,10 @@ def test_part_and_count():
 def test_parts_list_total_items():
     p1 = Part(
         bbox=BBox(0, 0, 10, 10),
-        name="Brick",
-        number="3001",
         count=PartCount(bbox=BBox(8, 0, 10, 2), count=2),
     )
     p2 = Part(
         bbox=BBox(0, 10, 10, 20),
-        name="Plate",
-        number="3020",
         count=PartCount(bbox=BBox(8, 10, 10, 12), count=5),
     )
     pl = PartsList(bbox=BBox(0, 0, 100, 200), parts=[p1, p2])
