@@ -203,22 +203,14 @@ class Classifier:
     ) -> list[str]:
         warnings = []
 
-        labeled_blocks = result.get_labeled_blocks()
-
         # Check if there's a page number
-        has_page_number = any(
-            label == "page_number" for label in labeled_blocks.values()
-        )
+        has_page_number = result.has_label("page_number")
         if not has_page_number:
             warnings.append(f"Page {page_data.page_number}: missing page number")
 
         # Get elements by label
-        parts_lists = [
-            e for e, label in labeled_blocks.items() if label == "parts_list"
-        ]
-        part_counts = [
-            e for e, label in labeled_blocks.items() if label == "part_count"
-        ]
+        parts_lists = result.get_blocks_by_label("parts_list")
+        part_counts = result.get_blocks_by_label("part_count")
 
         for pl in parts_lists:
             inside_counts = [t for t in part_counts if t.bbox.fully_inside(pl.bbox)]
@@ -229,9 +221,7 @@ class Classifier:
                 )
 
         steps: list[Text] = [
-            e
-            for e, label in labeled_blocks.items()
-            if label == "step_number" and isinstance(e, Text)
+            e for e in result.get_blocks_by_label("step_number") if isinstance(e, Text)
         ]
         ABOVE_EPS = 2.0
         for step in steps:

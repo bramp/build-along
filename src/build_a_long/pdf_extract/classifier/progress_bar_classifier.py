@@ -172,10 +172,9 @@ class ProgressBarClassifier(LabelClassifier):
 
     def _get_page_number_bbox(self, result: ClassificationResult) -> BBox | None:
         """Get the bbox of the page number if it has been classified."""
-        labeled = result.get_labeled_blocks()
-        for block, label in labeled.items():
-            if label == "page_number":
-                return block.bbox
+        page_numbers = result.get_blocks_by_label("page_number")
+        if page_numbers:
+            return page_numbers[0].bbox
         return None
 
     def _score_bottom_position(
