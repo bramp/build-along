@@ -17,7 +17,7 @@ class TestMain:
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.mkdir")
     @patch("builtins.open", new_callable=mock_open)
-    @patch("sys.argv", ["main.py", "/path/to/test.pdf"])
+    @patch("sys.argv", ["main.py", "/path/to/test.pdf", "--draw-elements"])
     def test_main_writes_json_and_images(
         self,
         mock_file_open,
@@ -71,9 +71,14 @@ class TestMain:
         assert call_args[0][1] == "w"
 
         # Assert draw_and_save_bboxes was called with correct arguments
-        # Now expects: page, result, output_path, draw_deleted=False
+        # Now expects: page, result, output_path, draw_blocks=False, draw_elements=True, draw_deleted=False
         mock_draw_and_save_bboxes.assert_called_once_with(
-            mock_page, ANY, ANY, draw_deleted=False
+            mock_page,
+            ANY,
+            ANY,
+            draw_blocks=False,
+            draw_elements=True,
+            draw_deleted=False,
         )
         draw_call_args = mock_draw_and_save_bboxes.call_args
         # Second argument is now ClassificationResult
@@ -147,8 +152,8 @@ class TestMain:
         # For "10-12,15" we should expand to explicit pages
         assert pages_arg == [10, 11, 12, 15]
 
-        # And drawing is invoked for each resulting page
-        assert mock_draw_and_save_bboxes.call_count == 4
+        # No drawing flags specified, so draw_and_save_bboxes should not be called
+        assert mock_draw_and_save_bboxes.call_count == 0
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
     @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
@@ -156,7 +161,9 @@ class TestMain:
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.mkdir")
     @patch("builtins.open", new_callable=mock_open)
-    @patch("sys.argv", ["main.py", "/path/to/test.pdf", "--draw-deleted"])
+    @patch(
+        "sys.argv", ["main.py", "/path/to/test.pdf", "--draw-blocks", "--draw-deleted"]
+    )
     def test_main_with_draw_deleted_flag(
         self,
         mock_file_open,
@@ -166,7 +173,7 @@ class TestMain:
         mock_extract_bounding_boxes,
         mock_pymupdf_open,
     ):
-        """Test that --draw-deleted flag is passed through to draw_and_save_bboxes."""
+        """Test that --draw-blocks and --draw-deleted flags are passed through to draw_and_save_bboxes."""
         mock_exists.return_value = True
 
         # Mock the extractor to return structured data
@@ -195,10 +202,11 @@ class TestMain:
         # Assert success
         assert result == 0
 
-        # Assert draw_and_save_bboxes was called with draw_deleted=True
+        # Assert draw_and_save_bboxes was called with draw_blocks=True and draw_deleted=True
         mock_draw_and_save_bboxes.assert_called_once()
         draw_call_args = mock_draw_and_save_bboxes.call_args
-        # Verify that draw_deleted keyword argument is True
+        # Verify that draw_blocks and draw_deleted keyword arguments are True
+        assert draw_call_args.kwargs["draw_blocks"] is True
         assert draw_call_args.kwargs["draw_deleted"] is True
         # Verify signature matches expected: page, result, output_path
         assert len(draw_call_args.args) == 3

@@ -176,6 +176,8 @@ def render_annotated_images(
     results: list[ClassificationResult],
     output_dir: Path,
     *,
+    draw_blocks: bool = False,
+    draw_elements: bool = False,
     draw_deleted: bool = False,
 ) -> None:
     """Render PDF pages with annotated bounding boxes as PNG images.
@@ -185,10 +187,19 @@ def render_annotated_images(
         pages: List of PageData containing extracted elements
         results: List of ClassificationResult with labels and elements
         output_dir: Directory where PNG images should be saved
+        draw_blocks: If True, render classified PDF blocks.
+        draw_elements: If True, render classified LEGO page elements.
         draw_deleted: If True, also render elements marked as deleted.
     """
     for page_data, result in zip(pages, results, strict=True):
         page_num = page_data.page_number  # 1-indexed
         page = doc[page_num - 1]  # 0-indexed
         output_path = output_dir / f"page_{page_num:03d}.png"
-        draw_and_save_bboxes(page, result, output_path, draw_deleted=draw_deleted)
+        draw_and_save_bboxes(
+            page,
+            result,
+            output_path,
+            draw_blocks=draw_blocks,
+            draw_elements=draw_elements,
+            draw_deleted=draw_deleted,
+        )

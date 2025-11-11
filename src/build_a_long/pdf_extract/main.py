@@ -139,12 +139,14 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         # Save results
         save_classified_json(pages, batch_result.results, output_dir, pdf_path)
 
-        if config.draw_images:
+        if config.draw_blocks or config.draw_elements:
             render_annotated_images(
                 doc,
                 pages,
                 batch_result.results,
                 output_dir,
+                draw_blocks=config.draw_blocks,
+                draw_elements=config.draw_elements,
                 draw_deleted=config.draw_deleted,
             )
 
