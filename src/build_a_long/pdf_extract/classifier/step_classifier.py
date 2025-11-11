@@ -94,32 +94,14 @@ class StepClassifier(LabelClassifier):
         """
         page_data = result.page_data
 
-        # Get step_number candidates
-        step_candidates = result.get_candidates("step_number")
-        steps: list[StepNumber] = []
-
-        for candidate in step_candidates:
-            if (
-                candidate.is_winner
-                and candidate.constructed is not None
-                and isinstance(candidate.constructed, StepNumber)
-            ):
-                steps.append(candidate.constructed)
+        # Get winners with type safety
+        steps = result.get_winners("step_number", StepNumber)
 
         if not steps:
             return
 
-        # Get parts_list candidates (winners only)
-        parts_list_candidates = result.get_candidates("parts_list")
-        parts_lists: list[PartsList] = []
-
-        for candidate in parts_list_candidates:
-            if (
-                candidate.is_winner
-                and candidate.constructed is not None
-                and isinstance(candidate.constructed, PartsList)
-            ):
-                parts_lists.append(candidate.constructed)
+        # Get parts_list winners
+        parts_lists = result.get_winners("parts_list", PartsList)
 
         log.debug(
             "[step] page=%s steps=%d parts_lists=%d",

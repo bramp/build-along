@@ -288,7 +288,6 @@ class ClassificationResult(BaseModel):
         """
         return self.constructed_elements.get(block.id)
 
-    # TODO maybe add a parameter to fitler out winners/non-winners
     def get_candidates(self, label: str) -> list[Candidate]:
         """Get all candidates for a specific label.
 
@@ -300,6 +299,54 @@ class ClassificationResult(BaseModel):
             external modification)
         """
         return self.candidates.get(label, []).copy()
+
+    def get_winners[T: LegoPageElement](
+        self, label: str, element_type: type[T]
+    ) -> list[T]:
+        """Get winning candidates for a specific label with type safety.
+
+        This is a convenience method that filters candidates to only those that:
+        - Are marked as winners (is_winner=True)
+        - Have been successfully constructed (constructed is not None)
+        - Match the specified element type
+
+        Args:
+            label: The label to get winners for (e.g., "page_number", "step")
+            element_type: The type of element to filter for (e.g., PageNumber, Step)
+
+        Returns:
+            List of constructed elements of the specified type
+
+        Raises:
+            AssertionError: If a winning candidate has None constructed (invalid state)
+            AssertionError: If element_type doesn't match the actual constructed type
+        """
+        winners = []
+        for candidate in self.get_candidates(label):
+            if not candidate.is_winner:
+                continue
+
+            # Invariant check: winners must have constructed elements
+            assert candidate.constructed is not None, (
+                f"Winner candidate for label '{label}' has None "
+                f"constructed. This is an invalid state - winners must "
+                f"have constructed elements."
+            )
+
+            # Type safety check: verify constructed matches requested type
+            assert isinstance(candidate.constructed, element_type), (
+                f"Type mismatch for label '{label}': requested "
+                f"{element_type.__name__} but got "
+                f"{type(candidate.constructed).__name__}. "
+                f"This indicates a programming error in the caller."
+            )
+
+            if candidate.constructed is not None and isinstance(
+                candidate.constructed, element_type
+            ):
+                winners.append(cast(T, candidate.constructed))
+
+        return winners
 
     def get_all_candidates(self) -> dict[str, list[Candidate]]:
         """Get all candidates across all labels.

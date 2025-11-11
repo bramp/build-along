@@ -790,3 +790,180 @@ class TestClassificationResultValidation:
         result = ClassificationResult(page_data=page_data)
         result.mark_removed(block2, reason)
         assert result.is_removed(block2)
+
+
+class TestGetWinners:
+    """Tests for the get_winners method."""
+
+    def test_get_winners_filters_correctly(self) -> None:
+        """Test that get_winners returns only winning candidates of the correct type."""
+        block1 = Text(bbox=BBox(10, 10, 20, 20), text="1", id=1)
+        block2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)
+        block3 = Text(bbox=BBox(30, 30, 40, 40), text="3", id=3)
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[block1, block2, block3],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        result = ClassificationResult(page_data=page_data)
+
+        # Add candidates
+        page_num1 = PageNumber(bbox=block1.bbox, value=1)
+        page_num2 = PageNumber(bbox=block2.bbox, value=2)
+        step_num = StepNumber(bbox=block3.bbox, value=1)
+
+        candidate1 = Candidate(
+            bbox=block1.bbox,
+            label="page_number",
+            score=0.9,
+            score_details={},
+            constructed=page_num1,
+            source_block=block1,
+        )
+
+        candidate2 = Candidate(
+            bbox=block2.bbox,
+            label="page_number",
+            score=0.8,
+            score_details={},
+            constructed=page_num2,
+            source_block=block2,
+        )
+
+        candidate3 = Candidate(
+            bbox=block3.bbox,
+            label="step_number",
+            score=0.95,
+            score_details={},
+            constructed=step_num,
+            source_block=block3,
+        )
+
+        result.add_candidate("page_number", candidate1)
+        result.add_candidate("page_number", candidate2)
+        result.add_candidate("step_number", candidate3)
+
+        # Mark only first page_number and step_number as winners
+        result.mark_winner(candidate1, page_num1)
+        result.mark_winner(candidate3, step_num)
+
+        # Get winners with type safety
+        page_number_winners = result.get_winners("page_number", PageNumber)
+        step_number_winners = result.get_winners("step_number", StepNumber)
+
+        # Verify correct filtering
+        assert len(page_number_winners) == 1
+        assert page_number_winners[0] == page_num1
+        assert page_number_winners[0].value == 1
+
+        assert len(step_number_winners) == 1
+        assert step_number_winners[0] == step_num
+        assert step_number_winners[0].value == 1
+
+        # Non-winners should not be returned
+        assert page_num2 not in page_number_winners
+
+    def test_get_winners_empty_list_when_no_winners(self) -> None:
+        """Test that get_winners returns empty list when there are no winners."""
+        block1 = Text(bbox=BBox(10, 10, 20, 20), text="1", id=1)
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[block1],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        result = ClassificationResult(page_data=page_data)
+
+        # Add candidate but don't mark as winner
+        page_num = PageNumber(bbox=block1.bbox, value=1)
+        result.add_candidate(
+            "page_number",
+            Candidate(
+                bbox=block1.bbox,
+                label="page_number",
+                score=0.9,
+                score_details={},
+                constructed=page_num,
+                source_block=block1,
+            ),
+        )
+
+        # Should return empty list
+        winners = result.get_winners("page_number", PageNumber)
+        assert winners == []
+
+    def test_get_winners_empty_list_when_no_candidates(self) -> None:
+        """Test that get_winners returns empty list when there are no candidates."""
+        page_data = PageData(
+            page_number=1,
+            blocks=[],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        result = ClassificationResult(page_data=page_data)
+
+        # Should return empty list when no candidates exist
+        winners = result.get_winners("page_number", PageNumber)
+        assert winners == []
+
+    def test_get_winners_asserts_on_none_constructed(self) -> None:
+        """Test that get_winners asserts when a winner has None constructed."""
+        block1 = Text(bbox=BBox(10, 10, 20, 20), text="1", id=1)
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[block1],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        result = ClassificationResult(page_data=page_data)
+
+        # Add a candidate with None constructed but mark as winner (invalid!)
+        candidate = Candidate(
+            bbox=block1.bbox,
+            label="page_number",
+            score=0.9,
+            score_details={},
+            constructed=None,  # Invalid for a winner!
+            source_block=block1,
+            is_winner=True,  # This combination is invalid
+        )
+
+        result.add_candidate("page_number", candidate)
+
+        # Should assert because winner has None constructed
+        with pytest.raises(AssertionError, match="has None constructed"):
+            result.get_winners("page_number", PageNumber)
+
+    def test_get_winners_asserts_on_type_mismatch(self) -> None:
+        """Test that get_winners asserts when element_type doesn't match."""
+        block1 = Text(bbox=BBox(10, 10, 20, 20), text="1", id=1)
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[block1],
+            bbox=BBox(0, 0, 100, 100),
+        )
+
+        result = ClassificationResult(page_data=page_data)
+
+        # Add a PageNumber candidate
+        page_num = PageNumber(bbox=block1.bbox, value=1)
+        candidate = Candidate(
+            bbox=block1.bbox,
+            label="page_number",
+            score=0.9,
+            score_details={},
+            constructed=page_num,
+            source_block=block1,
+        )
+
+        result.add_candidate("page_number", candidate)
+        result.mark_winner(candidate, page_num)
+
+        # Should assert when requesting wrong type (StepNumber instead of PageNumber)
+        with pytest.raises(AssertionError, match="Type mismatch"):
+            result.get_winners("page_number", StepNumber)
