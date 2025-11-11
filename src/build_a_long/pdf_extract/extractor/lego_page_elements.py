@@ -99,6 +99,27 @@ class PartCount(_LegoPageElement):
         return f"PartCount(count={self.count}x{hint_str})"
 
 
+class PartNumber(_LegoPageElement):
+    """The LEGO part number (element ID) for a part.
+
+    Positional context: On catalog pages, positioned directly below the catalog
+    part count label. This is LEGO's standard element ID used to identify parts
+    (typically a 6-7 digit number).
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["PartNumber"] = Field(
+        default="PartNumber", alias="__tag__", frozen=True
+    )
+    element_id: str
+    """LEGO's standard element ID for this part (typically 6-7 digit number)."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"PartNumber(element_id={self.element_id})"
+
+
 class Part(_LegoPageElement):
     """A single part entry within a parts list.
 
@@ -112,18 +133,15 @@ class Part(_LegoPageElement):
     count: PartCount
     diagram: Drawing | None = None
 
-    # Name and Number are not directly extracted, but may be filled in later
-    name: str | None = None
-    number: str | None = None
+    number: PartNumber | None = None
 
     # TODO maybe add color?
     # TODO Some parts have a "shiny" highlight - maybe reference that image
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        name_str = f'"{self.name}"' if self.name else "unnamed"
-        number_str = self.number if self.number else "no-number"
-        return f"Part(count={self.count.count}x, name={name_str}, number={number_str})"
+        number_str = self.number.element_id if self.number else "no-number"
+        return f"Part(count={self.count.count}x, number={number_str})"
 
 
 class PartsList(_LegoPageElement):
@@ -272,6 +290,7 @@ LegoPageElement = Annotated[
     PageNumber
     | StepNumber
     | PartCount
+    | PartNumber
     | Part
     | PartsList
     | BagNumber

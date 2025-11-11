@@ -61,10 +61,10 @@
                 "y1": 52.25
               },
               "__tag__": "PartCount",
-              "count": 2
+              "count": 2,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           },
           {
@@ -83,10 +83,10 @@
                 "y1": 52.25
               },
               "__tag__": "PartCount",
-              "count": 1
+              "count": 1,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           }
         ]
@@ -144,10 +144,10 @@
                 "y1": 270.46
               },
               "__tag__": "PartCount",
-              "count": 3
+              "count": 3,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           },
           {
@@ -166,10 +166,10 @@
                 "y1": 270.46
               },
               "__tag__": "PartCount",
-              "count": 4
+              "count": 4,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           }
         ]
@@ -227,10 +227,10 @@
                 "y1": 54.89
               },
               "__tag__": "PartCount",
-              "count": 3
+              "count": 3,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           }
         ]
@@ -288,10 +288,10 @@
                 "y1": 274.3
               },
               "__tag__": "PartCount",
-              "count": 1
+              "count": 1,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           },
           {
@@ -310,10 +310,10 @@
                 "y1": 274.3
               },
               "__tag__": "PartCount",
-              "count": 1
+              "count": 1,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           }
         ]

@@ -122,3 +122,36 @@ def extract_part_count_value(text: str) -> int | None:
         return int(m.group(1))
 
     return None
+
+
+def extract_element_id(text: str) -> str | None:
+    """Extract LEGO element ID from text.
+
+    Element IDs are 4-8 digit numbers that never start with zero.
+    Distribution:
+    - Length 4: 0.02%
+    - Length 5: 0.50%
+    - Length 6: 4.98%
+    - Length 7: 94.47% (most common)
+    - Length 8: 0.03%
+
+    Args:
+        text: The text to extract from
+
+    Returns:
+        The element ID string if valid, None otherwise
+    """
+    stripped_text = text.strip()
+    if not stripped_text.isdigit():
+        return None
+
+    # Element IDs never start with zero
+    if stripped_text.startswith("0"):
+        return None
+
+    # Element IDs are typically 4-8 digit numbers
+    num_digits = len(stripped_text)
+    if 4 <= num_digits <= 8:
+        return stripped_text
+
+    return None

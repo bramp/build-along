@@ -61,10 +61,10 @@
                 "y1": 48.65
               },
               "__tag__": "PartCount",
-              "count": 2
+              "count": 2,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           },
           {
@@ -83,10 +83,10 @@
                 "y1": 48.65
               },
               "__tag__": "PartCount",
-              "count": 2
+              "count": 2,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           },
           {
@@ -105,10 +105,10 @@
                 "y1": 48.65
               },
               "__tag__": "PartCount",
-              "count": 1
+              "count": 1,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           },
           {
@@ -127,10 +127,10 @@
                 "y1": 48.65
               },
               "__tag__": "PartCount",
-              "count": 1
+              "count": 1,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           },
           {
@@ -149,10 +149,10 @@
                 "y1": 48.65
               },
               "__tag__": "PartCount",
-              "count": 1
+              "count": 1,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           }
         ]

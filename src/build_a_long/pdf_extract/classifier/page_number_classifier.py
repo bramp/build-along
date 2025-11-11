@@ -189,8 +189,6 @@ class PageNumberClassifier(LabelClassifier):
         return max(valid_candidates, key=lambda c: c.score)
 
     def _score_page_number_text(self, text: str) -> float:
-        # TODO The score should increase if the text matches the actual page we
-        # are on.
         text = text.strip()
         if re.match(r"^0+\d{1,3}$", text):
             return 0.95

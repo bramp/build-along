@@ -3,6 +3,7 @@ Tests for text extraction utilities.
 """
 
 from build_a_long.pdf_extract.classifier.text_extractors import (
+    extract_element_id,
     extract_page_number_value,
     extract_part_count_value,
     extract_step_number_value,
@@ -154,3 +155,69 @@ class TestExtractPartCountValue:
         # Should reject 4+ digit numbers
         assert extract_part_count_value("1234x") is None
         assert extract_part_count_value("12345x") is None
+
+
+class TestExtractElementId:
+    """Tests for extract_element_id function."""
+
+    def test_valid_4_digit(self) -> None:
+        """Test valid 4-digit element IDs (rare, 0.02%)."""
+        assert extract_element_id("9347") == "9347"
+        assert extract_element_id("1234") == "1234"
+
+    def test_valid_5_digit(self) -> None:
+        """Test valid 5-digit element IDs (0.50%)."""
+        assert extract_element_id("12345") == "12345"
+        assert extract_element_id("98765") == "98765"
+
+    def test_valid_6_digit(self) -> None:
+        """Test valid 6-digit element IDs (4.98%)."""
+        assert extract_element_id("123456") == "123456"
+
+    def test_valid_7_digit(self) -> None:
+        """Test valid 7-digit element IDs (most common, 94.47%)."""
+        assert extract_element_id("6208370") == "6208370"
+        assert extract_element_id("1234567") == "1234567"
+
+    def test_valid_8_digit(self) -> None:
+        """Test valid 8-digit element IDs (rare, 0.03%)."""
+        assert extract_element_id("32017199") == "32017199"
+        assert extract_element_id("12345678") == "12345678"
+
+    def test_with_whitespace(self) -> None:
+        """Test that whitespace is properly stripped."""
+        assert extract_element_id("  6208370  ") == "6208370"
+        assert extract_element_id("\t32017199\t") == "32017199"
+        assert extract_element_id("  9347  ") == "9347"
+
+    def test_rejects_leading_zero(self) -> None:
+        """Element IDs never start with zero."""
+        assert extract_element_id("0123456") is None
+        assert extract_element_id("01234567") is None
+        assert extract_element_id("0234") is None
+        assert extract_element_id("012345") is None
+
+    def test_rejects_too_short(self) -> None:
+        """Element IDs must be at least 4 digits."""
+        assert extract_element_id("1") is None
+        assert extract_element_id("12") is None
+        assert extract_element_id("123") is None
+
+    def test_rejects_too_long(self) -> None:
+        """Element IDs must be at most 8 digits."""
+        assert extract_element_id("123456789") is None
+        assert extract_element_id("1234567890") is None
+
+    def test_rejects_non_numeric(self) -> None:
+        """Element IDs must be purely numeric."""
+        assert extract_element_id("abc") is None
+        assert extract_element_id("12a45") is None
+        assert extract_element_id("a12345") is None
+        assert extract_element_id("12345a") is None
+        assert extract_element_id("") is None
+        assert extract_element_id("   ") is None
+
+    def test_rejects_decimal(self) -> None:
+        """Element IDs cannot contain decimal points."""
+        assert extract_element_id("123.456") is None
+        assert extract_element_id("1234567.8") is None

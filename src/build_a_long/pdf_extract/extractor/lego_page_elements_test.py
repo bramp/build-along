@@ -56,15 +56,12 @@ def test_part_serialization_with_nested_elements():
         bbox=BBox(0, 0, 25, 25),
         count=count,
         diagram=diagram,
-        name="Brick 2x4",
-        number="3001",
     )
 
     json_data = part.model_dump(by_alias=True)
 
     assert json_data["__tag__"] == "Part"
-    assert json_data["name"] == "Brick 2x4"
-    assert json_data["number"] == "3001"
+    assert json_data["number"] is None
     assert json_data["count"]["__tag__"] == "PartCount"
     assert json_data["count"]["count"] == 3
     assert json_data["diagram"]["__tag__"] == "Drawing"
@@ -76,14 +73,10 @@ def test_parts_list_serialization():
     part1 = Part(
         bbox=BBox(0, 0, 10, 10),
         count=PartCount(bbox=BBox(0, 0, 5, 5), count=2),
-        name="Brick",
-        number="3001",
     )
     part2 = Part(
         bbox=BBox(0, 10, 10, 20),
         count=PartCount(bbox=BBox(0, 10, 5, 15), count=5),
-        name="Plate",
-        number="3020",
     )
     parts_list = PartsList(bbox=BBox(0, 0, 100, 100), parts=[part1, part2])
 
@@ -92,9 +85,7 @@ def test_parts_list_serialization():
     assert json_data["__tag__"] == "PartsList"
     assert len(json_data["parts"]) == 2
     assert json_data["parts"][0]["__tag__"] == "Part"
-    assert json_data["parts"][0]["name"] == "Brick"
     assert json_data["parts"][1]["__tag__"] == "Part"
-    assert json_data["parts"][1]["name"] == "Plate"
 
 
 def test_page_number_deserialization():
@@ -143,16 +134,14 @@ def test_part_deserialization_with_nested_elements():
             "id": 1,
             "image_id": "img_123"
         },
-        "name": "Brick 2x4",
-        "number": "3001"
+        "number": null
     }
     """
 
     part = Part.model_validate_json(json_str)
 
     assert isinstance(part, Part)
-    assert part.name == "Brick 2x4"
-    assert part.number == "3001"
+    assert part.number is None
     assert part.count.count == 3
     assert isinstance(part.diagram, Drawing)
     assert part.diagram.image_id == "img_123"
@@ -180,8 +169,6 @@ def test_parts_list_round_trip():
             Part(
                 bbox=BBox(0, 0, 10, 10),
                 count=PartCount(bbox=BBox(0, 0, 5, 5), count=2),
-                name="Test Part",
-                number="12345",
             )
         ],
     )
@@ -191,5 +178,4 @@ def test_parts_list_round_trip():
 
     assert restored.bbox == original.bbox
     assert len(restored.parts) == 1
-    assert restored.parts[0].name == "Test Part"
     assert restored.parts[0].count.count == 2

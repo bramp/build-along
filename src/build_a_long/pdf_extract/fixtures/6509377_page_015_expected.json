@@ -137,10 +137,10 @@
                 "y1": 57.79
               },
               "__tag__": "PartCount",
-              "count": 2
+              "count": 2,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           },
           {
@@ -159,10 +159,10 @@
                 "y1": 57.79
               },
               "__tag__": "PartCount",
-              "count": 2
+              "count": 2,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           },
           {
@@ -181,10 +181,10 @@
                 "y1": 57.79
               },
               "__tag__": "PartCount",
-              "count": 2
+              "count": 2,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           }
         ]
@@ -242,10 +242,10 @@
                 "y1": 284.42
               },
               "__tag__": "PartCount",
-              "count": 3
+              "count": 3,
+              "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "name": null,
             "number": null
           }
         ]
