@@ -13,7 +13,7 @@ from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
-from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
+from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement, Page
 from build_a_long.pdf_extract.extractor.page_blocks import Block
 
 # Score key can be either a single Block or a tuple of Blocks (for pairings)
@@ -249,6 +249,17 @@ class ClassificationResult(BaseModel):
             List of blocks from the page data
         """
         return self.page_data.blocks
+
+    @property
+    def page(self) -> Page | None:
+        """Returns the Page object built from this classification result."""
+        pages = self.get_candidates("page")
+        # Filter for winner candidates
+        winner_pages = [c for c in pages if c.is_winner and c.constructed is not None]
+        assert len(winner_pages) <= 1, (
+            "There should be no more than one winning Page candidate."
+        )
+        return winner_pages[0].constructed if winner_pages else None
 
     def add_warning(self, warning: str) -> None:
         """Add a warning message to the classification result.
