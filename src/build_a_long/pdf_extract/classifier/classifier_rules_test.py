@@ -517,6 +517,8 @@ class TestClassifierRules:
                 if isinstance(element, Page):
                     if element.page_number:
                         stack.append(element.page_number)
+                    if element.progress_bar:
+                        stack.append(element.progress_bar)
                     stack.extend(element.steps)
 
                 # Step attributes (all required fields)

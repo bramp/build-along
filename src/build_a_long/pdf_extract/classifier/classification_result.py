@@ -4,7 +4,7 @@ Data classes for the classifier.
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 from annotated_types import Ge, Le
 from pydantic import BaseModel, Field, model_validator
@@ -259,7 +259,7 @@ class ClassificationResult(BaseModel):
         assert len(winner_pages) <= 1, (
             "There should be no more than one winning Page candidate."
         )
-        return winner_pages[0].constructed if winner_pages else None
+        return cast(Page, winner_pages[0].constructed) if winner_pages else None
 
     def add_warning(self, warning: str) -> None:
         """Add a warning message to the classification result.

@@ -6,14 +6,16 @@ Pipeline order and dependencies
 Classifiers run in a fixed, enforced order because later stages depend on
 labels produced by earlier stages:
 
-1) PageNumberClassifier → outputs: "page_number"
-2) PartCountClassifier  → outputs: "part_count"
-3) StepNumberClassifier → outputs: "step_number" (uses page_number size)
-4) PartsClassifier      → outputs: "part" (requires part_count, pairs with images)
-5) PartsListClassifier  → outputs: "parts_list" (requires part)
-6) PartsImageClassifier → outputs: "part_image" (requires parts_list, part_count)
-7) StepClassifier       → outputs: "step" (requires step_number and parts_list)
-8) PageClassifier       → outputs: "page" (requires page_number and step)
+1) PageNumberClassifier  → outputs: "page_number"
+2) ProgressBarClassifier → outputs: "progress_bar" (optional, near page_number)
+3) PartCountClassifier   → outputs: "part_count"
+4) PartNumberClassifier  → outputs: "part_number" (catalog pages)
+5) StepNumberClassifier  → outputs: "step_number" (uses page_number size)
+6) PartsClassifier       → outputs: "part" (requires part_count, pairs with images)
+7) PartsListClassifier   → outputs: "parts_list" (requires part)
+8) PartsImageClassifier  → outputs: "part_image" (requires parts_list, part_count)
+9) StepClassifier        → outputs: "step" (requires step_number and parts_list)
+10) PageClassifier       → outputs: "page" (requires page_number and step)
 
 If the order is changed such that a classifier runs before its requirements
 are available, a ValueError will be raised at initialization time.
@@ -48,6 +50,9 @@ from build_a_long.pdf_extract.classifier.parts_image_classifier import (
 )
 from build_a_long.pdf_extract.classifier.parts_list_classifier import (
     PartsListClassifier,
+)
+from build_a_long.pdf_extract.classifier.progress_bar_classifier import (
+    ProgressBarClassifier,
 )
 from build_a_long.pdf_extract.classifier.step_classifier import (
     StepClassifier,
@@ -130,6 +135,7 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
 
 type Classifiers = (
     PageNumberClassifier
+    | ProgressBarClassifier
     | PartCountClassifier
     | PartNumberClassifier
     | StepNumberClassifier
@@ -151,6 +157,7 @@ class Classifier:
         self.config = config
         self.classifiers: list[Classifiers] = [
             PageNumberClassifier(config),
+            ProgressBarClassifier(config),
             PartCountClassifier(config),
             PartNumberClassifier(config),
             StepNumberClassifier(config),

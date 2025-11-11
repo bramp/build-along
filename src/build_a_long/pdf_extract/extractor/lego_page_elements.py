@@ -100,11 +100,10 @@ class PartCount(_LegoPageElement):
 
 
 class PartNumber(_LegoPageElement):
-    """The LEGO part number (element ID) for a part.
+    """The element ID number for a part (catalog pages).
 
-    Positional context: On catalog pages, positioned directly below the catalog
-    part count label. This is LEGO's standard element ID used to identify parts
-    (typically a 6-7 digit number).
+    Positional context: Located directly below the part count on catalog pages.
+    This is a 4-8 digit number that identifies the specific LEGO element.
 
     See layout diagram: lego_page_layout.png
     """
@@ -112,12 +111,36 @@ class PartNumber(_LegoPageElement):
     tag: Literal["PartNumber"] = Field(
         default="PartNumber", alias="__tag__", frozen=True
     )
+
     element_id: str
-    """LEGO's standard element ID for this part (typically 6-7 digit number)."""
+    """The LEGO element ID (4-8 digits, never starts with zero)."""
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"PartNumber(element_id={self.element_id})"
+
+
+class ProgressBar(_LegoPageElement):
+    """A progress bar showing building progress through the instruction book.
+
+    Positional context: Typically located at the bottom of the page, spanning most
+    of the page width, near the page number. Often consists of one or more
+    Drawing/Image elements forming a horizontal bar with progress indicators.
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["ProgressBar"] = Field(
+        default="ProgressBar", alias="__tag__", frozen=True
+    )
+
+    progress: float | None = None
+    """Optional progress percentage (0.0 to 1.0) if detectable from the visual."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        progress_str = f", {self.progress:.1%}" if self.progress is not None else ""
+        return f"ProgressBar(bbox={str(self.bbox)}{progress_str})"
 
 
 class Part(_LegoPageElement):
@@ -267,6 +290,7 @@ class Page(_LegoPageElement):
     category: Category | None = None
 
     page_number: PageNumber | None = None
+    progress_bar: ProgressBar | None = None
     steps: list[Step] = Field(default_factory=list)
 
     # Metadata about the conversion process
@@ -291,6 +315,7 @@ LegoPageElement = Annotated[
     | StepNumber
     | PartCount
     | PartNumber
+    | ProgressBar
     | Part
     | PartsList
     | BagNumber
@@ -305,5 +330,3 @@ LegoPageElement = Annotated[
 # TODO Add sub-assembly (or sub-step) element.
 # TODO Add a final preview element.
 # TODO Add a "information" element (for facts about the set).
-# TODO Maybe add a progress bar element.
-# TODO Add part number (for use on the parts list page at the back of the book).

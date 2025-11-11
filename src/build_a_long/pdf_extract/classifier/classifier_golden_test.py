@@ -113,6 +113,8 @@ class TestClassifierGolden:
         result = classify_elements(page)
         page_element = build_page(result)
 
+        assert page_element is not None, f"No page element found in {fixture_file}"
+
         # Serialize the Page using Pydantic's JSON encoder
         actual_json = page_element.model_dump_json(by_alias=True, indent=2) + "\n"
 
