@@ -18,7 +18,6 @@ See the [parent README](../README.md) for overall pipeline architecture.
 ```python
 import pymupdf
 from build_a_long.pdf_extract.classifier import classify_pages
-from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.extractor import extract_bounding_boxes
 
 # 1. Extract elements from PDF
@@ -29,8 +28,8 @@ with pymupdf.open("instructions.pdf") as doc:
 results = classify_pages(pages)
 
 # 3. Build structured hierarchy
-for page_data, result in zip(pages, results):
-    page = build_page(page_data, result)
+for result in results:
+    page = result.page
     
     # Access structured LEGO elements
     if page.page_number:
@@ -290,7 +289,6 @@ classifier/
 ├── parts_list_classifier.py         # Parts list classification logic
 ├── step_number_classifier.py        # Step number classification logic
 ├── text_extractors.py               # Shared text parsing functions
-├── lego_page_builder.py             # Builds Page from classification results
 └── types.py                         # Shared data types
 ```
 
@@ -327,155 +325,7 @@ To add a new classifier following the two-phase candidate pattern:
 
 See `PageNumberClassifier`, `StepNumberClassifier`, or `PartCountClassifier` for reference implementations.
 
-## Page Builder
-
-After classification, the `lego_page_builder` module constructs a structured hierarchy of LEGO-specific elements. With the candidate-based architecture, builders can use pre-constructed `LegoPageElement` objects from `ClassificationResult.constructed_elements`, eliminating duplicate parsing and guaranteeing consistency.
-
-The builder returns a `Page` object (a `LegoPageElement`) that represents the complete structured view of the page.
-
-### Transformations
-
-```python
-# Classifiers construct elements during classification
-Text("5") + scores → Candidate(constructed=PageNumber(value=5))
-
-# Builders use pre-constructed elements
-result.constructed_elements[text_element]  →  PageNumber(value=5)
-page.page_number = result.constructed_elements[text_element]
-```
-
-Traditional transformations (still supported for backwards compatibility):
-
-```python
-# Text with page_number label becomes PageNumber
-Text("5") + label="page_number"  →  PageNumber(value=5)
-
-# Text with step_number label becomes StepNumber inside a Step
-Text("2") + label="step_number"  →  StepNumber(value=2) inside Step
-
-# Part count text and image become Part inside PartsList
-Text("3x") + Image() + labels  →  Part(count=PartCount(3), ...)
-
-# Drawing with parts_list label becomes PartsList container
-Drawing() + label="parts_list"  →  PartsList(parts=[...])
-```
-
-### Spatial Relationships
-
-The page builder uses `bbox.fully_inside()` to determine containment. For example, parts are only included in a parts list if their bounding boxes are fully inside the parts list's bounding box:
-
-```text
-┌────────────────────────────────────┐
-│  PartsList (Drawing)               │
-│                                    │
-│  ┌──────┐  ┌──────────┐           │
-│  │ 2x   │  │  Image   │  ← Part 1 │
-│  └──────┘  └──────────┘           │
-│                                    │
-│  ┌──────┐  ┌──────────┐           │
-│  │ 1x   │  │  Image   │  ← Part 2 │
-│  └──────┘  └──────────┘           │
-└────────────────────────────────────┘
-```
-
-### Type Hierarchy
-
-```text
-LegoPageElement (base)
-├── Page (top-level container)
-│   ├── page_number: PageNumber | None
-│   ├── steps: List[Step]
-│   ├── parts_lists: List[PartsList]
-│   ├── warnings: List[str]
-│   └── unprocessed_elements: List[Element]
-├── PageNumber
-│   └── value: int
-├── Step
-│   ├── step_number: StepNumber
-│   ├── parts_list: PartsList
-│   └── diagram: Diagram
-├── StepNumber
-│   └── value: int
-├── PartsList
-│   └── parts: List[Part]
-├── Part
-│   ├── count: PartCount
-│   ├── name: str | None
-│   └── number: str | None
-├── PartCount
-│   └── count: int
-└── Diagram
-    └── bbox: BBox
-```
-
-### Usage Examples
-
-```python
-from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
-
-# After extracting and classifying
-page = build_page(page_data, result)
-
-# Access structured elements
-if page.page_number:
-    print(f"Page {page.page_number.value}")
-
-# Steps
-for step in page.steps:
-    print(f"Step {step.step_number.value}")
-    for part in step.parts_list.parts:
-        print(f"  {part.count.count}x")
-
-# Standalone parts lists
-for parts_list in page.parts_lists:
-    total = sum(p.count.count for p in parts_list.parts)
-    print(f"Parts list with {total} total items")
-
-# Check for issues
-if page.warnings:
-    for warning in page.warnings:
-        print(f"Warning: {warning}")
-```
-
-### Error Handling
-
-All parsing errors are non-fatal and result in warnings:
-
-```python
-page = build_page(page_data, result)
-
-# Check for parsing errors
-for warning in page.warnings:
-    if "Could not parse" in warning:
-        # Handle parse error
-        pass
-```
-
-The `Page` object includes:
-
-- **warnings**: List of issues encountered (e.g., multiple page numbers, parse failures)
-- **unprocessed_elements**: Elements that were labeled but not converted (helps identify gaps)
-
-### Current Limitations
-
-The page builder is under active development. Current limitations:
-
-1. **Step Construction** - Steps currently only have basic structure. Future work will:
-   - Associate diagrams with steps based on spatial proximity
-   - Link parts lists to steps when appropriate
-   - Handle multi-step layouts
-
-2. **Part Details** - Parts currently only extract count. Future enhancements:
-   - Extract part name from nearby text
-   - Extract part number (LEGO piece ID)
-   - Associate part color information
-
-3. **Missing Elements** - Some LEGO-specific elements are not yet extracted:
-   - Bag numbers
-   - New bag graphics
-   - Sub-assemblies
-   - Progress bars
-   - Information callouts
+## Adding New Classifiers
 
 ## Current Migration Status
 
@@ -499,7 +349,6 @@ The candidate-based architecture has been successfully implemented:
 ### ⏳ Future Work
 
 - **Builders** (to be updated to use `constructed_elements`):
-  - `lego_page_builder.py`: Currently parses elements; should use pre-constructed objects
 
 - **Enhancements**:
   - Implement hints support for re-evaluation
@@ -519,7 +368,6 @@ pants test src/build_a_long/pdf_extract/classifier::
 Run specific tests:
 
 ```bash
-pants test src/build_a_long/pdf_extract/classifier/lego_page_builder_test.py
 pants test src/build_a_long/pdf_extract/classifier/classifier_test.py
 ```
 

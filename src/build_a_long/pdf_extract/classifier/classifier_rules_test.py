@@ -18,7 +18,6 @@ from pathlib import Path
 import pytest
 
 from build_a_long.pdf_extract.classifier import ClassificationResult, classify_elements
-from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     LegoPageElement,
@@ -503,7 +502,9 @@ class TestClassifierRules:
             result = classify_elements(page_data)
 
             # Build the Page hierarchy
-            page = build_page(result)
+            page = result.page
+            if page is None:
+                pytest.fail(f"Page element is None for {fixture_file} page {page_idx}")
 
             # Collect all constructed elements from the Page hierarchy
             discovered_elements: set[int] = set()

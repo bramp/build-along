@@ -12,7 +12,6 @@ import sys
 from pathlib import Path
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
-from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 
 logging.basicConfig(level=logging.INFO)
@@ -61,10 +60,11 @@ def main() -> None:
         result = classify_elements(page)
 
         # Build the Page from classification results
-        page_element = build_page(result)
+        page_element = result.page
 
         # Serialize with by_alias=True to use __tag__ instead of tag
         # Use Pydantic's JSON encoder for consistent serialization
+        assert page_element is not None, "Page element should not be None"
         golden_json = page_element.model_dump_json(by_alias=True, indent=2) + "\n"
 
         # Write golden file

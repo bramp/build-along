@@ -6,7 +6,6 @@ These tests ensure that the golden file generation process remains functional.
 import json
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
-from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.classifier.tools.generate_golden_files import main
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.fixtures import FIXTURES_DIR, RAW_FIXTURE_FILES
@@ -31,9 +30,10 @@ def test_page_serialization() -> None:
     result = classify_elements(page)
 
     # Build the Page
-    page_element = build_page(result)
+    page_element = result.page
 
     # This should not raise an error
+    assert page_element is not None, "Page element should not be None"
     golden_data = page_element.model_dump(by_alias=True)
 
     # Verify it's valid JSON

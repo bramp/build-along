@@ -42,13 +42,6 @@ The processing pipeline has three main stages:
            │
            ▼
 ┌─────────────────────┐
-│ LEGO PAGE BUILDER   │  Assembles using
-│  (lego_page_builder)│  pre-constructed
-│                     │  elements
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
 │        Page         │  Structured LEGO
 │  - PageNumber       │  elements
 │  - Step[]           │
@@ -56,14 +49,13 @@ The processing pipeline has three main stages:
 └─────────────────────┘
 ```
 
-**Key Difference**: The classifier now **constructs** `LegoPageElement` objects during classification (single parse), and the builder **reuses** these pre-constructed objects instead of re-parsing. This guarantees consistency and preserves all decision context.
+**Key Difference**: The classifier now **constructs** `LegoPageElement` objects during classification (single parse). This guarantees consistency and preserves all decision context.
 
 ## Quick Start
 
 ```python
 import pymupdf
 from build_a_long.pdf_extract.classifier import classify_pages
-from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.extractor import extract_bounding_boxes
 
 # 1. Extract blocks from PDF
@@ -75,7 +67,7 @@ results = classify_pages(pages)
 
 # 3. Build structured hierarchy
 for page_data, result in zip(pages, results):
-    page = build_page(page_data, result)
+    page = result.page
     
     # Access structured LEGO elements
     if page.page_number:
@@ -96,7 +88,6 @@ pdf_extract/
 ├── ANALYZE_CLASSIFIER.md   # Classifier analysis documentation
 ├── classifier/             # Element classification submodule
 │   ├── classifier.py      # Main classification logic
-│   ├── lego_page_builder.py # Structured hierarchy builder
 │   ├── page_number_classifier.py # Individual classifiers
 │   ├── step_number_classifier.py
 │   ├── part_count_classifier.py
@@ -148,8 +139,7 @@ Defines the high-level, domain-specific data model representing the logical stru
 
 1. **PDF Extraction**: The `extractor` submodule uses PyMuPDF to parse the PDF and extract raw page blocks (text blocks, images, drawings) along with their bounding boxes.
 2. **Element Classification**: The `classifier` submodule applies rule-based heuristics to score elements, **construct** `LegoPageElement` objects for valid candidates, and select the best match. All candidates and decision context are preserved.
-3. **Hierarchy Building**: The `lego_page_builder` uses the **pre-constructed elements** from classification to assemble structured `Page` objects, establishing parent-child relationships. No re-parsing occurs.
-4. **Output Generation**: The extracted and classified data is output as structured JSON. Optionally, annotated PNG images can be generated showing the bounding boxes.
+3. **Output Generation**: The extracted and classified data is output as structured JSON. Optionally, annotated PNG images can be generated showing the bounding boxes.
 
 ## Submodules
 
