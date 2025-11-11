@@ -83,17 +83,8 @@ class PartsClassifier(LabelClassifier):
         """
         page_data = result.page_data
 
-        # Get winning part_count candidates
-        part_count_candidates = result.get_candidates("part_count")
-        part_counts: list[PartCount] = []
-
-        for candidate in part_count_candidates:
-            if (
-                candidate.is_winner
-                and candidate.constructed is not None
-                and isinstance(candidate.constructed, PartCount)
-            ):
-                part_counts.append(candidate.constructed)
+        # Get winning part_count candidates with type safety
+        part_counts = result.get_winners("part_count", PartCount)
 
         if not part_counts:
             return

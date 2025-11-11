@@ -42,16 +42,12 @@ class TestStepClassification:
         # Check that step_number is still labeled as step_number
         assert result.get_label(step) == "step_number"
 
-        # Get the constructed Step element from candidates (filter for winners)
-        step_candidates = result.get_candidates("step")
-        winning_steps = [c for c in step_candidates if c.is_winner]
+        # Get the constructed Step element using the new get_winners method
+        winning_steps = result.get_winners("step", Step)
         assert len(winning_steps) == 1
 
-        # The step should be constructed as a Step object
-        constructed = winning_steps[0].constructed
-        assert isinstance(constructed, Step)
-
         # Verify the Step has the correct components
+        constructed = winning_steps[0]
         assert constructed.step_number.value == 10
         assert len(constructed.parts_list.parts) > 0  # Should have parts
         assert constructed.diagram is not None
@@ -77,17 +73,12 @@ class TestStepClassification:
         # Check that step_number is still labeled as step_number
         assert result.get_label(step) == "step_number"
 
-        # Get the constructed Step element
-        step_candidates = result.get_candidates("step")
-        assert len(step_candidates) == 1
-
-        # Get the constructed Step element
-        step_candidates = result.get_candidates("step")
-        assert len(step_candidates) == 1
-        constructed = step_candidates[0].constructed
-        assert isinstance(constructed, Step)
+        # Get the constructed Step element using the new get_winners method
+        steps = result.get_winners("step", Step)
+        assert len(steps) == 1
 
         # Verify the Step has the correct components
+        constructed = steps[0]
         assert constructed.step_number.value == 5
         assert len(constructed.parts_list.parts) == 0  # Should have no parts
         assert constructed.diagram is not None
@@ -121,21 +112,11 @@ class TestStepClassification:
         assert result.get_label(step1) == "step_number"
         assert result.get_label(step2) == "step_number"
 
-        # Check that both steps are classified as "step" candidates
-        step_candidates = result.get_candidates("step")
-        assert len(step_candidates) == 2
-
-        # Verify both steps are constructed
-        step_candidates = result.get_candidates("step")
-        assert len(step_candidates) == 2
+        # Get the constructed Step elements using the new get_winners method
+        steps = result.get_winners("step", Step)
+        assert len(steps) == 2
 
         # Check that steps are in order
-        steps = [
-            c.constructed
-            for c in step_candidates
-            if c.constructed and isinstance(c.constructed, Step)
-        ]
-        assert len(steps) == 2
         steps_sorted = sorted(steps, key=lambda s: s.step_number.value)
         assert steps_sorted[0].step_number.value == 1
         assert steps_sorted[1].step_number.value == 2
@@ -227,8 +208,7 @@ class TestStepClassification:
         )
 
         # But only ONE step should be created (uniqueness enforced at Step level)
-        step_candidates = result.get_candidates("step")
-        winning_steps = [c for c in step_candidates if c.is_winner]
+        winning_steps = result.get_winners("step", Step)
 
         assert len(winning_steps) == 1, (
             f"Expected exactly 1 step winner, got {len(winning_steps)}. "
@@ -236,6 +216,5 @@ class TestStepClassification:
         )
 
         # Verify the winning step has value 1
-        winning_step = winning_steps[0].constructed
-        assert isinstance(winning_step, Step)
+        winning_step = winning_steps[0]
         assert winning_step.step_number.value == 1

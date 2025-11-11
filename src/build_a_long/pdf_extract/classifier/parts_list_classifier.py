@@ -74,16 +74,8 @@ class PartsListClassifier(LabelClassifier):
         Does NOT consider StepNumber proximity - that's done by StepClassifier.
         """
 
-        # Get part candidates and their constructed Part elements
-        part_candidates = result.get_candidates("part")
-        parts: list[Part] = []
-        for candidate in part_candidates:
-            if (
-                candidate.is_winner
-                and candidate.constructed is not None
-                and isinstance(candidate.constructed, Part)
-            ):
-                parts.append(candidate.constructed)
+        # Get part winners with type safety
+        parts = result.get_winners("part", Part)
         if not parts:
             return
 

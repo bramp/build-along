@@ -50,40 +50,15 @@ class PageClassifier(LabelClassifier):
         Collects page_number and step elements to build a complete Page.
         """
         page_data = result.page_data
-        # Get page_number candidate
-        page_number_candidates = result.get_candidates("page_number")
-        page_number: PageNumber | None = None
-        for candidate in page_number_candidates:
-            if (
-                candidate.is_winner
-                and candidate.constructed is not None
-                and isinstance(candidate.constructed, PageNumber)
-            ):
-                page_number = candidate.constructed
-                break
 
-        # Get progress_bar candidate
-        progress_bar_candidates = result.get_candidates("progress_bar")
-        progress_bar: ProgressBar | None = None
-        for candidate in progress_bar_candidates:
-            if (
-                candidate.is_winner
-                and candidate.constructed is not None
-                and isinstance(candidate.constructed, ProgressBar)
-            ):
-                progress_bar = candidate.constructed
-                break
+        # Get winners with type safety
+        page_number_winners = result.get_winners("page_number", PageNumber)
+        page_number = page_number_winners[0] if page_number_winners else None
 
-        # Get step candidates
-        step_candidates = result.get_candidates("step")
-        steps: list[Step] = []
-        for candidate in step_candidates:
-            if (
-                candidate.is_winner
-                and candidate.constructed is not None
-                and isinstance(candidate.constructed, Step)
-            ):
-                steps.append(candidate.constructed)
+        progress_bar_winners = result.get_winners("progress_bar", ProgressBar)
+        progress_bar = progress_bar_winners[0] if progress_bar_winners else None
+
+        steps = result.get_winners("step", Step)
 
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
