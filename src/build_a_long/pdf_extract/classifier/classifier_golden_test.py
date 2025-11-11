@@ -26,6 +26,7 @@ import pytest
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.extractor import ExtractionResult
+from build_a_long.pdf_extract.fixtures import RAW_FIXTURE_FILES
 
 log = logging.getLogger(__name__)
 
@@ -70,13 +71,7 @@ def _compare_json(
 class TestClassifierGolden:
     """Golden file tests validating Page output."""
 
-    @pytest.mark.parametrize(
-        "fixture_file",
-        [
-            f.name
-            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
-        ],
-    )
+    @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
     def test_page_output_matches_golden(self, fixture_file: str) -> None:
         """Test that the Page output matches the golden file.
 
