@@ -80,9 +80,12 @@ class TestClassifyPageNumber:
         assert results.get_label(page_number_text) == "page_number"
         # Check scores from ClassificationResult
         assert results.has_label("page_number")
-        page_number_scores = results.get_scores_for_label("page_number")
-        assert page_number_text in page_number_scores
-        score = page_number_scores[page_number_text].combined_score(ClassifierConfig())
+        candidate = next(
+            c
+            for c in results.get_candidates("page_number")
+            if c.source_block == page_number_text
+        )
+        score = candidate.score
         assert score > 0.5
 
     def test_single_page_number_bottom_right(self) -> None:
@@ -105,8 +108,13 @@ class TestClassifyPageNumber:
         assert result.get_label(page_number_text) == "page_number"
         # Check scores from ClassificationResult
         assert result.has_label("page_number")
-        page_number_scores = result.get_scores_for_label("page_number")
-        assert page_number_text in page_number_scores
+        candidate = next(
+            c
+            for c in result.get_candidates("page_number")
+            if c.source_block == page_number_text
+        )
+        score = candidate.score
+        assert score > 0.5
 
     def test_multiple_candidates_prefer_corners(self) -> None:
         """Test that corner elements score higher than center ones."""
@@ -139,13 +147,18 @@ class TestClassifyPageNumber:
         assert result.get_label(center_text) is None
 
         # Check scores from ClassificationResult
-        page_number_scores = result.get_scores_for_label("page_number")
-        corner_score = page_number_scores[corner_text].combined_score(
-            ClassifierConfig()
+        corner_candidate = next(
+            c
+            for c in result.get_candidates("page_number")
+            if c.source_block == corner_text
         )
-        center_score = page_number_scores[center_text].combined_score(
-            ClassifierConfig()
+        corner_score = corner_candidate.score
+        center_candidate = next(
+            c
+            for c in result.get_candidates("page_number")
+            if c.source_block == center_text
         )
+        center_score = center_candidate.score
         assert corner_score > center_score
 
     def test_prefer_numeric_match_to_page_index(self) -> None:
@@ -211,6 +224,10 @@ class TestClassifyPageNumber:
         assert result.get_label(text_block) is None
 
         # Check that score is low from ClassificationResult
-        page_number_scores = result.get_scores_for_label("page_number")
-        score = page_number_scores[text_block].combined_score(ClassifierConfig())
+        candidate = next(
+            c
+            for c in result.get_candidates("page_number")
+            if c.source_block == text_block
+        )
+        score = candidate.score
         assert score < 0.5

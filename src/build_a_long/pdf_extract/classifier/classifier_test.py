@@ -50,11 +50,12 @@ class TestClassifyElements:
             assert len(labeled_elements) == 1
             # Check that scores were calculated
             assert result.has_label("page_number")
-            page_number_scores = result.get_scores_for_label("page_number")
-            assert labeled_elements[0] in page_number_scores
-            score = page_number_scores[labeled_elements[0]].combined_score(
-                ClassifierConfig()
+            candidate = next(
+                c
+                for c in result.get_candidates("page_number")
+                if c.source_block == labeled_elements[0]
             )
+            score = candidate.score
             assert score > 0.5
 
     def test_empty_pages_list(self) -> None:

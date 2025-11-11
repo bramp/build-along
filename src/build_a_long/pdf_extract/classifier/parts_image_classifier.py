@@ -79,16 +79,13 @@ class PartsImageClassifier(LabelClassifier):
         part count texts and images within parts lists.
         """
         page_data = result.page_data
-        labeled_blocks = result.get_labeled_blocks()
         part_counts: list[Text] = [
-            e
-            for e, label in labeled_blocks.items()
-            if label == "part_count" and isinstance(e, Text)
+            e for e in result.get_blocks_by_label("part_count") if isinstance(e, Text)
         ]
         parts_lists: list[Drawing] = [
             e
-            for e, label in labeled_blocks.items()
-            if label == "parts_list" and isinstance(e, Drawing)
+            for e in result.get_blocks_by_label("parts_list")
+            if isinstance(e, Drawing)
         ]
         if not part_counts or not parts_lists:
             return

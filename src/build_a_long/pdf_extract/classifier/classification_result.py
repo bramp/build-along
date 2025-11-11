@@ -427,20 +427,6 @@ class ClassificationResult(BaseModel):
         self._validate_block_in_page_data(block, "block")
         self.removal_reasons[block.id] = reason
 
-    # TODO Consider removing this method.
-    def get_labeled_blocks(self) -> dict[Block, str]:
-        """Get a dictionary of all labeled blocks.
-
-        Returns:
-            Dictionary mapping blocks to their labels (excludes synthetic candidates)
-        """
-        labeled: dict[Block, str] = {}
-        for label, label_candidates in self.candidates.items():
-            for candidate in label_candidates:
-                if candidate.is_winner and candidate.source_block is not None:
-                    labeled[candidate.source_block] = label
-        return labeled
-
     def get_label(self, block: Block) -> str | None:
         """Get the label for a block from this classification result.
 
@@ -500,23 +486,6 @@ class ClassificationResult(BaseModel):
         """
         return self.removal_reasons.get(block.id)
 
-    def get_scores_for_label(self, label: str) -> dict[ScoreKey, Any]:
-        """Get all scores for a specific label.
-
-        Args:
-            label: The label to get scores for
-
-        Returns:
-            Dictionary mapping elements to score objects for that label
-            (excludes synthetic candidates without source_block)
-        """
-        label_candidates = self.candidates.get(label, [])
-        return {
-            c.source_block: c.score_details
-            for c in label_candidates
-            if c.source_block is not None
-        }
-
     def has_label(self, label: str) -> bool:
         """Check if any elements have been assigned the given label.
 
@@ -528,39 +497,3 @@ class ClassificationResult(BaseModel):
         """
         label_candidates = self.candidates.get(label, [])
         return any(c.is_winner for c in label_candidates)
-
-    def get_best_candidate(self, label: str) -> Candidate | None:
-        """Get the winning candidate for a label.
-
-        Args:
-            label: The label to get the best candidate for
-
-        Returns:
-            The candidate with the highest score that successfully constructed,
-            or None if no valid candidates exist
-        """
-        label_candidates = self.candidates.get(label, [])
-        valid = [c for c in label_candidates if c.constructed is not None]
-        return max(valid, key=lambda c: c.score) if valid else None
-
-    def get_alternative_candidates(
-        self, label: str, exclude_winner: bool = True
-    ) -> list[Candidate]:
-        """Get alternative candidates for a label (for UI/re-evaluation).
-
-        Args:
-            label: The label to get alternatives for
-            exclude_winner: If True, exclude the winning candidate
-
-        Returns:
-            List of candidates sorted by score (highest first)
-        """
-        label_candidates = self.candidates.get(label, [])
-        if exclude_winner:
-            winner_blocks = self.get_blocks_by_label(label)
-            if winner_blocks:
-                winner_id = id(winner_blocks[0])
-                label_candidates = [
-                    c for c in label_candidates if id(c.source_block) != winner_id
-                ]
-        return sorted(label_candidates, key=lambda c: c.score, reverse=True)
