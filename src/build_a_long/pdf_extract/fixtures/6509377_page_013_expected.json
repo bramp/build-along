@@ -17,6 +17,16 @@
     "__tag__": "PageNumber",
     "value": 13
   },
+  "progress_bar": {
+    "bbox": {
+      "x0": -517.74,
+      "y0": 474.1,
+      "x1": 517.74,
+      "y1": 482.59
+    },
+    "__tag__": "ProgressBar",
+    "progress": null
+  },
   "steps": [
     {
       "bbox": {

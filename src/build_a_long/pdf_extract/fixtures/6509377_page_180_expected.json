@@ -17,6 +17,7 @@
     "__tag__": "PageNumber",
     "value": 180
   },
+  "progress_bar": null,
   "steps": [
     {
       "bbox": {

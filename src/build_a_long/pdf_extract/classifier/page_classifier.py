@@ -27,6 +27,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Page,
     PageNumber,
+    ProgressBar,
     Step,
 )
 
@@ -38,7 +39,7 @@ class PageClassifier(LabelClassifier):
     """Classifier for building the complete Page element."""
 
     outputs = frozenset({"page"})
-    requires = frozenset({"page_number", "step"})
+    requires = frozenset({"page_number", "progress_bar", "step"})
 
     def evaluate(
         self,
@@ -61,6 +62,18 @@ class PageClassifier(LabelClassifier):
                 page_number = candidate.constructed
                 break
 
+        # Get progress_bar candidate
+        progress_bar_candidates = result.get_candidates("progress_bar")
+        progress_bar: ProgressBar | None = None
+        for candidate in progress_bar_candidates:
+            if (
+                candidate.is_winner
+                and candidate.constructed is not None
+                and isinstance(candidate.constructed, ProgressBar)
+            ):
+                progress_bar = candidate.constructed
+                break
+
         # Get step candidates
         step_candidates = result.get_candidates("step")
         steps: list[Step] = []
@@ -76,9 +89,10 @@ class PageClassifier(LabelClassifier):
         steps.sort(key=lambda step: step.step_number.value)
 
         log.debug(
-            "[page] page=%s page_number=%s steps=%d",
+            "[page] page=%s page_number=%s progress_bar=%s steps=%d",
             page_data.page_number,
             page_number.value if page_number else None,
+            progress_bar is not None,
             len(steps),
         )
 
@@ -86,6 +100,7 @@ class PageClassifier(LabelClassifier):
         constructed = Page(
             bbox=page_data.bbox,
             page_number=page_number,
+            progress_bar=progress_bar,
             steps=steps,
             warnings=[],
             unprocessed_elements=[],

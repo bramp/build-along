@@ -32,6 +32,7 @@ from .part_count_classifier import PartCountClassifier
 from .part_number_classifier import PartNumberClassifier
 from .parts_image_classifier import PartsImageClassifier
 from .parts_list_classifier import PartsListClassifier
+from .progress_bar_classifier import ProgressBarClassifier
 from .step_classifier import StepClassifier
 from .step_number_classifier import StepNumberClassifier
 
@@ -50,6 +51,7 @@ __all__ = [
     "StepNumberClassifier",
     "PartsListClassifier",
     "PartsImageClassifier",
+    "ProgressBarClassifier",
 ]
 
 import logging
