@@ -84,11 +84,19 @@ class PartCount(_LegoPageElement):
     tag: Literal["PartCount"] = Field(default="PartCount", alias="__tag__", frozen=True)
     count: Annotated[int, Ge(0)]
 
+    matched_hint: Literal["part_count", "catalog_part_count"] | None = None
+    """Which font size hint was matched during classification.
+    
+    - 'part_count': Standard instruction page part count
+    - 'catalog_part_count': Catalog/inventory page part count
+    """
+
     # TODO We may wish to add the part this count refers to.
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        return f"PartCount(count={self.count}x)"
+        hint_str = f", {self.matched_hint}" if self.matched_hint else ""
+        return f"PartCount(count={self.count}x{hint_str})"
 
 
 class Part(_LegoPageElement):

@@ -51,8 +51,10 @@ class _PartCountScore:
         """
         # Determine font size weight based on whether hints are available
         font_size_weight = config.part_count_font_size_weight
-        if config.font_size_hints.part_count_size is None:
-            # No hint available, zero out the font size weight
+
+        # If neither instruction nor catalog hints are available, zero out weight
+        hints = config.font_size_hints
+        if hints.part_count_size is None and hints.catalog_part_count_size is None:
             font_size_weight = 0.0
 
         # Sum the weighted components
@@ -89,14 +91,34 @@ class PartCountClassifier(LabelClassifier):
             if not isinstance(block, Text):
                 continue
 
+            # Try matching against both instruction and catalog part count font sizes
             text_score = self._score_part_count_text(block.text)
-            font_size_score = self._score_font_size(
+
+            # Score against instruction part count size
+            instruction_font_score = self._score_font_size(
                 block, self.config.font_size_hints.part_count_size
             )
 
+            # Score against catalog part count size
+            catalog_font_score = self._score_font_size(
+                block, self.config.font_size_hints.catalog_part_count_size
+            )
+
+            # Use the better matching font size
+            font_size_score = max(instruction_font_score, catalog_font_score)
+
+            # Determine which hint matched best
+            matched_hint = None
+            if font_size_score > 0:
+                if instruction_font_score > catalog_font_score:
+                    matched_hint = "part_count"
+                else:
+                    matched_hint = "catalog_part_count"
+
             # Store detailed score object
             detail_score = _PartCountScore(
-                text_score=text_score, font_size_score=font_size_score
+                text_score=text_score,
+                font_size_score=font_size_score,
             )
 
             # Try to construct (parse part count value)
@@ -114,6 +136,7 @@ class PartCountClassifier(LabelClassifier):
                 constructed_elem = PartCount(
                     count=value,
                     bbox=block.bbox,
+                    matched_hint=matched_hint,
                 )
 
             # Add candidate
