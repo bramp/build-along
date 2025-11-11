@@ -10,7 +10,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
 )
-from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 # TODO Maybe classifers need a interface, where they have

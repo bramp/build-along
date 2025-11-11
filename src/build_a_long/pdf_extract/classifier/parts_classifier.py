@@ -34,7 +34,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
-from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
@@ -65,6 +64,7 @@ class _PartPairScore:
         return self.distance
 
 
+# TODO Should this be called PartClassifier instead?
 @dataclass(frozen=True)
 class PartsClassifier(LabelClassifier):
     """Classifier for Part elements (pairs of part_count + image)."""
