@@ -24,7 +24,6 @@ from pathlib import Path
 import pytest
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
-from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.extractor import ExtractionResult
 from build_a_long.pdf_extract.fixtures import RAW_FIXTURE_FILES
 
@@ -111,11 +110,10 @@ class TestClassifierGolden:
 
         page = extraction.pages[0]
         result = classify_elements(page)
-        page_element = build_page(result)
-
-        assert page_element is not None, f"No page element found in {fixture_file}"
+        page_element = result.page
 
         # Serialize the Page using Pydantic's JSON encoder
+        assert page_element is not None, "Page element should not be None"
         actual_json = page_element.model_dump_json(by_alias=True, indent=2) + "\n"
 
         # Load expected golden data

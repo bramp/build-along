@@ -8,7 +8,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
-from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
@@ -428,5 +427,6 @@ def build_and_print_page_hierarchy(
     print("Building LEGO page hierarchy...")
 
     for page_data, result in zip(pages, results, strict=True):
-        page = build_page(result)
-        print_page_hierarchy(page_data, page)
+        page = result.page
+        if page:
+            print_page_hierarchy(page_data, page)
