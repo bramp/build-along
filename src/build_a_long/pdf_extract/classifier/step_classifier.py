@@ -86,13 +86,14 @@ class StepClassifier(LabelClassifier):
     outputs = frozenset({"step"})
     requires = frozenset({"step_number", "parts_list"})
 
-    def evaluate(self, page_data: PageData, result: ClassificationResult) -> None:
+    def evaluate(self, result: ClassificationResult) -> None:
         """Evaluate elements and create Step candidates for all possible pairings.
 
         Creates Step candidates for each StepNumber, scoring all possible pairings
         with PartsLists. Candidates are stored in ClassificationResult, and the
         best ones will be selected in classify().
         """
+        page_data = result.page_data
 
         # Get step_number candidates
         step_candidates = result.get_candidates("step_number")
@@ -132,10 +133,10 @@ class StepClassifier(LabelClassifier):
         for step_num in steps:
             # Create candidates for this StepNumber paired with each PartsList
             for parts_list in parts_lists:
-                self._create_step_candidate(step_num, parts_list, page_data, result)
+                self._create_step_candidate(step_num, parts_list, result)
 
             # Also create a candidate with no PartsList (fallback)
-            self._create_step_candidate(step_num, None, page_data, result)
+            self._create_step_candidate(step_num, None, result)
 
         log.debug(
             "[step] Created %d step candidates",
@@ -146,7 +147,6 @@ class StepClassifier(LabelClassifier):
         self,
         step_num: StepNumber,
         parts_list: PartsList | None,
-        page_data: PageData,
         result: ClassificationResult,
     ) -> None:
         """Create a Step candidate for a StepNumber paired with a PartsList (or None).
@@ -154,7 +154,6 @@ class StepClassifier(LabelClassifier):
         Args:
             step_num: The StepNumber for this candidate
             parts_list: The PartsList to pair with (or None for no pairing)
-            page_data: The page data
             result: Classification result to add the candidate to
         """
         ABOVE_EPS = 2.0  # Small epsilon for "above" check
@@ -184,7 +183,7 @@ class StepClassifier(LabelClassifier):
                 alignment_score = max(0.0, 1.0 - (left_diff / max_alignment_diff))
 
         # Identify diagram region
-        diagram_bbox = self._identify_diagram_region(step_num, parts_list, page_data)
+        diagram_bbox = self._identify_diagram_region(step_num, parts_list, result)
 
         # Build Step
         diagram = Diagram(bbox=diagram_bbox)
@@ -222,7 +221,7 @@ class StepClassifier(LabelClassifier):
         self,
         step_num: StepNumber,
         parts_list: PartsList | None,
-        page_data: PageData,
+        result: ClassificationResult,
     ) -> BBox:
         """Identify the diagram region for a step.
 
@@ -232,11 +231,12 @@ class StepClassifier(LabelClassifier):
         Args:
             step_num: The step number
             parts_list: The associated parts list (if any)
-            page_data: The page data
+            result: Classification result containing page_data
 
         Returns:
             BBox representing the diagram region
         """
+        page_data = result.page_data
         # Simple heuristic: use the step number's bbox as a starting point
         # In the future, we should look for actual drawing elements below the step
 
@@ -284,7 +284,7 @@ class StepClassifier(LabelClassifier):
 
         return BBox.union_all(bboxes)
 
-    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
+    def classify(self, result: ClassificationResult) -> None:
         """Greedily select the best Step candidates.
 
         Uses the candidates created in evaluate() to select the best pairings.

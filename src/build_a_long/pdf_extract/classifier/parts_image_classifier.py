@@ -70,7 +70,6 @@ class PartsImageClassifier(LabelClassifier):
 
     def evaluate(
         self,
-        page_data: PageData,
         result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create scores for part image pairings.
@@ -78,6 +77,7 @@ class PartsImageClassifier(LabelClassifier):
         Scores are based on vertical distance and horizontal alignment between
         part count texts and images within parts lists.
         """
+        page_data = result.page_data
         labeled_blocks = result.get_labeled_blocks()
         part_counts: list[Text] = [
             e
@@ -102,7 +102,7 @@ class PartsImageClassifier(LabelClassifier):
         )
         self._match_and_label_parts(candidate_edges, part_counts, images, result)
 
-    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
+    def classify(self, result: ClassificationResult) -> None:
         """No-op: All work done in evaluate()."""
         pass
 

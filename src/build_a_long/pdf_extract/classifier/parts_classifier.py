@@ -74,7 +74,6 @@ class PartsClassifier(LabelClassifier):
 
     def evaluate(
         self,
-        page_data: PageData,
         result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create scores for part pairings.
@@ -82,6 +81,8 @@ class PartsClassifier(LabelClassifier):
         Scores are based on vertical distance and horizontal alignment between
         part count elements and images.
         """
+        page_data = result.page_data
+
         # Get winning part_count candidates
         part_count_candidates = result.get_candidates("part_count")
         part_counts: list[PartCount] = []
@@ -111,7 +112,7 @@ class PartsClassifier(LabelClassifier):
         # Match and create Part candidates
         self._match_and_create_parts(candidate_edges, result)
 
-    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
+    def classify(self, result: ClassificationResult) -> None:
         """No-op: All work done in evaluate()."""
         pass
 

@@ -67,7 +67,6 @@ class PartsListClassifier(LabelClassifier):
 
     def evaluate(
         self,
-        page_data: PageData,
         result: ClassificationResult,
     ) -> None:
         """Evaluate elements and create candidates for potential parts list drawings.
@@ -89,6 +88,7 @@ class PartsListClassifier(LabelClassifier):
         if not parts:
             return
 
+        page_data = result.page_data
         drawings: list[Drawing] = [
             e for e in page_data.blocks if isinstance(e, Drawing)
         ]
@@ -151,7 +151,7 @@ class PartsListClassifier(LabelClassifier):
 
         return contained
 
-    def classify(self, page_data: PageData, result: ClassificationResult) -> None:
+    def classify(self, result: ClassificationResult) -> None:
         """Mark all parts list candidates with parts as winners.
 
         All PartsList candidates created in evaluate() have parts, so we mark
