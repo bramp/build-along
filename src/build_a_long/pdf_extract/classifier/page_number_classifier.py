@@ -21,7 +21,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_page_number_value,
 )
-from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import PageNumber
 from build_a_long.pdf_extract.extractor.page_blocks import Text

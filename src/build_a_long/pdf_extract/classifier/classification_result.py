@@ -101,8 +101,9 @@ class Candidate(BaseModel):
 class ClassifierConfig(BaseModel):
     """Configuration for the classifier."""
 
-    # TODO Not sure what this value is used for
-    min_confidence_threshold: float = 0.5
+    # TODO Consistenctly use this, or give it a name more descriptive of where
+    # it's used
+    min_confidence_threshold: Weight = 0.6
 
     page_number_text_weight: Weight = 0.7
     page_number_position_weight: Weight = 0.3
@@ -115,6 +116,14 @@ class ClassifierConfig(BaseModel):
 
     part_count_text_weight: Weight = 0.7
     part_count_font_size_weight: Weight = 0.3
+
+    parts_list_max_area_ratio: float = Field(default=0.75, ge=0.0, le=1.0)
+    """Maximum ratio of page area a parts list can occupy (0.0-1.0).
+    
+    Drawings larger than this fraction of the page are rejected as they're
+    likely the entire page background rather than actual parts lists.
+    Default is 0.75 (75% of page area).
+    """
 
     font_size_hints: FontSizeHints = Field(default_factory=FontSizeHints.empty)
     """Font size hints derived from analyzing all pages"""
@@ -497,21 +506,3 @@ class ClassificationResult(BaseModel):
                     c for c in label_candidates if id(c.source_block) != winner_id
                 ]
         return sorted(label_candidates, key=lambda c: c.score, reverse=True)
-
-    def get_part_image_pairs(self) -> list[tuple[Block, Block]]:
-        """Get part_count and part_image element pairs from winning candidates.
-
-        This derives the pairs from the part_image candidates' score_details,
-        which contain the relationship between part_count text and image elements.
-
-        Returns:
-            List of (part_count, image) tuples for all winning part_image candidates
-        """
-        pairs: list[tuple[Block, Block]] = []
-        for candidate in self.get_candidates("part_image"):
-            if candidate.is_winner and candidate.score_details:
-                # score_details is a _PartImageScore with part_count and image fields
-                score = candidate.score_details
-                if hasattr(score, "part_count") and hasattr(score, "image"):
-                    pairs.append((score.part_count, score.image))
-        return pairs

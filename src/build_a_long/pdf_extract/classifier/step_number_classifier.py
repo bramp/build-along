@@ -19,7 +19,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_step_number_value,
 )
-from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import StepNumber
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
@@ -59,7 +58,7 @@ class _StepNumberScore:
 class StepNumberClassifier(LabelClassifier):
     """Classifier for step numbers."""
 
-    outputs = frozenset({"step_number"})
+    outputs = frozenset({"step_number", "page_number"})
     requires = frozenset()
 
     def evaluate(
@@ -142,6 +141,7 @@ class StepNumberClassifier(LabelClassifier):
         # Get pre-built candidates
         candidate_list = result.get_candidates("step_number")
 
+        # TODO Do I need this check?
         # Find the page number block to avoid classifying it as a step number
         page_number_blocks = result.get_blocks_by_label("page_number")
         page_number_block = page_number_blocks[0] if page_number_blocks else None

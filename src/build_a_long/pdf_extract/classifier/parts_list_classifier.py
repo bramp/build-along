@@ -33,7 +33,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
-from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartsList,
@@ -111,16 +110,35 @@ class PartsListClassifier(LabelClassifier):
             # Create score
             score = _PartsListScore(parts=len(contained))
 
-            # Only create candidates for drawings that have parts
+            # Determine failure reason if any
+            failure_reason = None
+            constructed = None
+
             if not score.parts > 0:
-                continue
+                failure_reason = "Drawing contains no parts"
+            # Check if drawing is suspiciously large (likely the entire page)
+            # A legitimate parts list should be a reasonable fraction of the page
+            elif page_data.bbox:
+                page_area = page_data.bbox.area
+                drawing_area = drawing.bbox.area
+                max_ratio = self.config.parts_list_max_area_ratio
+                if page_area > 0 and drawing_area / page_area > max_ratio:
+                    pct = drawing_area / page_area * 100
+                    failure_reason = f"Drawing too large ({pct:.1f}% of page area)"
+                    log.debug(
+                        "[parts_list] Drawing %d rejected: %s",
+                        drawing.id,
+                        failure_reason,
+                    )
 
-            constructed = PartsList(
-                bbox=drawing.bbox,
-                parts=contained,
-            )
+            # Only construct if no failure
+            if failure_reason is None:
+                constructed = PartsList(
+                    bbox=drawing.bbox,
+                    parts=contained,
+                )
 
-            # Add candidate
+            # Add candidate (even if it failed, for debugging)
             result.add_candidate(
                 "parts_list",
                 Candidate(
@@ -130,7 +148,7 @@ class PartsListClassifier(LabelClassifier):
                     score_details=score,
                     constructed=constructed,
                     source_block=drawing,
-                    failure_reason=None,
+                    failure_reason=failure_reason,
                     is_winner=False,  # Will be set by classify()
                 ),
             )

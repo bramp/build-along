@@ -18,10 +18,34 @@ from pathlib import Path
 import pytest
 
 from build_a_long.pdf_extract.classifier import ClassificationResult, classify_elements
-from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.page_blocks import Block, Text
 
 log = logging.getLogger(__name__)
+
+
+def _load_pages_from_fixture(fixture_file: str) -> list[PageData]:
+    """Load all pages from a fixture file.
+
+    Args:
+        fixture_file: Name of the fixture file (e.g., '6509377_page_010_raw.json')
+
+    Returns:
+        All pages from the extraction result
+
+    Raises:
+        ValueError: If the fixture contains no pages
+    """
+    fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
+    extraction: ExtractionResult = ExtractionResult.model_validate_json(
+        fixture_path.read_text()
+    )  # type: ignore[assignment]
+
+    if not extraction.pages:
+        raise ValueError(f"No pages found in {fixture_file}")
+
+    return extraction.pages
+
 
 # TODO A lot of the methods in ClassifiedPage overlap with ClassificationResult
 
@@ -177,13 +201,15 @@ def _print_label_counts(page: PageData, result: ClassificationResult) -> None:
     log.info(f"Label counts: {label_counts}")
 
 
-@pytest.mark.skip(reason="Not working yet.")
 class TestClassifierRules:
     """End-to-end rules that must hold on real pages after classification."""
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).parent.parent / "fixtures").glob("*.json")],
+        [
+            f.name
+            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
+        ],
     )
     def test_parts_list_contains_at_least_one_part_image(
         self, fixture_file: str
@@ -194,118 +220,126 @@ class TestClassifierRules:
         This test runs on all JSON fixtures in the fixtures/ directory.
         """
 
-        fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
-        page: PageData = PageData.model_validate_json(fixture_path.read_text())
+        pages = _load_pages_from_fixture(fixture_file)
 
-        # Run the full classification pipeline on the page
-        result = classify_elements(page)
+        for page_idx, page in enumerate(pages):
+            # Run the full classification pipeline on the page
+            result = classify_elements(page)
 
-        classified = ClassifiedPage(page, result)
-        classified.print_summary()
+            classified = ClassifiedPage(page, result)
+            classified.print_summary()
 
-        parts_lists = classified.parts_lists()
-        part_images = classified.part_images()
-        part_counts = classified.part_counts()
+            parts_lists = classified.parts_lists()
+            part_images = classified.part_images()
+            part_counts = classified.part_counts()
 
-        # Debug: show all part_image labeled elements including deleted ones
-        all_part_images = classified.elements_by_label(
-            "part_image", include_deleted=True
-        )
-        log.info(
-            f"Total on page: {len(parts_lists)} parts_lists, "
-            f"{len(part_images)} part_images (non-deleted), "
-            f"{len(all_part_images)} total part_images, "
-            f"{len(part_counts)} part_counts"
-        )
-        if len(all_part_images) != len(part_images):
-            deleted_count = len(all_part_images) - len(part_images)
-            log.warning(
-                f"  WARNING: {deleted_count} part_images are DELETED on this page"
+            # Debug: show all part_image labeled elements including deleted ones
+            all_part_images = classified.elements_by_label(
+                "part_image", include_deleted=True
             )
-            for img in all_part_images:
-                if result.is_removed(img):
-                    # Check if it's inside any parts_list
-                    inside_any = any(
-                        img.bbox.fully_inside(pl.bbox) for pl in parts_lists
-                    )
-                    location = (
-                        "inside a parts_list"
-                        if inside_any
-                        else "outside all parts_lists"
-                    )
-                    log.warning(
-                        f"    - Deleted PartImage id:{img.id} "
-                        f"bbox:{img.bbox} ({location})"
-                    )
-
-        for parts_list in parts_lists:
-            part_images_inside = classified.children_of(parts_list, label="part_image")
-            part_counts_inside = classified.children_of(parts_list, label="part_count")
-
-            # Also get ALL part_images (including deleted) to check for deletion bugs
-            all_part_images_inside = []
-            for elem in page.blocks:
-                if result.get_label(elem) == "part_image" and elem.bbox.fully_inside(
-                    parts_list.bbox
-                ):
-                    all_part_images_inside.append(elem)
-
             log.info(
-                f"{fixture_file} PartsList id:{parts_list.id} "
-                f"bbox:{parts_list.bbox} contains:"
+                f"Page {page_idx}: Total on page: {len(parts_lists)} parts_lists, "
+                f"{len(part_images)} part_images (non-deleted), "
+                f"{len(all_part_images)} total part_images, "
+                f"{len(part_counts)} part_counts"
             )
-            for img in part_images_inside:
-                log.info(f" - PartImage id:{img.id} bbox:{img.bbox}")
-            for count in part_counts_inside:
-                count_text = count.text if isinstance(count, Text) else ""
-                log.info(
-                    f" - PartCount id:{count.id} text:{count_text} bbox:{count.bbox}"
-                )
-
-            # Log deleted part_images if any
-            deleted_images = [
-                img for img in all_part_images_inside if result.is_removed(img)
-            ]
-            if deleted_images:
+            if len(all_part_images) != len(part_images):
+                deleted_count = len(all_part_images) - len(part_images)
                 log.warning(
-                    f"  WARNING: {len(deleted_images)} part_images DELETED "
-                    f"inside parts_list {parts_list.id}:"
+                    f"  WARNING: {deleted_count} part_images are DELETED on this page"
                 )
-                for img in deleted_images:
-                    log.warning(
-                        f"    - PartImage id:{img.id} bbox:{img.bbox} [DELETED]"
-                    )
+                for img in all_part_images:
+                    if result.is_removed(img):
+                        # Check if it's inside any parts_list
+                        inside_any = any(
+                            img.bbox.fully_inside(pl.bbox) for pl in parts_lists
+                        )
+                        location = (
+                            "inside a parts_list"
+                            if inside_any
+                            else "outside all parts_lists"
+                        )
+                        log.warning(
+                            f"    - Deleted PartImage id:{img.id} "
+                            f"bbox:{img.bbox} ({location})"
+                        )
 
-            # Debug: log all part images to see why they're not inside
-            if len(part_images_inside) == 0:
-                log.info("  DEBUG: All part_images on page:")
-                for img in part_images:
+            for parts_list in parts_lists:
+                part_images_inside = classified.children_of(
+                    parts_list, label="part_image"
+                )
+                part_counts_inside = classified.children_of(
+                    parts_list, label="part_count"
+                )
+
+                # Also get ALL part_images (including deleted) to check for deletion bugs
+                all_part_images_inside = []
+                for elem in page.blocks:
+                    if result.get_label(
+                        elem
+                    ) == "part_image" and elem.bbox.fully_inside(parts_list.bbox):
+                        all_part_images_inside.append(elem)
+
+                log.info(
+                    f"{fixture_file} page {page_idx} PartsList id:{parts_list.id} "
+                    f"bbox:{parts_list.bbox} contains:"
+                )
+                for img in part_images_inside:
+                    log.info(f" - PartImage id:{img.id} bbox:{img.bbox}")
+                for count in part_counts_inside:
+                    count_text = count.text if isinstance(count, Text) else ""
                     log.info(
-                        f"  - PartImage id:{img.id} bbox:{img.bbox} "
-                        f"inside:{img.bbox.fully_inside(parts_list.bbox)}"
+                        f" - PartCount id:{count.id} text:{count_text} bbox:{count.bbox}"
                     )
-            # Each parts_list must contain at least one part_image fully inside its bbox
-            assert len(part_images_inside) >= 1, (
-                f"Parts list {parts_list.id} in {fixture_file} should contain "
-                f"at least one part image"
-            )
 
-            # No part_images inside a parts_list should be deleted
-            assert len(deleted_images) == 0, (
-                f"Parts list {parts_list.id} in {fixture_file} has "
-                f"{len(deleted_images)} deleted part_images inside it (should be 0)"
-            )
+                # Log deleted part_images if any
+                deleted_images = [
+                    img for img in all_part_images_inside if result.is_removed(img)
+                ]
+                if deleted_images:
+                    log.warning(
+                        f"  WARNING: {len(deleted_images)} part_images DELETED "
+                        f"inside parts_list {parts_list.id}:"
+                    )
+                    for img in deleted_images:
+                        log.warning(
+                            f"    - PartImage id:{img.id} bbox:{img.bbox} [DELETED]"
+                        )
 
-            # Each parts_list must contain the same number of part_counts as
-            # part_images inside it
-            assert len(part_counts_inside) == len(part_images_inside), (
-                f"PartsList id:{parts_list.id} in {fixture_file} should contain "
-                f"{len(part_images_inside)} PartCounts, found {len(part_counts_inside)}"
-            )
+                # Debug: log all part images to see why they're not inside
+                if len(part_images_inside) == 0:
+                    log.info("  DEBUG: All part_images on page:")
+                    for img in part_images:
+                        log.info(
+                            f"  - PartImage id:{img.id} bbox:{img.bbox} "
+                            f"inside:{img.bbox.fully_inside(parts_list.bbox)}"
+                        )
+                # Each parts_list must contain at least one part_image fully inside its bbox
+                assert len(part_images_inside) >= 1, (
+                    f"Parts list {parts_list.id} in {fixture_file} page {page_idx} "
+                    f"should contain at least one part image"
+                )
+
+                # No part_images inside a parts_list should be deleted
+                assert len(deleted_images) == 0, (
+                    f"Parts list {parts_list.id} in {fixture_file} page {page_idx} has "
+                    f"{len(deleted_images)} deleted part_images inside it (should be 0)"
+                )
+
+                # Each parts_list must contain the same number of part_counts as
+                # part_images inside it
+                assert len(part_counts_inside) == len(part_images_inside), (
+                    f"PartsList id:{parts_list.id} in {fixture_file} page {page_idx} "
+                    f"should contain {len(part_images_inside)} PartCounts, "
+                    f"found {len(part_counts_inside)}"
+                )
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).parent.parent / "fixtures").glob("*.json")],
+        [
+            f.name
+            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
+        ],
     )
     def test_parts_lists_do_not_overlap(self, fixture_file: str) -> None:
         """No two parts lists should overlap.
@@ -313,57 +347,63 @@ class TestClassifierRules:
         Parts lists represent distinct areas of the page and should not
         have overlapping bounding boxes.
         """
-        fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
-        page: PageData = PageData.model_validate_json(fixture_path.read_text())
+        pages = _load_pages_from_fixture(fixture_file)
 
-        # Run the full classification pipeline on the page
-        result = classify_elements(page)
+        for page_idx, page in enumerate(pages):
+            # Run the full classification pipeline on the page
+            result = classify_elements(page)
 
-        classified = ClassifiedPage(page, result)
-        parts_lists = classified.parts_lists()
+            classified = ClassifiedPage(page, result)
+            parts_lists = classified.parts_lists()
 
-        # Check all pairs of parts lists for overlap
-        for i, parts_list_a in enumerate(parts_lists):
-            for parts_list_b in parts_lists[i + 1 :]:
-                assert not parts_list_a.bbox.overlaps(parts_list_b.bbox), (
-                    f"Parts lists {parts_list_a.id} (bbox:{parts_list_a.bbox}) and "
-                    f"{parts_list_b.id} (bbox:{parts_list_b.bbox}) in "
-                    f"{fixture_file} overlap"
-                )
+            # Check all pairs of parts lists for overlap
+            for i, parts_list_a in enumerate(parts_lists):
+                for parts_list_b in parts_lists[i + 1 :]:
+                    assert not parts_list_a.bbox.overlaps(parts_list_b.bbox), (
+                        f"Parts lists {parts_list_a.id} (bbox:{parts_list_a.bbox}) and "
+                        f"{parts_list_b.id} (bbox:{parts_list_b.bbox}) in "
+                        f"{fixture_file} page {page_idx} overlap"
+                    )
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).parent.parent / "fixtures").glob("*.json")],
+        [
+            f.name
+            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
+        ],
     )
     def test_each_part_image_is_inside_a_parts_list(self, fixture_file: str) -> None:
         """Each part image must be inside at least one parts list.
 
         Every part_image should be contained within a parts_list's bounding box.
         """
-        fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
-        page: PageData = PageData.model_validate_json(fixture_path.read_text())
+        pages = _load_pages_from_fixture(fixture_file)
 
-        # Run the full classification pipeline on the page
-        result = classify_elements(page)
+        for page_idx, page in enumerate(pages):
+            # Run the full classification pipeline on the page
+            result = classify_elements(page)
 
-        classified = ClassifiedPage(page, result)
-        parts_lists = classified.parts_lists()
-        part_images = classified.part_images()
+            classified = ClassifiedPage(page, result)
+            parts_lists = classified.parts_lists()
+            part_images = classified.part_images()
 
-        for part_image in part_images:
-            # Check if this part_image is inside at least one parts_list
-            inside_any_parts_list = any(
-                part_image.bbox.fully_inside(pl.bbox) for pl in parts_lists
-            )
+            for part_image in part_images:
+                # Check if this part_image is inside at least one parts_list
+                inside_any_parts_list = any(
+                    part_image.bbox.fully_inside(pl.bbox) for pl in parts_lists
+                )
 
-            assert inside_any_parts_list, (
-                f"Part image {part_image.id} (bbox:{part_image.bbox}) in "
-                f"{fixture_file} is not inside any parts_list"
-            )
+                assert inside_any_parts_list, (
+                    f"Part image {part_image.id} (bbox:{part_image.bbox}) in "
+                    f"{fixture_file} page {page_idx} is not inside any parts_list"
+                )
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).parent.parent / "fixtures").glob("*.json")],
+        [
+            f.name
+            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
+        ],
     )
     def test_no_labeled_element_is_deleted(self, fixture_file: str) -> None:
         """No element with a label should be marked as deleted.
@@ -371,36 +411,40 @@ class TestClassifierRules:
         If an element has been classified with a label, it should not be deleted.
         This ensures that the classification and deletion logic don't conflict.
         """
-        fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
-        page: PageData = PageData.model_validate_json(fixture_path.read_text())
+        pages = _load_pages_from_fixture(fixture_file)
 
-        # Run the full classification pipeline on the page
-        result = classify_elements(page)
+        for page_idx, page in enumerate(pages):
+            # Run the full classification pipeline on the page
+            result = classify_elements(page)
 
-        # Find all elements that are both labeled and deleted
-        labeled_and_deleted = []
-        for elem in page.blocks:
-            if result.get_label(elem) is not None and result.is_removed(elem):
-                labeled_and_deleted.append(elem)
+            # Find all elements that are both labeled and deleted
+            labeled_and_deleted = []
+            for elem in page.blocks:
+                if result.get_label(elem) is not None and result.is_removed(elem):
+                    labeled_and_deleted.append(elem)
 
-        if labeled_and_deleted:
-            log.error(
-                f"Found {len(labeled_and_deleted)} labeled elements that are deleted:"
-            )
-            for elem in labeled_and_deleted:
+            if labeled_and_deleted:
                 log.error(
-                    f"  - {result.get_label(elem)} id:{elem.id} "
-                    f"bbox:{elem.bbox} [DELETED]"
+                    f"Found {len(labeled_and_deleted)} labeled elements that are deleted:"
                 )
+                for elem in labeled_and_deleted:
+                    log.error(
+                        f"  - {result.get_label(elem)} id:{elem.id} "
+                        f"bbox:{elem.bbox} [DELETED]"
+                    )
 
-        assert len(labeled_and_deleted) == 0, (
-            f"Found {len(labeled_and_deleted)} labeled elements that are "
-            f"deleted in {fixture_file}. Labeled elements should not be deleted."
-        )
+            assert len(labeled_and_deleted) == 0, (
+                f"Found {len(labeled_and_deleted)} labeled elements that are "
+                f"deleted in {fixture_file} page {page_idx}. "
+                f"Labeled elements should not be deleted."
+            )
 
     @pytest.mark.parametrize(
         "fixture_file",
-        [f.name for f in (Path(__file__).parent.parent / "fixtures").glob("*.json")],
+        [
+            f.name
+            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
+        ],
     )
     def test_each_element_has_at_most_one_winner(self, fixture_file: str) -> None:
         """Each element should have at most one winner candidate across all labels.
@@ -409,35 +453,35 @@ class TestClassifierRules:
         one of them should be marked as a winner. This ensures classification
         decisions are unambiguous.
         """
-        fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
-        page: PageData = PageData.model_validate_json(fixture_path.read_text())
+        pages = _load_pages_from_fixture(fixture_file)
 
-        # Run the full classification pipeline on the page
-        result = classify_elements(page)
+        for page_idx, page in enumerate(pages):
+            # Run the full classification pipeline on the page
+            result = classify_elements(page)
 
-        # Track which blocks have won, and for which label
-        block_to_winning_label: dict[int, str] = {}
+            # Track which blocks have won, and for which label
+            block_to_winning_label: dict[int, str] = {}
 
-        # Check all candidates across all labels
-        all_candidates = result.get_all_candidates()
-        for label, candidates in all_candidates.items():
-            for candidate in candidates:
-                if not candidate.is_winner:
-                    continue
+            # Check all candidates across all labels
+            all_candidates = result.get_all_candidates()
+            for label, candidates in all_candidates.items():
+                for candidate in candidates:
+                    if not candidate.is_winner:
+                        continue
 
-                # Skip synthetic candidates (no source block)
-                if candidate.source_block is None:
-                    continue
+                    # Skip synthetic candidates (no source block)
+                    if candidate.source_block is None:
+                        continue
 
-                block_id = candidate.source_block.id
+                    block_id = candidate.source_block.id
 
-                # Check if this block already has a winner
-                if block_id in block_to_winning_label:
-                    existing_label = block_to_winning_label[block_id]
-                    pytest.fail(
-                        f"Block {block_id} in {fixture_file} has multiple "
-                        f"winner candidates: '{existing_label}' and '{label}'. "
-                        "Each block should have at most one winner."
-                    )
+                    # Check if this block already has a winner
+                    if block_id in block_to_winning_label:
+                        existing_label = block_to_winning_label[block_id]
+                        pytest.fail(
+                            f"Block {block_id} in {fixture_file} page {page_idx} has multiple "
+                            f"winner candidates: '{existing_label}' and '{label}'. "
+                            "Each block should have at most one winner."
+                        )
 
-                block_to_winning_label[block_id] = label
+                    block_to_winning_label[block_id] = label

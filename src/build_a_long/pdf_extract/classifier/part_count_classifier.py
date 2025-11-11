@@ -28,7 +28,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_part_count_value,
 )
-from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import PartCount
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 

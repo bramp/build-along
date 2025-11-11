@@ -61,6 +61,7 @@ class _PartImageScore:
         return self.distance
 
 
+# TODO Should this be called PartImageClassifier instead?
 @dataclass(frozen=True)
 class PartsImageClassifier(LabelClassifier):
     """Classifier for part images paired with part count texts."""
