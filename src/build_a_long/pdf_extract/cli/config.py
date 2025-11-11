@@ -21,7 +21,8 @@ class ProcessingConfig:
     summary_detailed: bool = False
     save_raw_json: bool = False
     compress_json: bool = False
-    draw_images: bool = True
+    draw_blocks: bool = False
+    draw_elements: bool = False
     draw_deleted: bool = False
 
     # Debug flags
@@ -51,7 +52,8 @@ class ProcessingConfig:
             summary_detailed=args.summary_detailed,
             save_raw_json=args.debug_json,
             compress_json=args.compress_json,
-            draw_images=args.draw,
+            draw_blocks=args.draw_blocks,
+            draw_elements=args.draw_elements,
             draw_deleted=args.draw_deleted,
             debug_classification=args.debug_classification,
             print_histogram=args.print_histogram,
@@ -125,16 +127,22 @@ def parse_arguments() -> argparse.Namespace:
         ),
     )
     output_group.add_argument(
-        "--draw",
+        "--draw-blocks",
         action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Draw annotated images.",
+        default=False,
+        help="Draw bounding boxes for classified PDF blocks in annotated images.",
+    )
+    output_group.add_argument(
+        "--draw-elements",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Draw bounding boxes for classified LEGO page elements in annotated images.",
     )
     output_group.add_argument(
         "--draw-deleted",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Draw bounding boxes for elements marked as deleted.",
+        help="Draw bounding boxes for elements marked as deleted (requires --draw-blocks or --draw-elements).",
     )
 
     # Debug options group

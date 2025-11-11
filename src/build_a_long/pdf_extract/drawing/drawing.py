@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 import pymupdf
@@ -7,6 +8,7 @@ from PIL import Image, ImageDraw
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
@@ -17,6 +19,29 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class DrawableItem:
+    """A unified structure for things to draw on the page."""
+
+    bbox: BBox
+    """The bounding box to draw."""
+
+    label: str
+    """Label text to display."""
+
+    is_element: bool
+    """True if this represents a LegoPageElement."""
+
+    is_winner: bool
+    """True if this is a winning element/block."""
+
+    is_removed: bool
+    """True if this block was removed."""
+
+    depth: int = 0
+    """Nesting depth for color selection (computed later)."""
 
 
 def _draw_dashed_rectangle(
@@ -41,11 +66,153 @@ def _draw_dashed_rectangle(
         draw.line([(x1, i), (x1, min(i + dash_length, y1))], fill=outline, width=width)
 
 
+def _create_drawable_items(
+    result: ClassificationResult,
+    *,
+    draw_blocks: bool,
+    draw_elements: bool,
+    draw_deleted: bool,
+) -> list[DrawableItem]:
+    """Create a unified list of items to draw.
+
+    Args:
+        result: Classification result containing blocks and elements
+        draw_blocks: If True, include PDF blocks
+        draw_elements: If True, include LEGO page elements
+        draw_deleted: If True, include removed/non-winner items
+
+    Returns:
+        List of DrawableItem objects ready to be rendered
+    """
+    items: list[DrawableItem] = []
+    element_source_block_ids: set[int] = set()
+
+    # Add elements first and track their source block IDs
+    if draw_elements:
+        for _, candidates in result.get_all_candidates().items():
+            for candidate in candidates:
+                if candidate.constructed is None:
+                    continue
+                if not candidate.is_winner and not draw_deleted:
+                    continue
+
+                label_suffix = "" if candidate.is_winner else " [NOT WINNER]"
+                label = f"[{candidate.label}]{label_suffix}"
+
+                # Element without source block (e.g., Step, Page)
+                items.append(
+                    DrawableItem(
+                        bbox=candidate.bbox,
+                        label=label,
+                        is_element=True,
+                        is_winner=candidate.is_winner,
+                        is_removed=False,
+                    )
+                )
+
+                if candidate.source_block:
+                    # Element with source block - track it and add as element
+                    element_source_block_ids.add(candidate.source_block.id)
+
+    # Add regular blocks (skip those that will be drawn as elements)
+    if draw_blocks:
+        for block in result.blocks:
+            # Skip blocks that are source blocks for elements we're drawing
+            if block.id in element_source_block_ids:
+                continue
+
+            is_removed = result.is_removed(block)
+            if is_removed and not draw_deleted:
+                continue
+
+            block_label = result.get_label(block)
+            label_suffix = " [REMOVED]" if is_removed else ""
+            label_text = block_label or block.__class__.__name__
+
+            # Add extra info for specific block types
+            if isinstance(block, Drawing | ImageBlock):
+                if hasattr(block, "image_id") and block.image_id:
+                    label_text = f"{label_text} ({block.image_id})"
+            elif isinstance(block, Text):
+                content = block.text.strip()
+                if len(content) > 50:
+                    content = content[:47] + "..."
+                label_text = f"{label_text}: {content}"
+
+            label = f"ID: {block.id} {label_text}{label_suffix}"
+
+            items.append(
+                DrawableItem(
+                    bbox=block.bbox,
+                    label=label,
+                    is_element=False,
+                    is_winner=not is_removed,
+                    is_removed=is_removed,
+                )
+            )
+
+    return items
+
+
+def _draw_item(
+    draw: ImageDraw.ImageDraw,
+    item: DrawableItem,
+    depth_colors: list[str],
+    scale_x: float,
+    scale_y: float,
+) -> None:
+    """Draw a single item on the image.
+
+    Args:
+        draw: PIL ImageDraw object
+        item: The item to draw
+        depth_colors: List of colors to cycle through
+        scale_x: X scaling factor
+        scale_y: Y scaling factor
+    """
+    bbox = item.bbox
+    scaled_bbox = (
+        bbox.x0 * scale_x,
+        bbox.y0 * scale_y,
+        bbox.x1 * scale_x,
+        bbox.y1 * scale_y,
+    )
+
+    color = depth_colors[item.depth % len(depth_colors)]
+
+    # Determine drawing style
+    if item.is_element:
+        # Elements get thicker lines
+        if item.is_winner:
+            draw.rectangle(scaled_bbox, outline=color, width=2)
+        else:
+            # Non-winners get dashed thick lines
+            _draw_dashed_rectangle(draw, scaled_bbox, outline=color, width=2)
+    else:
+        # Regular blocks
+        if item.is_removed:
+            _draw_dashed_rectangle(draw, scaled_bbox, outline=color, width=2)
+        else:
+            draw.rectangle(scaled_bbox, outline=color, width=1)
+
+    # Draw label
+    if item.depth % 2 == 0:
+        text_position = (scaled_bbox[0], scaled_bbox[3] + 2)
+        draw.text(text_position, item.label, fill=color)
+    else:
+        text_bbox = draw.textbbox((0, 0), item.label)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_position = (scaled_bbox[2] - text_width, scaled_bbox[3] + 2)
+        draw.text(text_position, item.label, fill=color)
+
+
 def draw_and_save_bboxes(
     page: pymupdf.Page,
     result: ClassificationResult,
     output_path: Path,
     *,
+    draw_blocks: bool = False,
+    draw_elements: bool = False,
     draw_deleted: bool = False,
 ) -> None:
     """
@@ -56,6 +223,8 @@ def draw_and_save_bboxes(
         page: PyMuPDF page to render
         result: ClassificationResult containing labels and blocks
         output_path: Where to save the output image
+        draw_blocks: If True, render classified PDF blocks.
+        draw_elements: If True, render classified LEGO page elements.
         draw_deleted: If True, also render blocks marked as deleted.
     """
     image_dpi = 150
@@ -73,88 +242,24 @@ def draw_and_save_bboxes(
     # Colors for different nesting depths (cycles through this list)
     depth_colors = ["red", "green", "blue", "yellow", "purple", "orange"]
 
-    # Build hierarchy once to efficiently calculate depths - O(n log n)
-    hierarchy = build_hierarchy_from_blocks(result.blocks)
+    # Create unified list of items to draw
+    items = _create_drawable_items(
+        result,
+        draw_blocks=draw_blocks,
+        draw_elements=draw_elements,
+        draw_deleted=draw_deleted,
+    )
 
-    # Draw all blocks
-    for block in result.blocks:
-        block_removed = result.is_removed(block)
-        if block_removed and not draw_deleted:
-            continue
+    # Build hierarchy for depth calculation directly from DrawableItems
+    hierarchy = build_hierarchy_from_blocks(items)
 
-        bbox = block.bbox
+    # Compute and store depth in each item
+    for item in items:
+        item.depth = hierarchy.get_depth(item)
 
-        # Scale the bounding box
-        scaled_bbox = (
-            bbox.x0 * scale_x,
-            bbox.y0 * scale_y,
-            bbox.x1 * scale_x,
-            bbox.y1 * scale_y,
-        )
-
-        # Get pre-calculated depth - O(1)
-        depth = hierarchy.get_depth(block)
-
-        # Determine color based on depth
-        color = depth_colors[depth % len(depth_colors)]
-
-        # If block is removed (in to_remove), use lighter/grayed color and dash
-        if block_removed:
-            # Draw dashed outline for removed blocks
-            _draw_dashed_rectangle(draw, scaled_bbox, outline=color, width=2)
-        else:
-            # Draw the bounding box normally
-            draw.rectangle(scaled_bbox, outline=color, width=1)
-
-        # Draw the block type text
-        label_prefix = "[REMOVED] " if block_removed else ""
-        block_label = result.get_label(block)  # type: ignore[arg-type]
-        label = f"ID: {block.id} {label_prefix}" + (
-            block_label or block.__class__.__name__
-        )
-        if isinstance(block, Drawing | ImageBlock):
-            if block.image_id:
-                label = f"{label} ({block.image_id})"
-        elif isinstance(block, Text):
-            # For Text blocks, show the actual text content
-            content = block.text.strip()
-            if len(content) > 50:  # Truncate long text
-                content = content[:47] + "..."
-            label = f"{label}: {content}"
-
-        # Below bottom-left
-        if depth % 2 == 0:  # Even depth, left align
-            text_position = (scaled_bbox[0], scaled_bbox[3] + 2)
-            draw.text(text_position, label, fill=color)
-        else:  # Odd depth, right align
-            # Calculate text width for right alignment
-            text_bbox = draw.textbbox((0, 0), label)
-            text_width = text_bbox[2] - text_bbox[0]
-            text_position = (scaled_bbox[2] - text_width, scaled_bbox[3] + 2)
-            draw.text(text_position, label, fill=color)
-
-    # Draw all winning candidates that are synthetic (no source_block)
-    synthetic_winner_color = "magenta"
-    for _, candidates in result.get_all_candidates().items():
-        for candidate in candidates:
-            if candidate.is_winner and candidate.source_block is None:
-                bbox = candidate.bbox
-
-                # Scale the bounding box
-                scaled_bbox = (
-                    bbox.x0 * scale_x,
-                    bbox.y0 * scale_y,
-                    bbox.x1 * scale_x,
-                    bbox.y1 * scale_y,
-                )
-
-                # Draw outline for synthetic winners
-                draw.rectangle(scaled_bbox, outline=synthetic_winner_color, width=2)
-
-                # Draw the label and score
-                label = f"SYNTHETIC WINNER: {candidate.label} (Score: {candidate.score:.2f})"
-                text_position = (scaled_bbox[0], scaled_bbox[1] - 12)  # Above top-left
-                draw.text(text_position, label, fill=synthetic_winner_color)
+    # Draw all items
+    for item in items:
+        _draw_item(draw, item, depth_colors, scale_x, scale_y)
 
     img.save(output_path)
     logger.info("Saved image with bboxes to %s", output_path)
