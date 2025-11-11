@@ -4,12 +4,12 @@ These tests ensure that the golden file generation process remains functional.
 """
 
 import json
-from pathlib import Path
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.classifier.lego_page_builder import build_page
 from build_a_long.pdf_extract.classifier.tools.generate_golden_files import main
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.fixtures import FIXTURES_DIR, RAW_FIXTURE_FILES
 
 
 def test_page_serialization() -> None:
@@ -18,8 +18,7 @@ def test_page_serialization() -> None:
     This is a regression test for the generate_golden_files script.
     """
     # Load a simple fixture
-    fixtures_dir = Path(__file__).parent.parent / "fixtures"
-    raw_fixture = fixtures_dir / "6509377_page_010_raw.json"
+    raw_fixture = FIXTURES_DIR / "6509377_page_010_raw.json"
 
     if not raw_fixture.exists():
         # Skip test if fixture doesn't exist
@@ -55,8 +54,7 @@ def test_generate_golden_files_main() -> None:
     serialization issues (e.g., TYPE_CHECKING imports making types unavailable
     at runtime).
     """
-    fixtures_dir = Path(__file__).parent.parent / "fixtures"
-    expected_files = list(fixtures_dir.glob("*_raw.json"))
+    expected_files = [FIXTURES_DIR / f for f in RAW_FIXTURE_FILES]
 
     if not expected_files:
         # Skip test if no fixtures are available

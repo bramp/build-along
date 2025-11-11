@@ -1,4 +1,11 @@
-python_sources()
+python_sources(
+    sources=["*.py", "!fixtures.py"],
+)
+
+python_test_utils(
+    name="test_utils",
+    sources=["fixtures.py"],
+)
 
 python_tests(
     name="tests",

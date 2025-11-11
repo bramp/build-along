@@ -1,7 +1,6 @@
 """Tests for font_size_hints module."""
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -10,6 +9,7 @@ from build_a_long.pdf_extract.cli.io import load_json
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Text
+from build_a_long.pdf_extract.fixtures import FIXTURES_DIR
 
 
 def test_from_pages_with_all_sizes() -> None:
@@ -313,12 +313,11 @@ class TestFontSizeHintsGolden:
                 src/build_a_long/pdf_extract/classifier/ \\
                 tools:generate-font-hints-golden
         """
-        fixtures_dir = Path(__file__).parent.parent / "fixtures"
-        fixture_path = fixtures_dir / fixture_file
+        fixture_path = FIXTURES_DIR / fixture_file
 
         # Determine golden file path
         golden_file = fixture_file.replace("_raw.json.bz2", "_font_hints_expected.json")
-        golden_path = fixtures_dir / golden_file
+        golden_path = FIXTURES_DIR / golden_file
 
         # Load the input fixture
         json_data = load_json(fixture_path)

@@ -20,6 +20,7 @@ import pytest
 from build_a_long.pdf_extract.classifier import ClassificationResult, classify_elements
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.page_blocks import Block, Text
+from build_a_long.pdf_extract.fixtures import RAW_FIXTURE_FILES
 
 log = logging.getLogger(__name__)
 
@@ -204,13 +205,7 @@ def _print_label_counts(page: PageData, result: ClassificationResult) -> None:
 class TestClassifierRules:
     """End-to-end rules that must hold on real pages after classification."""
 
-    @pytest.mark.parametrize(
-        "fixture_file",
-        [
-            f.name
-            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
-        ],
-    )
+    @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
     def test_parts_list_contains_at_least_one_part_image(
         self, fixture_file: str
     ) -> None:
@@ -334,13 +329,7 @@ class TestClassifierRules:
                     f"found {len(part_counts_inside)}"
                 )
 
-    @pytest.mark.parametrize(
-        "fixture_file",
-        [
-            f.name
-            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
-        ],
-    )
+    @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
     def test_parts_lists_do_not_overlap(self, fixture_file: str) -> None:
         """No two parts lists should overlap.
 
@@ -365,13 +354,7 @@ class TestClassifierRules:
                         f"{fixture_file} page {page_idx} overlap"
                     )
 
-    @pytest.mark.parametrize(
-        "fixture_file",
-        [
-            f.name
-            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
-        ],
-    )
+    @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
     def test_each_part_image_is_inside_a_parts_list(self, fixture_file: str) -> None:
         """Each part image must be inside at least one parts list.
 
@@ -398,13 +381,7 @@ class TestClassifierRules:
                     f"{fixture_file} page {page_idx} is not inside any parts_list"
                 )
 
-    @pytest.mark.parametrize(
-        "fixture_file",
-        [
-            f.name
-            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
-        ],
-    )
+    @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
     def test_no_labeled_element_is_deleted(self, fixture_file: str) -> None:
         """No element with a label should be marked as deleted.
 
@@ -439,13 +416,7 @@ class TestClassifierRules:
                 f"Labeled elements should not be deleted."
             )
 
-    @pytest.mark.parametrize(
-        "fixture_file",
-        [
-            f.name
-            for f in (Path(__file__).parent.parent / "fixtures").glob("*_raw.json")
-        ],
-    )
+    @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
     def test_each_element_has_at_most_one_winner(self, fixture_file: str) -> None:
         """Each element should have at most one winner candidate across all labels.
 
