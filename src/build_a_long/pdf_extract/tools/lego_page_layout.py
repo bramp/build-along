@@ -21,7 +21,9 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PageNumber,
     Part,
     PartCount,
+    PartNumber,
     PartsList,
+    ProgressBar,
     Step,
     StepNumber,
 )
@@ -38,6 +40,8 @@ COLORS = {
     "StepNumber": "#FF6347",  # Tomato red
     "PageNumber": "#8B4513",  # Saddle brown
     "Diagram": "#9370DB",  # Medium purple
+    "PartNumber": "#FFA500",  # Orange
+    "ProgressBar": "#DDA0DD",  # Plum
 }
 
 
@@ -148,6 +152,10 @@ def draw_page(page: Page, output_path: str = "lego_page_layout.png") -> None:
     if page.page_number:
         draw_page_number(draw, page.page_number)
 
+    # Draw progress bar if present
+    if page.progress_bar:
+        draw_progress_bar(draw, page.progress_bar)
+
     # Draw all steps
     for step in page.steps:
         draw_step(draw, step)
@@ -162,6 +170,17 @@ def draw_page_number(draw: ImageDraw.ImageDraw, page_number: PageNumber) -> None
     bbox = page_number.bbox.to_tuple()
     draw_bbox_with_label(
         draw, bbox, "PageNumber", COLORS["PageNumber"], str(page_number.value)
+    )
+
+
+def draw_progress_bar(draw: ImageDraw.ImageDraw, progress_bar: ProgressBar) -> None:
+    """Draw a ProgressBar element."""
+    bbox = progress_bar.bbox.to_tuple()
+    progress_text = (
+        f"{progress_bar.progress:.0%}" if progress_bar.progress is not None else ""
+    )
+    draw_bbox_with_label(
+        draw, bbox, "ProgressBar", COLORS["ProgressBar"], progress_text
     )
 
 
@@ -229,12 +248,24 @@ def draw_part(draw: ImageDraw.ImageDraw, part: Part) -> None:
     # Draw part count
     draw_part_count(draw, part.count)
 
+    # Draw part number if present
+    if part.number:
+        draw_part_number(draw, part.number)
+
 
 def draw_part_count(draw: ImageDraw.ImageDraw, part_count: PartCount) -> None:
     """Draw a PartCount element."""
     bbox = part_count.bbox.to_tuple()
     draw_bbox_with_label(
         draw, bbox, "PartCount", COLORS["PartCount"], f"{part_count.count}x"
+    )
+
+
+def draw_part_number(draw: ImageDraw.ImageDraw, part_number: PartNumber) -> None:
+    """Draw a PartNumber element."""
+    bbox = part_number.bbox.to_tuple()
+    draw_bbox_with_label(
+        draw, bbox, "PartNumber", COLORS["PartNumber"], str(part_number.element_id)
     )
 
 
@@ -274,6 +305,10 @@ def create_sample_page() -> Page:
             value=10,
             bbox=BBox(680, 570, 720, 595),
         ),
+        progress_bar=ProgressBar(
+            bbox=BBox(60, 570, 670, 595),
+            progress=0.25,
+        ),
         steps=[
             # Step 1
             Step(
@@ -299,7 +334,7 @@ def create_sample_page() -> Page:
                         ),
                         # Part 2
                         Part(
-                            bbox=BBox(150, 120, 230, 185),
+                            bbox=BBox(150, 120, 280, 185),
                             count=PartCount(
                                 count=1,
                                 bbox=BBox(155, 165, 185, 180),
@@ -307,6 +342,10 @@ def create_sample_page() -> Page:
                             diagram=Drawing(
                                 id=2,
                                 bbox=BBox(155, 125, 225, 160),
+                            ),
+                            number=PartNumber(
+                                element_id="6091234",
+                                bbox=BBox(230, 125, 275, 145),
                             ),
                         ),
                     ],
