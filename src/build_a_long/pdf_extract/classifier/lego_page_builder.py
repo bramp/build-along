@@ -13,6 +13,8 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 
 
+# TODO Do I need this? It's a simple wrapper, where I could just use
+# results.page instead.
 def build_page(
     result: ClassificationResult,
 ) -> Page:
