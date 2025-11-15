@@ -19,13 +19,12 @@ To update golden files:
 
 import difflib
 import logging
-from pathlib import Path
 
 import pytest
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import ExtractionResult
-from build_a_long.pdf_extract.fixtures import RAW_FIXTURE_FILES
+from build_a_long.pdf_extract.fixtures import FIXTURES_DIR, RAW_FIXTURE_FILES
 
 log = logging.getLogger(__name__)
 
@@ -84,14 +83,11 @@ class TestClassifierGolden:
             pants run src/build_a_long/pdf_extract/classifier/
             tools:generate-golden-files
         """
-        # Path adjusted for tests/ subdirectory:
-        # tests/ -> classifier/ -> pdf_extract/ -> fixtures/
-        fixtures_dir = Path(__file__).parent.parent.parent / "fixtures"
-        fixture_path = fixtures_dir / fixture_file
+        fixture_path = FIXTURES_DIR / fixture_file
 
         # Determine golden file path
         golden_file = fixture_file.replace("_raw.json", "_expected.json")
-        golden_path = fixtures_dir / golden_file
+        golden_path = FIXTURES_DIR / golden_file
 
         # Load the input fixture
         extraction: ExtractionResult = ExtractionResult.model_validate_json(

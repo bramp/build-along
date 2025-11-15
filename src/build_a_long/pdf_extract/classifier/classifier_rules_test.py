@@ -13,14 +13,13 @@ Real fixture(s) live under this package's fixtures/ directory.
 
 import logging
 from collections import defaultdict
-from pathlib import Path
 
 import pytest
 
 from build_a_long.pdf_extract.classifier import ClassificationResult, classify_elements
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.page_blocks import Block
-from build_a_long.pdf_extract.fixtures import RAW_FIXTURE_FILES
+from build_a_long.pdf_extract.fixtures import FIXTURES_DIR, RAW_FIXTURE_FILES
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ def _load_pages_from_fixture(fixture_file: str) -> list[PageData]:
     Raises:
         ValueError: If the fixture contains no pages
     """
-    fixture_path = Path(__file__).parent.parent / "fixtures" / fixture_file
+    fixture_path = FIXTURES_DIR / fixture_file
     extraction: ExtractionResult = ExtractionResult.model_validate_json(
         fixture_path.read_text()
     )  # type: ignore[assignment]
@@ -281,7 +280,3 @@ class TestClassifierRules:
                         )
 
                     block_to_winning_label[block_id] = label
-
-
-# TODO Add test to ensure nothing overlaps the page number or progress bar
-# TODO Ensure bbox stay within the page boundaries
