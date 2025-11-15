@@ -12,6 +12,7 @@ from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
+from build_a_long.pdf_extract.extractor.page_blocks import Block
 
 logger = logging.getLogger(__name__)
 
@@ -234,18 +235,27 @@ def print_font_hints(hints: FontSizeHints) -> None:
     print()
 
 
-def print_classification_debug(page: PageData, result: ClassificationResult) -> None:
-    """Print line-by-line classification status for all elements.
+def print_classification_debug(
+    page: PageData,
+    result: ClassificationResult,
+    *,
+    show_candidates: bool = True,
+    show_hierarchy: bool = True,
+    label: str | None = None,
+) -> None:
+    """Print comprehensive classification debug information.
 
-    For each element (ordered hierarchically), shows:
-    - Element ID, type, and string representation
-    - Winning candidate labels (if any)
-    - Removal status and reason (if removed)
-    - Indentation based on bbox nesting hierarchy
+    Shows all classification details in one consolidated view:
+    - Block hierarchy with labels and removal status
+    - Detailed candidate analysis (if requested)
+    - Page hierarchy summary (if requested)
 
     Args:
         page: PageData containing all elements
         result: ClassificationResult with classification information
+        show_candidates: Include detailed candidate breakdown
+        show_hierarchy: Include page hierarchy summary
+        label: If provided, filter candidate analysis to this label only
     """
     print(f"\n{'=' * 80}")
     print(f"CLASSIFICATION DEBUG - Page {page.page_number}")
@@ -254,96 +264,67 @@ def print_classification_debug(page: PageData, result: ClassificationResult) -> 
     # Build block hierarchy tree
     block_tree = build_hierarchy_from_blocks(page.blocks)
 
-    # Get all winning candidates organized by block
-    all_candidates = result.get_all_candidates()
-    # block.id -> list of winning labels
-    block_to_labels: dict[int, list[str]] = {}
-
-    for label, candidates in all_candidates.items():
-        for candidate in candidates:
-            if candidate.is_winner and candidate.source_block is not None:
-                block_id = candidate.source_block.id
-                if block_id is not None:
-                    if block_id not in block_to_labels:
-                        block_to_labels[block_id] = []
-                    block_to_labels[block_id].append(label)
-
-    def print_element(elem, depth: int, is_last: bool = True) -> None:
+    def print_block(block: Block, depth: int, is_last: bool = True) -> None:
         """Recursively print a block and its children."""
         # Build tree characters
         if depth == 0:
             tree_prefix = ""
             indent = ""
         else:
-            # Use └─ for last child, ├─ for others
             tree_char = "└─" if is_last else "├─"
-            # Build the prefix based on depth (spaces for alignment)
             indent = "  " * (depth - 1)
             tree_prefix = f"{indent}{tree_char} "
 
-        # Base info: ID and type
-        type_name = elem.__class__.__name__
-        elem_id = elem.id if elem.id is not None else -1
-
-        # Check if removed
-        is_removed = result.is_removed(elem)
+        # Base info
+        is_removed = result.is_removed(block)
         color = GREY if is_removed else ""
         reset = RESET if is_removed else ""
 
-        # Build the complete line with block details
-        # Prefer constructed element string if available
-        constructed = result.get_constructed_element(elem)
-        elem_str = str(constructed) if constructed else str(elem)
-        line = f"{color}{tree_prefix}{elem_id:3d} {type_name:8s} "
+        # Build line - get constructed element from winner candidate
+        elem_str = str(block)
+        label = result.get_label(block)
+        if label:
+            winner = result.get_winner_candidate(block)
+            if winner and winner.constructed:
+                elem_str = str(winner.constructed)
+
+        line = f"{color}{tree_prefix}{block.id:3d} "
 
         if is_removed:
-            reason = result.get_removal_reason(elem)
+            reason = result.get_removal_reason(block)
             reason_text = reason.reason_type if reason else "unknown"
-            line += f"[REMOVED: {reason_text}"
-            if reason and hasattr(reason, "target_element"):
+            line += f"* REMOVED: {reason_text}"
+            if reason:
                 target = reason.target_block
-                target_id = target.id if hasattr(target, "id") else "?"
-                line += f" -> {target_id}"
-                # Show what the target block won as
-                if (
-                    hasattr(target, "id")
-                    and target.id is not None
-                    and target.id in block_to_labels
-                ):
-                    target_labels = block_to_labels[target.id]
-                    line += f" ({', '.join(target_labels)})"
-            line += f"] {elem_str}"
-        # Check if it has winning candidates
-        elif elem.id is not None and elem.id in block_to_labels:
-            labels = block_to_labels[elem.id]
-            line += f"[{', '.join(labels)}] {elem_str}"
+                line += f" by {target.id}"
+                target_label = result.get_label(target)
+                if target_label:
+                    line += f" ({target_label})"
+            line += f"* {elem_str}"
+        elif label:
+            line += f"[{label}] {elem_str}"
         else:
-            # No candidates
             line += f"[no candidates] {elem_str}"
 
         line += reset
         print(line)
 
-        # Recursively print children, sorted by ID
-        children = block_tree.get_children(elem)
-        sorted_children = sorted(
-            children, key=lambda e: e.id if e.id is not None else 999999
-        )
+        # Print children
+        children = block_tree.get_children(block)
+        sorted_children = sorted(children, key=lambda e: e.id)
         for i, child in enumerate(sorted_children):
             child_is_last = i == len(sorted_children) - 1
-            print_element(child, depth + 1, child_is_last)
+            print_block(child, depth + 1, child_is_last)
 
-    # Print root blocks sorted by ID, then their children recursively
-    sorted_roots = sorted(
-        block_tree.roots, key=lambda e: e.id if e.id is not None else 999999
-    )
+    # Print root blocks
+    sorted_roots = sorted(block_tree.roots, key=lambda e: e.id)
     for root in sorted_roots:
-        print_element(root, 0)
+        print_block(root, 0)
 
-    # Print summary statistics
+    # Summary stats
     total = len(page.blocks)
-    with_labels = len(block_to_labels)
-    removed = sum(1 for e in page.blocks if result.is_removed(e))
+    with_labels = sum(1 for b in page.blocks if result.get_label(b) is not None)
+    removed = sum(1 for b in page.blocks if result.is_removed(b))
     no_candidates = total - with_labels - removed
 
     print(f"\n{'─' * 80}")
@@ -358,7 +339,70 @@ def print_classification_debug(page: PageData, result: ClassificationResult) -> 
         for warning in warnings:
             print(f"  ⚠ {warning}")
 
-    print(f"{'=' * 80}\n")
+    # Detailed candidate analysis
+    if show_candidates:
+        print(f"\n{'=' * 80}")
+        print("CANDIDATES BY LABEL")
+        print(f"{'=' * 80}")
+
+        # Get all candidates
+        all_candidates = result.get_all_candidates()
+
+        # Filter to specific label if requested
+        if label:
+            labels_to_show = {label: all_candidates.get(label, [])}
+        else:
+            labels_to_show = all_candidates
+
+        # Summary table
+        print(f"\n{'Label':<20} {'Total':<8} {'Winners':<8}")
+        print(f"{'-' * 40}")
+        for lbl in sorted(labels_to_show.keys()):
+            candidates = labels_to_show[lbl]
+            winners = [c for c in candidates if c.is_winner]
+            print(f"{lbl:<20} {len(candidates):<8} {len(winners):<8}")
+
+        # Detailed per-label breakdown
+        for lbl in sorted(labels_to_show.keys()):
+            candidates = labels_to_show[lbl]
+            if not candidates:
+                continue
+
+            winners = [c for c in candidates if c.is_winner]
+            if not winners:
+                continue  # Skip labels with no winners for brevity
+
+            print(f"\n{lbl} ({len(winners)} winner{'s' if len(winners) > 1 else ''}):")
+            for candidate in winners:
+                block = candidate.source_block
+                # Format similar to tree: block_id [label] constructed | source
+                block_id_str = f"{block.id:3d}" if block else "  ?"
+                constructed_str = str(candidate.constructed)
+                source_str = str(block) if block else "no source"
+                print(
+                    f"  {block_id_str} [{lbl}] {constructed_str} | "
+                    f"score={candidate.score:.3f} | {source_str}"
+                )
+
+    # Page hierarchy
+    if show_hierarchy:
+        page_obj = result.page
+        if page_obj:
+            print(f"\n{'=' * 80}")
+            print("PAGE HIERARCHY")
+            print(f"{'=' * 80}")
+            page_num_str = (
+                page_obj.page_number.value if page_obj.page_number else "None"
+            )
+            print(f"Page number: {page_num_str}")
+            print(f"Progress bar: {'Yes' if page_obj.progress_bar else 'No'}")
+            print(f"Steps: {len(page_obj.steps)}")
+
+            for i, step in enumerate(page_obj.steps, 1):
+                parts_count = len(step.parts_list.parts)
+                print(f"  Step {i}: #{step.step_number.value} ({parts_count} parts)")
+
+    print(f"\n{'=' * 80}\n")
 
 
 def print_label_counts(page: PageData, result: ClassificationResult) -> None:

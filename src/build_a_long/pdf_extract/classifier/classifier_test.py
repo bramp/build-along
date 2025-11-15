@@ -65,6 +65,72 @@ class TestClassifyElements:
         assert batch_result.histogram is not None
         # Should not raise any errors
 
+    def test_duplicate_blocks_marked_as_removed(self) -> None:
+        """Test that duplicate blocks are marked with removal reasons.
+
+        This ensures duplicate filtering is tracked properly via removal_reasons
+        rather than physically removing blocks from PageData.
+        """
+        # Create a page with duplicate blocks
+        page_bbox = BBox(0, 0, 100, 200)
+        # Two identical blocks (duplicates) - one should be marked as removed
+        block1 = Text(id=0, bbox=BBox(10, 10, 50, 30), text="1")
+        block2 = Text(id=1, bbox=BBox(10, 10, 50, 30), text="1")
+        # A unique block
+        block3 = Text(id=2, bbox=BBox(5, 190, 15, 198), text="10")
+
+        original_page = PageData(
+            page_number=10, blocks=[block1, block2, block3], bbox=page_bbox
+        )
+
+        batch_result = classify_pages([original_page])
+
+        # Should have one result
+        assert len(batch_result.results) == 1
+        result = batch_result.results[0]
+
+        # Original page should be unchanged (all blocks present)
+        assert result.page_data is original_page
+        assert len(result.page_data.blocks) == 3
+
+        # One duplicate should be marked as removed
+        removed_blocks = [b for b in result.page_data.blocks if result.is_removed(b)]
+        assert len(removed_blocks) == 1
+        removed_block = removed_blocks[0]
+
+        # Check removal reason
+        reason = result.get_removal_reason(removed_block)
+        assert reason is not None
+        assert reason.reason_type == "duplicate_bbox"
+        assert reason.target_block in [block1, block2]
+
+        # The kept block should not be removed
+        kept_blocks = [b for b in result.page_data.blocks if not result.is_removed(b)]
+        assert len(kept_blocks) == 2
+        assert block3 in kept_blocks
+
+        # Classification result should only reference non-removed blocks
+        all_candidates = result.get_all_candidates()
+
+        # Get all blocks referenced in candidates
+        blocks_in_candidates = set()
+        for candidates_list in all_candidates.values():
+            for candidate in candidates_list:
+                if candidate.source_block:
+                    blocks_in_candidates.add(id(candidate.source_block))
+
+        # All blocks in candidates should not be removed
+        for block in result.page_data.blocks:
+            if id(block) in blocks_in_candidates:
+                assert not result.is_removed(block), (
+                    "Candidate references a removed block"
+                )
+
+        # The removed duplicate should not appear in candidates
+        assert id(removed_block) not in blocks_in_candidates, (
+            "Removed duplicate block should not be referenced in candidates"
+        )
+
 
 class TestPipelineEnforcement:
     """Tests to ensure classifier pipeline dependencies are enforced at init time."""

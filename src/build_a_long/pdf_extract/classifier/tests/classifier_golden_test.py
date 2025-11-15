@@ -84,7 +84,9 @@ class TestClassifierGolden:
             pants run src/build_a_long/pdf_extract/classifier/
             tools:generate-golden-files
         """
-        fixtures_dir = Path(__file__).parent.parent / "fixtures"
+        # Path adjusted for tests/ subdirectory:
+        # tests/ -> classifier/ -> pdf_extract/ -> fixtures/
+        fixtures_dir = Path(__file__).parent.parent.parent / "fixtures"
         fixture_path = fixtures_dir / fixture_file
 
         # Determine golden file path

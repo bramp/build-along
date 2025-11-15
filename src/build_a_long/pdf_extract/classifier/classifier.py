@@ -30,6 +30,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     BatchClassificationResult,
     ClassificationResult,
     ClassifierConfig,
+    RemovalReason,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.page_classifier import PageClassifier
@@ -62,7 +63,7 @@ from build_a_long.pdf_extract.classifier.step_number_classifier import (
 )
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_blocks import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Block, Text
 
 logger = logging.getLogger(__name__)
 
@@ -86,8 +87,9 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
     """Classify and label elements across multiple pages using rule-based heuristics.
 
     This function performs a three-phase process:
-    1. Filtering phase: Remove duplicate/similar blocks on each page
-    2. Analysis phase: Build font size hints from text properties across all pages
+    1. Filtering phase: Mark duplicate/similar blocks as removed on each page
+    2. Analysis phase: Build font size hints from text properties (excluding
+       removed blocks)
     3. Classification phase: Use hints to guide element classification
 
     Args:
@@ -96,38 +98,58 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
     Returns:
         BatchClassificationResult containing per-page results and global histogram
     """
-    # Phase 1: Filter duplicate blocks on each page
-    filtered_pages = []
+    # Phase 1: Filter duplicate blocks on each page and track removals
+    duplicate_removals: list[dict[Block, Block]] = []
     for page_data in pages:
-        filtered_blocks = filter_duplicate_blocks(page_data.blocks)
+        # Get blocks to keep and mapping of removed blocks
+        kept_blocks, removed_mapping = filter_duplicate_blocks(page_data.blocks)
 
         logger.debug(
             f"Page {page_data.page_number}: "
-            f"filtered {len(page_data.blocks) - len(filtered_blocks)} "
-            f"duplicate blocks"
+            f"filtered {len(removed_mapping)} duplicate blocks"
         )
 
-        # Create a new PageData with filtered blocks
-        filtered_page = PageData(
-            page_number=page_data.page_number,
-            bbox=page_data.bbox,
-            blocks=filtered_blocks,
+        duplicate_removals.append(removed_mapping)
+
+    # Phase 2: Extract font size hints from all pages (excluding removed blocks)
+    # Build pages with non-removed blocks for hint extraction and histogram
+    pages_without_duplicates = []
+    for page_data, removed_mapping in zip(pages, duplicate_removals, strict=True):
+        non_removed_blocks = [
+            block for block in page_data.blocks if block not in removed_mapping
+        ]
+        pages_without_duplicates.append(
+            PageData(
+                page_number=page_data.page_number,
+                bbox=page_data.bbox,
+                blocks=non_removed_blocks,
+            )
         )
-        filtered_pages.append(filtered_page)
 
-    # Phase 2: Extract font size hints from all pages
-    font_size_hints = FontSizeHints.from_pages(filtered_pages)
+    font_size_hints = FontSizeHints.from_pages(pages_without_duplicates)
+    histogram = TextHistogram.from_pages(pages_without_duplicates)
 
-    # Build histogram for result (keeping for compatibility)
-    histogram = TextHistogram.from_pages(filtered_pages)
-
-    # Phase 3: Classify using the hints
+    # Phase 3: Classify using the hints (on pages without duplicates)
     config = ClassifierConfig(font_size_hints=font_size_hints)
     classifier = Classifier(config)
 
     results = []
-    for page_data in filtered_pages:
-        result = classifier.classify(page_data)
+    for page_data, page_without_duplicates, removed_mapping in zip(
+        pages, pages_without_duplicates, duplicate_removals, strict=True
+    ):
+        # Classify using only non-removed blocks
+        result = classifier.classify(page_without_duplicates)
+
+        # Update result to use original page_data (with all blocks)
+        result.page_data = page_data
+
+        # Mark duplicate blocks as removed
+        for removed_block, kept_block in removed_mapping.items():
+            result.mark_removed(
+                removed_block,
+                RemovalReason(reason_type="duplicate_bbox", target_block=kept_block),
+            )
+
         results.append(result)
 
     return BatchClassificationResult(results=results, histogram=histogram)

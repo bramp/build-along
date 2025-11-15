@@ -121,11 +121,14 @@ class TestClassificationResult:
         result.mark_winner(candidate, constructed)
 
         assert candidate.is_winner is True
-        assert result.get_constructed_element(block) is constructed
+        # Verify the constructed element is accessible via the winner candidate
+        winners = result.get_winners("page_number", PageNumber)
+        assert len(winners) == 1
+        assert winners[0] is constructed
         assert result.has_label("page_number")
 
-    def test_constructed_elements_dict(self) -> None:
-        """Test the internal _constructed_elements dict."""
+    def test_winners_accessible_via_candidates(self) -> None:
+        """Test that winner constructed elements are accessible via candidates."""
         block1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
         block2 = Text(bbox=BBox(20, 20, 30, 30), text="Step 2", id=2)
         page_data = PageData(
@@ -160,10 +163,14 @@ class TestClassificationResult:
         result.mark_winner(candidate1, constructed1)
         result.mark_winner(candidate2, constructed2)
 
-        # Access the internal dict directly (keyed by block ID)
-        assert len(result.constructed_elements) == 2
-        assert result.constructed_elements[1] is constructed1
-        assert result.constructed_elements[2] is constructed2
+        # Verify constructed elements are accessible via winner candidates
+        page_numbers = result.get_winners("page_number", PageNumber)
+        assert len(page_numbers) == 1
+        assert page_numbers[0] is constructed1
+
+        step_numbers = result.get_winners("step_number", StepNumber)
+        assert len(step_numbers) == 1
+        assert step_numbers[0] is constructed2
 
     def test_get_label(self) -> None:
         """Test getting the label for a specific block."""
@@ -181,13 +188,45 @@ class TestClassificationResult:
             score_details={},
             constructed=constructed,
             source_block=block,
-            is_winner=True,
         )
 
         result = ClassificationResult(page_data=page_data)
         result.add_candidate("page_number", candidate)
+        result.mark_winner(candidate, constructed)
 
         assert result.get_label(block) == "page_number"
+
+    def test_get_winner_candidate(self) -> None:
+        """Test getting the winner candidate for a block."""
+        block = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
+        page_data = PageData(
+            page_number=1,
+            blocks=[block],
+            bbox=BBox(0, 0, 100, 100),
+        )
+        constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
+        candidate = Candidate(
+            bbox=BBox(0, 0, 10, 10),
+            label="page_number",
+            score=0.95,
+            score_details={},
+            constructed=constructed,
+            source_block=block,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        result.add_candidate("page_number", candidate)
+        result.mark_winner(candidate, constructed)
+
+        winner = result.get_winner_candidate(block)
+        assert winner is not None
+        assert winner is candidate
+        assert winner.constructed is constructed
+        assert winner.label == "page_number"
+
+        # Test non-winner block
+        other_block = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)
+        assert result.get_winner_candidate(other_block) is None
 
     def test_get_blocks_by_label(self) -> None:
         """Test getting blocks by label."""

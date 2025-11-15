@@ -18,7 +18,9 @@ if TYPE_CHECKING:
     )
 
 
-def filter_duplicate_blocks(blocks: Sequence[Block]) -> list[Block]:
+def filter_duplicate_blocks(
+    blocks: Sequence[Block],
+) -> tuple[list[Block], dict[Block, Block]]:
     """Filter out duplicate/similar blocks, keeping the largest one from each group.
 
     Pages often contain multiple overlapping blocks at similar positions to create
@@ -33,7 +35,9 @@ def filter_duplicate_blocks(blocks: Sequence[Block]) -> list[Block]:
         blocks: List of blocks to filter.
 
     Returns:
-        Filtered list of blocks with duplicates removed, preserving original order.
+        A tuple of:
+        - Filtered list of blocks with duplicates removed, preserving original order
+        - Dict mapping removed blocks to the block that was kept instead
 
     Example:
         >>> # Three blocks forming a drop shadow effect
@@ -42,14 +46,16 @@ def filter_duplicate_blocks(blocks: Sequence[Block]) -> list[Block]:
         ...     Drawing(bbox=BBox(11, 11, 31, 31)),  # Shadow offset by 1px
         ...     Drawing(bbox=BBox(12, 12, 32, 32)),  # Second shadow offset by 2px
         ... ]
-        >>> result = filter_duplicate_blocks(blocks)
-        >>> len(result)  # Returns 1, keeping only the largest
+        >>> kept, removed = filter_duplicate_blocks(blocks)
+        >>> len(kept)  # Returns 1, keeping only the largest
         1
+        >>> len(removed)  # Returns 2, the two smaller blocks
+        2
     """
     if not blocks:
-        return []
+        return [], {}
 
-    IOU_THRESHOLD = 0.8
+    IOU_THRESHOLD = 0.9
 
     # Helper function to check if two blocks are similar based on IOU
     def are_similar(block_i: Block, block_j: Block) -> bool:
@@ -86,14 +92,22 @@ def filter_duplicate_blocks(blocks: Sequence[Block]) -> list[Block]:
 
     # For each group, keep the block with the largest area
     result_indices = []
+    removed_mapping: dict[Block, Block] = {}
+
     for group_indices in groups.values():
         # Find the block with the largest area in this group
         largest_idx = max(group_indices, key=lambda idx: blocks[idx].bbox.area)
         result_indices.append(largest_idx)
 
+        # Map all other blocks in the group to the kept block
+        kept_block = blocks[largest_idx]
+        for idx in group_indices:
+            if idx != largest_idx:
+                removed_mapping[blocks[idx]] = kept_block
+
     # Return blocks in their original order
     result_indices.sort()
-    return [blocks[i] for i in result_indices]
+    return [blocks[i] for i in result_indices], removed_mapping
 
 
 def remove_child_bboxes(
@@ -152,7 +166,7 @@ def remove_similar_bboxes(
     target_area = target.bbox.area
     tx, ty = target.bbox.center
 
-    IOU_THRESHOLD = 0.8
+    IOU_THRESHOLD = 0.9
     CENTER_EPS = 1.5
     AREA_TOL = 0.12
 

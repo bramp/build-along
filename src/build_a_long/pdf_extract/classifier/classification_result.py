@@ -42,8 +42,9 @@ class RemovalReason(BaseModel):
     """Tracks why a block was removed during classification."""
 
     reason_type: str
-    """Type of removal: 'child_bbox' or 'similar_bbox'"""
+    """Type of removal: 'duplicate_bbox', 'child_bbox', or 'similar_bbox'"""
 
+    # TODO Should this be updated to the Candidate that caused the removal?
     target_block: Block
     """The block that caused this removal"""
 
@@ -169,18 +170,6 @@ class ClassificationResult(BaseModel):
     Public for serialization. Prefer using accessor methods.
     """
 
-    constructed_elements: dict[int, LegoPageElement] = Field(default_factory=dict)
-    """Maps source block IDs to their constructed LegoPageElements.
-    
-    Only contains elements that were successfully labeled and constructed.
-    The builder should use these pre-constructed elements rather than
-    re-parsing the source blocks.
-    
-    Keys are block IDs (int) instead of Block objects to ensure JSON serializability.
-    
-    Public for serialization. Prefer using get_constructed_element() method.
-    """
-
     candidates: dict[str, list[Candidate]] = Field(default_factory=dict)
     """Maps label names to lists of all candidates considered for that label.
     
@@ -210,14 +199,14 @@ class ClassificationResult(BaseModel):
 
     @model_validator(mode="after")
     def validate_unique_block_ids(self) -> ClassificationResult:
-        """Validate PageData blocks have unique IDs (if present).
+        """Validate that all block IDs in page_data are unique.
 
-        Blocks may have None IDs, but blocks with IDs must have unique IDs.
-        Note: Only blocks with IDs can be tracked in _constructed_elements and
-        _removal_reasons (which require block.id as keys for JSON serializability).
+        Blocks must have unique IDs.
+        Note: Blocks with IDs can be tracked in removal_reasons
+        (which require block.id as keys for JSON serializability).
         """
-        # Validate unique IDs (ignoring None values)
-        block_ids = [e.id for e in self.page_data.blocks if e.id is not None]
+        # Validate unique IDs
+        block_ids = [b.id for b in self.page_data.blocks]
         if len(block_ids) != len(set(block_ids)):
             duplicates = [id_ for id_ in block_ids if block_ids.count(id_) > 1]
             raise ValueError(
@@ -276,17 +265,6 @@ class ClassificationResult(BaseModel):
             List of warning messages
         """
         return self.warnings.copy()
-
-    def get_constructed_element(self, block: Block) -> LegoPageElement | None:
-        """Get the constructed LegoPageElement for a source block.
-
-        Args:
-            block: The source block to look up
-
-        Returns:
-            The constructed LegoPageElement if it exists, otherwise None
-        """
-        return self.constructed_elements.get(block.id)
 
     def get_candidates(self, label: str) -> list[Candidate]:
         """Get all candidates for a specific label.
@@ -406,9 +384,8 @@ class ClassificationResult(BaseModel):
                 )
 
         candidate.is_winner = True
-        # Store the constructed element for this source element
+        # Track the winner for this block
         if candidate.source_block is not None:
-            self.constructed_elements[candidate.source_block.id] = constructed
             self.block_winners[candidate.source_block.id] = (
                 candidate.label,
                 candidate,
@@ -436,11 +413,26 @@ class ClassificationResult(BaseModel):
         Returns:
             The label string if found, None otherwise
         """
-        # Search through all candidates to find the winning label for this block
-        for label, label_candidates in self.candidates.items():
-            for candidate in label_candidates:
-                if candidate.source_block is block and candidate.is_winner:
-                    return label
+        # Use O(1) lookup via block_winners
+        if block.id in self.block_winners:
+            label, _ = self.block_winners[block.id]
+            return label
+        return None
+
+    def get_winner_candidate(self, block: Block) -> Candidate | None:
+        """Get the winning candidate for a block.
+
+        Provides O(1) lookup of the winner candidate and its constructed element.
+
+        Args:
+            block: The block to get the winner for
+
+        Returns:
+            The winning Candidate if found, None otherwise
+        """
+        if block.id in self.block_winners:
+            _, candidate = self.block_winners[block.id]
+            return candidate
         return None
 
     def get_blocks_by_label(self, label: str) -> list[Block]:
