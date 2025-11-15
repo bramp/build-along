@@ -3,22 +3,18 @@
 This suite validates high-level invariants that must hold after classification.
 
 Rules covered:
-- Every parts list must contain at least one part image inside it.
-- No two parts lists overlap.
-- Each part image is inside a parts list.
+- No labeled element should be marked as deleted.
 - Each element has at most one winner candidate.
 
 Real fixture(s) live under this package's fixtures/ directory.
 """
 
 import logging
-from collections import defaultdict
 
 import pytest
 
-from build_a_long.pdf_extract.classifier import ClassificationResult, classify_elements
+from build_a_long.pdf_extract.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
-from build_a_long.pdf_extract.extractor.page_blocks import Block
 from build_a_long.pdf_extract.fixtures import FIXTURES_DIR, RAW_FIXTURE_FILES
 
 log = logging.getLogger(__name__)
@@ -45,160 +41,6 @@ def _load_pages_from_fixture(fixture_file: str) -> list[PageData]:
         raise ValueError(f"No pages found in {fixture_file}")
 
     return extraction.pages
-
-
-# TODO A lot of the methods in ClassifiedPage overlap with ClassificationResult
-
-
-class ClassifiedPage:
-    """Wrapper around PageData providing convenient access to classified elements.
-
-    This class provides helper methods to query elements by label type and
-    supports hierarchical queries (e.g., finding children inside parent bboxes).
-    Results are cached for efficiency.
-    """
-
-    def __init__(self, page: PageData, result: ClassificationResult):
-        """Initialize with a classified PageData and its result.
-
-        Args:
-            page: PageData that has been run through classify_elements()
-            result: The ClassificationResult for this page
-        """
-        self.page = page
-        self.result = result
-        self._cache: dict[str, list[Block]] = {}
-
-    def elements_by_label(
-        self, label: str, include_deleted: bool = False
-    ) -> list[Block]:
-        """Get all elements with the given label.
-
-        Args:
-            label: The label to filter by
-            include_deleted: Whether to include deleted elements
-
-        Returns:
-            List of elements with matching label
-        """
-        cache_key = f"{label}:deleted={include_deleted}"
-        if cache_key not in self._cache:
-            if include_deleted:
-                self._cache[cache_key] = [
-                    e for e in self.page.blocks if self.result.get_label(e) == label
-                ]
-            else:
-                self._cache[cache_key] = [
-                    e
-                    for e in self.page.blocks
-                    if self.result.get_label(e) == label
-                    and not self.result.is_removed(e)
-                ]
-        return self._cache[cache_key]
-
-    def parts_lists(self) -> list[Block]:
-        """Get all non-deleted parts_list elements."""
-        return self.elements_by_label("parts_list")
-
-    def part_images(self) -> list[Block]:
-        """Get all non-deleted part_image elements."""
-        return self.elements_by_label("part_image")
-
-    def part_counts(self) -> list[Block]:
-        """Get all non-deleted part_count elements."""
-        return self.elements_by_label("part_count")
-
-    def step_numbers(self) -> list[Block]:
-        """Get all non-deleted step_number elements."""
-        return self.elements_by_label("step_number")
-
-    def children_of(self, parent: Block, label: str | None = None) -> list[Block]:
-        """Return all non-deleted elements spatially contained within a parent element.
-
-        Note: This uses bbox containment, not ElementTree hierarchy, because
-        the hierarchy is based on "smallest containing bbox" which means there
-        may be intermediate unlabeled elements between a parent and its
-        logical children. For validation rules about spatial containment,
-        bbox checking is more appropriate.
-
-        Args:
-            parent: The parent element to search within
-            label: Optional label filter (e.g., "part_image")
-
-        Returns:
-            List of non-deleted Elements matching the label (if specified) that
-            are fully contained within the parent's bbox
-        """
-        # Use spatial containment, not hierarchy
-        result = []
-        for elem in self.page.blocks:
-            if id(elem) in self.result.removal_reasons:
-                continue
-            if label is not None and self.result.get_label(elem) != label:
-                continue
-            if elem.bbox.fully_inside(parent.bbox):
-                result.append(elem)
-        return result
-
-    def print_summary(self, logger: logging.Logger | None = None) -> None:
-        """Log a summary of labeled elements.
-
-        Args:
-            logger: Logger to use (defaults to module logger)
-        """
-        logger = logger or log
-        label_counts = defaultdict(int)
-        for e in self.page.blocks:
-            label = (
-                self.result.get_label(e) if self.result.get_label(e) else "<unknown>"
-            )
-            label_counts[label] += 1
-
-        logger.info(f"Label counts: {dict(label_counts)}")
-
-
-# TODO Replace this with just results.get_blocks_by_label()
-
-
-def _parts_lists(page: PageData, result: ClassificationResult) -> list[Block]:
-    return [
-        e
-        for e in page.blocks
-        if result.get_label(e) == "parts_list" and not result.is_removed(e)
-    ]
-
-
-# TODO Replace this with just results.get_blocks_by_label()
-
-
-def _part_images(page: PageData, result: ClassificationResult) -> list[Block]:
-    return [
-        e
-        for e in page.blocks
-        if result.get_label(e) == "part_image" and not result.is_removed(e)
-    ]
-
-
-# TODO Replace this with just results.get_blocks_by_label()
-
-
-def _part_counts(page: PageData, result: ClassificationResult) -> list[Block]:
-    return [
-        e
-        for e in page.blocks
-        if result.get_label(e) == "part_count" and not result.is_removed(e)
-    ]
-
-
-def _print_label_counts(page: PageData, result: ClassificationResult) -> None:
-    label_counts = defaultdict(int)
-    for e in page.blocks:
-        label = result.get_label(e) if result.get_label(e) else "<unknown>"
-        label_counts[label] += 1
-
-    # TODO The following logging shows "defaultdict(<class 'int'>,..." figure
-    # out how to avoid that.
-    log.info(f"Label counts: {label_counts}")
 
 
 class TestClassifierRules:

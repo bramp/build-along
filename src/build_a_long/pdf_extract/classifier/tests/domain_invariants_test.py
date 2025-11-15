@@ -44,17 +44,10 @@ def test_parts_list_contains_parts(fixture_file: str) -> None:
 
     for page_idx, page_data in enumerate(pages):
         result = classify_elements(page_data)
+        page = result.page
 
-        # Get the constructed Page object
-        page_candidates = result.get_candidates("page")
-        if not page_candidates:
-            continue
-
-        page = page_candidates[0].constructed
         if page is None:
             continue
-
-        assert isinstance(page, Page), f"Expected Page, got {type(page)}"
 
         # Check each step's parts_list
         for step in page.steps:
@@ -86,17 +79,10 @@ def test_parts_lists_do_not_overlap(fixture_file: str) -> None:
 
     for page_idx, page_data in enumerate(pages):
         result = classify_elements(page_data)
+        page = result.page
 
-        # Get the constructed Page object
-        page_candidates = result.get_candidates("page")
-        if not page_candidates:
-            continue
-
-        page = page_candidates[0].constructed
         if page is None:
             continue
-
-        assert isinstance(page, Page), f"Expected Page, got {type(page)}"
 
         # Collect all parts_lists from all steps
         parts_lists = [
@@ -125,17 +111,10 @@ def test_part_bbox_contains_count_and_diagram(fixture_file: str) -> None:
 
     for page_idx, page_data in enumerate(pages):
         result = classify_elements(page_data)
+        page = result.page
 
-        # Get the constructed Page object
-        page_candidates = result.get_candidates("page")
-        if not page_candidates:
-            continue
-
-        page = page_candidates[0].constructed
         if page is None:
             continue
-
-        assert isinstance(page, Page), f"Expected Page, got {type(page)}"
 
         # Check all parts in all parts_lists
         for step in page.steps:
@@ -193,9 +172,8 @@ def test_all_winners_discoverable_from_page(fixture_file: str) -> None:
     for page_idx, page_data in enumerate(pages):
         # Run classification
         result = classify_elements(page_data)
-
-        # Build the Page hierarchy
         page = result.page
+
         if page is None:
             pytest.fail(f"Page element is None for {fixture_file} page {page_idx}")
 
