@@ -136,8 +136,13 @@ def build_hierarchy_from_blocks[T: HasBBox](
         for j, candidate in enumerate(converted):
             if i == j:
                 continue
-            if bbox_i.fully_inside(candidate.bbox):
-                area = candidate.bbox.area
+            bbox_j = candidate.bbox
+            # Skip if bboxes are identical (duplicate blocks at same position)
+            # fully_inside uses >=/<= so identical boxes would be "inside" each other
+            if bbox_i == bbox_j:
+                continue
+            if bbox_i.fully_inside(bbox_j):
+                area = bbox_j.area
                 if area < best_parent_area:
                     best_parent = j
                     best_parent_area = area

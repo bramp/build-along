@@ -20,7 +20,7 @@ backend_packages = [
     "pants.backend.experimental.javascript.lint.prettier",
     "pants.backend.experimental.tools.yamllint",
 ]
-pants_ignore = [".vscode/settings.json"]
+pants_ignore = [".vscode/settings.json", "apps/**"]
 
 [ruff]
 # Prefer using Ruff configuration from pyproject.toml.

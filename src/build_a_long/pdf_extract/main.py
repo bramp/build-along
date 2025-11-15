@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pymupdf
 
-from build_a_long.pdf_extract.classifier import classify_pages
+from build_a_long.pdf_extract.classifier import classify_elements, classify_pages
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.cli import (
     ProcessingConfig,
@@ -22,7 +22,10 @@ from build_a_long.pdf_extract.cli.reporting import (
     build_and_print_page_hierarchy,
     print_summary,
 )
-from build_a_long.pdf_extract.extractor import extract_bounding_boxes
+from build_a_long.pdf_extract.extractor import (
+    ExtractionResult,
+    extract_bounding_boxes,
+)
 from build_a_long.pdf_extract.parser import parse_page_ranges
 from build_a_long.pdf_extract.parser.page_ranges import PageRanges
 
@@ -42,10 +45,10 @@ def _setup_logging(log_level: str) -> None:
 
 
 def _validate_pdf_path(pdf_path: Path) -> bool:
-    """Validate that PDF file exists.
+    """Validate that PDF or JSON file exists.
 
     Args:
-        pdf_path: Path to PDF file
+        pdf_path: Path to PDF or JSON file
 
     Returns:
         True if file exists, False otherwise
@@ -54,6 +57,26 @@ def _validate_pdf_path(pdf_path: Path) -> bool:
         logger.error("File not found: %s", pdf_path)
         return False
     return True
+
+
+def _load_json_pages(json_path: Path) -> list:
+    """Load pages from a JSON fixture file.
+
+    Args:
+        json_path: Path to JSON file (raw extraction result)
+
+    Returns:
+        List of PageData objects
+    """
+    logger.info("Loading pages from JSON: %s", json_path)
+    extraction = ExtractionResult.model_validate_json(json_path.read_text())
+
+    if not extraction.pages:
+        logger.error("No pages found in JSON file: %s", json_path)
+        return []
+
+    logger.info("Loaded %d page(s) from JSON", len(extraction.pages))
+    return extraction.pages
 
 
 def _parse_page_selection(pages_arg: str | None, doc_length: int) -> PageRanges | None:
@@ -122,22 +145,28 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         # Classify elements
         batch_result = classify_pages(pages)
 
-        # Debug outputs
-        if config.print_histogram:
-            print_histogram(batch_result.histogram)
+        # Extract page_data from results for compatibility
+        classified_pages = [result.page_data for result in batch_result.results]
 
-        if config.debug_classification:
-            for page, result in zip(pages, batch_result.results, strict=True):
-                print_label_counts(page, result)
-                print_classification_debug(page, result)
-            build_and_print_page_hierarchy(pages, batch_result.results)
+        _print_debug_output(
+            config,
+            classified_pages,
+            batch_result.results,
+            batch_result.histogram,
+        )
 
         # Summary output
         if config.save_summary:
-            print_summary(pages, batch_result.results, detailed=config.summary_detailed)
+            print_summary(
+                classified_pages,
+                batch_result.results,
+                detailed=config.summary_detailed,
+            )
 
         # Save results
-        save_classified_json(pages, batch_result.results, output_dir, pdf_path)
+        save_classified_json(
+            classified_pages, batch_result.results, output_dir, pdf_path
+        )
 
         if config.draw_blocks or config.draw_elements:
             render_annotated_images(
@@ -151,6 +180,72 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             )
 
     return 0
+
+
+def _process_json(config: ProcessingConfig, json_path: Path) -> int:
+    """Process a JSON file (raw extraction result) with classification only.
+
+    Args:
+        config: Processing configuration
+        json_path: Path to the JSON file to process
+
+    Returns:
+        Exit code (0 for success, non-zero for error)
+    """
+    logging.info("Processing JSON: %s", json_path)
+
+    # Load pages from JSON
+    pages = _load_json_pages(json_path)
+    if not pages:
+        return 2
+
+    # Classify each page individually to get results
+    results = [classify_elements(page) for page in pages]
+
+    # Print font hints if requested
+    if config.print_font_hints:
+        font_hints = FontSizeHints.from_pages(pages)
+        print_font_hints(font_hints)
+
+    # For JSON files, we don't have a batch histogram, so pass None
+    _print_debug_output(config, pages, results, histogram=None)
+
+    # Summary output
+    if config.save_summary:
+        print_summary(pages, results, detailed=config.summary_detailed)
+
+    return 0
+
+
+def _print_debug_output(
+    config: ProcessingConfig, pages: list, results: list, histogram
+) -> None:
+    """Print debug output based on configuration.
+
+    Args:
+        config: Processing configuration
+        pages: List of PageData
+        results: List of ClassificationResult
+        histogram: TextHistogram or None
+    """
+    # Debug outputs
+    if config.print_histogram and histogram:
+        print_histogram(histogram)
+
+    if config.debug_classification:
+        for page, result in zip(pages, results, strict=True):
+            print_label_counts(page, result)
+            print_classification_debug(page, result)
+        build_and_print_page_hierarchy(pages, results)
+
+    if config.debug_candidates:
+        for page, result in zip(pages, results, strict=True):
+            print_classification_debug(
+                page,
+                result,
+                show_hierarchy=False,
+                label=config.debug_candidates_label,
+            )
 
 
 def main() -> int:
@@ -170,20 +265,27 @@ def main() -> int:
         if not _validate_pdf_path(pdf_path):
             return 2
 
-    # Process each PDF
-    for pdf_path in config.pdf_paths:
-        # Determine output directory for this PDF
-        if config.output_dir is not None:
-            output_dir = config.output_dir
+    # Process each file (PDF or JSON)
+    for file_path in config.pdf_paths:
+        # Check if it's a JSON file (raw extraction result) or PDF
+        if file_path.suffix.lower() == ".json":
+            # Process JSON file directly (no output dir needed, no extraction)
+            exit_code = _process_json(config, file_path)
         else:
-            # Default to same directory as the PDF
-            output_dir = pdf_path.parent
+            # Process PDF with extraction
+            # Determine output directory for this PDF
+            if config.output_dir is not None:
+                output_dir = config.output_dir
+            else:
+                # Default to same directory as the PDF
+                output_dir = file_path.parent
 
-        # Ensure output directory exists
-        output_dir.mkdir(parents=True, exist_ok=True)
+            # Ensure output directory exists
+            output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Process this PDF
-        exit_code = _process_pdf(config, pdf_path, output_dir)
+            # Process this PDF
+            exit_code = _process_pdf(config, file_path, output_dir)
+
         if exit_code != 0:
             return exit_code
 

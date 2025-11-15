@@ -10,13 +10,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
-from build_a_long.pdf_extract.extractor.page_blocks import (
-    Drawing,
-    Text,
-)
-from build_a_long.pdf_extract.extractor.page_blocks import (
-    Image as ImageBlock,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -127,17 +120,7 @@ def _create_drawable_items(
 
             block_label = result.get_label(block)
             label_suffix = " [REMOVED]" if is_removed else ""
-            label_text = block_label or block.__class__.__name__
-
-            # Add extra info for specific block types
-            if isinstance(block, Drawing | ImageBlock):
-                if hasattr(block, "image_id") and block.image_id:
-                    label_text = f"{label_text} ({block.image_id})"
-            elif isinstance(block, Text):
-                content = block.text.strip()
-                if len(content) > 50:
-                    content = content[:47] + "..."
-                label_text = f"{label_text}: {content}"
+            label_text = block_label or str(block)
 
             label = f"ID: {block.id} {label_text}{label_suffix}"
 

@@ -27,6 +27,8 @@ class ProcessingConfig:
 
     # Debug flags
     debug_classification: bool = False
+    debug_candidates: bool = False
+    debug_candidates_label: str | None = None
     print_histogram: bool = False
     print_font_hints: bool = False
 
@@ -56,6 +58,8 @@ class ProcessingConfig:
             draw_elements=args.draw_elements,
             draw_deleted=args.draw_deleted,
             debug_classification=args.debug_classification,
+            debug_candidates=args.debug_candidates,
+            debug_candidates_label=args.debug_candidates_label,
             print_histogram=args.print_histogram,
             print_font_hints=args.print_font_hints,
         )
@@ -161,6 +165,23 @@ def parse_arguments() -> argparse.Namespace:
         "--debug-classification",
         action="store_true",
         help="Print detailed classification debugging information for each page.",
+    )
+    debug_group.add_argument(
+        "--debug-candidates",
+        action="store_true",
+        help=(
+            "Print detailed analysis of classification candidates, including "
+            "winners, scores, and constructed elements. Useful for debugging "
+            "classification issues."
+        ),
+    )
+    debug_group.add_argument(
+        "--debug-candidates-label",
+        type=str,
+        help=(
+            "Limit --debug-candidates output to a specific label "
+            "(e.g., 'step_number', 'page_number'). If not specified, shows all labels."
+        ),
     )
     debug_group.add_argument(
         "--print-histogram",
