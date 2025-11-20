@@ -1,5 +1,7 @@
 """Tests for legocom.py - LEGO.com website parsing (pytest style)."""
 
+from pydantic import AnyUrl
+
 from build_a_long.downloader.legocom import (
     LEGO_BASE,
     build_instructions_url,
@@ -8,7 +10,7 @@ from build_a_long.downloader.legocom import (
     parse_instruction_pdf_urls_fallback,
     parse_set_metadata,
 )
-from build_a_long.downloader.metadata import DownloadUrl
+from build_a_long.schemas import DownloadUrl
 
 # Sample HTML with multiple PDFs for parsing tests
 HTML_WITH_TWO_PDFS = """
@@ -179,10 +181,13 @@ def test_parse_instruction_pdf_urls():
     infos = parse_instruction_pdf_urls(HTML_WITH_TWO_PDFS, base=LEGO_BASE)
     assert infos == [
         DownloadUrl(
-            url="https://www.example.com/6602644.pdf",
-            preview_url="image1.png",
+            url=AnyUrl("https://www.example.com/6602644.pdf"),
+            preview_url=AnyUrl("https://www.lego.com/image1.png"),
         ),
-        DownloadUrl(url="/6602645.pdf", preview_url="image2.png"),
+        DownloadUrl(
+            url=AnyUrl("https://www.lego.com/6602645.pdf"),
+            preview_url=AnyUrl("https://www.lego.com/image2.png"),
+        ),
     ]
 
 
@@ -193,7 +198,7 @@ def test_parse_set_metadata():
     assert meta.age == "9+"
     assert meta.pieces == 1083
     assert meta.year == 2024
-    assert meta.set_image_url == "set_image.png"
+    assert meta.set_image_url == AnyUrl("https://www.lego.com/set_image.png")
     assert meta.set == "12345"
     assert meta.locale == "en-us"
 
@@ -207,15 +212,15 @@ def test_build_metadata():
     assert metadata.age == "9+"
     assert metadata.pieces == 1083
     assert metadata.year == 2024
-    assert metadata.set_image_url == "set_image.png"
+    assert metadata.set_image_url == AnyUrl("https://www.lego.com/set_image.png")
     assert len(metadata.pdfs) == 2
     # Ensure order is preserved
-    assert metadata.pdfs[0].url == "/6602000.pdf"
+    assert metadata.pdfs[0].url == AnyUrl("https://www.lego.com/6602000.pdf")
     assert metadata.pdfs[0].filename == "6602000.pdf"
-    assert metadata.pdfs[0].preview_url == "preview1.png"
-    assert metadata.pdfs[1].url == "/6602001.pdf"
+    assert metadata.pdfs[0].preview_url == AnyUrl("https://www.lego.com/preview1.png")
+    assert metadata.pdfs[1].url == AnyUrl("https://www.lego.com/6602001.pdf")
     assert metadata.pdfs[1].filename == "6602001.pdf"
-    assert metadata.pdfs[1].preview_url == "preview2.png"
+    assert metadata.pdfs[1].preview_url == AnyUrl("https://www.lego.com/preview2.png")
 
 
 def test_parse_instruction_pdf_urls_from_real_data():
@@ -223,10 +228,10 @@ def test_parse_instruction_pdf_urls_from_real_data():
     html = HTML_WITH_METADATA_AND_PDF
     urls = parse_instruction_pdf_urls(html)
     assert len(urls) == 2
-    assert urls[0].url == "/6602000.pdf"
-    assert urls[0].preview_url == "preview1.png"
-    assert urls[1].url == "/6602001.pdf"
-    assert urls[1].preview_url == "preview2.png"
+    assert urls[0].url == AnyUrl("https://www.lego.com/6602000.pdf")
+    assert urls[0].preview_url == AnyUrl("https://www.lego.com/preview1.png")
+    assert urls[1].url == AnyUrl("https://www.lego.com/6602001.pdf")
+    assert urls[1].preview_url == AnyUrl("https://www.lego.com/preview2.png")
 
 
 def test_json_fields_exist(monkeypatch):
@@ -253,11 +258,13 @@ def test_parse_instruction_pdf_urls_fallback_simple():
     urls = parse_instruction_pdf_urls_fallback(html)
     assert urls == [
         DownloadUrl(
-            url="https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6600001.pdf",
-            preview_url=None,
+            url=AnyUrl(
+                "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6600001.pdf"
+            ),
         ),
         DownloadUrl(
-            url="https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6600002.pdf",
-            preview_url=None,
+            url=AnyUrl(
+                "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6600002.pdf"
+            ),
         ),
     ]

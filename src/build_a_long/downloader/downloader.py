@@ -7,13 +7,15 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from pydantic import AnyUrl
 
 from build_a_long.downloader.legocom import (
     LEGO_BASE,
     build_instructions_url,
     build_metadata,
 )
-from build_a_long.downloader.metadata import (
+from build_a_long.downloader.util import extract_filename_from_url
+from build_a_long.schemas import (
     DownloadedFile,
     InstructionMetadata,
 )
@@ -136,7 +138,7 @@ class LegoInstructionDownloader:
 
     def download(
         self,
-        url: str,
+        url: AnyUrl,
         dest_dir: Path,
         *,
         progress_prefix: str = "",
@@ -156,7 +158,9 @@ class LegoInstructionDownloader:
             Path to the downloaded file, its size, and its SHA256 hash.
         """
         dest_dir.mkdir(parents=True, exist_ok=True)
-        filename = url.split("/")[-1]
+        filename = extract_filename_from_url(url)
+        if not filename:
+            raise ValueError(f"Could not extract filename from URL: {url}")
         dest = dest_dir / filename
 
         if dest.exists() and not self.overwrite:
@@ -173,7 +177,7 @@ class LegoInstructionDownloader:
             stream_fn = client.stream
 
         file_hash_obj = hashlib.sha256()
-        with stream_fn("GET", url, follow_redirects=True, timeout=None) as r:
+        with stream_fn("GET", str(url), follow_redirects=True, timeout=None) as r:
             r.raise_for_status()
             total = int(r.headers.get("Content-Length", "0"))
             downloaded = 0
@@ -262,10 +266,9 @@ class LegoInstructionDownloader:
 
         # Download each PDF with inline progress
         for entry in metadata.pdfs:
-            url = entry.url
-            progress_prefix = f" - {url}"
+            progress_prefix = f" - {entry.url}"
             downloaded_file = self.download(
-                url, out_dir, progress_prefix=progress_prefix
+                entry.url, out_dir, progress_prefix=progress_prefix
             )
             entry.filesize = downloaded_file.size
             entry.filehash = downloaded_file.hash
@@ -289,7 +292,6 @@ class LegoInstructionDownloader:
         Args:
             set_number: The LEGO set number.
             metadata: InstructionMetadata object.
-            pdf_count: Number of PDFs found.
         """
         parts = [f"Found {len(metadata.pdfs)} PDF(s) for set {set_number}"]
 

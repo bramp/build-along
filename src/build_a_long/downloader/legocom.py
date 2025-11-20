@@ -9,10 +9,17 @@ import logging
 import re
 from contextlib import suppress
 from typing import Any
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
+from pydantic import AnyUrl
 
-from build_a_long.downloader.metadata import DownloadUrl, InstructionMetadata, PdfEntry
+from build_a_long.downloader.util import extract_filename_from_url
+from build_a_long.schemas import (
+    DownloadUrl,
+    InstructionMetadata,
+    PdfEntry,
+)
 
 LEGO_BASE = "https://www.lego.com"
 
@@ -55,7 +62,7 @@ def _get_building_instruction_data(
 
 
 def parse_set_metadata(
-    html: str, set_number: str = "", locale: str = ""
+    html: str, set_number: str = "", locale: str = "", base: str = LEGO_BASE
 ) -> InstructionMetadata:
     """Parse a LEGO instructions HTML page and extract set metadata.
 
@@ -63,6 +70,7 @@ def parse_set_metadata(
         html: The HTML content to parse
         set_number: Optional set number to include in metadata
         locale: Optional locale to include in metadata
+        base: Base URL for resolving relative URLs
 
     Returns:
         InstructionMetadata object with extracted fields, or minimal InstructionMetadata
@@ -105,12 +113,14 @@ def parse_set_metadata(
         with suppress(ValueError, TypeError):
             year = int(bi_data["year"])
 
-    # Extract set image URL
+    # Extract set image URL and resolve to absolute
     set_image_url = None
     if bi_data.get("setImage"):
         image_ref = bi_data["setImage"].get("id")
         if image_ref and image_ref in apollo_state:
-            set_image_url = apollo_state[image_ref].get("src")
+            relative_url = apollo_state[image_ref].get("src")
+            if relative_url:
+                set_image_url = urljoin(base, relative_url)
 
     return InstructionMetadata(
         set=set_number,
@@ -120,7 +130,7 @@ def parse_set_metadata(
         age=age,
         pieces=pieces,
         year=year,
-        set_image_url=set_image_url,
+        set_image_url=AnyUrl(set_image_url) if set_image_url else None,
     )
 
 
@@ -156,10 +166,13 @@ def _apollo_resolve(apollo_state: dict[str, Any], item_or_ref: Any) -> Any:
     return current
 
 
-def parse_instruction_pdf_urls_apollo(html: str) -> list[DownloadUrl]:
+def parse_instruction_pdf_urls_apollo(
+    html: str, base: str = LEGO_BASE
+) -> list[DownloadUrl]:
     """Parse instruction PDFs using the Apollo (__NEXT_DATA__) approach only.
 
     Returns an empty list if the expected Apollo structures are not present.
+    Resolves relative URLs to absolute URLs using the provided base.
     """
     next_data = _extract_next_data(html)
     if not next_data:
@@ -197,10 +210,23 @@ def parse_instruction_pdf_urls_apollo(html: str) -> list[DownloadUrl]:
             )
             continue
 
+        # Resolve relative URLs to absolute
+        absolute_pdf_url = urljoin(base, pdf_url)
+
         cover_image = _apollo_resolve(apollo_state, pdf.get("coverImage"))
         preview_url = cover_image.get("src") if isinstance(cover_image, dict) else None
 
-        results.append(DownloadUrl(url=pdf_url, preview_url=preview_url))
+        # Resolve preview URL if present
+        absolute_preview_url = urljoin(base, preview_url) if preview_url else None
+
+        results.append(
+            DownloadUrl(
+                url=AnyUrl(absolute_pdf_url),
+                preview_url=(
+                    AnyUrl(absolute_preview_url) if absolute_preview_url else None
+                ),
+            )
+        )
 
     return results
 
@@ -222,7 +248,7 @@ def parse_instruction_pdf_urls_fallback(html: str) -> list[DownloadUrl]:
             seen.add(u)
             urls_in_order.append(u)
 
-    return [DownloadUrl(url=u, preview_url=None) for u in urls_in_order]
+    return [DownloadUrl(url=AnyUrl(u), preview_url=None) for u in urls_in_order]
 
 
 def parse_instruction_pdf_urls(html: str, base: str = LEGO_BASE) -> list[DownloadUrl]:
@@ -230,7 +256,7 @@ def parse_instruction_pdf_urls(html: str, base: str = LEGO_BASE) -> list[Downloa
 
     Prefers Apollo/Next.js state when present. Falls back to regex scanning otherwise.
     """
-    results = parse_instruction_pdf_urls_apollo(html)
+    results = parse_instruction_pdf_urls_apollo(html, base=base)
     if results:
         return results
     return parse_instruction_pdf_urls_fallback(html)
@@ -244,16 +270,26 @@ def build_metadata(
     Parses both the set fields and the ordered list of instruction PDFs.
     """
     pdf_infos = parse_instruction_pdf_urls(html, base=base)
-    metadata = parse_set_metadata(html, set_number=set_number, locale=locale)
+    metadata = parse_set_metadata(html, set_number=set_number, locale=locale, base=base)
 
     # Add PDFs to the metadata
-    metadata.pdfs = [
-        PdfEntry(
-            url=info.url,
-            filename=info.url.split("/")[-1],
-            preview_url=info.preview_url,
+    metadata.pdfs = []
+    for info in pdf_infos:
+        filename = extract_filename_from_url(info.url)
+        if filename is None:
+            log.warning(
+                "Could not extract filename from URL: %s. Skipping PDF.", info.url
+            )
+            continue
+
+        metadata.pdfs.append(
+            PdfEntry(
+                url=info.url,
+                filename=filename,
+                preview_url=info.preview_url,
+                filesize=None,
+                filehash=None,
+            )
         )
-        for info in pdf_infos
-    ]
 
     return metadata

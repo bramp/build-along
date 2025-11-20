@@ -5,13 +5,16 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from pydantic import AnyUrl
+
 from build_a_long.downloader.downloader import (
     LegoInstructionDownloader,
     read_metadata,
     write_metadata,
 )
 from build_a_long.downloader.legocom_test import HTML_WITH_METADATA_AND_PDF
-from build_a_long.downloader.metadata import (
+from build_a_long.downloader.util import extract_filename_from_url
+from build_a_long.schemas import (
     DownloadedFile,
     InstructionMetadata,
     PdfEntry,
@@ -28,8 +31,19 @@ def _make_mock_httpx_client(html: str):
     return mock_client
 
 
+def _fake_download(self, url: str, dest_dir: Path, **kwargs):
+    """Helper for tests to stub out actual file downloads."""
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    filename = extract_filename_from_url(url)
+    assert filename is not None, f"Could not extract filename from {url}"
+    p = dest_dir / filename
+    content = b"dummy"
+    p.write_bytes(content)
+    return DownloadedFile(path=p, size=len(content), hash="a" * 64)
+
+
 def test_download_skips_if_exists(tmp_path: Path):
-    url = "https://example.com/file.pdf"
+    url = AnyUrl("https://example.com/file.pdf")
     dest = tmp_path / "file.pdf"
     dest.write_bytes(b"already")
 
@@ -66,7 +80,7 @@ def test_download_writes_and_shows_progress(tmp_path: Path, capsys):
 
     downloader = LegoInstructionDownloader(overwrite=True, show_progress=True)
     out = downloader.download(
-        "https://example.com/path/file.pdf",
+        AnyUrl("https://example.com/path/file.pdf"),
         tmp_path,
         stream_fn=mock_stream_fn,
     )
@@ -102,15 +116,7 @@ def test_context_manager_creates_and_closes_client():
 def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
     mock_client = _make_mock_httpx_client(HTML_WITH_METADATA_AND_PDF)
 
-    # Stub out actual file downloads
-    def fake_download(self, url: str, dest_dir: Path, **kwargs):
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        p = dest_dir / url.split("/")[-1]
-        content = b"dummy"
-        p.write_bytes(content)
-        return DownloadedFile(path=p, size=len(content), hash="a" * 64)
-
-    monkeypatch.setattr(LegoInstructionDownloader, "download", fake_download)
+    monkeypatch.setattr(LegoInstructionDownloader, "download", _fake_download)
 
     downloader = LegoInstructionDownloader(
         client=mock_client, out_dir=tmp_path, show_progress=False
@@ -128,16 +134,16 @@ def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
     assert data.get("age") == "9+"
     assert data.get("pieces") == 1083
     assert data.get("year") == 2024
-    assert data.get("set_image_url") == "set_image.png"
+    assert data.get("set_image_url") == "https://www.lego.com/set_image.png"
     # Ensure PDFs preserved order
     pdfs = data.get("pdfs", [])
     assert len(pdfs) == 2
-    assert pdfs[0]["url"] == "/6602000.pdf"
-    assert pdfs[0]["preview_url"] == "preview1.png"
+    assert pdfs[0]["url"] == "https://www.lego.com/6602000.pdf"
+    assert pdfs[0]["preview_url"] == "https://www.lego.com/preview1.png"
     assert pdfs[0]["filesize"] == 5
     assert pdfs[0]["filehash"] == "a" * 64
-    assert pdfs[1]["url"] == "/6602001.pdf"
-    assert pdfs[1]["preview_url"] == "preview2.png"
+    assert pdfs[1]["url"] == "https://www.lego.com/6602001.pdf"
+    assert pdfs[1]["preview_url"] == "https://www.lego.com/preview2.png"
     assert pdfs[1]["filesize"] == 5
     assert pdfs[1]["filehash"] == "a" * 64
 
@@ -159,14 +165,14 @@ def test_process_set_uses_existing_metadata_and_skips_fetch(
             {
                 "url": "https://www.example.com/7000001.pdf",
                 "filename": "7000001.pdf",
-                "preview_url": "preview1.png",
+                "preview_url": "https://www.example.com/preview1.png",
                 "size": 5,
                 "hash": "a" * 64,
             },
             {
                 "url": "https://www.example.com/7000002.pdf",
                 "filename": "7000002.pdf",
-                "preview_url": "preview2.png",
+                "preview_url": "https://www.example.com/preview2.png",
                 "size": 5,
                 "hash": "a" * 64,
             },
@@ -181,19 +187,11 @@ def test_process_set_uses_existing_metadata_and_skips_fetch(
     # Mock client that would raise if network is attempted
     mock_client = _make_mock_httpx_client("<html></html>")
 
-    # Stub out actual file downloads
-    def fake_download(self, url: str, dest_dir: Path, **kwargs):
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        p = dest_dir / url.split("/")[-1]
-        content = b"dummy"
-        p.write_bytes(content)
-        return DownloadedFile(path=p, size=len(content), hash="a" * 64)
-
     downloader = LegoInstructionDownloader(
         client=mock_client, out_dir=out_dir, show_progress=False
     )
 
-    monkeypatch.setattr(LegoInstructionDownloader, "download", fake_download)
+    monkeypatch.setattr(LegoInstructionDownloader, "download", _fake_download)
 
     # Run
     exit_code = downloader.process_set("99999")
@@ -231,7 +229,20 @@ def test_write_and_read_metadata_round_trip(tmp_path: Path):
         set="12345",
         locale="en-us",
         name="Test",
-        pdfs=[PdfEntry(url="https://example.com/x.pdf", filename="x.pdf")],
+        theme=None,
+        age=None,
+        pieces=None,
+        year=None,
+        set_image_url=None,
+        pdfs=[
+            PdfEntry(
+                url=AnyUrl("https://example.com/x.pdf"),
+                filename="x.pdf",
+                preview_url=None,
+                filesize=None,
+                filehash=None,
+            )
+        ],
     )
 
     write_metadata(meta_path, payload)

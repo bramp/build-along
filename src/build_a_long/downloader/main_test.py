@@ -5,8 +5,10 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from pydantic import AnyUrl
+
 from build_a_long.downloader.main import get_set_numbers_from_args, main
-from build_a_long.downloader.metadata import InstructionMetadata, PdfEntry
+from build_a_long.schemas import InstructionMetadata, PdfEntry
 
 
 def test_get_set_numbers_from_args_single_arg():
@@ -130,7 +132,16 @@ def test_main_metadata_mode(
         age="9+",
         pieces=100,
         year=2024,
-        pdfs=[PdfEntry(url="https://example.com/test.pdf", filename="test.pdf")],
+        set_image_url=None,
+        pdfs=[
+            PdfEntry(
+                url=AnyUrl("https://example.com/test.pdf"),
+                filename="test.pdf",
+                preview_url=None,
+                filesize=None,
+                filehash=None,
+            )
+        ],
     )
     mock_build_metadata.return_value = mock_meta
 

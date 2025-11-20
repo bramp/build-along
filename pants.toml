@@ -53,7 +53,7 @@ unowned_dependency_behavior = "error"
 
 
 [source]
-root_patterns = ["/src/", "/tests/"]
+root_patterns = ["/src/"]
 
 
 [anonymous-telemetry]
