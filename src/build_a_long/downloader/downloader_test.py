@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import httpx
 from pydantic import AnyUrl
 
 from build_a_long.downloader.downloader import (
@@ -250,3 +251,84 @@ def test_write_and_read_metadata_round_trip(tmp_path: Path):
 
     loaded = read_metadata(meta_path)
     assert loaded == payload
+
+
+@patch(
+    "build_a_long.downloader.downloader.LegoInstructionDownloader.fetch_instructions_page"
+)
+@patch("build_a_long.downloader.downloader.build_metadata")
+def test_process_set_creates_not_found_on_empty_name(
+    mock_build_metadata, mock_fetch_instructions_page, tmp_path: Path, capsys
+):
+    """Test that a .not_found file is created when metadata has an empty name."""
+    # Mock build_metadata to return metadata with an empty name
+    mock_build_metadata.return_value = InstructionMetadata(
+        set="10516",
+        locale="en-us",
+        name="",
+        pdfs=[],
+    )
+    mock_fetch_instructions_page.return_value = "<html></html>"
+
+    set_number = "10516"
+    out_dir = tmp_path / set_number
+    not_found_path = out_dir / ".not_found"
+
+    downloader = LegoInstructionDownloader(out_dir=out_dir, show_progress=False)
+    exit_code = downloader.process_set(set_number)
+
+    assert exit_code == 0
+    assert not_found_path.exists()
+    assert "Set 10516 not found or has no data on LEGO.com." in capsys.readouterr().out
+    assert not (out_dir / "metadata.json").exists()
+
+
+def test_process_set_skips_if_not_found_file_exists(tmp_path: Path, capsys):
+    """Test that process_set skips a set if a .not_found file exists."""
+    set_number = "12345"
+    out_dir = tmp_path / set_number
+    out_dir.mkdir()
+    (out_dir / ".not_found").touch()
+
+    downloader = LegoInstructionDownloader(
+        out_dir=out_dir, overwrite=False, show_progress=False
+    )
+    exit_code = downloader.process_set(set_number)
+
+    assert exit_code == 0
+    assert "Skipping set 12345 (marked as not found)." in capsys.readouterr().out
+
+
+@patch(
+    "build_a_long.downloader.downloader.LegoInstructionDownloader.fetch_instructions_page"
+)
+def test_process_set_creates_not_found_file_on_404(
+    mock_fetch_instructions_page, tmp_path: Path, capsys
+):
+    """Test that process_set creates a .not_found file when fetch_instructions_page returns 404."""
+    # Configure mock to raise httpx.HTTPStatusError with a 404 response
+    mock_request = httpx.Request("GET", "http://test.com")
+    mock_response = httpx.Response(404, request=mock_request)
+    mock_fetch_instructions_page.side_effect = httpx.HTTPStatusError(
+        "Not Found", request=mock_request, response=mock_response
+    )
+
+    set_number = "10516"
+    out_dir = tmp_path / set_number
+    not_found_path = out_dir / ".not_found"
+
+    downloader = LegoInstructionDownloader(out_dir=out_dir, show_progress=False)
+    exit_code = downloader.process_set(set_number)
+
+    assert exit_code == 0
+    assert not_found_path.exists()
+    assert "Set 10516 not found on LEGO.com (404)." in capsys.readouterr().out
+    assert not (out_dir / "metadata.json").exists()  # Should not create metadata.json
+
+    # Test that it skips on subsequent runs
+    capsys.readouterr()  # Clear previous output
+    mock_fetch_instructions_page.reset_mock()
+    exit_code_again = downloader.process_set(set_number)
+    assert exit_code_again == 0
+    assert "Skipping set 10516 (marked as not found)." in capsys.readouterr().out
+    mock_fetch_instructions_page.assert_not_called()

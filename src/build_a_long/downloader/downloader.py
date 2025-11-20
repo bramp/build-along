@@ -234,6 +234,11 @@ class LegoInstructionDownloader:
         """
         out_dir = self.out_dir if self.out_dir else Path("data") / set_number
         meta_path = out_dir / "metadata.json"
+        not_found_path = out_dir / ".not_found"
+
+        if not_found_path.exists() and not self.overwrite:
+            print(f"Skipping set {set_number} (marked as not found).")
+            return 0
 
         # Try to load existing metadata first (if allowed)
         existing_meta: InstructionMetadata | None = None
@@ -244,25 +249,37 @@ class LegoInstructionDownloader:
         use_cached = existing_meta is not None and bool(existing_meta.pdfs)
         if use_cached:
             print(f"Processing set: {set_number} [cached]")
-
-            # existing_meta is guaranteed non-None here
             assert existing_meta is not None
             metadata: InstructionMetadata = existing_meta
         else:
             print(f"Processing set: {set_number}")
-            metadata = self._fetch_metadata_for_set(set_number)
+            try:
+                html = self.fetch_instructions_page(set_number)
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    print(f"Set {set_number} not found on LEGO.com (404).")
+                    out_dir.mkdir(parents=True, exist_ok=True)
+                    not_found_path.touch()
+                    return 0
+                raise  # Re-raise other HTTP errors
 
-        if not metadata.pdfs:
-            print(f"No PDFs found for set {set_number} (locale={self.locale}).")
-            return 0
+            metadata = build_metadata(html, set_number, self.locale, base=LEGO_BASE)
+
+            if not metadata.name:
+                print(f"Set {set_number} not found or has no data on LEGO.com.")
+                out_dir.mkdir(parents=True, exist_ok=True)
+                not_found_path.touch()
+                return 0
+
+            # Write initial metadata.json
+            write_metadata(meta_path, metadata)
 
         # Print metadata info
         self._print_metadata_info(set_number, metadata)
 
-        # Write initial metadata.json alongside downloaded PDFs (only if we fetched it)
-        # Note: this initial write does not yet include filesize/filehash for PDFs.
-        if not use_cached:
-            write_metadata(meta_path, metadata)
+        if not metadata.pdfs:
+            print(f"No PDFs found for set {set_number} (locale={self.locale}).")
+            return 0
 
         # Download each PDF with inline progress
         for entry in metadata.pdfs:
@@ -278,11 +295,6 @@ class LegoInstructionDownloader:
             write_metadata(meta_path, metadata)
 
         return 0
-
-    def _fetch_metadata_for_set(self, set_number: str):
-        """Fetch the instructions page and build metadata dataclass for a set."""
-        html = self.fetch_instructions_page(set_number)
-        return build_metadata(html, set_number, self.locale, base=LEGO_BASE)
 
     def _print_metadata_info(
         self, set_number: str, metadata: InstructionMetadata
@@ -300,7 +312,7 @@ class LegoInstructionDownloader:
         if metadata.theme:
             parts.append(f"({metadata.theme})")
         if metadata.pieces is not None:
-            parts.append(f"{metadata.pieces} pieces")
+            parts.append(f"({metadata.pieces} pieces)")
         if metadata.age:
             parts.append(f"ages {metadata.age}")
         if metadata.year is not None:

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import AnyUrl, BaseModel, Field, RootModel
 
 
 class DownloadedFile(BaseModel):
@@ -59,4 +59,23 @@ class InstructionMetadata(BaseModel):
     )
     pdfs: list[PdfEntry] = Field(
         default=[], description="A list of PDF instruction entries for the set."
+    )
+
+
+class YearlyIndexSummary(BaseModel):
+    year: int = Field(..., description="The year of the index.")
+    count: int = Field(..., description="The number of sets in the index.")
+    filesize: int = Field(..., description="The size of the index file in bytes.")
+    filename: str = Field(..., description="The filename of the index file.")
+
+
+class MainIndex(RootModel[list[YearlyIndexSummary]]):
+    root: list[YearlyIndexSummary] = Field(
+        ..., description="A list of summaries for each yearly index."
+    )
+
+
+class YearlyIndex(RootModel[list[InstructionMetadata]]):
+    root: list[InstructionMetadata] = Field(
+        ..., description="A list of instruction metadata for a single year."
     )

@@ -117,3 +117,39 @@ components:
       required:
         - set
         - locale
+
+    YearlyIndexSummary:
+      type: object
+      description: Metadata for a single year's index file.
+      properties:
+        year:
+          type: integer
+          format: int32
+          description: The year of the index.
+        count:
+          type: integer
+          description: The number of sets in the index.
+        filesize:
+          type: integer
+          format: int64
+          description: The size of the index file in bytes.
+        filename:
+          type: string
+          description: The filename of the index file.
+      required:
+        - year
+        - count
+        - filesize
+        - filename
+
+    MainIndex:
+      type: array
+      items:
+        $ref: '#/components/schemas/YearlyIndexSummary'
+      description: A list of summaries for each yearly index.
+
+    YearlyIndex:
+      type: array
+      items:
+        $ref: '#/components/schemas/InstructionMetadata'
+      description: A list of instruction metadata for a single year.

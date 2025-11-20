@@ -85,7 +85,7 @@ def parse_set_metadata(
         return InstructionMetadata(set=set_number, locale=locale)
 
     bi_data = _get_building_instruction_data(apollo_state)
-    if not bi_data:
+    if not bi_data or not bi_data.get("name"):  # Added check for bi_data.get("name")
         return InstructionMetadata(set=set_number, locale=locale)
 
     # Extract name
@@ -269,8 +269,13 @@ def build_metadata(
 
     Parses both the set fields and the ordered list of instruction PDFs.
     """
-    pdf_infos = parse_instruction_pdf_urls(html, base=base)
     metadata = parse_set_metadata(html, set_number=set_number, locale=locale, base=base)
+
+    # If no name was found, it's a "not found" set, so don't look for PDFs.
+    if not metadata.name:
+        return metadata
+
+    pdf_infos = parse_instruction_pdf_urls(html, base=base)
 
     # Add PDFs to the metadata
     metadata.pdfs = []

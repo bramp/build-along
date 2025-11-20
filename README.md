@@ -64,20 +64,22 @@ pre-commit install
 
 Download LEGO building instruction PDFs for a given set number by scraping the official instructions page.
 
+**Download Command**
+
 Run with Pants (recommended):
 
 ```bash
 # Fetch metadata only (no downloads) for set 75419
-pants run src/build_a_long/downloader:main -- 75419 --metadata
+pants run src/build_a_long/downloader:main -- download 75419 --metadata
 
 # Download PDFs to data/75419
-pants run src/build_a_long/downloader:main -- 75419
+pants run src/build_a_long/downloader:main -- download 75419
 
 # Pipe a list of set numbers into the downloader
-echo -e "75419\n75159\n" | pants run src/build_a_long/downloader:main -- --stdin
+echo -e "75419\n75159\n" | pants run src/build_a_long/downloader:main -- download --stdin
 
 # Fetch metadata for multiple sets from stdin
-cat sets.txt | pants run src/build_a_long/downloader:main -- --stdin --metadata
+cat sets.txt | pants run src/build_a_long/downloader:main -- download --stdin --metadata
 ```
 
 Options:
@@ -86,6 +88,21 @@ Options:
 - `--out-dir`: Output directory (defaults to `data/<set>`).
 - `--metadata`: Only fetch and print metadata as JSON (no downloads).
 - `--force`: Re-download PDFs even if the file already exists.
+
+**Summarize Command**
+
+The `summarize` command scans the downloaded metadata and creates yearly index files.
+
+Run with Pants:
+
+```bash
+pants run src/build_a_long/downloader:main -- summarize
+```
+
+Options:
+
+- `--data-dir` (default `data`): Directory containing the downloaded LEGO set data.
+- `--output-dir` (default `data/indices`): Directory to store the generated index files.
 
 Notes:
 
