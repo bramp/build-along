@@ -61,7 +61,7 @@ def test_main_single_set_number_from_arg(mock_downloader_class, monkeypatch, cap
     mock_instance.process_sets.return_value = 0
     mock_downloader_class.return_value = mock_instance
 
-    monkeypatch.setattr(sys, "argv", ["main.py", "12345"])
+    monkeypatch.setattr(sys, "argv", ["main.py", "download", "12345"])
     exit_code = main()
 
     assert exit_code == 0
@@ -84,7 +84,7 @@ def test_main_multiple_set_numbers_from_stdin(mock_downloader_class, monkeypatch
     mock_instance.process_sets.return_value = 0
     mock_downloader_class.return_value = mock_instance
 
-    monkeypatch.setattr(sys, "argv", ["main.py", "--stdin"])
+    monkeypatch.setattr(sys, "argv", ["main.py", "download", "--stdin"])
     monkeypatch.setattr(sys, "stdin", io.StringIO("12345\n67890\n"))
     exit_code = main()
 
@@ -101,7 +101,7 @@ def test_main_custom_locale_and_force(mock_downloader_class, monkeypatch):
     mock_downloader_class.return_value = mock_instance
 
     monkeypatch.setattr(
-        sys, "argv", ["main.py", "--locale", "de-de", "--force", "12345"]
+        sys, "argv", ["main.py", "download", "--locale", "de-de", "--force", "12345"]
     )
     exit_code = main()
 
@@ -145,7 +145,7 @@ def test_main_metadata_mode(
     )
     mock_build_metadata.return_value = mock_meta
 
-    monkeypatch.setattr(sys, "argv", ["main.py", "12345", "--metadata"])
+    monkeypatch.setattr(sys, "argv", ["main.py", "download", "12345", "--metadata"])
     exit_code = main()
 
     assert exit_code == 0
@@ -171,7 +171,9 @@ def test_main_custom_out_dir(mock_downloader_class, monkeypatch):
     mock_instance.process_sets.return_value = 0
     mock_downloader_class.return_value = mock_instance
 
-    monkeypatch.setattr(sys, "argv", ["main.py", "--out-dir", "/tmp/lego", "12345"])
+    monkeypatch.setattr(
+        sys, "argv", ["main.py", "download", "--out-dir", "/tmp/lego", "12345"]
+    )
     exit_code = main()
 
     assert exit_code == 0
@@ -179,9 +181,24 @@ def test_main_custom_out_dir(mock_downloader_class, monkeypatch):
     assert call_kwargs["out_dir"] == Path("/tmp/lego")
 
 
+@patch("build_a_long.downloader.main.summarize_metadata")
+def test_main_summarize_command(mock_summarize_metadata, monkeypatch):
+    """Test the 'summarize' subcommand."""
+    mock_summarize_metadata.return_value = 0
+    monkeypatch.setattr(
+        sys, "argv", ["main.py", "summarize", "--data-dir", "/tmp/data"]
+    )
+    exit_code = main()
+
+    assert exit_code == 0
+    mock_summarize_metadata.assert_called_once_with(
+        Path("/tmp/data"), Path("data/indices")
+    )
+
+
 @patch("build_a_long.downloader.main.LegoInstructionDownloader")
 def test_main_empty_stdin(mock_downloader_class, monkeypatch, capsys):
-    monkeypatch.setattr(sys, "argv", ["main.py", "--stdin"])
+    monkeypatch.setattr(sys, "argv", ["main.py", "download", "--stdin"])
     monkeypatch.setattr(sys, "stdin", io.StringIO("\n\n"))
     exit_code = main()
 
@@ -198,7 +215,7 @@ def test_main_invalid_set_ids_from_stdin(mock_downloader_class, monkeypatch, cap
     mock_instance.process_sets.return_value = 0
     mock_downloader_class.return_value = mock_instance
 
-    monkeypatch.setattr(sys, "argv", ["main.py", "--stdin"])
+    monkeypatch.setattr(sys, "argv", ["main.py", "download", "--stdin"])
     monkeypatch.setattr(sys, "stdin", io.StringIO("12345\ninvalid_id\n67890\n"))
     exit_code = main()
 
