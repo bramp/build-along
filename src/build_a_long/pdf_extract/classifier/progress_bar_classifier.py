@@ -25,10 +25,6 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from build_a_long.pdf_extract.classifier.block_filter import (
-    remove_child_bboxes,
-    remove_similar_bboxes,
-)
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -38,7 +34,10 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.lego_page_elements import ProgressBar
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    PageNumber,
+    ProgressBar,
+)
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
     Image,
@@ -137,42 +136,16 @@ class ProgressBarClassifier(LabelClassifier):
                     constructed=constructed_elem,
                     source_block=block,
                     failure_reason=None,
-                    is_winner=False,  # Will be set by classify()
                 ),
             )
 
     def classify(self, result: ClassificationResult) -> None:
-        """Select the best progress bar candidate(s).
-
-        Progress bars are typically unique per page, but there may be multiple
-        elements forming a single visual bar. For now, we select the single
-        best candidate.
-        """
-        candidates = result.get_candidates("progress_bar")
-        if not candidates:
-            return
-
-        # Filter to only candidates that were successfully constructed
-        valid_candidates = [c for c in candidates if c.constructed is not None]
-        if not valid_candidates:
-            return
-
-        # Sort by score and take the best one
-        # TODO: Consider merging adjacent elements into a single progress bar
-        valid_candidates.sort(key=lambda c: c.score, reverse=True)
-        best = valid_candidates[0]
-
-        assert best.constructed is not None
-        assert best.source_block is not None
-        result.mark_winner(best, best.constructed)
-
-        # Remove similar or containing bboxes to avoid duplicate detections
-        remove_similar_bboxes(best.source_block, result)
-        remove_child_bboxes(best.source_block, result)
+        """No-op - winners selected by PageClassifier using get_winners_by_score()."""
+        pass
 
     def _get_page_number_bbox(self, result: ClassificationResult) -> BBox | None:
         """Get the bbox of the page number if it has been classified."""
-        page_numbers = result.get_blocks_by_label("page_number")
+        page_numbers = result.get_winners_by_score("page_number", PageNumber)
         if page_numbers:
             return page_numbers[0].bbox
         return None

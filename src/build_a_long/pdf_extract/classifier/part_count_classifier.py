@@ -13,10 +13,6 @@ Enable DEBUG logs with LOG_LEVEL=DEBUG.
 import logging
 from dataclasses import dataclass
 
-from build_a_long.pdf_extract.classifier.block_filter import (
-    remove_child_bboxes,
-    remove_similar_bboxes,
-)
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -150,37 +146,12 @@ class PartCountClassifier(LabelClassifier):
                     constructed=constructed_elem,
                     source_block=block,
                     failure_reason=failure_reason,
-                    is_winner=False,  # Will be set by classify()
                 ),
             )
 
     def classify(self, result: ClassificationResult) -> None:
-        """Select winning part counts from pre-built candidates."""
-        # Get pre-built candidates
-        candidate_list = result.get_candidates("part_count")
-
-        # Mark winners (all successfully constructed candidates)
-        for candidate in candidate_list:
-            if candidate.constructed is None:
-                # Already has failure_reason from calculate_scores
-                continue
-
-            # Check if this candidate has been removed due to overlap with a
-            # previous winner
-            if candidate.source_block is not None and result.is_removed(
-                candidate.source_block
-            ):
-                continue
-
-            # This is a winner!
-            assert isinstance(candidate.constructed, PartCount)
-            assert candidate.source_block is not None
-            result.mark_winner(candidate, candidate.constructed)
-
-            remove_similar_bboxes(candidate.source_block, result)
-
-            # There should be no blocks inside this part count bbox
-            remove_child_bboxes(candidate.source_block, result)
+        """No-op - winners selected by PartsClassifier using get_winners_by_score()."""
+        pass
 
     def _score_part_count_text(self, text: str) -> float:
         """Score text based on how well it matches part count patterns.

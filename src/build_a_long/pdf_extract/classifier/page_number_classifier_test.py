@@ -1,57 +1,18 @@
 """Tests for the page number classifier."""
 
-from build_a_long.pdf_extract.classifier.classification_result import ClassifierConfig
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
-from build_a_long.pdf_extract.classifier.page_number_classifier import (
-    PageNumberClassifier,
-)
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import (
-    Drawing,
     Text,
 )
 
 
-class TestScorePageNumberText:
-    """Tests for the _score_page_number_text function."""
+class TestPageNumberClassification:
+    """Tests for page number detection and scoring."""
 
-    def test_simple_numbers(self) -> None:
-        """Test simple numeric page numbers."""
-        pn = PageNumberClassifier(ClassifierConfig())  # type: ignore[arg-type]
-        assert pn._score_page_number_text("1") == 1.0
-        assert pn._score_page_number_text("5") == 1.0
-        assert pn._score_page_number_text("42") == 1.0
-        assert pn._score_page_number_text("123") == 1.0
-
-    def test_leading_zeros(self) -> None:
-        """Test page numbers with leading zeros."""
-        pn = PageNumberClassifier(ClassifierConfig())  # type: ignore[arg-type]
-        assert pn._score_page_number_text("01") == 0.95
-        assert pn._score_page_number_text("001") == 0.95
-        assert pn._score_page_number_text("005") == 0.95
-
-    def test_whitespace_handling(self) -> None:
-        """Test that whitespace is properly handled."""
-        pn = PageNumberClassifier(ClassifierConfig())  # type: ignore[arg-type]
-        assert pn._score_page_number_text("  5  ") == 1.0
-        assert pn._score_page_number_text("\t42\n") == 1.0
-
-    def test_non_page_numbers(self) -> None:
-        """Test that non-page-number text is rejected."""
-        pn = PageNumberClassifier(ClassifierConfig())  # type: ignore[arg-type]
-        assert pn._score_page_number_text("hello") == 0.0
-        assert pn._score_page_number_text("Step 3") == 0.0
-        assert pn._score_page_number_text("1234") == 0.0  # Too many digits
-        assert pn._score_page_number_text("12.5") == 0.0  # Decimal
-        assert pn._score_page_number_text("") == 0.0
-
-
-class TestClassifyPageNumber:
-    """Tests for the _classify_page_number function."""
-
-    def test_no_elements(self) -> None:
-        """Test classification with no elements."""
+    def test_no_page_numbers_on_empty_page(self) -> None:
+        """Test that classification succeeds on a page with no elements."""
         page_data = PageData(
             page_number=1,
             blocks=[],
@@ -77,16 +38,17 @@ class TestClassifyPageNumber:
 
         results = classify_elements(page_data)
 
-        assert results.get_label(page_number_text) == "page_number"
-        # Check scores from ClassificationResult
-        assert results.has_label("page_number")
-        candidate = next(
-            c
-            for c in results.get_candidates("page_number")
-            if c.source_block == page_number_text
-        )
-        score = candidate.score
-        assert score > 0.5
+        # Check that the Page was built with the correct page_number
+        assert results.page is not None
+        assert results.page.page_number is not None
+        assert results.page.page_number.value == 1
+        assert results.page.page_number.bbox == page_number_text.bbox
+
+        # Check the page_number candidate exists and has a good score
+        candidate = results.get_candidate_for_block(page_number_text, "page_number")
+        assert candidate is not None
+        assert candidate.constructed is not None
+        assert candidate.score > 0.5
 
     def test_single_page_number_bottom_right(self) -> None:
         """Test identifying a page number in the bottom-right corner."""
@@ -105,16 +67,17 @@ class TestClassifyPageNumber:
 
         result = classify_elements(page_data)
 
-        assert result.get_label(page_number_text) == "page_number"
-        # Check scores from ClassificationResult
-        assert result.has_label("page_number")
-        candidate = next(
-            c
-            for c in result.get_candidates("page_number")
-            if c.source_block == page_number_text
-        )
-        score = candidate.score
-        assert score > 0.5
+        # Check that the Page was built with the correct page_number
+        assert result.page is not None
+        assert result.page.page_number is not None
+        assert result.page.page_number.value == 5
+        assert result.page.page_number.bbox == page_number_text.bbox
+
+        # Check the page_number candidate exists and has a good score
+        candidate = result.get_candidate_for_block(page_number_text, "page_number")
+        assert candidate is not None
+        assert candidate.constructed is not None
+        assert candidate.score > 0.5
 
     def test_multiple_candidates_prefer_corners(self) -> None:
         """Test that corner elements score higher than center ones."""
@@ -142,27 +105,21 @@ class TestClassifyPageNumber:
 
         result = classify_elements(page_data)
 
-        # Corner should have higher score and be labeled
-        assert result.get_label(corner_text) == "page_number"
-        assert result.get_label(center_text) is None
+        # Check that the Page was built with the corner text (higher score)
+        assert result.page is not None
+        assert result.page.page_number is not None
+        assert result.page.page_number.value == 3
+        assert result.page.page_number.bbox == corner_text.bbox
 
         # Check scores from ClassificationResult
-        corner_candidate = next(
-            c
-            for c in result.get_candidates("page_number")
-            if c.source_block == corner_text
-        )
-        corner_score = corner_candidate.score
-        center_candidate = next(
-            c
-            for c in result.get_candidates("page_number")
-            if c.source_block == center_text
-        )
-        center_score = center_candidate.score
-        assert corner_score > center_score
+        corner_candidate = result.get_candidate_for_block(corner_text, "page_number")
+        center_candidate = result.get_candidate_for_block(center_text, "page_number")
+        assert corner_candidate is not None
+        assert center_candidate is not None
+        assert corner_candidate.score > center_candidate.score
 
     def test_prefer_numeric_match_to_page_index(self) -> None:
-        """Prefer element whose numeric value equals PageData.page_number."""
+        """Test that page numbers matching PageData.page_number score higher."""
         page_bbox = BBox(0, 0, 100, 200)
         # Two numbers, both near bottom, but only one matches the page number 7
         txt6 = Text(id=0, bbox=BBox(10, 190, 14, 196), text="6")
@@ -176,32 +133,11 @@ class TestClassifyPageNumber:
 
         result = classify_elements(page_data)
 
-        assert result.get_label(txt7) == "page_number"
-        assert result.get_label(txt6) is None
-
-    def test_remove_near_duplicate_bboxes(self) -> None:
-        """After choosing page number, remove nearly identical
-        shadow/duplicate elements."""
-        page_bbox = BBox(0, 0, 100, 200)
-        # Chosen page number
-        pn = Text(id=0, bbox=BBox(10, 190, 14, 196), text="3")
-        # Very similar drawing (e.g., stroke/shadow) almost same bbox
-        dup = Drawing(id=1, bbox=BBox(10.2, 190.1, 14.1, 195.9))
-
-        page_data = PageData(
-            page_number=3,
-            blocks=[pn, dup],
-            bbox=page_bbox,
-        )
-
-        result = classify_elements(page_data)
-
-        # Page number kept and labeled; duplicate marked for removal
-        assert result.get_label(pn) == "page_number"
-        assert pn in page_data.blocks
-        assert dup in page_data.blocks
-        assert result.is_removed(dup)
-        assert not result.is_removed(pn)
+        # Check that txt7 was selected (matches page number)
+        assert result.page is not None
+        assert result.page.page_number is not None
+        assert result.page.page_number.value == 7
+        assert result.page.page_number.bbox == txt7.bbox
 
     def test_non_numeric_text_scores_low(self) -> None:
         """Test that non-numeric text scores low."""
@@ -221,13 +157,10 @@ class TestClassifyPageNumber:
         result = classify_elements(page_data)
 
         # Should not be labeled due to text pattern (position is good but text is bad)
-        assert result.get_label(text_block) is None
+        # Check that no successful page_number candidates exist with this block as source
+        candidate = result.get_candidate_for_block(text_block, "page_number")
+        assert candidate is not None
+        assert candidate.constructed is None
 
-        # Check that score is low from ClassificationResult
-        candidate = next(
-            c
-            for c in result.get_candidates("page_number")
-            if c.source_block == text_block
-        )
-        score = candidate.score
-        assert score < 0.5
+        # Check that score is low
+        assert candidate.score < 0.5

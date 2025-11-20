@@ -280,13 +280,13 @@ def print_classification_debug(
         color = GREY if is_removed else ""
         reset = RESET if is_removed else ""
 
-        # Build line - get constructed element from winner candidate
+        # Build line - get constructed element from candidate
         elem_str = str(block)
         label = result.get_label(block)
         if label:
-            winner = result.get_winner_candidate(block)
-            if winner and winner.constructed:
-                elem_str = str(winner.constructed)
+            candidate = result.get_candidate_for_block(block, label)
+            if candidate and candidate.constructed:
+                elem_str = str(candidate.constructed)
 
         line = f"{color}{tree_prefix}{block.id:3d} "
 
@@ -354,13 +354,23 @@ def print_classification_debug(
         else:
             labels_to_show = all_candidates
 
+        # Build set of elements in the page tree
+        chosen_elements: set[int] = set()
+        if result.page:
+            for element in result.page.iter_elements():
+                chosen_elements.add(id(element))
+
         # Summary table
-        print(f"\n{'Label':<20} {'Total':<8} {'Winners':<8}")
+        print(f"\n{'Label':<20} {'Total':<8} {'In Page':<8}")
         print(f"{'-' * 40}")
         for lbl in sorted(labels_to_show.keys()):
             candidates = labels_to_show[lbl]
-            winners = [c for c in candidates if c.is_winner]
-            print(f"{lbl:<20} {len(candidates):<8} {len(winners):<8}")
+            in_page = [
+                c
+                for c in candidates
+                if c.constructed and id(c.constructed) in chosen_elements
+            ]
+            print(f"{lbl:<20} {len(candidates):<8} {len(in_page):<8}")
 
         # Detailed per-label breakdown
         for lbl in sorted(labels_to_show.keys()):
@@ -368,12 +378,16 @@ def print_classification_debug(
             if not candidates:
                 continue
 
-            winners = [c for c in candidates if c.is_winner]
-            if not winners:
-                continue  # Skip labels with no winners for brevity
+            in_page = [
+                c
+                for c in candidates
+                if c.constructed and id(c.constructed) in chosen_elements
+            ]
+            if not in_page:
+                continue  # Skip labels with no elements in page for brevity
 
-            print(f"\n{lbl} ({len(winners)} winner{'s' if len(winners) > 1 else ''}):")
-            for candidate in winners:
+            print(f"\n{lbl} ({len(in_page)} in page):")
+            for candidate in in_page:
                 block = candidate.source_block
                 # Format similar to tree: block_id [label] constructed | source
                 block_id_str = f"{block.id:3d}" if block else "  ?"

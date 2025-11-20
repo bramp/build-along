@@ -1,6 +1,7 @@
 from abc import ABC
+from collections.abc import Iterator
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from annotated_types import Ge, Gt
 from pydantic import BaseModel, ConfigDict, Discriminator, Field
@@ -32,6 +33,17 @@ class _LegoPageElement(BaseModel, ABC):
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"{self.__class__.__name__}(bbox={str(self.bbox)})"
+
+    def iter_elements(self) -> Iterator["_LegoPageElement"]:
+        """Iterate over this element and all child elements.
+
+        Default implementation yields only self. Subclasses with children
+        should override to yield self first, then recursively yield children.
+
+        Yields:
+            This element and all descendant LegoPageElements
+        """
+        yield self
 
 
 class PageNumber(_LegoPageElement):
@@ -154,6 +166,8 @@ class Part(_LegoPageElement):
 
     tag: Literal["Part"] = Field(default="Part", alias="__tag__", frozen=True)
     count: PartCount
+
+    # TODO Diagram should be a LegoPageElement
     diagram: Drawing | None = None
 
     number: PartNumber | None = None
@@ -165,6 +179,16 @@ class Part(_LegoPageElement):
         """Return a single-line string representation with key information."""
         number_str = self.number.element_id if self.number else "no-number"
         return f"Part(count={self.count.count}x, number={number_str})"
+
+    def iter_elements(self) -> Iterator["_LegoPageElement"]:
+        """Iterate over this Part and all child elements."""
+        yield self
+        yield self.count
+        # TODO Diagram should be a LegoPageElement
+        # if self.diagram:
+        #    yield from self.diagram.iter_elements()
+        if self.number:
+            yield from self.number.iter_elements()
 
 
 class PartsList(_LegoPageElement):
@@ -193,6 +217,12 @@ class PartsList(_LegoPageElement):
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"PartsList(parts={len(self.parts)}, total_items={self.total_items})"
+
+    def iter_elements(self) -> Iterator["_LegoPageElement"]:
+        """Iterate over this PartsList and all child elements."""
+        yield self
+        for part in self.parts:
+            yield from part.iter_elements()
 
 
 class BagNumber(_LegoPageElement):
@@ -265,6 +295,15 @@ class Step(_LegoPageElement):
         """Return the step number value for convenience."""
         return self.step_number.value
 
+    def iter_elements(self) -> Iterator["_LegoPageElement"]:
+        """Iterate over this Step and all child elements."""
+        yield self
+        yield from self.step_number.iter_elements()
+        yield from self.parts_list.iter_elements()
+
+        # TODO Diagram should be a LegoPageElement
+        # yield from self.diagram.iter_elements()
+
 
 class Page(_LegoPageElement):
     """A complete page of LEGO instructions.
@@ -308,6 +347,25 @@ class Page(_LegoPageElement):
             f"Page(number={page_num}, steps={len(self.steps)}, "
             f"warnings={len(self.warnings)})"
         )
+
+    def iter_elements(self) -> Iterator["_LegoPageElement"]:
+        """Iterate over this Page and all child elements.
+
+        Yields all elements in depth-first order: the Page itself, then all
+        contained elements (page_number, progress_bar, steps and their children).
+
+        Yields:
+            This element and all descendant LegoPageElements
+        """
+        yield self
+
+        if self.page_number:
+            yield from self.page_number.iter_elements()
+        if self.progress_bar:
+            yield from self.progress_bar.iter_elements()
+
+        for step in self.steps:
+            yield from step.iter_elements()
 
 
 LegoPageElement = Annotated[

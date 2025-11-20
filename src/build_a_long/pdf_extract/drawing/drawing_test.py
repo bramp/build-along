@@ -17,7 +17,7 @@ from build_a_long.pdf_extract.drawing.drawing import (
 )
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
-from build_a_long.pdf_extract.extractor.lego_page_elements import PageNumber
+from build_a_long.pdf_extract.extractor.lego_page_elements import Page, PageNumber
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
 
@@ -25,7 +25,6 @@ def _make_candidate(
     label: str,
     bbox: BBox,
     source_block: Text | Drawing | Image | None = None,
-    is_winner: bool = True,
     has_constructed: bool = True,
 ) -> Candidate:
     """Helper to create a Candidate with minimal required fields.
@@ -34,7 +33,6 @@ def _make_candidate(
         label: The label for this candidate
         bbox: The bounding box
         source_block: The source block if any
-        is_winner: Whether this candidate won
         has_constructed: Whether construction succeeded (creates a PageNumber if True)
     """
     return Candidate(
@@ -44,7 +42,6 @@ def _make_candidate(
         score=0.9,
         score_details={},
         constructed=PageNumber(bbox=bbox, value=1) if has_constructed else None,
-        is_winner=is_winner,
     )
 
 
@@ -88,14 +85,35 @@ def test_create_drawable_items_elements_only():
     )
 
     # Create an element candidate with a source block
-    candidate = _make_candidate("PageNumber", block.bbox, block, True)
+    page_number = PageNumber(bbox=block.bbox, value=1)
+    candidate = Candidate(
+        label="PageNumber",
+        bbox=block.bbox,
+        source_block=block,
+        score=0.9,
+        score_details={},
+        constructed=page_number,
+    )
     result.add_candidate("PageNumber", candidate)
+
+    # Create a Page that includes this PageNumber
+    page = Page(bbox=BBox(0, 0, 200, 200), page_number=page_number)
+    page_candidate = Candidate(
+        label="page",
+        bbox=BBox(0, 0, 200, 200),
+        source_block=None,
+        score=1.0,
+        score_details={},
+        constructed=page,
+    )
+    result.add_candidate("page", page_candidate)
 
     items = _create_drawable_items(
         result, draw_blocks=False, draw_elements=True, draw_deleted=False
     )
 
-    assert len(items) == 1
+    assert len(items) == 2  # PageNumber + Page
+    assert any(item.label == "[PageNumber]" for item in items)
     assert items[0].is_element
     assert items[0].bbox == block.bbox
     assert "[PageNumber]" in items[0].label
@@ -109,17 +127,37 @@ def test_create_drawable_items_no_duplicate_blocks():
     )
 
     # Create an element candidate with this block as source
-    candidate = _make_candidate("PageNumber", block.bbox, block, True)
+    page_number = PageNumber(bbox=block.bbox, value=1)
+    candidate = Candidate(
+        label="PageNumber",
+        bbox=block.bbox,
+        source_block=block,
+        score=0.9,
+        score_details={},
+        constructed=page_number,
+    )
     result.add_candidate("PageNumber", candidate)
+
+    # Create a Page that includes this PageNumber
+    page = Page(bbox=BBox(0, 0, 200, 200), page_number=page_number)
+    page_candidate = Candidate(
+        label="page",
+        bbox=BBox(0, 0, 200, 200),
+        source_block=None,
+        score=1.0,
+        score_details={},
+        constructed=page,
+    )
+    result.add_candidate("page", page_candidate)
 
     # Request both blocks and elements
     items = _create_drawable_items(
         result, draw_blocks=True, draw_elements=True, draw_deleted=False
     )
 
-    # Should only have 1 item (the element, not the block)
-    assert len(items) == 1
-    assert items[0].is_element
+    # Should have 2 items (Page + PageNumber element), block should be filtered out
+    assert len(items) == 2
+    assert sum(item.is_element for item in items) == 2
     assert "[PageNumber]" in items[0].label
 
 
@@ -129,18 +167,26 @@ def test_create_drawable_items_element_without_source_block():
         page_data=PageData(page_number=1, bbox=BBox(0, 0, 200, 200), blocks=[])
     )
 
-    # Create an element candidate without a source block (e.g., Step, Page)
-    candidate = _make_candidate("Step", BBox(5, 5, 15, 15), None, True)
-    result.add_candidate("Step", candidate)
+    # Create a Page element (has no source block)
+    page = Page(bbox=BBox(5, 5, 15, 15))
+    candidate = Candidate(
+        label="page",
+        bbox=BBox(5, 5, 15, 15),
+        source_block=None,
+        score=1.0,
+        score_details={},
+        constructed=page,
+    )
+    result.add_candidate("page", candidate)
 
     items = _create_drawable_items(
         result, draw_blocks=False, draw_elements=True, draw_deleted=False
     )
 
     assert len(items) == 1
+    assert items[0].label == "[page]"
     assert items[0].is_element
     assert items[0].bbox == candidate.bbox
-    assert "[Step]" in items[0].label
 
 
 def test_create_drawable_items_filter_removed_blocks():
@@ -191,20 +237,55 @@ def test_create_drawable_items_filter_non_winner_elements():
         page_data=PageData(page_number=1, bbox=BBox(0, 0, 200, 200), blocks=[block])
     )
 
-    winner = _make_candidate("PageNumber", block.bbox, block, is_winner=True)
-    non_winner = _make_candidate(
-        "StepNumber", block.bbox, block, is_winner=False, has_constructed=True
+    # Create a winner candidate (will be added to the Page)
+    page_number = PageNumber(bbox=block.bbox, value=1)
+    winner_candidate = Candidate(
+        label="PageNumber",
+        bbox=block.bbox,
+        source_block=block,
+        score=0.9,
+        score_details={},
+        constructed=page_number,
     )
-    result.add_candidate("PageNumber", winner)
-    result.add_candidate("StepNumber", non_winner)
+
+    # Create a non-winner candidate (constructed but not in the Page)
+    step_number_elem = PageNumber(
+        bbox=block.bbox, value=2
+    )  # Using PageNumber for simplicity
+    non_winner_candidate = Candidate(
+        label="StepNumber",
+        bbox=block.bbox,
+        source_block=block,
+        score=0.8,
+        score_details={},
+        constructed=step_number_elem,
+    )
+
+    result.add_candidate("PageNumber", winner_candidate)
+    result.add_candidate("StepNumber", non_winner_candidate)
+
+    # Build a Page that only includes the winner candidate's constructed element
+    # This simulates the page builder choosing only the PageNumber
+    page = Page(bbox=BBox(0, 0, 200, 200), page_number=page_number)
+    page_candidate = Candidate(
+        label="page",
+        bbox=BBox(0, 0, 200, 200),
+        source_block=None,
+        score=1.0,
+        score_details={},
+        constructed=page,
+    )
+    result.add_candidate("page", page_candidate)
 
     items = _create_drawable_items(
         result, draw_blocks=False, draw_elements=True, draw_deleted=False
     )
 
-    assert len(items) == 1
-    assert "[PageNumber]" in items[0].label
-    assert "[NOT WINNER]" not in items[0].label
+    # Only the winners should be included (Page + PageNumber)
+    assert len(items) == 2
+    assert any("[PageNumber]" in item.label for item in items)
+    assert not any("[StepNumber]" in item.label for item in items)
+    assert all("[NOT WINNER]" not in item.label for item in items)
 
 
 def test_create_drawable_items_include_non_winner_elements():
@@ -214,18 +295,51 @@ def test_create_drawable_items_include_non_winner_elements():
         page_data=PageData(page_number=1, bbox=BBox(0, 0, 200, 200), blocks=[block])
     )
 
-    winner = _make_candidate("PageNumber", block.bbox, block, is_winner=True)
-    non_winner = _make_candidate(
-        "StepNumber", block.bbox, block, is_winner=False, has_constructed=True
+    # Create a winner candidate (will be added to the Page)
+    page_number = PageNumber(bbox=block.bbox, value=1)
+    winner_candidate = Candidate(
+        label="PageNumber",
+        bbox=block.bbox,
+        source_block=block,
+        score=0.9,
+        score_details={},
+        constructed=page_number,
     )
-    result.add_candidate("PageNumber", winner)
-    result.add_candidate("StepNumber", non_winner)
+
+    # Create a non-winner candidate (constructed but not in the Page)
+    step_number_elem = PageNumber(
+        bbox=block.bbox, value=2
+    )  # Using PageNumber for simplicity
+    non_winner_candidate = Candidate(
+        label="StepNumber",
+        bbox=block.bbox,
+        source_block=block,
+        score=0.8,
+        score_details={},
+        constructed=step_number_elem,
+    )
+
+    result.add_candidate("PageNumber", winner_candidate)
+    result.add_candidate("StepNumber", non_winner_candidate)
+
+    # Build a Page that only includes the winner candidate's constructed element
+    page = Page(bbox=BBox(0, 0, 200, 200), page_number=page_number)
+    page_candidate = Candidate(
+        label="page",
+        bbox=BBox(0, 0, 200, 200),
+        source_block=None,
+        score=1.0,
+        score_details={},
+        constructed=page,
+    )
+    result.add_candidate("page", page_candidate)
 
     items = _create_drawable_items(
         result, draw_blocks=False, draw_elements=True, draw_deleted=True
     )
 
-    assert len(items) == 2
+    # Both winner and non-winner should be included (Page + PageNumber + StepNumber)
+    assert len(items) == 3
     assert any("[PageNumber]" in item.label for item in items)
     # Check for non-winner StepNumber element
     assert any(

@@ -83,8 +83,8 @@ class PartsClassifier(LabelClassifier):
         """
         page_data = result.page_data
 
-        # Get winning part_count candidates with type safety
-        part_counts = result.get_winners("part_count", PartCount)
+        # Get part_count candidates with type safety, selecting by score
+        part_counts = result.get_winners_by_score("part_count", PartCount)
 
         if not part_counts:
             return
@@ -192,6 +192,5 @@ class PartsClassifier(LabelClassifier):
                     constructed=part,
                     source_block=None,  # Synthetic element, no single source
                     failure_reason=None,
-                    is_winner=True,  # All matched pairs are winners
                 ),
             )

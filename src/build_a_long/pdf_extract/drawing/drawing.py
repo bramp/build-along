@@ -80,16 +80,26 @@ def _create_drawable_items(
     items: list[DrawableItem] = []
     element_source_block_ids: set[int] = set()
 
+    # Build set of chosen elements (elements in the final Page hierarchy)
+    chosen_elements: set[int] = set()
+    if result.page:
+        for element in result.page.iter_elements():
+            chosen_elements.add(id(element))
+
     # Add elements first and track their source block IDs
     if draw_elements:
         for _, candidates in result.get_all_candidates().items():
             for candidate in candidates:
-                if candidate.constructed is None:
-                    continue
-                if not candidate.is_winner and not draw_deleted:
+                is_constructed = candidate.constructed is not None
+                # Check if this constructed element is in the final Page hierarchy
+                is_winner = (
+                    is_constructed and id(candidate.constructed) in chosen_elements
+                )
+
+                if not is_winner and not draw_deleted:
                     continue
 
-                label_suffix = "" if candidate.is_winner else " [NOT WINNER]"
+                label_suffix = "" if is_winner else " [NOT WINNER]"
                 label = f"[{candidate.label}]{label_suffix}"
 
                 # Element without source block (e.g., Step, Page)
@@ -98,7 +108,7 @@ def _create_drawable_items(
                         bbox=candidate.bbox,
                         label=label,
                         is_element=True,
-                        is_winner=candidate.is_winner,
+                        is_winner=is_winner,
                         is_removed=False,
                     )
                 )
@@ -118,6 +128,7 @@ def _create_drawable_items(
             if is_removed and not draw_deleted:
                 continue
 
+            # Get label from successfully constructed candidate for this block
             block_label = result.get_label(block)
             label_suffix = " [REMOVED]" if is_removed else ""
             label_text = block_label or str(block)
