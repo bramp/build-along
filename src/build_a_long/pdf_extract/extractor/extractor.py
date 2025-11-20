@@ -9,7 +9,7 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 
 # Note: We intentionally do not build hierarchy here to avoid syncing issues
 from build_a_long.pdf_extract.extractor.page_blocks import (
-    Block,
+    Blocks,
     Drawing,
     Image,
     Text,
@@ -36,7 +36,7 @@ class PageData(BaseModel):
 
     page_number: int
     bbox: BBox
-    blocks: list[Block]
+    blocks: list[Blocks]
 
 
 class ExtractionResult(BaseModel):
@@ -219,7 +219,7 @@ class Extractor:
         assert self._warn_unknown_block_types(blocks)
 
         # Extract blocks by type (IDs are assigned during creation)
-        typed_blocks: list[Block] = []
+        typed_blocks: list[Blocks] = []
         if "text" in include_types:
             typed_blocks.extend(self._extract_text_blocks(blocks))
         if "image" in include_types:

@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.classification_result import RemovalReason
-from build_a_long.pdf_extract.extractor.page_blocks import Block
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classification_result import (
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 
 
 def filter_duplicate_blocks(
-    blocks: Sequence[Block],
-) -> tuple[list[Block], dict[Block, Block]]:
+    blocks: Sequence[Blocks],
+) -> tuple[list[Blocks], dict[Blocks, Blocks]]:
     """Filter out duplicate/similar blocks, keeping the largest one from each group.
 
     Pages often contain multiple overlapping blocks at similar positions to create
@@ -58,7 +58,7 @@ def filter_duplicate_blocks(
     IOU_THRESHOLD = 0.9
 
     # Helper function to check if two blocks are similar based on IOU
-    def are_similar(block_i: Block, block_j: Block) -> bool:
+    def are_similar(block_i: Blocks, block_j: Blocks) -> bool:
         return block_i.bbox.iou(block_j.bbox) >= IOU_THRESHOLD
 
     # Union-find data structure for grouping similar blocks
@@ -92,7 +92,7 @@ def filter_duplicate_blocks(
 
     # For each group, keep the block with the largest area
     result_indices = []
-    removed_mapping: dict[Block, Block] = {}
+    removed_mapping: dict[Blocks, Blocks] = {}
 
     for group_indices in groups.values():
         # Find the block with the largest area in this group
@@ -111,7 +111,7 @@ def filter_duplicate_blocks(
 
 
 def remove_child_bboxes(
-    target: Block,
+    target: Blocks,
     result: ClassificationResult,
     keep_ids: set[int] | None = None,
 ) -> None:
@@ -142,7 +142,7 @@ def remove_child_bboxes(
 
 
 def remove_similar_bboxes(
-    target: Block,
+    target: Blocks,
     result: ClassificationResult,
     keep_ids: set[int] | None = None,
 ) -> None:
