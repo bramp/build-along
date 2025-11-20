@@ -14,7 +14,9 @@ datamodel-codegen \
     --field-constraints \
     --output-model-type pydantic_v2.BaseModel \
     --use-union-operator \
-    --strict-nullable
+    --strict-nullable \
+    --custom-file-header "# Generated from schemas/openapi.yaml - DO NOT EDIT MANUALLY
+# Use 'pants run src/build_a_long/schemas:generate_models' to regenerate this file"
 
 # Ensure this generated file is formatted
 PANTS_CONCURRENT=True pants fix src/build_a_long/schemas/generated_models.py

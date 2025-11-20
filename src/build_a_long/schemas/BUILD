@@ -1,8 +1,5 @@
-# Shell script to generate Pydantic models from OpenAPI schema
-shell_sources(name="scripts", sources=["generate_models.sh"])
-
 pex_binary(
-    name="codegen",
+    name="datamodel_codegen",
     entry_point="datamodel_codegen:main",
     dependencies=[
         "//3rdparty:dev#datamodel-code-generator",
@@ -10,18 +7,20 @@ pex_binary(
     description="Generate Pydantic models from OpenAPI specs.",
 )
 
+# Shell script to generate Pydantic models from OpenAPI schema
+shell_sources(name="scripts", sources=["generate_models.sh"])
 
 # Generate Pydantic models from OpenAPI schema
-# Usage: pants run src/build_a_long/schemas:codegen
+# Usage: pants run src/build_a_long/schemas:generate_models
 run_shell_command(
     name="generate_models",
     command="./generate_models.sh",
     execution_dependencies=[
         ":scripts",
         "//schemas:openapi",
-        "//tools/datamodel_codegen:codegen",
+        ":datamodel_codegen",
     ],
-    runnable_dependencies=["//tools/datamodel_codegen:codegen"],
+    runnable_dependencies=[":datamodel_codegen"],
 )
 
 # TODO add a adhoc_tool to run generate_models directly.
