@@ -12,7 +12,7 @@ from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
-from build_a_long.pdf_extract.extractor.page_blocks import Block
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 
 logger = logging.getLogger(__name__)
 
@@ -264,7 +264,7 @@ def print_classification_debug(
     # Build block hierarchy tree
     block_tree = build_hierarchy_from_blocks(page.blocks)
 
-    def print_block(block: Block, depth: int, is_last: bool = True) -> None:
+    def print_block(block: Blocks, depth: int, is_last: bool = True) -> None:
         """Recursively print a block and its children."""
         # Build tree characters
         if depth == 0:

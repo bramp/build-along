@@ -69,7 +69,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartsList,
     StepNumber,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Block
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +105,7 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
         BatchClassificationResult containing per-page results and global histogram
     """
     # Phase 1: Filter duplicate blocks on each page and track removals
-    duplicate_removals: list[dict[Block, Block]] = []
+    duplicate_removals: list[dict[Blocks, Blocks]] = []
     for page_data in pages:
         # Get blocks to keep and mapping of removed blocks
         kept_blocks, removed_mapping = filter_duplicate_blocks(page_data.blocks)

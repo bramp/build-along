@@ -21,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, Discriminator, Field
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
 
-class _Block(BaseModel, ABC):
+class Block(BaseModel, ABC):
     """Base class for raw blocks extracted from PDF.
 
     Contract:
@@ -43,7 +43,7 @@ class _Block(BaseModel, ABC):
     id: int
 
 
-class Drawing(_Block):
+class Drawing(Block):
     """A vector drawing block on the page.
 
     image_id can be used to tie back to a raster extracted by the pipeline
@@ -61,7 +61,7 @@ class Drawing(_Block):
         return f"Drawing(bbox={str(self.bbox)}{image_str})"
 
 
-class Text(_Block):
+class Text(Block):
     """A text block on the page.
 
     Stores the actual text content extracted from the PDF.
@@ -80,7 +80,7 @@ class Text(_Block):
         return f'Text(bbox={str(self.bbox)}, text="{text_preview}")'
 
 
-class Image(_Block):
+class Image(Block):
     """An image block on the page (raster image from PDF).
 
     image_id can be used to tie back to a raster extracted by the pipeline.
@@ -100,4 +100,4 @@ class Image(_Block):
 # Discriminated union type for polymorphic deserialization
 # The Discriminator allows Pydantic to deserialize JSON into the correct
 # subclass based on the "tag" field
-Block = Annotated[Drawing | Text | Image, Discriminator("tag")]
+Blocks = Annotated[Drawing | Text | Image, Discriminator("tag")]

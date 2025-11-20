@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from abc import ABC
 from collections.abc import Iterator
 from enum import Enum
-from typing import Annotated, Literal, Self
+from typing import Annotated, Literal
 
 from annotated_types import Ge, Gt
 from pydantic import BaseModel, ConfigDict, Discriminator, Field
@@ -10,7 +12,7 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 
-class _LegoPageElement(BaseModel, ABC):
+class LegoPageElement(BaseModel, ABC):
     """Base class for LEGO-specific structured elements constructed by classifiers.
 
     LegoPageElements are typically constructed from one or more Blocks during
@@ -34,7 +36,7 @@ class _LegoPageElement(BaseModel, ABC):
         """Return a single-line string representation with key information."""
         return f"{self.__class__.__name__}(bbox={str(self.bbox)})"
 
-    def iter_elements(self) -> Iterator["_LegoPageElement"]:
+    def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this element and all child elements.
 
         Default implementation yields only self. Subclasses with children
@@ -46,7 +48,7 @@ class _LegoPageElement(BaseModel, ABC):
         yield self
 
 
-class PageNumber(_LegoPageElement):
+class PageNumber(LegoPageElement):
     """The page number, usually a small integer on the page.
 
     Positional context: Typically located in the lower-left or lower-right corner
@@ -65,7 +67,7 @@ class PageNumber(_LegoPageElement):
         return f"PageNumber(value={self.value})"
 
 
-class StepNumber(_LegoPageElement):
+class StepNumber(LegoPageElement):
     """A step number label.
 
     Positional context: Located below the PartsList within a Step, left-aligned
@@ -84,7 +86,7 @@ class StepNumber(_LegoPageElement):
         return f"StepNumber(value={self.value})"
 
 
-class PartCount(_LegoPageElement):
+class PartCount(LegoPageElement):
     """The visual count label associated with a part entry (e.g., '2x').
 
     Positional context: Positioned directly below the corresponding part image/diagram,
@@ -111,7 +113,7 @@ class PartCount(_LegoPageElement):
         return f"PartCount(count={self.count}x{hint_str})"
 
 
-class PartNumber(_LegoPageElement):
+class PartNumber(LegoPageElement):
     """The element ID number for a part (catalog pages).
 
     Positional context: Located directly below the part count on catalog pages.
@@ -132,7 +134,7 @@ class PartNumber(_LegoPageElement):
         return f"PartNumber(element_id={self.element_id})"
 
 
-class ProgressBar(_LegoPageElement):
+class ProgressBar(LegoPageElement):
     """A progress bar showing building progress through the instruction book.
 
     Positional context: Typically located at the bottom of the page, spanning most
@@ -155,7 +157,7 @@ class ProgressBar(_LegoPageElement):
         return f"ProgressBar(bbox={str(self.bbox)}{progress_str})"
 
 
-class Part(_LegoPageElement):
+class Part(LegoPageElement):
     """A single part entry within a parts list.
 
     Positional context: The part image/diagram appears first, with the PartCount
@@ -180,7 +182,7 @@ class Part(_LegoPageElement):
         number_str = self.number.element_id if self.number else "no-number"
         return f"Part(count={self.count.count}x, number={number_str})"
 
-    def iter_elements(self) -> Iterator["_LegoPageElement"]:
+    def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this Part and all child elements."""
         yield self
         yield self.count
@@ -191,7 +193,7 @@ class Part(_LegoPageElement):
             yield from self.number.iter_elements()
 
 
-class PartsList(_LegoPageElement):
+class PartsList(LegoPageElement):
     """A container of multiple parts for the page's parts list.
 
     Positional context: Contained within a Step. Located
@@ -218,14 +220,14 @@ class PartsList(_LegoPageElement):
         """Return a single-line string representation with key information."""
         return f"PartsList(parts={len(self.parts)}, total_items={self.total_items})"
 
-    def iter_elements(self) -> Iterator["_LegoPageElement"]:
+    def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this PartsList and all child elements."""
         yield self
         for part in self.parts:
             yield from part.iter_elements()
 
 
-class BagNumber(_LegoPageElement):
+class BagNumber(LegoPageElement):
     """The bag number, usually a small integer on the page."""
 
     tag: Literal["BagNumber"] = Field(default="BagNumber", alias="__tag__", frozen=True)
@@ -236,7 +238,7 @@ class BagNumber(_LegoPageElement):
         return f"BagNumber(value={self.value})"
 
 
-class NewBag(_LegoPageElement):
+class NewBag(LegoPageElement):
     """The graphic showing a new bag icon on the page."""
 
     tag: Literal["NewBag"] = Field(default="NewBag", alias="__tag__", frozen=True)
@@ -247,7 +249,7 @@ class NewBag(_LegoPageElement):
         return f"NewBag(bag={self.bag.value})"
 
 
-class Diagram(_LegoPageElement):
+class Diagram(LegoPageElement):
     """The graphic showing how to complete the step.
 
     Positional context: The main diagram is positioned on the right side of the
@@ -264,7 +266,7 @@ class Diagram(_LegoPageElement):
         return f"Diagram(bbox={str(self.bbox)})"
 
 
-class Step(_LegoPageElement):
+class Step(LegoPageElement):
     """A single instruction step on the page.
 
     Positional context: Steps are arranged vertically on the page, typically 1-2
@@ -295,7 +297,7 @@ class Step(_LegoPageElement):
         """Return the step number value for convenience."""
         return self.step_number.value
 
-    def iter_elements(self) -> Iterator["_LegoPageElement"]:
+    def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this Step and all child elements."""
         yield self
         yield from self.step_number.iter_elements()
@@ -305,7 +307,7 @@ class Step(_LegoPageElement):
         # yield from self.diagram.iter_elements()
 
 
-class Page(_LegoPageElement):
+class Page(LegoPageElement):
     """A complete page of LEGO instructions.
 
     This is the top-level element that contains all other elements on a page.
@@ -348,7 +350,7 @@ class Page(_LegoPageElement):
             f"warnings={len(self.warnings)})"
         )
 
-    def iter_elements(self) -> Iterator["_LegoPageElement"]:
+    def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this Page and all child elements.
 
         Yields all elements in depth-first order: the Page itself, then all
@@ -368,7 +370,7 @@ class Page(_LegoPageElement):
             yield from step.iter_elements()
 
 
-LegoPageElement = Annotated[
+LegoPageElements = Annotated[
     PageNumber
     | StepNumber
     | PartCount

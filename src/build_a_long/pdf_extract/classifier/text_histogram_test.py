@@ -3,7 +3,7 @@
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Block, Image, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Image, Text
 
 
 class TestTextHistogram:
@@ -35,7 +35,7 @@ class TestTextHistogram:
         # Create 3 sample pages with various text elements
         for i in range(1, 4):
             page_bbox = BBox(0, 0, 100, 200)
-            blocks: list[Block] = [
+            blocks: list[Blocks] = [
                 # Page number (small font) - appears on all 3 pages
                 Text(
                     id=0,

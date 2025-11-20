@@ -13,11 +13,11 @@ from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
-from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement, Page
-from build_a_long.pdf_extract.extractor.page_blocks import Block
+from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElements, Page
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 
 # Score key can be either a single Block or a tuple of Blocks (for pairings)
-ScoreKey = Block | tuple[Block, ...]
+ScoreKey = Blocks | tuple[Blocks, ...]
 
 # Weight value constrained to [0.0, 1.0] range
 Weight = Annotated[float, Ge(0), Le(1)]
@@ -45,7 +45,7 @@ class RemovalReason(BaseModel):
     """Type of removal: 'duplicate_bbox', 'child_bbox', or 'similar_bbox'"""
 
     # TODO Should this be updated to the Candidate that caused the removal?
-    target_block: Block
+    target_block: Blocks
     """The block that caused this removal"""
 
 
@@ -75,10 +75,10 @@ class Candidate(BaseModel):
     score_details: Any
     """The detailed score object (e.g., _PageNumberScore)"""
 
-    constructed: LegoPageElement | None
+    constructed: LegoPageElements | None
     """The constructed LegoElement if parsing succeeded, None if failed"""
 
-    source_block: Block | None = None
+    source_block: Blocks | None = None
     """The raw element that was scored (None for synthetic elements like Step)"""
 
     failure_reason: str | None = None
@@ -192,7 +192,7 @@ class ClassificationResult(BaseModel):
         return self
 
     def _validate_block_in_page_data(
-        self, block: Block | None, param_name: str = "block"
+        self, block: Blocks | None, param_name: str = "block"
     ) -> None:
         """Validate that a block is in PageData.
 
@@ -207,7 +207,7 @@ class ClassificationResult(BaseModel):
             raise ValueError(f"{param_name} must be in PageData.blocks. Block: {block}")
 
     @property
-    def blocks(self) -> list[Block]:
+    def blocks(self) -> list[Blocks]:
         """Get the blocks from the page data.
 
         Returns:
@@ -251,7 +251,7 @@ class ClassificationResult(BaseModel):
         """
         return self.candidates.get(label, []).copy()
 
-    def get_winners_by_score[T: LegoPageElement](
+    def get_winners_by_score[T: LegoPageElements](
         self, label: str, element_type: type[T], max_count: int | None = None
     ) -> list[T]:
         """Get the best candidates for a specific label by score.
@@ -320,7 +320,7 @@ class ClassificationResult(BaseModel):
         """
         return sum(1 for c in self.get_candidates(label) if c.constructed is not None)
 
-    def get_all_candidates_for_block(self, block: Block) -> list[Candidate]:
+    def get_all_candidates_for_block(self, block: Blocks) -> list[Candidate]:
         """Get all candidates for a block across all labels.
 
         Searches across all labels to find candidates that used the given block
@@ -340,7 +340,7 @@ class ClassificationResult(BaseModel):
                     results.append(candidate)
         return results
 
-    def get_candidate_for_block(self, block: Block, label: str) -> Candidate | None:
+    def get_candidate_for_block(self, block: Blocks, label: str) -> Candidate | None:
         """Get the candidate for a specific block with a specific label.
 
         Helper method for testing - returns the single candidate for the given
@@ -369,7 +369,7 @@ class ClassificationResult(BaseModel):
             f"with label '{label}'. Expected at most one."
         )
 
-    def get_label(self, block: Block) -> str | None:
+    def get_label(self, block: Blocks) -> str | None:
         """Get the label for a block from its successfully constructed candidate.
 
         Returns the label of the first successfully constructed candidate for
@@ -405,7 +405,7 @@ class ClassificationResult(BaseModel):
             self.candidates[label] = []
         self.candidates[label].append(candidate)
 
-    def mark_removed(self, block: Block, reason: RemovalReason) -> None:
+    def mark_removed(self, block: Blocks, reason: RemovalReason) -> None:
         """Mark a block as removed with the given reason.
 
         Args:
@@ -418,7 +418,7 @@ class ClassificationResult(BaseModel):
         self._validate_block_in_page_data(block, "block")
         self.removal_reasons[block.id] = reason
 
-    def is_removed(self, block: Block) -> bool:
+    def is_removed(self, block: Blocks) -> bool:
         """Check if a block has been marked for removal.
 
         Args:
@@ -429,7 +429,7 @@ class ClassificationResult(BaseModel):
         """
         return block.id in self.removal_reasons
 
-    def get_removal_reason(self, block: Block) -> RemovalReason | None:
+    def get_removal_reason(self, block: Blocks) -> RemovalReason | None:
         """Get the reason why a block was removed.
 
         Args:
