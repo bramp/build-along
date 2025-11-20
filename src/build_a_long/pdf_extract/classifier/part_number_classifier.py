@@ -14,10 +14,6 @@ Enable DEBUG logs with LOG_LEVEL=DEBUG.
 import logging
 from dataclasses import dataclass
 
-from build_a_long.pdf_extract.classifier.block_filter import (
-    remove_child_bboxes,
-    remove_similar_bboxes,
-)
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -152,34 +148,18 @@ class PartNumberClassifier(LabelClassifier):
                     constructed=constructed_elem,
                     source_block=block,
                     failure_reason=failure_reason,
-                    is_winner=False,  # Will be set by classify()
                 ),
             )
 
     def classify(self, result: ClassificationResult) -> None:
-        """Select winning part numbers from pre-built candidates."""
-        # Get pre-built candidates
-        candidate_list = result.get_candidates("part_number")
+        """Select winning part numbers from pre-built candidates.
 
-        # Mark winners (all successfully constructed candidates)
-        for candidate in candidate_list:
-            if candidate.constructed is None:
-                # Already has failure_reason from evaluate
-                continue
+        This method is intentionally a no-op. Winner selection is handled by
+        higher-level classifiers which use get_winners_by_score() to select
+        the most appropriate part_number candidates based on their scores.
 
-            # Check if this candidate has been removed due to overlap with a
-            # previous winner
-            if candidate.source_block is not None and result.is_removed(
-                candidate.source_block
-            ):
-                continue
-
-            # This is a winner!
-            assert isinstance(candidate.constructed, PartNumber)
-            assert candidate.source_block is not None
-            result.mark_winner(candidate, candidate.constructed)
-
-            remove_similar_bboxes(candidate.source_block, result)
-
-            # There should be no blocks inside this part number bbox
-            remove_child_bboxes(candidate.source_block, result)
+        This is part of a refactoring to eliminate the is_winner flag and
+        move winner selection logic to where the context is available to make
+        better decisions about which candidates to use.
+        """
+        pass

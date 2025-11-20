@@ -84,20 +84,6 @@ class Candidate(BaseModel):
     failure_reason: str | None = None
     """Why construction failed, if it did"""
 
-    is_winner: bool = False
-    """Whether this candidate was selected as the winner.
-    
-    This field is set by mark_winner() and is used for:
-    - Querying winners (get_label, get_blocks_by_label, has_label)
-    - Synthetic candidates (which have no source_block and can't be tracked
-      in _block_winners)
-    - JSON serialization and golden file comparisons
-    
-    Note: For candidates with source_block, this is redundant with
-    _block_winners, but provides convenient access and handles synthetic
-    candidates.
-    """
-
 
 class ClassifierConfig(BaseModel):
     """Configuration for the classifier."""
@@ -178,7 +164,6 @@ class ClassificationResult(BaseModel):
     - Its score and score details
     - The constructed LegoPageElement (if successful)
     - Failure reason (if construction failed)
-    - Whether it was the winner
     
     This enables:
     - Re-evaluation with hints (exclude specific candidates)
@@ -186,15 +171,6 @@ class ClassificationResult(BaseModel):
     - UI support (show users alternatives)
     
     Public for serialization. Prefer using get_* accessor methods.
-    """
-
-    block_winners: dict[int, tuple[str, Candidate]] = Field(default_factory=dict)
-    """Maps block IDs to their winning (label, candidate) tuple.
-    
-    Ensures each block has at most one winning candidate across all labels.
-    Keys are block IDs (int) for JSON serializability.
-    
-    Public for serialization. Prefer using get_label() and related methods.
     """
 
     @model_validator(mode="after")
@@ -242,13 +218,8 @@ class ClassificationResult(BaseModel):
     @property
     def page(self) -> Page | None:
         """Returns the Page object built from this classification result."""
-        pages = self.get_candidates("page")
-        # Filter for winner candidates
-        winner_pages = [c for c in pages if c.is_winner and c.constructed is not None]
-        assert len(winner_pages) <= 1, (
-            "There should be no more than one winning Page candidate."
-        )
-        return cast(Page, winner_pages[0].constructed) if winner_pages else None
+        pages = self.get_winners_by_score("page", Page, max_count=1)
+        return pages[0] if pages else None
 
     def add_warning(self, warning: str) -> None:
         """Add a warning message to the classification result.
@@ -266,6 +237,8 @@ class ClassificationResult(BaseModel):
         """
         return self.warnings.copy()
 
+    # TODO Reconsider the methods below - some may be redundant.
+
     def get_candidates(self, label: str) -> list[Candidate]:
         """Get all candidates for a specific label.
 
@@ -278,40 +251,36 @@ class ClassificationResult(BaseModel):
         """
         return self.candidates.get(label, []).copy()
 
-    def get_winners[T: LegoPageElement](
-        self, label: str, element_type: type[T]
+    def get_winners_by_score[T: LegoPageElement](
+        self, label: str, element_type: type[T], max_count: int | None = None
     ) -> list[T]:
-        """Get winning candidates for a specific label with type safety.
+        """Get the best candidates for a specific label by score.
 
-        This is a convenience method that filters candidates to only those that:
-        - Are marked as winners (is_winner=True)
-        - Have been successfully constructed (constructed is not None)
+        Selects candidates by:
+        - Successfully constructed (constructed is not None)
+        - Highest score
         - Match the specified element type
 
         Args:
             label: The label to get winners for (e.g., "page_number", "step")
-            element_type: The type of element to filter for (e.g., PageNumber, Step)
+            element_type: The type of element to filter for (e.g., PageNumber)
+            max_count: Maximum number of winners to return (None = all valid)
 
         Returns:
-            List of constructed elements of the specified type
+            List of constructed elements of the specified type, sorted by score
+            (highest first)
 
         Raises:
-            AssertionError: If a winning candidate has None constructed (invalid state)
-            AssertionError: If element_type doesn't match the actual constructed type
+            AssertionError: If element_type doesn't match the actual
+                constructed type
         """
-        winners = []
-        for candidate in self.get_candidates(label):
-            if not candidate.is_winner:
-                continue
+        # Get all candidates and filter for successful construction
+        valid_candidates = [
+            c for c in self.get_candidates(label) if c.constructed is not None
+        ]
 
-            # Invariant check: winners must have constructed elements
-            assert candidate.constructed is not None, (
-                f"Winner candidate for label '{label}' has None "
-                f"constructed. This is an invalid state - winners must "
-                f"have constructed elements."
-            )
-
-            # Type safety check: verify constructed matches requested type
+        # Validate types
+        for candidate in valid_candidates:
             assert isinstance(candidate.constructed, element_type), (
                 f"Type mismatch for label '{label}': requested "
                 f"{element_type.__name__} but got "
@@ -319,20 +288,104 @@ class ClassificationResult(BaseModel):
                 f"This indicates a programming error in the caller."
             )
 
-            if candidate.constructed is not None and isinstance(
-                candidate.constructed, element_type
-            ):
-                winners.append(cast(T, candidate.constructed))
+        # Sort by score (highest first)
+        valid_candidates.sort(key=lambda c: c.score, reverse=True)
 
-        return winners
+        # Apply max_count if specified
+        if max_count is not None:
+            valid_candidates = valid_candidates[:max_count]
+
+        # Extract constructed elements
+        return [cast(T, c.constructed) for c in valid_candidates]
 
     def get_all_candidates(self) -> dict[str, list[Candidate]]:
         """Get all candidates across all labels.
 
         Returns:
-            Dictionary mapping labels to their candidates (returns deep copy)
+            Dictionary mapping labels to their candidates (returns deep copy to
+            prevent external modification)
         """
         return {label: cands.copy() for label, cands in self.candidates.items()}
+
+    def count_successful_candidates(self, label: str) -> int:
+        """Count how many candidates were successfully constructed for a label.
+
+        Test helper method that counts candidates where construction succeeded.
+
+        Args:
+            label: The label to count successful candidates for
+
+        Returns:
+            Count of successfully constructed candidates
+        """
+        return sum(1 for c in self.get_candidates(label) if c.constructed is not None)
+
+    def get_all_candidates_for_block(self, block: Block) -> list[Candidate]:
+        """Get all candidates for a block across all labels.
+
+        Searches across all labels to find candidates that used the given block
+        as their source. For finding a candidate with a specific label, use
+        get_candidate_for_block() instead.
+
+        Args:
+            block: The block to find candidates for
+
+        Returns:
+            List of all candidates across all labels with this block as source_block
+        """
+        results = []
+        for candidates in self.candidates.values():
+            for candidate in candidates:
+                if candidate.source_block is block:
+                    results.append(candidate)
+        return results
+
+    def get_candidate_for_block(self, block: Block, label: str) -> Candidate | None:
+        """Get the candidate for a specific block with a specific label.
+
+        Helper method for testing - returns the single candidate for the given
+        block and label combination. Returns None if no such candidate exists.
+
+        Args:
+            block: The block to find the candidate for
+            label: The label to search within
+
+        Returns:
+            The candidate if found, None otherwise
+
+        Raises:
+            ValueError: If multiple candidates exist for this block/label pair
+        """
+        candidates = [c for c in self.get_candidates(label) if c.source_block is block]
+
+        if len(candidates) == 0:
+            return None
+
+        if len(candidates) == 1:
+            return candidates[0]
+
+        raise ValueError(
+            f"Multiple candidates found for block {block.id} "
+            f"with label '{label}'. Expected at most one."
+        )
+
+    def get_label(self, block: Block) -> str | None:
+        """Get the label for a block from its successfully constructed candidate.
+
+        Returns the label of the first successfully constructed candidate for
+        the given block, or None if no successfully constructed candidate exists.
+
+        Args:
+            block: The block to get the label for
+
+        Returns:
+            The label string if a successfully constructed candidate exists,
+            None otherwise
+        """
+        for candidate in self.get_all_candidates_for_block(block):
+            if candidate.constructed is not None:
+                return candidate.label
+        return None
 
     def add_candidate(self, label: str, candidate: Candidate) -> None:
         """Add a single candidate for a specific label.
@@ -352,45 +405,6 @@ class ClassificationResult(BaseModel):
             self.candidates[label] = []
         self.candidates[label].append(candidate)
 
-    def mark_winner(
-        self,
-        candidate: Candidate,
-        constructed: LegoPageElement,
-    ) -> None:
-        """Mark a candidate as the winner and update tracking dicts.
-
-        Args:
-            candidate: The candidate to mark as winner
-            constructed: The constructed LegoPageElement
-
-        Raises:
-            ValueError: If candidate has a source_block that is not in PageData
-            ValueError: If this block already has a winner candidate
-        """
-        self._validate_block_in_page_data(
-            candidate.source_block, "candidate.source_block"
-        )
-
-        # Check if this block already has a winner
-        if candidate.source_block is not None:
-            block_id = candidate.source_block.id
-            if block_id in self.block_winners:
-                existing_label, existing_candidate = self.block_winners[block_id]
-                raise ValueError(
-                    f"Block {block_id} already has a winner candidate for "
-                    f"label '{existing_label}'. Cannot mark as winner for "
-                    f"label '{candidate.label}'. Each block can have at most "
-                    f"one winner candidate."
-                )
-
-        candidate.is_winner = True
-        # Track the winner for this block
-        if candidate.source_block is not None:
-            self.block_winners[candidate.source_block.id] = (
-                candidate.label,
-                candidate,
-            )
-
     def mark_removed(self, block: Block, reason: RemovalReason) -> None:
         """Mark a block as removed with the given reason.
 
@@ -403,58 +417,6 @@ class ClassificationResult(BaseModel):
         """
         self._validate_block_in_page_data(block, "block")
         self.removal_reasons[block.id] = reason
-
-    def get_label(self, block: Block) -> str | None:
-        """Get the label for a block from this classification result.
-
-        Args:
-            block: The block to get the label for
-
-        Returns:
-            The label string if found, None otherwise
-        """
-        # Use O(1) lookup via block_winners
-        if block.id in self.block_winners:
-            label, _ = self.block_winners[block.id]
-            return label
-        return None
-
-    def get_winner_candidate(self, block: Block) -> Candidate | None:
-        """Get the winning candidate for a block.
-
-        Provides O(1) lookup of the winner candidate and its constructed element.
-
-        Args:
-            block: The block to get the winner for
-
-        Returns:
-            The winning Candidate if found, None otherwise
-        """
-        if block.id in self.block_winners:
-            _, candidate = self.block_winners[block.id]
-            return candidate
-        return None
-
-    def get_blocks_by_label(self, label: str) -> list[Block]:
-        """Get all blocks with the given label.
-
-        Args:
-            label: The label to search for
-
-        Returns:
-            List of blocks with that label. For constructed blocks (e.g., Part),
-            returns the constructed object; for regular blocks, returns source_block.
-        """
-        label_candidates = self.candidates.get(label, [])
-        blocks = []
-        for c in label_candidates:
-            if c.is_winner:
-                # Prefer source_block, fall back to constructed for synthetic blocks
-                if c.source_block is not None:
-                    blocks.append(c.source_block)
-                elif c.constructed is not None:
-                    blocks.append(c.constructed)
-        return blocks
 
     def is_removed(self, block: Block) -> bool:
         """Check if a block has been marked for removal.
@@ -477,15 +439,3 @@ class ClassificationResult(BaseModel):
             The RemovalReason if the block was removed, None otherwise
         """
         return self.removal_reasons.get(block.id)
-
-    def has_label(self, label: str) -> bool:
-        """Check if any elements have been assigned the given label.
-
-        Args:
-            label: The label to check for
-
-        Returns:
-            True if at least one element has this label, False otherwise
-        """
-        label_candidates = self.candidates.get(label, [])
-        return any(c.is_winner for c in label_candidates)

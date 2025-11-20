@@ -39,11 +39,12 @@ class TestStepClassification:
 
         result = classify_elements(page)
 
-        # Check that step_number is still labeled as step_number
-        assert result.get_label(step) == "step_number"
+        # Check the Page structure
+        assert result.page is not None
+        assert len(result.page.steps) == 1
 
-        # Get the constructed Step element using the new get_winners method
-        winning_steps = result.get_winners("step", Step)
+        # Verify the Step has the correct components
+        winning_steps = result.page.steps
         assert len(winning_steps) == 1
 
         # Verify the Step has the correct components
@@ -70,11 +71,12 @@ class TestStepClassification:
 
         result = classify_elements(page)
 
-        # Check that step_number is still labeled as step_number
-        assert result.get_label(step) == "step_number"
+        # Check the Page structure
+        assert result.page is not None
+        assert len(result.page.steps) == 1
 
-        # Get the constructed Step element using the new get_winners method
-        steps = result.get_winners("step", Step)
+        # Verify the Step
+        steps = result.page.steps
         assert len(steps) == 1
 
         # Verify the Step has the correct components
@@ -108,15 +110,25 @@ class TestStepClassification:
 
         result = classify_elements(page)
 
-        # Check that both step_numbers are still labeled as step_number
-        assert result.get_label(step1) == "step_number"
-        assert result.get_label(step2) == "step_number"
+        # Check the Page structure
+        assert result.page is not None
+        assert len(result.page.steps) == 2
 
-        # Get the constructed Step elements using the new get_winners method
-        steps = result.get_winners("step", Step)
+        # Get the Steps from the Page
+        steps = result.page.steps
         assert len(steps) == 2
 
-        # Check that steps are in order
+        # Verify the step_number candidates came from the correct source blocks
+        step1_candidate = result.get_candidate_for_block(step1, "step_number")
+        step2_candidate = result.get_candidate_for_block(step2, "step_number")
+        assert step1_candidate is not None
+        assert step2_candidate is not None
+        assert step1_candidate.constructed is not None
+        assert step2_candidate.constructed is not None
+        assert step1_candidate.source_block is step1
+        assert step2_candidate.source_block is step2
+
+        # Check that steps are in order by value
         steps_sorted = sorted(steps, key=lambda s: s.step_number.value)
         assert steps_sorted[0].step_number.value == 1
         assert steps_sorted[1].step_number.value == 2
@@ -195,20 +207,24 @@ class TestStepClassification:
 
         result = classify_elements(page)
 
-        # Both step numbers should be labeled
-        assert result.get_label(step1) == "step_number"
-        assert result.get_label(step2) == "step_number"
+        # Check step_number candidates were created for both blocks
+        assert result.count_successful_candidates("step_number") == 2
+        step1_candidate = result.get_candidate_for_block(step1, "step_number")
+        step2_candidate = result.get_candidate_for_block(step2, "step_number")
+        assert step1_candidate is not None
+        assert step2_candidate is not None
+        assert step1_candidate.constructed is not None
+        assert step2_candidate.constructed is not None
 
-        # Both parts lists should be marked as winners
-        # (no uniqueness at PartsList level)
-        parts_list_candidates = result.get_candidates("parts_list")
-        winning_parts_lists = [c for c in parts_list_candidates if c.is_winner]
-        assert len(winning_parts_lists) == 2, (
-            f"Expected 2 parts list winners, got {len(winning_parts_lists)}"
+        # Both parts lists should exist as candidates
+        parts_list_count = result.count_successful_candidates("parts_list")
+        assert parts_list_count == 2, (
+            f"Expected 2 parts list candidates, got {parts_list_count}"
         )
 
         # But only ONE step should be created (uniqueness enforced at Step level)
-        winning_steps = result.get_winners("step", Step)
+        assert result.page is not None
+        winning_steps = result.page.steps
 
         assert len(winning_steps) == 1, (
             f"Expected exactly 1 step winner, got {len(winning_steps)}. "

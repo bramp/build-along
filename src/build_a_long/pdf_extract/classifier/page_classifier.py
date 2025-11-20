@@ -47,18 +47,27 @@ class PageClassifier(LabelClassifier):
     ) -> None:
         """Evaluate elements and create a Page candidate.
 
-        Collects page_number and step elements to build a complete Page.
+        Collects page_number, progress_bar, and step elements to build a
+        complete Page. Uses get_winners_by_score() to select the best
+        candidates based on scores.
         """
         page_data = result.page_data
 
-        # Get winners with type safety
-        page_number_winners = result.get_winners("page_number", PageNumber)
+        # Get best candidates using score-based selection
+        # (max_count=1 for singleton elements)
+        page_number_winners = result.get_winners_by_score(
+            "page_number", PageNumber, max_count=1
+        )
         page_number = page_number_winners[0] if page_number_winners else None
 
-        progress_bar_winners = result.get_winners("progress_bar", ProgressBar)
+        progress_bar_winners = result.get_winners_by_score(
+            "progress_bar", ProgressBar, max_count=1
+        )
         progress_bar = progress_bar_winners[0] if progress_bar_winners else None
 
-        steps = result.get_winners("step", Step)
+        # Get steps using score-based selection (StepClassifier now handles
+        # deduplication in evaluate(), so all step candidates are valid)
+        steps = result.get_winners_by_score("step", Step)
 
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
@@ -92,19 +101,15 @@ class PageClassifier(LabelClassifier):
                 constructed=constructed,
                 source_block=None,  # Synthetic element
                 failure_reason=None,
-                is_winner=False,  # Will be set by classify()
             ),
         )
 
     def classify(self, result: ClassificationResult) -> None:
-        """Mark the Page candidate as winner."""
-        candidate_list = result.get_candidates("page")
+        """No-op - Page selection handled by result.page property.
 
-        for candidate in candidate_list:
-            if candidate.constructed is None:
-                continue
-
-            assert isinstance(candidate.constructed, Page)
-
-            # This is a winner!
-            result.mark_winner(candidate, candidate.constructed)
+        This is part of a refactoring to eliminate the is_winner flag and
+        mark_winner() method. The Page candidate created in evaluate() is
+        accessed via the ClassificationResult.page property which uses
+        get_winners_by_score().
+        """
+        pass

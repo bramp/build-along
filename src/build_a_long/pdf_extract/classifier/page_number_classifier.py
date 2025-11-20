@@ -6,10 +6,6 @@ import math
 import re
 from dataclasses import dataclass
 
-from build_a_long.pdf_extract.classifier.block_filter import (
-    remove_child_bboxes,
-    remove_similar_bboxes,
-)
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -142,51 +138,30 @@ class PageNumberClassifier(LabelClassifier):
                     constructed=constructed_elem,
                     source_block=block,
                     failure_reason=failure_reason,
-                    is_winner=False,  # Will be set by classify()
                 ),
             )
 
     def classify(self, result: ClassificationResult) -> None:
-        """Select the best page number candidate from pre-built candidates."""
-        candidate_list = result.get_candidates("page_number")
+        """Select the best page number candidate from pre-built candidates.
 
-        if not candidate_list:
-            return
+        This method is intentionally a no-op. Winner selection is handled by
+        higher-level classifiers (e.g., PageClassifier) which use
+        get_winners_by_score() to select the highest-scoring page_number
+        candidate.
 
-        # Select the winner from successfully constructed candidates
-        winner = self._select_winner(candidate_list)
-        if not winner:
-            # All candidates failed to construct
-            return
-
-        # Mark winner and store results
-        assert isinstance(winner.constructed, PageNumber)
-        assert winner.source_block is not None
-        result.mark_winner(winner, winner.constructed)
-
-        # Cleanup: remove child/similar bboxes
-        remove_child_bboxes(winner.source_block, result)
-        remove_similar_bboxes(winner.source_block, result)
-
-    def _select_winner(self, candidate_list: list[Candidate]) -> Candidate | None:
-        """Select the best candidate from the list.
-
-        Only considers candidates that successfully constructed a PageNumber.
-        Selects the highest scoring candidate.
-
-        Args:
-            candidate_list: List of candidates to choose from
-
-        Returns:
-            The winning candidate, or None if no valid candidates exist.
+        This is part of a refactoring to eliminate the is_winner flag and
+        move winner selection logic to where the context is available to make
+        better decisions about which candidates to use.
         """
-        # Choose best candidate that successfully constructed
-        valid_candidates = [c for c in candidate_list if c.constructed is not None]
-        if not valid_candidates:
-            return None
+        # Check if we have any valid candidates and add warning if not
+        candidates = [
+            c for c in result.get_candidates("page_number") if c.constructed is not None
+        ]
 
-        # Sort by score and pick winner
-        return max(valid_candidates, key=lambda c: c.score)
+        if not candidates:
+            result.add_warning(
+                f"Page {result.page_data.page_number}: missing page number"
+            )
 
     def _score_page_number_text(self, text: str) -> float:
         text = text.strip()

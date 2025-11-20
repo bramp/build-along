@@ -4,10 +4,6 @@ Step number classifier.
 
 from dataclasses import dataclass
 
-from build_a_long.pdf_extract.classifier.block_filter import (
-    remove_child_bboxes,
-    remove_similar_bboxes,
-)
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -132,54 +128,12 @@ class StepNumberClassifier(LabelClassifier):
                     constructed=constructed_elem,
                     source_block=block,
                     failure_reason=failure_reason,
-                    is_winner=False,  # Will be set by classify()
                 ),
             )
 
     def classify(self, result: ClassificationResult) -> None:
-        """Select winning step numbers from pre-built candidates."""
-        # Get pre-built candidates
-        candidate_list = result.get_candidates("step_number")
-
-        # TODO Do I need this check?
-        # Find the page number block to avoid classifying it as a step number
-        page_number_blocks = result.get_blocks_by_label("page_number")
-        page_number_block = page_number_blocks[0] if page_number_blocks else None
-
-        # Mark winners (all successfully constructed candidates that aren't
-        # the page number and meet the confidence threshold)
-        for candidate in candidate_list:
-            if candidate.source_block is page_number_block:
-                # Don't classify page number as step number
-                candidate.failure_reason = "Block is already labeled as page_number"
-                continue
-
-            if candidate.score < self.config.min_confidence_threshold:
-                candidate.failure_reason = (
-                    f"Score {candidate.score:.2f} below threshold "
-                    f"{self.config.min_confidence_threshold}"
-                )
-                continue
-
-            if candidate.constructed is None:
-                # Already has failure_reason from calculate_scores
-                continue
-
-            # Check if this candidate has been removed due to overlap with a
-            # previous winner
-            if candidate.source_block is not None and result.is_removed(
-                candidate.source_block
-            ):
-                continue
-
-            # This is a winner!
-            assert isinstance(candidate.constructed, StepNumber)
-            assert candidate.source_block is not None
-            result.mark_winner(candidate, candidate.constructed)
-            remove_similar_bboxes(candidate.source_block, result)
-
-            # There should be no blocks inside this step number bbox
-            remove_child_bboxes(candidate.source_block, result)
+        """No-op - winners selected by StepClassifier using get_winners_by_score()."""
+        pass
 
     def _score_step_number_text(self, text: str) -> float:
         """Score text based on how well it matches step number patterns.

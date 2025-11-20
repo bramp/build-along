@@ -60,21 +60,28 @@ class TestClassifierRules:
             result = classify_elements(page)
 
             # Find all elements that are both labeled and deleted
+            # Build a map of source_block -> label for successfully constructed candidates
+            block_to_label: dict[int, str] = {}
+            for label, candidates in result.get_all_candidates().items():
+                for candidate in candidates:
+                    if (
+                        candidate.constructed is not None
+                        and candidate.source_block is not None
+                    ):
+                        block_to_label[id(candidate.source_block)] = label
+
             labeled_and_deleted = []
             for elem in page.blocks:
-                if result.get_label(elem) is not None and result.is_removed(elem):
-                    labeled_and_deleted.append(elem)
+                if id(elem) in block_to_label and result.is_removed(elem):
+                    labeled_and_deleted.append((elem, block_to_label[id(elem)]))
 
             if labeled_and_deleted:
                 log.error(
                     f"Found {len(labeled_and_deleted)} labeled elements "
                     f"that are deleted:"
                 )
-                for elem in labeled_and_deleted:
-                    log.error(
-                        f"  - {result.get_label(elem)} id:{elem.id} "
-                        f"bbox:{elem.bbox} [DELETED]"
-                    )
+                for elem, label in labeled_and_deleted:
+                    log.error(f"  - {label} id:{elem.id} bbox:{elem.bbox} [DELETED]")
 
             assert len(labeled_and_deleted) == 0, (
                 f"Found {len(labeled_and_deleted)} labeled elements that are "
@@ -96,14 +103,15 @@ class TestClassifierRules:
             # Run the full classification pipeline on the page
             result = classify_elements(page)
 
-            # Track which blocks have won, and for which label
+            # Track which blocks have successful constructions, and for which label
             block_to_winning_label: dict[int, str] = {}
 
-            # Check all candidates across all labels
+            # Check all successful candidates across all labels
             all_candidates = result.get_all_candidates()
             for label, candidates in all_candidates.items():
                 for candidate in candidates:
-                    if not candidate.is_winner:
+                    # Only consider successfully constructed candidates
+                    if candidate.constructed is None:
                         continue
 
                     # Skip synthetic candidates (no source block)
@@ -112,13 +120,13 @@ class TestClassifierRules:
 
                     block_id = candidate.source_block.id
 
-                    # Check if this block already has a winner
+                    # Check if this block already has a successful construction
                     if block_id in block_to_winning_label:
                         existing_label = block_to_winning_label[block_id]
                         pytest.fail(
                             f"Block {block_id} in {fixture_file} page {page_idx} "
-                            f"has multiple winner candidates: '{existing_label}' "
-                            f"and '{label}'. Each block should have at most one winner."
+                            f"has multiple successful constructions: '{existing_label}' "
+                            f"and '{label}'. Each block should have at most one successful construction."
                         )
 
                     block_to_winning_label[block_id] = label

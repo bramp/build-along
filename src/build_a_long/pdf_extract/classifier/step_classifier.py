@@ -86,22 +86,22 @@ class StepClassifier(LabelClassifier):
     requires = frozenset({"step_number", "parts_list"})
 
     def evaluate(self, result: ClassificationResult) -> None:
-        """Evaluate elements and create Step candidates for all possible pairings.
+        """Evaluate elements and create deduplicated Step candidates.
 
         Creates Step candidates for each StepNumber, scoring all possible pairings
-        with PartsLists. Candidates are stored in ClassificationResult, and the
-        best ones will be selected in classify().
+        with PartsLists, then greedily selects the best pairings to ensure each
+        StepNumber value and PartsList is used at most once.
         """
         page_data = result.page_data
 
-        # Get winners with type safety
-        steps = result.get_winners("step_number", StepNumber)
+        # Get step numbers and parts lists using score-based selection
+        steps = result.get_winners_by_score("step_number", StepNumber)
 
         if not steps:
             return
 
-        # Get parts_list winners
-        parts_lists = result.get_winners("parts_list", PartsList)
+        # Get parts_list candidates by score
+        parts_lists = result.get_winners_by_score("parts_list", PartsList)
 
         log.debug(
             "[step] page=%s steps=%d parts_lists=%d",
@@ -110,18 +110,31 @@ class StepClassifier(LabelClassifier):
             len(parts_lists),
         )
 
-        # Create Step candidates for all possible pairings
+        # Create all possible Step candidates for pairings
+        all_candidates: list[Candidate] = []
         for step_num in steps:
             # Create candidates for this StepNumber paired with each PartsList
             for parts_list in parts_lists:
-                self._create_step_candidate(step_num, parts_list, result)
+                candidate = self._create_step_candidate(step_num, parts_list, result)
+                if candidate:
+                    all_candidates.append(candidate)
 
             # Also create a candidate with no PartsList (fallback)
-            self._create_step_candidate(step_num, None, result)
+            candidate = self._create_step_candidate(step_num, None, result)
+            if candidate:
+                all_candidates.append(candidate)
+
+        # Greedily select the best candidates (deduplication)
+        deduplicated_candidates = self._deduplicate_candidates(all_candidates)
+
+        # Add the deduplicated candidates to the result
+        for candidate in deduplicated_candidates:
+            result.add_candidate("step", candidate)
 
         log.debug(
-            "[step] Created %d step candidates",
-            len(result.get_candidates("step")),
+            "[step] Created %d deduplicated step candidates (from %d possibilities)",
+            len(deduplicated_candidates),
+            len(all_candidates),
         )
 
     def _create_step_candidate(
@@ -129,13 +142,16 @@ class StepClassifier(LabelClassifier):
         step_num: StepNumber,
         parts_list: PartsList | None,
         result: ClassificationResult,
-    ) -> None:
+    ) -> Candidate | None:
         """Create a Step candidate for a StepNumber paired with a PartsList (or None).
 
         Args:
             step_num: The StepNumber for this candidate
             parts_list: The PartsList to pair with (or None for no pairing)
             result: Classification result to add the candidate to
+
+        Returns:
+            The created Candidate, or None if creation failed
         """
         ABOVE_EPS = 2.0  # Small epsilon for "above" check
         ALIGNMENT_THRESHOLD_MULTIPLIER = 1.0  # Max horizontal offset
@@ -184,7 +200,7 @@ class StepClassifier(LabelClassifier):
             diagram_area=diagram_bbox.area,
         )
 
-        # Add candidate (not yet a winner)
+        # Create candidate
         step_candidate = Candidate(
             bbox=constructed.bbox,
             label="step",
@@ -193,10 +209,9 @@ class StepClassifier(LabelClassifier):
             constructed=constructed,
             source_block=None,
             failure_reason=None,
-            is_winner=False,
         )
 
-        result.add_candidate("step", step_candidate)
+        return step_candidate
 
     def _identify_diagram_region(
         self,
@@ -265,24 +280,27 @@ class StepClassifier(LabelClassifier):
 
         return BBox.union_all(bboxes)
 
-    def classify(self, result: ClassificationResult) -> None:
+    def _deduplicate_candidates(self, candidates: list[Candidate]) -> list[Candidate]:
         """Greedily select the best Step candidates.
 
-        Uses the candidates created in evaluate() to select the best pairings.
         Ensures each StepNumber value and each PartsList is used at most once.
-        """
-        # Get all Step candidates
-        candidate_list = result.get_candidates("step")
 
+        Args:
+            candidates: All possible Step candidates
+
+        Returns:
+            Deduplicated list of Step candidates
+        """
         # Sort candidates by score (highest first)
         sorted_candidates = sorted(
-            candidate_list,
+            candidates,
             key=lambda c: c.score_details.sort_key(),
         )
 
         # Track which StepNumber values and PartsLists have been used
         used_step_values: set[int] = set()
         used_parts_list_ids: set[int] = set()
+        selected: list[Candidate] = []
 
         # Greedily select winners
         for candidate in sorted_candidates:
@@ -315,13 +333,24 @@ class StepClassifier(LabelClassifier):
                 # Claim this parts_list
                 used_parts_list_ids.add(parts_list_id)
 
-            # Mark this candidate as winner
-            result.mark_winner(candidate, step)
+            # Select this candidate
+            selected.append(candidate)
             used_step_values.add(step_value)
 
             log.debug(
-                "[step] Marking step %d as winner (parts_list=%s, pairing_score=%.2f)",
+                "[step] Selected step %d (parts_list=%s, pairing_score=%.2f)",
                 step_value,
                 "yes" if parts_list is not None else "no",
                 candidate.score_details.pairing_score(),
             )
+
+        return selected
+
+    def classify(self, result: ClassificationResult) -> None:
+        """No-op - deduplication is done in evaluate().
+
+        This is part of a refactoring to eliminate the is_winner flag and
+        mark_winner() method. Selection logic now happens in evaluate() where
+        only the final deduplicated candidates are created.
+        """
+        pass

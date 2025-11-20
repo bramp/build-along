@@ -25,7 +25,6 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from build_a_long.pdf_extract.classifier.block_filter import remove_similar_bboxes
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -75,7 +74,7 @@ class PartsListClassifier(LabelClassifier):
         """
 
         # Get part winners with type safety
-        parts = result.get_winners("part", Part)
+        parts = result.get_winners_by_score("part", Part)
         if not parts:
             return
 
@@ -141,7 +140,6 @@ class PartsListClassifier(LabelClassifier):
                     constructed=constructed,
                     source_block=drawing,
                     failure_reason=failure_reason,
-                    is_winner=False,  # Will be set by classify()
                 ),
             )
 
@@ -162,27 +160,15 @@ class PartsListClassifier(LabelClassifier):
         return contained
 
     def classify(self, result: ClassificationResult) -> None:
-        """Mark all parts list candidates with parts as winners.
+        """Select winning parts lists from pre-built candidates.
 
-        All PartsList candidates created in evaluate() have parts, so we mark
-        them all as winners. StepClassifier will later decide which PartsList
-        to pair with which StepNumber.
+        This method is intentionally a no-op. Winner selection is handled by
+        higher-level classifiers (e.g., StepClassifier) which use
+        get_winners_by_score() to select the most appropriate parts_list
+        candidates based on their scores.
+
+        This is part of a refactoring to eliminate the is_winner flag and
+        move winner selection logic to where the context is available to make
+        better decisions about which candidates to use.
         """
-        candidate_list = result.get_candidates("parts_list")
-
-        for candidate in sorted(candidate_list, key=lambda c: c.score, reverse=True):
-            if candidate.constructed is None:
-                continue
-
-            # Check if removed by overlap
-            if candidate.source_block is not None and result.is_removed(
-                candidate.source_block
-            ):
-                continue
-
-            # Mark as winner
-            result.mark_winner(candidate, candidate.constructed)
-
-            # Remove similar/overlapping drawings
-            if candidate.source_block is not None:
-                remove_similar_bboxes(candidate.source_block, result)
+        pass

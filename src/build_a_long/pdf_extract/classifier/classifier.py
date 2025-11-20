@@ -63,7 +63,13 @@ from build_a_long.pdf_extract.classifier.step_number_classifier import (
 )
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_blocks import Block, Text
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    PageNumber,
+    PartCount,
+    PartsList,
+    StepNumber,
+)
+from build_a_long.pdf_extract.extractor.page_blocks import Block
 
 logger = logging.getLogger(__name__)
 
@@ -226,13 +232,13 @@ class Classifier:
         warnings = []
 
         # Check if there's a page number
-        has_page_number = result.has_label("page_number")
-        if not has_page_number:
+        page_numbers = result.get_winners_by_score("page_number", PageNumber)
+        if not page_numbers:
             warnings.append(f"Page {page_data.page_number}: missing page number")
 
         # Get elements by label
-        parts_lists = result.get_blocks_by_label("parts_list")
-        part_counts = result.get_blocks_by_label("part_count")
+        parts_lists = result.get_winners_by_score("parts_list", PartsList)
+        part_counts = result.get_winners_by_score("part_count", PartCount)
 
         for pl in parts_lists:
             inside_counts = [t for t in part_counts if t.bbox.fully_inside(pl.bbox)]
@@ -242,16 +248,14 @@ class Classifier:
                     f"contains no part counts"
                 )
 
-        steps: list[Text] = [
-            e for e in result.get_blocks_by_label("step_number") if isinstance(e, Text)
-        ]
+        steps = result.get_winners_by_score("step_number", StepNumber)
         ABOVE_EPS = 2.0
         for step in steps:
             sb = step.bbox
             above = [pl for pl in parts_lists if pl.bbox.y1 <= sb.y0 + ABOVE_EPS]
             if not above:
                 warnings.append(
-                    f"Page {page_data.page_number}: step number '{step.text}' "
+                    f"Page {page_data.page_number}: step number '{step.value}' "
                     f"at {sb} has no parts list above it"
                 )
         return warnings

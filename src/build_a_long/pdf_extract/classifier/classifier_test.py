@@ -37,26 +37,18 @@ class TestClassifyElements:
         # Verify histogram was built
         assert batch_result.histogram is not None
 
-        # Verify all pages have their page numbers labeled
+        # Verify all pages have their page numbers identified
         assert len(batch_result.results) == 3
-        for _i, (page_data, result) in enumerate(
-            zip(pages, batch_result.results, strict=True)
+        for i, (page_data, result) in enumerate(
+            zip(pages, batch_result.results, strict=True), start=1
         ):
-            labeled_elements = [
-                e
-                for e in page_data.blocks
-                if isinstance(e, Text) and result.get_label(e) == "page_number"
-            ]
-            assert len(labeled_elements) == 1
-            # Check that scores were calculated
-            assert result.has_label("page_number")
-            candidate = next(
-                c
-                for c in result.get_candidates("page_number")
-                if c.source_block == labeled_elements[0]
-            )
-            score = candidate.score
-            assert score > 0.5
+            # Check the final Page structure
+            page = result.page
+            assert page is not None
+
+            # Verify page number was correctly identified
+            assert page.page_number is not None
+            assert page.page_number.value == i
 
     def test_empty_pages_list(self) -> None:
         """Test with an empty list of pages."""

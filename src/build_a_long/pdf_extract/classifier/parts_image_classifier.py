@@ -79,14 +79,25 @@ class PartsImageClassifier(LabelClassifier):
         part count texts and images within parts lists.
         """
         page_data = result.page_data
-        part_counts: list[Text] = [
-            e for e in result.get_blocks_by_label("part_count") if isinstance(e, Text)
+
+        # Get source blocks for part_counts and parts_lists
+        part_count_candidates = [
+            c
+            for c in result.get_candidates("part_count")
+            if c.constructed is not None and isinstance(c.source_block, Text)
         ]
-        parts_lists: list[Drawing] = [
-            e
-            for e in result.get_blocks_by_label("parts_list")
-            if isinstance(e, Drawing)
+        parts_list_candidates = [
+            c
+            for c in result.get_candidates("parts_list")
+            if c.constructed is not None and isinstance(c.source_block, Drawing)
         ]
+
+        if not part_count_candidates or not parts_list_candidates:
+            return
+
+        # Extract source blocks (Text and Drawing) for matching
+        part_counts: list[Text] = [c.source_block for c in part_count_candidates]  # type: ignore
+        parts_lists: list[Drawing] = [c.source_block for c in parts_list_candidates]  # type: ignore
         if not part_counts or not parts_lists:
             return
 
@@ -123,23 +134,20 @@ class PartsImageClassifier(LabelClassifier):
                 continue
             matched_counts.add(id(pc))
             matched_images.add(id(img))
-            # Label the image as part_image (only once per image)
-            if result.get_label(img) != "part_image":
-                # Create a candidate for tracking with the score
-                # containing the pair relationship
-                result.add_candidate(
-                    "part_image",
-                    Candidate(
-                        bbox=img.bbox,
-                        label="part_image",
-                        score=1.0,  # Matched based on distance, not a traditional score
-                        score_details=score,
-                        constructed=None,
-                        source_block=img,
-                        failure_reason=None,
-                        is_winner=True,
-                    ),
-                )
+            # Create a candidate for the matched image
+            # containing the pair relationship
+            result.add_candidate(
+                "part_image",
+                Candidate(
+                    bbox=img.bbox,
+                    label="part_image",
+                    score=1.0,  # Matched based on distance, not a traditional score
+                    score_details=score,
+                    constructed=None,
+                    source_block=img,
+                    failure_reason=None,
+                ),
+            )
 
         if log.isEnabledFor(logging.DEBUG):
             unmatched_c = [pc for pc in part_counts if id(pc) not in matched_counts]
