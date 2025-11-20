@@ -1,7 +1,5 @@
 """Tests for the classification result data classes."""
 
-import json
-
 import pytest
 from pydantic import ValidationError
 

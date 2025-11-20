@@ -1,0 +1,119 @@
+# data/openapi.yaml
+openapi: 3.1.0
+info:
+  title: LEGO Instructions Data Model
+  version: 1.0.0
+  description: Shared data models for LEGO instructions between Python and Flutter applications.
+
+components:
+  schemas:
+    DownloadedFile:
+      type: object
+      description: Represents a downloaded file with its path, size, and hash.
+      properties:
+        path:
+          type: string
+          format: path
+          description: The path to the downloaded file.
+        size:
+          type: integer
+          format: int64
+          description: The size of the file in bytes.
+        hash:
+          type: string
+          nullable: true
+          description: SHA256 hash of the file content, if available.
+      required:
+        - path
+        - size
+
+    DownloadUrl:
+      type: object
+      description: Holds the URL and preview URL for a download.
+      properties:
+        url:
+          type: string
+          format: uri
+          description: The primary download URL.
+        preview_url:
+          type: string
+          format: uri
+          nullable: true
+          description: An optional URL for a preview image or page.
+      required:
+        - url
+
+    PdfEntry:
+      type: object
+      description: Represents a single instruction PDF file.
+      properties:
+        url:
+          type: string
+          format: uri
+          description: The URL to the PDF file.
+        filename:
+          type: string
+          description: The suggested filename for the PDF.
+        preview_url:
+          type: string
+          format: uri
+          nullable: true
+          description: An optional URL for a preview image of the PDF.
+        filesize:
+          type: integer
+          format: int64
+          nullable: true
+          description: The size of the PDF file in bytes.
+        filehash:
+          type: string
+          nullable: true
+          description: SHA256 hash of the PDF file content, if available.
+      required:
+        - url
+        - filename
+
+    InstructionMetadata:
+      type: object
+      description: Complete metadata for a LEGO set's instructions.
+      properties:
+        set:
+          type: string
+          description: The unique identifier for the LEGO set.
+        locale:
+          type: string
+          description: The locale for the instructions (e.g., "en-US").
+        name:
+          type: string
+          nullable: true
+          description: The name of the LEGO set.
+        theme:
+          type: string
+          nullable: true
+          description: The theme of the LEGO set (e.g., "City", "Star Wars").
+        age:
+          type: string
+          nullable: true
+          description: The recommended age range for the set.
+        pieces:
+          type: integer
+          nullable: true
+          description: The number of pieces in the set.
+        year:
+          type: integer
+          format: int32
+          nullable: true
+          description: The year the set was released.
+        set_image_url:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to an image of the LEGO set.
+        pdfs:
+          type: array
+          items:
+            $ref: '#/components/schemas/PdfEntry'
+          default: []
+          description: A list of PDF instruction entries for the set.
+      required:
+        - set
+        - locale

@@ -37,7 +37,7 @@ from build_a_long.downloader.legocom import (
     parse_instruction_pdf_urls,
     parse_set_metadata,
 )
-from build_a_long.downloader.metadata import InstructionMetadata
+from build_a_long.schemas import InstructionMetadata
 
 # Skip all tests in this module unless explicitly enabled
 # Set ENABLE_INTEGRATION_TESTS=true to run these tests
@@ -63,8 +63,8 @@ def test_fetch_real_set_30708(http_client):
     # Test PDF extraction
     pdfs = parse_instruction_pdf_urls(html)
     assert len(pdfs) >= 1, "Should find at least one instruction PDF"
-    assert all("product.bi.core.pdf" in pdf.url for pdf in pdfs)
-    assert all(pdf.url.startswith("https://") for pdf in pdfs)
+    assert all("product.bi.core.pdf" in str(pdf.url) for pdf in pdfs)
+    assert all(pdf.url.scheme == "https" for pdf in pdfs)
 
     # Test metadata extraction
     meta = parse_set_metadata(html, set_number=set_number, locale="en-us")
