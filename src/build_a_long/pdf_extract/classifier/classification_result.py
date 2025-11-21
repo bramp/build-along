@@ -143,6 +143,7 @@ class ClassificationResult(BaseModel):
     page_data: PageData
     """The original page data being classified"""
 
+    # TODO Do we need this field? Can we remove it?
     warnings: list[str] = Field(default_factory=list)
     """Warning messages generated during classification.
     

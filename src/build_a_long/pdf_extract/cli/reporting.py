@@ -408,8 +408,16 @@ def print_classification_debug(
             page_num_str = (
                 page_obj.page_number.value if page_obj.page_number else "None"
             )
+            category_str = page_obj.category.name if page_obj.category else "None"
             print(f"Page number: {page_num_str}")
+            print(f"Category: {category_str}")
             print(f"Progress bar: {'Yes' if page_obj.progress_bar else 'No'}")
+
+            if page_obj.catalog:
+                parts_count = len(page_obj.catalog.parts)
+                total_items = page_obj.catalog.total_items
+                print(f"Catalog: {parts_count} parts ({total_items} total items)")
+
             print(f"Steps: {len(page_obj.steps)}")
 
             for i, step in enumerate(page_obj.steps, 1):
@@ -443,7 +451,8 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
         page_data: PageData containing the raw page number
         page: Structured Page object with steps, parts lists, etc.
     """
-    print(f"Page {page_data.page_number}:")
+    category_str = f" ({page.category.name})" if page.category else ""
+    print(f"Page {page_data.page_number}{category_str}:")
 
     if page.page_number:
         print(f"  ✓ Page Number: {page.page_number.value}")
@@ -452,6 +461,16 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
         print(f"  ✓ New Bags: {len(page.new_bags)}")
         for new_bag in page.new_bags:
             print(f"    - Bag {new_bag.number.value} at {new_bag.bbox}")
+
+    if page.catalog:
+        parts_count = len(page.catalog.parts)
+        total_items = page.catalog.total_items
+        print(f"  ✓ Catalog: {parts_count} parts ({total_items} total items)")
+        if page.catalog.parts:
+            print("      Parts:")
+            for part in page.catalog.parts:
+                number_str = part.number.element_id if part.number else "no number"
+                print(f"        • {part.count.count}x ({number_str})")
 
     if page.steps:
         print(f"  ✓ Steps: {len(page.steps)}")
