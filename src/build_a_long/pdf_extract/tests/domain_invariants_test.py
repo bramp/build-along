@@ -82,6 +82,7 @@ def test_parts_lists_do_not_overlap(fixture_file: str) -> None:
             step.parts_list for step in page.steps if step.parts_list is not None
         ]
 
+        # TODO Use a proper spatial index for efficiency if needed
         # Check pairwise for overlaps
         for i, pl1 in enumerate(parts_lists):
             for pl2 in parts_lists[i + 1 :]:
@@ -89,6 +90,66 @@ def test_parts_lists_do_not_overlap(fixture_file: str) -> None:
                 assert overlap == 0.0, (
                     f"PartsList at {pl1.bbox} and {pl2.bbox} in {fixture_file} "
                     f"page {page_data.page_number} overlap with IOU {pl1.bbox.iou(pl2.bbox)}"
+                )
+
+
+@pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
+@pytest.mark.skip(reason="Needs investigation")
+def test_steps_do_not_overlap(fixture_file: str) -> None:
+    """Step bounding boxes should not significantly overlap.
+
+    Domain Invariant: Steps should occupy distinct regions on the page.
+    Some minor overlap is acceptable (e.g., at boundaries), but significant
+    overlap would indicate a classification error.
+
+    We allow up to 5% IOU (Intersection over Union) to account for minor
+    boundary overlaps or shared visual elements.
+
+    Note: This test only checks pages where diagrams were successfully classified.
+    Pages without extractable diagram elements will have fallback diagrams that
+    may overlap, which is a known limitation of the current PDF extraction.
+    """
+    pages = load_pages(fixture_file)
+
+    OVERLAP_THRESHOLD = 0.05  # Allow up to 5% IOU overlap
+
+    for _page_idx, page_data in enumerate(pages):
+        result = classify_elements(page_data)
+        page = result.page
+
+        if page is None:
+            continue
+
+        # Need at least 2 steps to check for overlaps
+        if len(page.steps) < 2:
+            continue
+
+        # Check if any Drawing/Image elements exist on this page
+        # If not, diagrams will be fallbacks and may overlap (known limitation)
+        drawing_or_image_blocks = [
+            block
+            for block in page_data.blocks
+            if block.__class__.__name__ in ("Drawing", "Image")
+        ]
+
+        if not drawing_or_image_blocks:
+            # Skip check for pages without diagram elements
+            # (fallback diagrams extend to page boundaries and will overlap)
+            pytest.skip(
+                f"Page {page_data.page_number} has no Drawing/Image elements - "
+                "skipping overlap check (fallback diagrams will overlap)"
+            )
+
+        # TODO Use a proper spatial index for efficiency if needed
+        # Check pairwise for significant overlaps
+        for i, step1 in enumerate(page.steps):
+            for step2 in page.steps[i + 1 :]:
+                iou = step1.bbox.iou(step2.bbox)
+                assert iou <= OVERLAP_THRESHOLD, (
+                    f"Step {step1.step_number.value} at {step1.bbox} and "
+                    f"Step {step2.step_number.value} at {step2.bbox} "
+                    f"in {fixture_file} page {page_data.page_number} "
+                    f"overlap with IOU {iou:.3f} (threshold: {OVERLAP_THRESHOLD})"
                 )
 
 

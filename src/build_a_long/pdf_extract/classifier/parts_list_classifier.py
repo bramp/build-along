@@ -96,7 +96,10 @@ class PartsListClassifier(LabelClassifier):
         # Pre-score all drawings to sort them by quality
         drawing_scores: list[tuple[Drawing, _PartsListScore, list[Part]]] = []
         for drawing in drawings:
+            # Find all parts contained in this drawing
             contained = self._score_containing_parts(drawing, parts)
+
+            # Create score
             score = _PartsListScore(parts=len(contained))
             drawing_scores.append((drawing, score, contained))
 
@@ -134,6 +137,7 @@ class PartsListClassifier(LabelClassifier):
             # Check for overlap with already-accepted candidates
             if failure_reason is None and accepted_candidates:
                 for accepted in accepted_candidates:
+                    # TODO Later we could optomise this with a spatial index if needed
                     overlap = drawing.bbox.iou(accepted.bbox)
                     if overlap > IOU_THRESHOLD:
                         failure_reason = (

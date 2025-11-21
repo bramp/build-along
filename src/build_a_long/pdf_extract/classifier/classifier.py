@@ -14,8 +14,9 @@ labels produced by earlier stages:
 6) PartsClassifier       → outputs: "part" (requires part_count, pairs with images)
 7) PartsListClassifier   → outputs: "parts_list" (requires part)
 8) PartsImageClassifier  → outputs: "part_image" (requires parts_list, part_count)
-9) StepClassifier        → outputs: "step" (requires step_number and parts_list)
-10) PageClassifier       → outputs: "page" (requires page_number and step)
+9) DiagramClassifier     → outputs: "diagram" (requires parts_list)
+10) StepClassifier       → outputs: "step" (requires step_number, parts_list, diagram)
+11) PageClassifier       → outputs: "page" (requires page_number and step)
 
 If the order is changed such that a classifier runs before its requirements
 are available, a ValueError will be raised at initialization time.
@@ -31,6 +32,9 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
     RemovalReason,
+)
+from build_a_long.pdf_extract.classifier.diagram_classifier import (
+    DiagramClassifier,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.page_classifier import PageClassifier
@@ -170,6 +174,7 @@ type Classifiers = (
     | PartsClassifier
     | PartsListClassifier
     | PartsImageClassifier
+    | DiagramClassifier
     | StepClassifier
     | PageClassifier
 )
@@ -192,6 +197,7 @@ class Classifier:
             PartsClassifier(config),
             PartsListClassifier(config),
             PartsImageClassifier(config),
+            DiagramClassifier(config),
             StepClassifier(config),
             PageClassifier(config),
         ]
