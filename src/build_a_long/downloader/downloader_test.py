@@ -14,12 +14,9 @@ from build_a_long.downloader.downloader import (
     write_metadata,
 )
 from build_a_long.downloader.legocom_test import HTML_WITH_METADATA_AND_PDF
+from build_a_long.downloader.models import DownloadedFile
 from build_a_long.downloader.util import extract_filename_from_url
-from build_a_long.schemas import (
-    DownloadedFile,
-    InstructionMetadata,
-    PdfEntry,
-)
+from build_a_long.schemas import InstructionMetadata, PdfEntry
 
 
 def _make_mock_httpx_client(html: str):
@@ -136,6 +133,7 @@ def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
     assert data.get("pieces") == 1083
     assert data.get("year") == 2024
     assert data.get("set_image_url") == "https://www.lego.com/set_image.png"
+
     # Ensure PDFs preserved order
     pdfs = data.get("pdfs", [])
     assert len(pdfs) == 2

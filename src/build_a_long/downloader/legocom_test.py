@@ -10,7 +10,7 @@ from build_a_long.downloader.legocom import (
     parse_instruction_pdf_urls_fallback,
     parse_set_metadata,
 )
-from build_a_long.schemas import DownloadUrl
+from build_a_long.downloader.models import DownloadUrl
 
 # Sample HTML with multiple PDFs for parsing tests
 HTML_WITH_TWO_PDFS = """
@@ -21,8 +21,8 @@ HTML_WITH_TWO_PDFS = """
       "__APOLLO_STATE__": {
         "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\\"setNumber\\":\\"75419\\"}).data": {
           "buildingInstructions": [
-            {"pdf": {"id": "pdf1"}},
-            {"pdf": {"id": "pdf2"}}
+            {"pdf": {"id": "pdf1"}, "sequence": {"id": "seq1"}},
+            {"pdf": {"id": "pdf2"}, "sequence": {"id": "seq2"}}
           ],
           "__typename": "CS_BuildingInstructionData"
         },
@@ -35,7 +35,15 @@ HTML_WITH_TWO_PDFS = """
           "coverImage": {"id": "img2"}
         },
         "img1": {"src": "image1.png"},
-        "img2": {"src": "image2.png"}
+        "img2": {"src": "image2.png"},
+        "seq1": {
+          "element": "1",
+          "total": "2"
+        },
+        "seq2": {
+          "element": "2",
+          "total": "2"
+        }
       }
     }
   }
@@ -83,8 +91,8 @@ HTML_WITH_METADATA_AND_PDF = """
           "year": "2024",
           "setImage": {"id": "img1"},
           "buildingInstructions": [
-            {"pdf": {"id": "pdf1"}},
-            {"pdf": {"id": "pdf2"}}
+            {"pdf": {"id": "pdf1"}, "sequence": {"id": "seq1"}},
+            {"pdf": {"id": "pdf2"}, "sequence": {"id": "seq2"}}
           ],
           "__typename": "CS_BuildingInstructionData"
         },
@@ -99,7 +107,15 @@ HTML_WITH_METADATA_AND_PDF = """
           "coverImage": {"id": "img3"}
         },
         "img2": {"src": "preview1.png"},
-        "img3": {"src": "preview2.png"}
+        "img3": {"src": "preview2.png"},
+        "seq1": {
+          "element": "1",
+          "total": "2"
+        },
+        "seq2": {
+          "element": "2",
+          "total": "2"
+        }
       }
     }
   }
@@ -132,9 +148,16 @@ HTML_WITH_TWO_PDFS_REAL_DATA = """
           "__typename": "CS_BuildingInstructionData"
         },
         "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\"setNumber\":\"75419\"}).data.buildingInstructions.0": {
+          "isAdditionalInfoBooklet": false,
           "pdf": {
             "id": "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\\\"setNumber\\\":\\\"75419\\\"}).data.buildingInstructions.0.pdf"
-          }
+          },
+          "sequence": {
+            "type": "id",
+            "id":
+            "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\\\"setNumber\\\":\\\"75419\\\"}).data.buildingInstructions.0.sequence",
+            "typename": "Sequence"
+          },
         },
         "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\"setNumber\":\"75419\"}).data.buildingInstructions.0.pdf": {
           "pdfUrl": "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6602644.pdf",
@@ -145,9 +168,18 @@ HTML_WITH_TWO_PDFS_REAL_DATA = """
         "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\"setNumber\":\"75419\"}).data.buildingInstructions.0.pdf.coverImage": {
           "src": "https://www.lego.com/cdn/product-assets/product.bi.core.img/6602644.png"
         },
+        "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\"setNumber\":\"75419\"}).data.buildingInstructions.0.sequence": {
+          "total": "2",
+          "element": "1",
+          "__typename": "Sequence"
+        },
         "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\"setNumber\":\"75419\"}).data.buildingInstructions.1": {
+          "isAdditionalInfoBooklet": false,
           "pdf": {
             "id": "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\\\"setNumber\\\":\\\"75419\\\"}).data.buildingInstructions.1.pdf"
+          },
+          "sequence": {
+            "id": "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\\\"setNumber\\\":\\\"75419\\\"}).data.buildingInstructions.1.sequence"
           }
         },
         "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\"setNumber\":\"75419\"}).data.buildingInstructions.1.pdf": {
@@ -158,7 +190,12 @@ HTML_WITH_TWO_PDFS_REAL_DATA = """
         },
         "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\"setNumber\":\"75419\"}).data.buildingInstructions.1.pdf.coverImage": {
           "src": "https://www.lego.com/cdn/product-assets/product.bi.core.img/6602645.png"
-        }
+        },
+        "$ROOT_QUERY.customerService.getBuildingInstructionsForSet({\"setNumber\":\"75419\"}).data.buildingInstructions.1.sequence": {
+          "total": "2",
+          "element": "2",
+          "__typename": "Sequence"
+        },
       }
     }
   }
@@ -182,10 +219,14 @@ def test_parse_instruction_pdf_urls():
     assert infos == [
         DownloadUrl(
             url=AnyUrl("https://www.example.com/6602644.pdf"),
+            sequence_number=1,
+            sequence_total=2,
             preview_url=AnyUrl("https://www.lego.com/image1.png"),
         ),
         DownloadUrl(
             url=AnyUrl("https://www.lego.com/6602645.pdf"),
+            sequence_number=2,
+            sequence_total=2,
             preview_url=AnyUrl("https://www.lego.com/image2.png"),
         ),
     ]
@@ -216,9 +257,13 @@ def test_build_metadata():
     assert len(metadata.pdfs) == 2
     # Ensure order is preserved
     assert metadata.pdfs[0].url == AnyUrl("https://www.lego.com/6602000.pdf")
+    assert metadata.pdfs[0].sequence_number == 1
+    assert metadata.pdfs[0].sequence_total == 2
     assert metadata.pdfs[0].filename == "6602000.pdf"
     assert metadata.pdfs[0].preview_url == AnyUrl("https://www.lego.com/preview1.png")
     assert metadata.pdfs[1].url == AnyUrl("https://www.lego.com/6602001.pdf")
+    assert metadata.pdfs[1].sequence_number == 2
+    assert metadata.pdfs[1].sequence_total == 2
     assert metadata.pdfs[1].filename == "6602001.pdf"
     assert metadata.pdfs[1].preview_url == AnyUrl("https://www.lego.com/preview2.png")
 
@@ -229,8 +274,12 @@ def test_parse_instruction_pdf_urls_from_real_data():
     urls = parse_instruction_pdf_urls(html)
     assert len(urls) == 2
     assert urls[0].url == AnyUrl("https://www.lego.com/6602000.pdf")
+    assert urls[0].sequence_number == 1
+    assert urls[0].sequence_total == 2
     assert urls[0].preview_url == AnyUrl("https://www.lego.com/preview1.png")
     assert urls[1].url == AnyUrl("https://www.lego.com/6602001.pdf")
+    assert urls[1].sequence_number == 2
+    assert urls[1].sequence_total == 2
     assert urls[1].preview_url == AnyUrl("https://www.lego.com/preview2.png")
 
 
@@ -261,10 +310,16 @@ def test_parse_instruction_pdf_urls_fallback_simple():
             url=AnyUrl(
                 "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6600001.pdf"
             ),
+            sequence_number=None,
+            sequence_total=None,
+            preview_url=None,
         ),
         DownloadUrl(
             url=AnyUrl(
                 "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6600002.pdf"
             ),
+            sequence_number=None,
+            sequence_total=None,
+            preview_url=None,
         ),
     ]

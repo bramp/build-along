@@ -3,28 +3,19 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from pydantic import AnyUrl, BaseModel, Field, RootModel
-
-
-class DownloadedFile(BaseModel):
-    path: Path = Field(..., description="The path to the downloaded file.")
-    size: int = Field(..., description="The size of the file in bytes.")
-    hash: str | None = Field(
-        default=None, description="SHA256 hash of the file content, if available."
-    )
-
-
-class DownloadUrl(BaseModel):
-    url: AnyUrl = Field(..., description="The primary download URL.")
-    preview_url: AnyUrl | None = Field(
-        default=None, description="An optional URL for a preview image or page."
-    )
 
 
 class PdfEntry(BaseModel):
     url: AnyUrl = Field(..., description="The URL to the PDF file.")
+    sequence_number: int | None = Field(
+        default=None,
+        description="The sequence number of the PDF in a multi-part instruction set (e.g., 1 for 1/4).",
+    )
+    sequence_total: int | None = Field(
+        default=None,
+        description="The total number of PDFs in a multi-part instruction set (e.g., 4 for 1/4).",
+    )
     filename: str = Field(..., description="The suggested filename for the PDF.")
     preview_url: AnyUrl | None = Field(
         default=None, description="An optional URL for a preview image of the PDF."
