@@ -80,6 +80,7 @@ class LegoInstructionDownloader:
         overwrite: bool = False,
         show_progress: bool = True,
         client: httpx.Client | None = None,
+        debug: bool = False,
     ):
         """Initialize the downloader.
 
@@ -89,6 +90,7 @@ class LegoInstructionDownloader:
             overwrite: If True, re-download existing files.
             show_progress: If True, show download progress.
             client: Optional httpx.Client to use (if None, creates one internally).
+            debug: If True, enable debug output.
         """
         self.locale = locale
         self.out_dir = out_dir
@@ -96,6 +98,7 @@ class LegoInstructionDownloader:
         self.show_progress = show_progress
         self._client = client
         self._owns_client = client is None
+        self.debug = debug
 
     def _get_client(self) -> httpx.Client:
         """Get or create the HTTP client."""
@@ -263,7 +266,9 @@ class LegoInstructionDownloader:
                     return 0
                 raise  # Re-raise other HTTP errors
 
-            metadata = build_metadata(html, set_number, self.locale, base=LEGO_BASE)
+            metadata = build_metadata(
+                html, set_number, self.locale, base=LEGO_BASE, debug=self.debug
+            )
 
             if not metadata.name:
                 print(f"Set {set_number} not found or has no data on LEGO.com.")

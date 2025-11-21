@@ -87,6 +87,11 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Re-download PDFs even if the file already exists",
     )
+    download_parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug output",
+    )
 
     # Summarize subcommand
     summarize_parser = subparsers.add_parser(
@@ -131,7 +136,11 @@ def main() -> int:
                     try:
                         html = downloader.fetch_instructions_page(set_number)
                         meta = build_metadata(
-                            html, set_number, args.locale, base=LEGO_BASE
+                            html,
+                            set_number,
+                            args.locale,
+                            base=LEGO_BASE,
+                            debug=args.debug,
                         )
                         print(meta.model_dump_json(indent=2))
                     except Exception as e:
@@ -148,6 +157,7 @@ def main() -> int:
             out_dir=Path(args.out_dir) if args.out_dir else None,
             overwrite=args.force,
             show_progress=True,
+            debug=args.debug,
         ) as downloader:
             exit_code = downloader.process_sets(all_set_numbers)
 
