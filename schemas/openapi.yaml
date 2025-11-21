@@ -7,42 +7,6 @@ info:
 
 components:
   schemas:
-    DownloadedFile:
-      type: object
-      description: Represents a downloaded file with its path, size, and hash.
-      properties:
-        path:
-          type: string
-          format: path
-          description: The path to the downloaded file.
-        size:
-          type: integer
-          format: int64
-          description: The size of the file in bytes.
-        hash:
-          type: string
-          nullable: true
-          description: SHA256 hash of the file content, if available.
-      required:
-        - path
-        - size
-
-    DownloadUrl:
-      type: object
-      description: Holds the URL and preview URL for a download.
-      properties:
-        url:
-          type: string
-          format: uri
-          description: The primary download URL.
-        preview_url:
-          type: string
-          format: uri
-          nullable: true
-          description: An optional URL for a preview image or page.
-      required:
-        - url
-
     PdfEntry:
       type: object
       description: Represents a single instruction PDF file.
@@ -51,6 +15,14 @@ components:
           type: string
           format: uri
           description: The URL to the PDF file.
+        sequence_number:
+          type: integer
+          nullable: true
+          description: The sequence number of the PDF in a multi-part instruction set (e.g., 1 for 1/4).
+        sequence_total:
+          type: integer
+          nullable: true
+          description: The total number of PDFs in a multi-part instruction set (e.g., 4 for 1/4).
         filename:
           type: string
           description: The suggested filename for the PDF.

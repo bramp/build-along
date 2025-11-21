@@ -14,9 +14,9 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from pydantic import AnyUrl
 
+from build_a_long.downloader.models import DownloadUrl
 from build_a_long.downloader.util import extract_filename_from_url
 from build_a_long.schemas import (
-    DownloadUrl,
     InstructionMetadata,
     PdfEntry,
 )
@@ -41,7 +41,13 @@ def _extract_next_data(html: str, debug: bool = False) -> dict[str, Any] | None:
             if debug:
                 print(json.dumps(data, indent=2))
             return data
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            log.error(
+                "Failed to parse __NEXT_DATA__ JSON: %s at line %d column %d",
+                e.msg,
+                e.lineno,
+                e.colno,
+            )
             pass
     return None
 
@@ -197,6 +203,18 @@ def parse_instruction_pdf_urls_apollo(
         if not isinstance(item, dict):
             continue
 
+        sequence_number: int | None = None
+        sequence_total: int | None = None
+        if sequence_ref := item.get("sequence"):
+            sequence_data = _apollo_resolve(apollo_state, sequence_ref)
+            if isinstance(sequence_data, dict):
+                if "element" in sequence_data:
+                    with suppress(ValueError, TypeError):
+                        sequence_number = int(sequence_data["element"])
+                if "total" in sequence_data:
+                    with suppress(ValueError, TypeError):
+                        sequence_total = int(sequence_data["total"])
+
         pdf = _apollo_resolve(apollo_state, item.get("pdf"))
         if not isinstance(pdf, dict):
             log.debug(
@@ -227,6 +245,8 @@ def parse_instruction_pdf_urls_apollo(
         results.append(
             DownloadUrl(
                 url=AnyUrl(absolute_pdf_url),
+                sequence_number=sequence_number,
+                sequence_total=sequence_total,
                 preview_url=(
                     AnyUrl(absolute_preview_url) if absolute_preview_url else None
                 ),
@@ -303,6 +323,8 @@ def build_metadata(
         metadata.pdfs.append(
             PdfEntry(
                 url=info.url,
+                sequence_number=info.sequence_number,
+                sequence_total=info.sequence_total,
                 filename=filename,
                 preview_url=info.preview_url,
                 filesize=None,

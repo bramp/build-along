@@ -14,9 +14,9 @@ from build_a_long.downloader.legocom import (
     build_instructions_url,
     build_metadata,
 )
+from build_a_long.downloader.models import DownloadedFile
 from build_a_long.downloader.util import extract_filename_from_url
 from build_a_long.schemas import (
-    DownloadedFile,
     InstructionMetadata,
 )
 
