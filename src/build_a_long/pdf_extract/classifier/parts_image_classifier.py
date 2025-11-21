@@ -111,10 +111,6 @@ class PartsImageClassifier(LabelClassifier):
         )
         self._match_and_label_parts(candidate_edges, part_counts, images, result)
 
-    def classify(self, result: ClassificationResult) -> None:
-        """No-op: All work done in evaluate()."""
-        pass
-
     def _match_and_label_parts(
         self,
         edges: list[_PartImageScore],

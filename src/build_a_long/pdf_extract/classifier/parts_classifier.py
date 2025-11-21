@@ -103,10 +103,6 @@ class PartsClassifier(LabelClassifier):
         # Match and create Part candidates
         self._match_and_create_parts(candidate_edges, result)
 
-    def classify(self, result: ClassificationResult) -> None:
-        """No-op: All work done in evaluate()."""
-        pass
-
     def _build_candidate_edges(
         self,
         part_counts: list[PartCount],

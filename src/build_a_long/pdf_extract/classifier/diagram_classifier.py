@@ -142,10 +142,6 @@ class DiagramClassifier(LabelClassifier):
                 ),
             )
 
-    def classify(self, result: ClassificationResult) -> None:
-        """No-op - winners selected by StepClassifier using greedy matching."""
-        pass
-
     def _get_parts_list_blocks(self, result: ClassificationResult) -> set[int]:
         """Get the set of block IDs that are part of classified parts lists.
 

@@ -154,10 +154,6 @@ class BagNumberClassifier(LabelClassifier):
                 detail_score.combined_score(self.config),
             )
 
-    def classify(self, result: ClassificationResult) -> None:
-        """No-op - winners selected by NewBagClassifier using get_winners_by_score()."""
-        pass
-
     def _score_bag_number_text(self, text: str) -> float:
         """Score text based on how well it matches bag number patterns.
 

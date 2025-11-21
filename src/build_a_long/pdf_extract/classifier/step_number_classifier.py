@@ -131,10 +131,6 @@ class StepNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def classify(self, result: ClassificationResult) -> None:
-        """No-op - winners selected by StepClassifier using get_winners_by_score()."""
-        pass
-
     def _score_step_number_text(self, text: str) -> float:
         """Score text based on how well it matches step number patterns.
 

@@ -234,7 +234,6 @@ class Classifier:
 
         for classifier in self.classifiers:
             classifier.evaluate(result)
-            classifier.classify(result)
 
         warnings = self._log_post_classification_warnings(page_data, result)
         for warning in warnings:

@@ -345,12 +345,3 @@ class StepClassifier(LabelClassifier):
             )
 
         return selected
-
-    def classify(self, result: ClassificationResult) -> None:
-        """No-op - deduplication is done in evaluate().
-
-        This is part of a refactoring to eliminate the is_winner flag and
-        mark_winner() method. Selection logic now happens in evaluate() where
-        only the final deduplicated candidates are created.
-        """
-        pass

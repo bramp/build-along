@@ -141,28 +141,6 @@ class PageNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def classify(self, result: ClassificationResult) -> None:
-        """Select the best page number candidate from pre-built candidates.
-
-        This method is intentionally a no-op. Winner selection is handled by
-        higher-level classifiers (e.g., PageClassifier) which use
-        get_winners_by_score() to select the highest-scoring page_number
-        candidate.
-
-        This is part of a refactoring to eliminate the is_winner flag and
-        move winner selection logic to where the context is available to make
-        better decisions about which candidates to use.
-        """
-        # Check if we have any valid candidates and add warning if not
-        candidates = [
-            c for c in result.get_candidates("page_number") if c.constructed is not None
-        ]
-
-        if not candidates:
-            result.add_warning(
-                f"Page {result.page_data.page_number}: missing page number"
-            )
-
     def _score_page_number_text(self, text: str) -> float:
         text = text.strip()
         if re.match(r"^0+\d{1,3}$", text):

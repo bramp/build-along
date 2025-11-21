@@ -149,10 +149,6 @@ class PartCountClassifier(LabelClassifier):
                 ),
             )
 
-    def classify(self, result: ClassificationResult) -> None:
-        """No-op - winners selected by PartsClassifier using get_winners_by_score()."""
-        pass
-
     def _score_part_count_text(self, text: str) -> float:
         """Score text based on how well it matches part count patterns.
 

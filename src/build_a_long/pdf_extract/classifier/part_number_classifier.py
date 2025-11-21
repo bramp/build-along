@@ -150,16 +150,3 @@ class PartNumberClassifier(LabelClassifier):
                     failure_reason=failure_reason,
                 ),
             )
-
-    def classify(self, result: ClassificationResult) -> None:
-        """Select winning part numbers from pre-built candidates.
-
-        This method is intentionally a no-op. Winner selection is handled by
-        higher-level classifiers which use get_winners_by_score() to select
-        the most appropriate part_number candidates based on their scores.
-
-        This is part of a refactoring to eliminate the is_winner flag and
-        move winner selection logic to where the context is available to make
-        better decisions about which candidates to use.
-        """
-        pass
