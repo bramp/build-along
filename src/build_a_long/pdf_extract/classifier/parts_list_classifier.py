@@ -93,14 +93,24 @@ class PartsListClassifier(LabelClassifier):
             len(parts),
         )
 
-        # Score each drawing based on whether it contains parts
+        # Pre-score all drawings to sort them by quality
+        drawing_scores: list[tuple[Drawing, _PartsListScore, list[Part]]] = []
         for drawing in drawings:
-            # Find all parts contained in this drawing
             contained = self._score_containing_parts(drawing, parts)
-
-            # Create score
             score = _PartsListScore(parts=len(contained))
+            drawing_scores.append((drawing, score, contained))
 
+        # Sort by score (highest first), then by drawing ID for determinism
+        drawing_scores.sort(
+            key=lambda x: (x[1].combined_score(), -x[0].id), reverse=True
+        )
+
+        # Track accepted candidates to check for overlaps
+        IOU_THRESHOLD = 0.9  # Consider candidates duplicate if IOU > this
+        accepted_candidates: list[Candidate] = []
+
+        # Process each drawing in score order
+        for drawing, score, contained in drawing_scores:
             # Determine failure reason if any
             failure_reason = None
             constructed = None
@@ -109,7 +119,7 @@ class PartsListClassifier(LabelClassifier):
                 failure_reason = "Drawing contains no parts"
             # Check if drawing is suspiciously large (likely the entire page)
             # A legitimate parts list should be a reasonable fraction of the page
-            elif page_data.bbox:
+            if failure_reason is None and page_data.bbox:
                 page_area = page_data.bbox.area
                 drawing_area = drawing.bbox.area
                 max_ratio = self.config.parts_list_max_area_ratio
@@ -121,6 +131,20 @@ class PartsListClassifier(LabelClassifier):
                         drawing.id,
                         failure_reason,
                     )
+            # Check for overlap with already-accepted candidates
+            if failure_reason is None and accepted_candidates:
+                for accepted in accepted_candidates:
+                    overlap = drawing.bbox.iou(accepted.bbox)
+                    if overlap > IOU_THRESHOLD:
+                        failure_reason = (
+                            f"Overlaps with {accepted.bbox} (IOU={overlap:.2f})"
+                        )
+                        log.debug(
+                            "[parts_list] Drawing %d rejected: %s",
+                            drawing.id,
+                            failure_reason,
+                        )
+                        break
 
             # Only construct if no failure
             if failure_reason is None:
@@ -129,19 +153,23 @@ class PartsListClassifier(LabelClassifier):
                     parts=contained,
                 )
 
-            # Add candidate (even if it failed, for debugging)
-            result.add_candidate(
-                "parts_list",
-                Candidate(
-                    bbox=drawing.bbox,
-                    label="parts_list",
-                    score=score.combined_score(),
-                    score_details=score,
-                    constructed=constructed,
-                    source_block=drawing,
-                    failure_reason=failure_reason,
-                ),
+            # Create candidate
+            candidate = Candidate(
+                bbox=drawing.bbox,
+                label="parts_list",
+                score=score.combined_score(),
+                score_details=score,
+                constructed=constructed,
+                source_block=drawing,
+                failure_reason=failure_reason,
             )
+
+            # Track accepted candidates for overlap checking
+            if constructed is not None:
+                accepted_candidates.append(candidate)
+
+            # Add candidate to result (even if it failed, for debugging)
+            result.add_candidate("parts_list", candidate)
 
     def _score_containing_parts(
         self, drawing: Drawing, parts: Sequence[Part]
