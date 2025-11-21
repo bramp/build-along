@@ -14,7 +14,9 @@ import logging
 import pytest
 
 from build_a_long.pdf_extract.classifier import classify_elements
+from build_a_long.pdf_extract.classifier.classification_result import Candidate
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
+from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
 from build_a_long.pdf_extract.fixtures import FIXTURES_DIR, RAW_FIXTURE_FILES
 
 log = logging.getLogger(__name__)
@@ -53,7 +55,7 @@ class TestClassifierRules:
         If an element has been classified with a label, it should not be deleted.
         This ensures that the classification and deletion logic don't conflict.
         """
-        pages = _load_pages_from_fixture(fixture_file)
+        pages: list[PageData] = _load_pages_from_fixture(fixture_file)
 
         for page_idx, page in enumerate(pages):
             # Run the full classification pipeline on the page
@@ -90,43 +92,57 @@ class TestClassifierRules:
             )
 
     @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
-    def test_each_element_has_at_most_one_winner(self, fixture_file: str) -> None:
-        """Each element should have at most one winner candidate across all labels.
+    def test_each_source_block_maps_to_one_element(self, fixture_file: str) -> None:
+        """Each source block should map to at most one LegoPageElement.
 
-        An element can have multiple candidates across different labels, but only
-        one of them should be marked as a winner. This ensures classification
-        decisions are unambiguous.
+        This validates that the classification pipeline doesn't create duplicate
+        elements from the same source block. Each raw extraction block should
+        produce at most one classified element in the final Page tree.
         """
         pages = _load_pages_from_fixture(fixture_file)
 
-        for page_idx, page in enumerate(pages):
+        for page_idx, page_data in enumerate(pages):
             # Run the full classification pipeline on the page
-            result = classify_elements(page)
+            result = classify_elements(page_data)
+            page = result.page
 
-            # Track which blocks have successful constructions, and for which label
-            block_to_winning_label: dict[int, str] = {}
+            if page is None:
+                continue
 
-            # Check all successful candidates across all labels
+            # Get all candidates from the classification result
             all_candidates = result.get_all_candidates()
-            for label, candidates in all_candidates.items():
+
+            # Build a mapping from constructed element ID to candidate
+            element_id_to_candidate: dict[int, Candidate] = {}
+            for _label, candidates in all_candidates.items():
                 for candidate in candidates:
-                    # Only consider successfully constructed candidates
-                    if candidate.constructed is None:
-                        continue
-
-                    # Skip synthetic candidates (no source block)
-                    if candidate.source_block is None:
-                        continue
-
-                    block_id = candidate.source_block.id
-
-                    # Check if this block already has a successful construction
-                    if block_id in block_to_winning_label:
-                        existing_label = block_to_winning_label[block_id]
-                        pytest.fail(
-                            f"Block {block_id} in {fixture_file} page {page_idx} "
-                            f"has multiple successful constructions: '{existing_label}' "
-                            f"and '{label}'. Each block should have at most one successful construction."
+                    if candidate.constructed is not None:
+                        elem_id = id(candidate.constructed)
+                        assert elem_id not in element_id_to_candidate, (
+                            f"Source block id:{id(candidate.source_block)} "
+                            f"produced multiple elements of type "
+                            f"{candidate.constructed.__class__.__name__} "
+                            f"in {fixture_file} page {page_idx}"
                         )
+                        element_id_to_candidate[elem_id] = candidate
 
-                    block_to_winning_label[block_id] = label
+            blocks_to_element: dict[int, LegoPageElement] = {}
+
+            # Traverse all LegoPageElements in the Page tree
+            for element in page.iter_elements():
+                elem_id = id(element)
+
+                # Skip synthetic/fallback elements that weren't created by candidates
+                # (e.g., empty PartsLists created when Step has no parts_list)
+                if elem_id not in element_id_to_candidate:
+                    continue
+
+                candidate = element_id_to_candidate[elem_id]
+
+                if candidate.source_block:
+                    assert candidate.source_block.id not in blocks_to_element, (
+                        f"Source block id:{candidate.source_block.id} "
+                        f"mapped to multiple elements in {fixture_file} "
+                        f"page {page_idx}"
+                    )
+                    blocks_to_element[candidate.source_block.id] = element

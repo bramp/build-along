@@ -38,6 +38,7 @@ class BatchClassificationResult(BaseModel):
     """Global text histogram computed across all pages"""
 
 
+# TODO Change this to be frozen
 class RemovalReason(BaseModel):
     """Tracks why a block was removed during classification."""
 
@@ -49,6 +50,7 @@ class RemovalReason(BaseModel):
     """The block that caused this removal"""
 
 
+# TODO Change this to be frozen
 class Candidate(BaseModel):
     """A candidate block with its score and constructed LegoElement.
 
@@ -302,10 +304,10 @@ class ClassificationResult(BaseModel):
         """Get all candidates across all labels.
 
         Returns:
-            Dictionary mapping labels to their candidates (returns deep copy to
+            Dictionary mapping labels to their candidates (returns copy to
             prevent external modification)
         """
-        return {label: cands.copy() for label, cands in self.candidates.items()}
+        return {label: cands for label, cands in self.candidates.items()}
 
     def count_successful_candidates(self, label: str) -> int:
         """Count how many candidates were successfully constructed for a label.
