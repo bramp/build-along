@@ -308,6 +308,7 @@ def create_sample_page() -> Page:
         progress_bar=ProgressBar(
             bbox=BBox(60, 570, 670, 595),
             progress=0.25,
+            full_width=610,
         ),
         steps=[
             # Step 1

@@ -141,6 +141,9 @@ class ProgressBar(LegoPageElement):
     of the page width, near the page number. Often consists of one or more
     Drawing/Image elements forming a horizontal bar with progress indicators.
 
+    Note: The bbox is clipped to page boundaries for display purposes, but the
+    original unclipped width is preserved in full_width for progress calculation.
+
     See layout diagram: lego_page_layout.png
     """
 
@@ -150,6 +153,14 @@ class ProgressBar(LegoPageElement):
 
     progress: float | None = None
     """Optional progress percentage (0.0 to 1.0) if detectable from the visual."""
+
+    full_width: float
+    """The original unclipped width of the progress bar, used for progress calculation.
+    
+    When the progress bar bbox extends beyond page boundaries (a PDF extraction
+    artifact), the bbox is clipped but this field preserves the original width
+    that may be semantically meaningful for calculating progress percentage.
+    """
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""

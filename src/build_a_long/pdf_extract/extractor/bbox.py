@@ -208,3 +208,27 @@ class BBox(BaseModel):
             x1=max(b.x1 for b in bboxes),
             y1=max(b.y1 for b in bboxes),
         )
+
+    def clip_to(self, bounds: BBox) -> BBox:
+        """Clip this bounding box to stay within the given bounds.
+
+        Args:
+            bounds: The bounding box to clip to.
+
+        Returns:
+            A new BBox clipped to the bounds. If this bbox doesn't overlap
+            with bounds at all, returns a degenerate bbox (x0 == x1 or y0 == y1)
+            at the nearest edge.
+        """
+        x0 = max(self.x0, bounds.x0)
+        y0 = max(self.y0, bounds.y0)
+        x1 = min(self.x1, bounds.x1)
+        y1 = min(self.y1, bounds.y1)
+
+        # If no overlap, clamp to create a degenerate (zero-area) bbox
+        if x0 > x1:
+            x0 = x1 = max(bounds.x0, min(self.x0, bounds.x1))
+        if y0 > y1:
+            y0 = y1 = max(bounds.y0, min(self.y0, bounds.y1))
+
+        return BBox(x0=x0, y0=y0, x1=x1, y1=y1)

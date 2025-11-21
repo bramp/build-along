@@ -19,13 +19,14 @@
   },
   "progress_bar": {
     "bbox": {
-      "x0": -517.74,
+      "x0": 0.0,
       "y0": 474.1,
       "x1": 517.74,
       "y1": 482.59
     },
     "__tag__": "ProgressBar",
-    "progress": null
+    "progress": null,
+    "full_width": 1035.48
   },
   "steps": [
     {

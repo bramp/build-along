@@ -129,5 +129,35 @@ def test_part_bbox_contains_count_and_diagram(fixture_file: str) -> None:
                     )
 
 
+@pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
+def test_elements_stay_within_page_bounds(fixture_file: str) -> None:
+    """All element bounding boxes should stay within the page boundaries.
+
+    Domain Invariant: Elements should not extend beyond the page boundaries.
+    This would indicate an extraction or classification error.
+    """
+    pages = load_pages(fixture_file)
+
+    for page_idx, page_data in enumerate(pages):
+        result = classify_elements(page_data)
+        page = result.page
+
+        if page is None:
+            continue
+
+        # Check that page has valid bbox
+        assert page_data.bbox is not None, (
+            f"Page in {fixture_file} page {page_idx} has no bbox"
+        )
+
+        page_bbox = page_data.bbox
+
+        # Check all elements in the page hierarchy
+        for element in page.iter_elements():
+            assert element.bbox.fully_inside(page_bbox), (
+                f"{element.__class__.__name__} at {element.bbox} extends beyond "
+                f"page bounds {page_bbox} in {fixture_file} page {page_idx}"
+            )
+
+
 # TODO Add test to ensure nothing overlaps the page number or progress bar
-# TODO Ensure bbox stay within the page boundaries
