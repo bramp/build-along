@@ -61,7 +61,6 @@ def test_parts_list_contains_parts(fixture_file: str) -> None:
             )
 
 
-@pytest.mark.skip(reason="Known issue: parts lists overlap on pages 14 and 15")
 @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
 def test_parts_lists_do_not_overlap(fixture_file: str) -> None:
     """PartsList bounding boxes should not overlap.
@@ -71,7 +70,7 @@ def test_parts_lists_do_not_overlap(fixture_file: str) -> None:
     """
     pages = load_pages(fixture_file)
 
-    for page_idx, page_data in enumerate(pages):
+    for _page_idx, page_data in enumerate(pages):
         result = classify_elements(page_data)
         page = result.page
 
@@ -86,10 +85,10 @@ def test_parts_lists_do_not_overlap(fixture_file: str) -> None:
         # Check pairwise for overlaps
         for i, pl1 in enumerate(parts_lists):
             for pl2 in parts_lists[i + 1 :]:
-                overlap = pl1.bbox.iou(pl2.bbox)
+                overlap = pl1.bbox.overlaps(pl2.bbox)
                 assert overlap == 0.0, (
                     f"PartsList at {pl1.bbox} and {pl2.bbox} in {fixture_file} "
-                    f"page {page_idx} overlap with IOU {overlap}"
+                    f"page {page_data.page_number} overlap with IOU {pl1.bbox.iou(pl2.bbox)}"
                 )
 
 
