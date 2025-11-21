@@ -184,6 +184,7 @@ class Part(LegoPageElement):
     diagram: Drawing | None = None
 
     number: PartNumber | None = None
+    """Optional part number used only on catalog pages."""
 
     # TODO maybe add color?
     # TODO Some parts have a "shiny" highlight - maybe reference that image
@@ -330,7 +331,8 @@ class Page(LegoPageElement):
 
     Attributes:
         page_number: The page number element, if found
-        steps: List of Step elements on the page
+        steps: List of Step elements on the page (for INSTRUCTION pages)
+        catalog: Parts list for catalog/inventory pages (for CATALOG pages)
         warnings: List of warnings generated during hierarchy building
         unprocessed_elements: Raw elements that were classified but couldn't
             be converted
@@ -342,6 +344,9 @@ class Page(LegoPageElement):
         CATALOG = 3
 
     tag: Literal["Page"] = Field(default="Page", alias="__tag__", frozen=True)
+
+    # TODO This perhaps should be a bit field, in case a page is both
+    # INSTRUCTION and CATALOG
     category: Category | None = None
 
     page_number: PageNumber | None = None
@@ -349,6 +354,7 @@ class Page(LegoPageElement):
 
     new_bags: list[NewBag] = Field(default_factory=list)
     steps: list[Step] = Field(default_factory=list)
+    catalog: PartsList | None = None
 
     # Metadata about the conversion process
     warnings: list[str] = Field(default_factory=list)
@@ -362,8 +368,12 @@ class Page(LegoPageElement):
         """Return a single-line string representation with key information."""
         page_num = self.page_number.value if self.page_number else "unknown"
         bags_str = f", bags={len(self.new_bags)}" if self.new_bags else ""
+        catalog_str = (
+            f", catalog={len(self.catalog.parts)} parts" if self.catalog else ""
+        )
+        steps_str = f", steps={len(self.steps)}" if self.steps else ""
         return (
-            f"Page(number={page_num}{bags_str}, steps={len(self.steps)}, "
+            f"Page(number={page_num}{bags_str}{catalog_str}{steps_str}, "
             f"warnings={len(self.warnings)})"
         )
 
@@ -385,6 +395,9 @@ class Page(LegoPageElement):
 
         for new_bag in self.new_bags:
             yield from new_bag.iter_elements()
+
+        if self.catalog:
+            yield from self.catalog.iter_elements()
 
         for step in self.steps:
             yield from step.iter_elements()
