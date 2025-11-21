@@ -31,19 +31,23 @@ def build_instructions_url(set_number: str, locale: str = "en-us") -> str:
     return f"{LEGO_BASE}/{locale}/service/building-instructions/{set_number}"
 
 
-def _extract_next_data(html: str) -> dict[str, Any] | None:
+def _extract_next_data(html: str, debug: bool = False) -> dict[str, Any] | None:
     """Extracts the __NEXT_DATA__ JSON blob from the HTML."""
     soup = BeautifulSoup(html, "html.parser")
     script_tag = soup.find("script", id="__NEXT_DATA__")
     if script_tag and script_tag.string:
         try:
-            return json.loads(script_tag.string)
+            data = json.loads(script_tag.string)
+            if debug:
+                print(json.dumps(data, indent=2))
+            return data
         except json.JSONDecodeError:
             pass
     return None
 
 
 def _get_apollo_state(next_data: dict[str, Any]) -> dict[str, Any]:
+    """Extract the Apollo state dictionary from the Next.js data."""
     return next_data.get("props", {}).get("pageProps", {}).get("__APOLLO_STATE__", {})
 
 
@@ -62,7 +66,11 @@ def _get_building_instruction_data(
 
 
 def parse_set_metadata(
-    html: str, set_number: str = "", locale: str = "", base: str = LEGO_BASE
+    html: str,
+    set_number: str = "",
+    locale: str = "",
+    base: str = LEGO_BASE,
+    debug: bool = False,
 ) -> InstructionMetadata:
     """Parse a LEGO instructions HTML page and extract set metadata.
 
@@ -71,12 +79,9 @@ def parse_set_metadata(
         set_number: Optional set number to include in metadata
         locale: Optional locale to include in metadata
         base: Base URL for resolving relative URLs
-
-    Returns:
-        InstructionMetadata object with extracted fields, or minimal InstructionMetadata
-        if parsing fails
+        debug: If True, enable debug output.
     """
-    next_data = _extract_next_data(html)
+    next_data = _extract_next_data(html, debug=debug)
     if not next_data:
         return InstructionMetadata(set=set_number, locale=locale)
 
@@ -167,14 +172,14 @@ def _apollo_resolve(apollo_state: dict[str, Any], item_or_ref: Any) -> Any:
 
 
 def parse_instruction_pdf_urls_apollo(
-    html: str, base: str = LEGO_BASE
+    html: str, base: str = LEGO_BASE, debug: bool = False
 ) -> list[DownloadUrl]:
     """Parse instruction PDFs using the Apollo (__NEXT_DATA__) approach only.
 
     Returns an empty list if the expected Apollo structures are not present.
     Resolves relative URLs to absolute URLs using the provided base.
     """
-    next_data = _extract_next_data(html)
+    next_data = _extract_next_data(html, debug=debug)
     if not next_data:
         return []
 
@@ -251,31 +256,39 @@ def parse_instruction_pdf_urls_fallback(html: str) -> list[DownloadUrl]:
     return [DownloadUrl(url=AnyUrl(u), preview_url=None) for u in urls_in_order]
 
 
-def parse_instruction_pdf_urls(html: str, base: str = LEGO_BASE) -> list[DownloadUrl]:
+def parse_instruction_pdf_urls(
+    html: str, base: str = LEGO_BASE, debug: bool = False
+) -> list[DownloadUrl]:
     """Parse an instructions HTML page and return instruction PDF URLs.
 
     Prefers Apollo/Next.js state when present. Falls back to regex scanning otherwise.
     """
-    results = parse_instruction_pdf_urls_apollo(html, base=base)
+    results = parse_instruction_pdf_urls_apollo(html, base=base, debug=debug)
     if results:
         return results
     return parse_instruction_pdf_urls_fallback(html)
 
 
 def build_metadata(
-    html: str, set_number: str, locale: str, base: str = LEGO_BASE
+    html: str,
+    set_number: str,
+    locale: str,
+    base: str = LEGO_BASE,
+    debug: bool = False,
 ) -> InstructionMetadata:
     """Construct a InstructionMetadata dataclass from the instructions HTML.
 
     Parses both the set fields and the ordered list of instruction PDFs.
     """
-    metadata = parse_set_metadata(html, set_number=set_number, locale=locale, base=base)
+    metadata = parse_set_metadata(
+        html, set_number=set_number, locale=locale, base=base, debug=debug
+    )
 
     # If no name was found, it's a "not found" set, so don't look for PDFs.
     if not metadata.name:
         return metadata
 
-    pdf_infos = parse_instruction_pdf_urls(html, base=base)
+    pdf_infos = parse_instruction_pdf_urls(html, base=base, debug=debug)
 
     # Add PDFs to the metadata
     metadata.pdfs = []
