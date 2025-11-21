@@ -147,10 +147,6 @@ class ProgressBarClassifier(LabelClassifier):
                 ),
             )
 
-    def classify(self, result: ClassificationResult) -> None:
-        """No-op - winners selected by PageClassifier using get_winners_by_score()."""
-        pass
-
     def _get_page_number_bbox(self, result: ClassificationResult) -> BBox | None:
         """Get the bbox of the page number if it has been classified."""
         page_numbers = result.get_winners_by_score("page_number", PageNumber)

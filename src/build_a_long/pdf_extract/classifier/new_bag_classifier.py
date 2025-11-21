@@ -166,10 +166,6 @@ class NewBagClassifier(LabelClassifier):
                 cluster_bbox,
             )
 
-    def classify(self, result: ClassificationResult) -> None:
-        """No-op - winners selected using get_winners_by_score()."""
-        pass
-
     def _find_nearby_images(
         self, bag_bbox: BBox, image_blocks: list[Drawing | Image]
     ) -> list[Drawing | Image]:

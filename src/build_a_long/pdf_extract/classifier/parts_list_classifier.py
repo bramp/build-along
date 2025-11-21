@@ -187,20 +187,4 @@ class PartsListClassifier(LabelClassifier):
         Returns:
             List of Part elements whose bboxes are fully inside the drawing
         """
-        contained = [part for part in parts if part.bbox.fully_inside(drawing.bbox)]
-
-        return contained
-
-    def classify(self, result: ClassificationResult) -> None:
-        """Select winning parts lists from pre-built candidates.
-
-        This method is intentionally a no-op. Winner selection is handled by
-        higher-level classifiers (e.g., StepClassifier) which use
-        get_winners_by_score() to select the most appropriate parts_list
-        candidates based on their scores.
-
-        This is part of a refactoring to eliminate the is_winner flag and
-        move winner selection logic to where the context is available to make
-        better decisions about which candidates to use.
-        """
-        pass
+        return [part for part in parts if part.bbox.fully_inside(drawing.bbox)]

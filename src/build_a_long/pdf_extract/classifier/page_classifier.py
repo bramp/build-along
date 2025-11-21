@@ -109,13 +109,3 @@ class PageClassifier(LabelClassifier):
                 failure_reason=None,
             ),
         )
-
-    def classify(self, result: ClassificationResult) -> None:
-        """No-op - Page selection handled by result.page property.
-
-        This is part of a refactoring to eliminate the is_winner flag and
-        mark_winner() method. The Page candidate created in evaluate() is
-        accessed via the ClassificationResult.page property which uses
-        get_winners_by_score().
-        """
-        pass

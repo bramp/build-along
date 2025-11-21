@@ -84,17 +84,3 @@ class LabelClassifier(ABC):
             result: The classification result to populate with candidates
         """
         pass
-
-    @abstractmethod
-    def classify(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Classify the elements for the label by selecting winners.
-
-        Args:
-            result: The classification result to populate with winners
-            result: The classification result containing candidates and to update
-                with winners
-        """
-        pass
