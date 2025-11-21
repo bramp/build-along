@@ -448,6 +448,11 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
     if page.page_number:
         print(f"  ✓ Page Number: {page.page_number.value}")
 
+    if page.new_bags:
+        print(f"  ✓ New Bags: {len(page.new_bags)}")
+        for new_bag in page.new_bags:
+            print(f"    - Bag {new_bag.number.value} at {new_bag.bbox}")
+
     if page.steps:
         print(f"  ✓ Steps: {len(page.steps)}")
         for step in page.steps:

@@ -253,11 +253,16 @@ class NewBag(LegoPageElement):
     """The graphic showing a new bag icon on the page."""
 
     tag: Literal["NewBag"] = Field(default="NewBag", alias="__tag__", frozen=True)
-    bag: BagNumber
+    number: BagNumber
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        return f"NewBag(bag={self.bag.value})"
+        return f"NewBag(bag={self.number.value})"
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over this Step and all child elements."""
+        yield self
+        yield from self.number.iter_elements()
 
 
 class Diagram(LegoPageElement):
@@ -313,9 +318,7 @@ class Step(LegoPageElement):
         yield self
         yield from self.step_number.iter_elements()
         yield from self.parts_list.iter_elements()
-
-        # TODO Diagram should be a LegoPageElement
-        # yield from self.diagram.iter_elements()
+        yield from self.diagram.iter_elements()
 
 
 class Page(LegoPageElement):
@@ -343,6 +346,8 @@ class Page(LegoPageElement):
 
     page_number: PageNumber | None = None
     progress_bar: ProgressBar | None = None
+
+    new_bags: list[NewBag] = Field(default_factory=list)
     steps: list[Step] = Field(default_factory=list)
 
     # Metadata about the conversion process
@@ -356,8 +361,9 @@ class Page(LegoPageElement):
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         page_num = self.page_number.value if self.page_number else "unknown"
+        bags_str = f", bags={len(self.new_bags)}" if self.new_bags else ""
         return (
-            f"Page(number={page_num}, steps={len(self.steps)}, "
+            f"Page(number={page_num}{bags_str}, steps={len(self.steps)}, "
             f"warnings={len(self.warnings)})"
         )
 
@@ -376,6 +382,9 @@ class Page(LegoPageElement):
             yield from self.page_number.iter_elements()
         if self.progress_bar:
             yield from self.progress_bar.iter_elements()
+
+        for new_bag in self.new_bags:
+            yield from new_bag.iter_elements()
 
         for step in self.steps:
             yield from step.iter_elements()
