@@ -122,14 +122,22 @@ class ProgressBarClassifier(LabelClassifier):
 
             combined = score_details.combined_score(self.config)
 
-            # Try to construct the ProgressBar element
-            constructed_elem = ProgressBar(bbox=block.bbox, progress=None)
+            # Clip the bbox to page boundaries to handle extraction artifacts
+            # where progress bars may extend beyond the page boundaries.
+            # Preserve the original width for potential progress calculation.
+            original_width = block.bbox.width
+            clipped_bbox = block.bbox.clip_to(page_bbox)
+
+            # Try to construct the ProgressBar element with clipped bbox
+            constructed_elem = ProgressBar(
+                bbox=clipped_bbox, progress=None, full_width=original_width
+            )
 
             # Store candidate
             result.add_candidate(
                 "progress_bar",
                 Candidate(
-                    bbox=block.bbox,
+                    bbox=clipped_bbox,
                     label="progress_bar",
                     score=combined,
                     score_details=score_details,
