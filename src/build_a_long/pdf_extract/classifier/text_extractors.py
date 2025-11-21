@@ -124,6 +124,41 @@ def extract_part_count_value(text: str) -> int | None:
     return None
 
 
+def extract_bag_number_value(text: str) -> int | None:
+    """Extract numeric bag number value from text.
+
+    Handles plain numeric text representing bag numbers (1-99).
+    Bag numbers are typically small positive integers.
+
+    Args:
+        text: Text potentially containing a bag number
+
+    Returns:
+        Integer bag number if found, None otherwise
+
+    Examples:
+        >>> extract_bag_number_value("1")
+        1
+        >>> extract_bag_number_value("2")
+        2
+        >>> extract_bag_number_value("10")
+        10
+        >>> extract_bag_number_value("0")
+        None
+        >>> extract_bag_number_value("100")
+        None
+        >>> extract_bag_number_value("abc")
+        None
+    """
+    t = text.strip()
+
+    # Match bag numbers: must start with 1-9, can have 0-1 more digits (1-99)
+    if re.fullmatch(r"[1-9]\d?", t):
+        return int(t)
+
+    return None
+
+
 def extract_element_id(text: str) -> str | None:
     """Extract LEGO element ID from text.
 

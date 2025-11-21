@@ -20,6 +20,7 @@ The classifier pipeline runs in a fixed order, enforced at initialization:
 Changing the order such that dependencies are not met will raise a ValueError.
 """
 
+from .bag_number_classifier import BagNumberClassifier
 from .classification_result import (
     Candidate,
     ClassificationResult,
@@ -28,6 +29,7 @@ from .classification_result import (
 from .classifier import Classifier, classify_elements, classify_pages
 from .diagram_classifier import DiagramClassifier
 from .label_classifier import LabelClassifier
+from .new_bag_classifier import NewBagClassifier
 from .page_number_classifier import PageNumberClassifier
 from .part_count_classifier import PartCountClassifier
 from .part_number_classifier import PartNumberClassifier
@@ -40,12 +42,14 @@ from .step_number_classifier import StepNumberClassifier
 __all__ = [
     "classify_elements",
     "classify_pages",
+    "BagNumberClassifier",
     "Candidate",
     "Classifier",
     "ClassificationResult",
     "ClassifierConfig",
     "DiagramClassifier",
     "LabelClassifier",
+    "NewBagClassifier",
     "StepClassifier",
     "PageNumberClassifier",
     "PartCountClassifier",

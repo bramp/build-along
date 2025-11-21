@@ -26,6 +26,9 @@ from __future__ import annotations
 
 import logging
 
+from build_a_long.pdf_extract.classifier.bag_number_classifier import (
+    BagNumberClassifier,
+)
 from build_a_long.pdf_extract.classifier.block_filter import filter_duplicate_blocks
 from build_a_long.pdf_extract.classifier.classification_result import (
     BatchClassificationResult,
@@ -37,6 +40,9 @@ from build_a_long.pdf_extract.classifier.diagram_classifier import (
     DiagramClassifier,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
+from build_a_long.pdf_extract.classifier.new_bag_classifier import (
+    NewBagClassifier,
+)
 from build_a_long.pdf_extract.classifier.page_classifier import PageClassifier
 from build_a_long.pdf_extract.classifier.page_number_classifier import (
     PageNumberClassifier,
@@ -168,12 +174,14 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
 type Classifiers = (
     PageNumberClassifier
     | ProgressBarClassifier
+    | BagNumberClassifier
     | PartCountClassifier
     | PartNumberClassifier
     | StepNumberClassifier
     | PartsClassifier
     | PartsListClassifier
     | PartsImageClassifier
+    | NewBagClassifier
     | DiagramClassifier
     | StepClassifier
     | PageClassifier
@@ -191,12 +199,14 @@ class Classifier:
         self.classifiers: list[Classifiers] = [
             PageNumberClassifier(config),
             ProgressBarClassifier(config),
+            BagNumberClassifier(config),
             PartCountClassifier(config),
             PartNumberClassifier(config),
             StepNumberClassifier(config),
             PartsClassifier(config),
             PartsListClassifier(config),
             PartsImageClassifier(config),
+            NewBagClassifier(config),
             DiagramClassifier(config),
             StepClassifier(config),
             PageClassifier(config),
