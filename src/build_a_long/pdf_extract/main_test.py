@@ -71,7 +71,7 @@ class TestMain:
         assert call_args[0][1] == "w"
 
         # Assert draw_and_save_bboxes was called with correct arguments
-        # Now expects: page, result, output_path, draw_blocks=False, draw_elements=True, draw_deleted=False
+        # Now expects: page, result, output_path, draw_blocks=False, draw_elements=True, draw_deleted=False, debug_candidates_label=None
         mock_draw_and_save_bboxes.assert_called_once_with(
             mock_page,
             ANY,
@@ -79,6 +79,7 @@ class TestMain:
             draw_blocks=False,
             draw_elements=True,
             draw_deleted=False,
+            debug_candidates_label=None,
         )
         draw_call_args = mock_draw_and_save_bboxes.call_args
         # Second argument is now ClassificationResult

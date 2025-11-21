@@ -65,6 +65,7 @@ def _create_drawable_items(
     draw_blocks: bool,
     draw_elements: bool,
     draw_deleted: bool,
+    debug_candidates_label: str | None = None,
 ) -> list[DrawableItem]:
     """Create a unified list of items to draw.
 
@@ -73,6 +74,7 @@ def _create_drawable_items(
         draw_blocks: If True, include PDF blocks
         draw_elements: If True, include LEGO page elements
         draw_deleted: If True, include removed/non-winner items
+        debug_candidates_label: If provided, only include candidates with this label
 
     Returns:
         List of DrawableItem objects ready to be rendered
@@ -88,7 +90,14 @@ def _create_drawable_items(
 
     # Add elements first and track their source block IDs
     if draw_elements:
-        for _, candidates in result.get_all_candidates().items():
+        all_candidates = result.get_all_candidates()
+        # Filter to specific label if requested
+        if debug_candidates_label:
+            all_candidates = {
+                debug_candidates_label: all_candidates.get(debug_candidates_label, [])
+            }
+
+        for _, candidates in all_candidates.items():
             for candidate in candidates:
                 is_constructed = candidate.constructed is not None
                 # Check if this constructed element is in the final Page hierarchy
@@ -208,6 +217,7 @@ def draw_and_save_bboxes(
     draw_blocks: bool = False,
     draw_elements: bool = False,
     draw_deleted: bool = False,
+    debug_candidates_label: str | None = None,
 ) -> None:
     """
     Draws bounding boxes from blocks on the PDF page image and saves it.
@@ -220,6 +230,7 @@ def draw_and_save_bboxes(
         draw_blocks: If True, render classified PDF blocks.
         draw_elements: If True, render classified LEGO page elements.
         draw_deleted: If True, also render blocks marked as deleted.
+        debug_candidates_label: If provided, only render candidates with this label.
     """
     image_dpi = 150
 
@@ -242,6 +253,7 @@ def draw_and_save_bboxes(
         draw_blocks=draw_blocks,
         draw_elements=draw_elements,
         draw_deleted=draw_deleted,
+        debug_candidates_label=debug_candidates_label,
     )
 
     # Build hierarchy for depth calculation directly from DrawableItems
