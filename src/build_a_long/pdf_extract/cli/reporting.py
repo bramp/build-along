@@ -280,13 +280,15 @@ def print_classification_debug(
         color = GREY if is_removed else ""
         reset = RESET if is_removed else ""
 
-        # Build line - get constructed element from candidate
+        # Build line - get best candidate and its constructed element
         elem_str = str(block)
-        label = result.get_label(block)
-        if label:
-            candidate = result.get_candidate_for_block(block, label)
-            if candidate and candidate.constructed:
-                elem_str = str(candidate.constructed)
+        best_candidate = result.get_best_candidate(block)
+        if best_candidate:
+            label = best_candidate.label
+            if best_candidate.constructed:
+                elem_str = str(best_candidate.constructed)
+        else:
+            label = None
 
         line = f"{color}{tree_prefix}{block.id:3d} "
 
@@ -297,9 +299,9 @@ def print_classification_debug(
             if reason:
                 target = reason.target_block
                 line += f" by {target.id}"
-                target_label = result.get_label(target)
-                if target_label:
-                    line += f" ({target_label})"
+                target_best = result.get_best_candidate(target)
+                if target_best:
+                    line += f" ({target_best.label})"
             line += f"* {elem_str}"
         elif label:
             line += f"[{label}] {elem_str}"
@@ -354,23 +356,29 @@ def print_classification_debug(
         else:
             labels_to_show = all_candidates
 
-        # Build set of elements in the page tree
-        chosen_elements: set[int] = set()
+        # Build set of elements that made it into the final Page hierarchy
+        # These are the "winners" - candidates whose constructed elements
+        # were actually used in the final output
+        elements_in_page: set[int] = set()
         if result.page:
             for element in result.page.iter_elements():
-                chosen_elements.add(id(element))
+                elements_in_page.add(id(element))
 
         # Summary table
-        print(f"\n{'Label':<20} {'Total':<8} {'In Page':<8}")
-        print(f"{'-' * 40}")
+        print(f"\n{'Label':<20} {'Total':<8} {'In Page':<8} {'Constructed':<12}")
+        print(f"{'-' * 52}")
         for lbl in sorted(labels_to_show.keys()):
             candidates = labels_to_show[lbl]
             in_page = [
                 c
                 for c in candidates
-                if c.constructed and id(c.constructed) in chosen_elements
+                if c.constructed and id(c.constructed) in elements_in_page
             ]
-            print(f"{lbl:<20} {len(candidates):<8} {len(in_page):<8}")
+            constructed = [c for c in candidates if c.constructed is not None]
+            print(
+                f"{lbl:<20} {len(candidates):<8} "
+                f"{len(in_page):<8} {len(constructed):<12}"
+            )
 
         # Detailed per-label breakdown
         for lbl in sorted(labels_to_show.keys()):
@@ -378,23 +386,29 @@ def print_classification_debug(
             if not candidates:
                 continue
 
-            in_page = [
-                c
-                for c in candidates
-                if c.constructed and id(c.constructed) in chosen_elements
-            ]
-            if not in_page:
-                continue  # Skip labels with no elements in page for brevity
+            # Sort by score (highest first) for better readability
+            sorted_candidates = sorted(candidates, key=lambda c: c.score, reverse=True)
 
-            print(f"\n{lbl} ({len(in_page)} in page):")
-            for candidate in in_page:
+            print(f"\n{lbl} ({len(candidates)} candidates):")
+            for candidate in sorted_candidates:
                 block = candidate.source_block
-                # Format similar to tree: block_id [label] constructed | source
                 block_id_str = f"{block.id:3d}" if block else "  ?"
-                constructed_str = str(candidate.constructed)
+
+                # Determine if this candidate made it into the final Page
+                in_page = (
+                    candidate.constructed
+                    and id(candidate.constructed) in elements_in_page
+                )
+                winner_mark = "✓ " if in_page else "  "
+
+                if candidate.constructed:
+                    constructed_str = str(candidate.constructed)
+                else:
+                    constructed_str = "<failed to construct>"
+
                 source_str = str(block) if block else "no source"
                 print(
-                    f"  {block_id_str} [{lbl}] {constructed_str} | "
+                    f"  {winner_mark}{block_id_str} [{lbl}] {constructed_str} | "
                     f"score={candidate.score:.3f} | {source_str}"
                 )
 
