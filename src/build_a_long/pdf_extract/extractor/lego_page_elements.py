@@ -338,16 +338,21 @@ class Page(LegoPageElement):
             be converted
     """
 
-    class Category(Enum):
-        INFO = 1
-        INSTRUCTION = 2
-        CATALOG = 3
+    class PageType(Enum):
+        """Type of LEGO instruction page."""
+
+        INSTRUCTION = "instruction"
+        CATALOG = "catalog"
+        INFO = "info"
 
     tag: Literal["Page"] = Field(default="Page", alias="__tag__", frozen=True)
 
-    # TODO This perhaps should be a bit field, in case a page is both
-    # INSTRUCTION and CATALOG
-    category: Category | None = None
+    categories: set[PageType] = Field(default_factory=set)
+    """Set of categories this page belongs to. A page can have multiple categories.
+    
+    For example, a page might be both INSTRUCTION and CATALOG if it contains
+    both building steps and a parts catalog.
+    """
 
     page_number: PageNumber | None = None
     progress_bar: ProgressBar | None = None
@@ -364,17 +369,37 @@ class Page(LegoPageElement):
         default_factory=list
     )  # List[Element] but avoiding import
 
+    @property
+    def is_instruction(self) -> bool:
+        """Check if this page is an instruction page."""
+        return Page.PageType.INSTRUCTION in self.categories
+
+    @property
+    def is_catalog(self) -> bool:
+        """Check if this page is a catalog page."""
+        return Page.PageType.CATALOG in self.categories
+
+    @property
+    def is_info(self) -> bool:
+        """Check if this page is an info page."""
+        return Page.PageType.INFO in self.categories
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         page_num = self.page_number.value if self.page_number else "unknown"
+        categories_str = (
+            f", categories=[{', '.join(c.name for c in self.categories)}]"
+            if self.categories
+            else ""
+        )
         bags_str = f", bags={len(self.new_bags)}" if self.new_bags else ""
         catalog_str = (
             f", catalog={len(self.catalog.parts)} parts" if self.catalog else ""
         )
         steps_str = f", steps={len(self.steps)}" if self.steps else ""
         return (
-            f"Page(number={page_num}{bags_str}{catalog_str}{steps_str}, "
-            f"warnings={len(self.warnings)})"
+            f"Page(number={page_num}{categories_str}{bags_str}{catalog_str}"
+            f"{steps_str}, warnings={len(self.warnings)})"
         )
 
     def iter_elements(self) -> Iterator[LegoPageElement]:

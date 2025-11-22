@@ -44,6 +44,7 @@ from build_a_long.pdf_extract.classifier.new_bag_classifier import (
     NewBagClassifier,
 )
 from build_a_long.pdf_extract.classifier.page_classifier import PageClassifier
+from build_a_long.pdf_extract.classifier.page_hints import PageHints
 from build_a_long.pdf_extract.classifier.page_number_classifier import (
     PageNumberClassifier,
 )
@@ -143,10 +144,11 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
         )
 
     font_size_hints = FontSizeHints.from_pages(pages_without_duplicates)
+    page_hints = PageHints.from_pages(pages_without_duplicates)
     histogram = TextHistogram.from_pages(pages_without_duplicates)
 
     # Phase 3: Classify using the hints (on pages without duplicates)
-    config = ClassifierConfig(font_size_hints=font_size_hints)
+    config = ClassifierConfig(font_size_hints=font_size_hints, page_hints=page_hints)
     classifier = Classifier(config)
 
     results = []
