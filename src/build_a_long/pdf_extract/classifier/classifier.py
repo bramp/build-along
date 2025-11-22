@@ -100,7 +100,9 @@ def classify_elements(page: PageData) -> ClassificationResult:
     return classifier.classify(page)
 
 
-def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
+def classify_pages(
+    pages: list[PageData], pages_for_hints: list[PageData] | None = None
+) -> BatchClassificationResult:
     """Classify and label elements across multiple pages using rule-based heuristics.
 
     This function performs a three-phase process:
@@ -111,10 +113,16 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
 
     Args:
         pages: A list of PageData objects to classify.
+        pages_for_hints: Optional list of pages to use for generating font/page hints.
+            If None, uses `pages`. This allows generating hints from all pages
+            while only classifying a subset (e.g., when using --pages filter).
 
     Returns:
         BatchClassificationResult containing per-page results and global histogram
     """
+    # Use all pages for hint generation if provided, otherwise use selected pages
+    hint_pages = pages_for_hints if pages_for_hints is not None else pages
+
     # Phase 1: Filter duplicate blocks on each page and track removals
     duplicate_removals: list[dict[Blocks, Blocks]] = []
     for page_data in pages:
@@ -128,8 +136,24 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
 
         duplicate_removals.append(removed_mapping)
 
-    # Phase 2: Extract font size hints from all pages (excluding removed blocks)
+    # Phase 2: Extract font size hints from hint pages (excluding removed blocks)
     # Build pages with non-removed blocks for hint extraction and histogram
+
+    # Filter duplicates from hint pages (may be different from pages to classify)
+    hint_pages_without_duplicates = []
+    for page_data in hint_pages:
+        # TODO We are re-filtering duplicates here; optimize by changing the API
+        # to accept one list of PageData, and seperate by page_numbers.
+        kept_blocks, _ = filter_duplicate_blocks(page_data.blocks)
+        hint_pages_without_duplicates.append(
+            PageData(
+                page_number=page_data.page_number,
+                bbox=page_data.bbox,
+                blocks=kept_blocks,
+            )
+        )
+
+    # Build pages without duplicates for classification
     pages_without_duplicates = []
     for page_data, removed_mapping in zip(pages, duplicate_removals, strict=True):
         non_removed_blocks = [
@@ -143,8 +167,9 @@ def classify_pages(pages: list[PageData]) -> BatchClassificationResult:
             )
         )
 
-    font_size_hints = FontSizeHints.from_pages(pages_without_duplicates)
-    page_hints = PageHints.from_pages(pages_without_duplicates)
+    # Generate hints from hint pages, histogram from pages to classify
+    font_size_hints = FontSizeHints.from_pages(hint_pages_without_duplicates)
+    page_hints = PageHints.from_pages(hint_pages_without_duplicates)
     histogram = TextHistogram.from_pages(pages_without_duplicates)
 
     # Phase 3: Classify using the hints (on pages without duplicates)
