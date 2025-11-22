@@ -88,7 +88,7 @@ class PageClassifier(LabelClassifier):
 
         # Determine page categories and catalog field
         categories: set[Page.PageType] = set()
-        catalog = None
+        catalog_parts: list[Part] = []
 
         # Check for instruction content
         if steps:
@@ -97,41 +97,27 @@ class PageClassifier(LabelClassifier):
         # Check for catalog content
         if parts_lists:
             categories.add(Page.PageType.CATALOG)
-            # Merge all parts_lists into a single catalog
-            # Use the first parts_list bbox (or combine them if multiple)
-            if len(parts_lists) == 1:
-                catalog = parts_lists[0]
-            else:
-                log.warning(
-                    "Multiple parts_lists found on catalog page %s; "
-                    "merging into single catalog.",
-                    page_data.page_number,
-                )
-                # Merge multiple parts_lists
-                # Use dict to deduplicate parts by id to avoid having the same
-                # Part object appear multiple times
-                parts_by_id: dict[int, Part] = {}
-                combined_bbox = parts_lists[0].bbox
-                for pl in parts_lists:
-                    for part in pl.parts:
-                        part_id = id(part)
-                        if part_id in parts_by_id:
-                            log.debug(
-                                "Skipping duplicate part id:%d in merged catalog",
-                                part_id,
-                            )
-                        parts_by_id[part_id] = part
-                    combined_bbox = combined_bbox.union(pl.bbox)
-                log.debug(
-                    "Merged %d parts_lists into catalog with %d unique parts "
-                    "(from %d total)",
-                    len(parts_lists),
-                    len(parts_by_id),
-                    sum(len(pl.parts) for pl in parts_lists),
-                )
-                catalog = PartsList(
-                    bbox=combined_bbox, parts=list(parts_by_id.values())
-                )
+            # Collect all parts from parts_lists into catalog
+            # Use dict to deduplicate parts by id to avoid having the same
+            # Part object appear multiple times
+            parts_by_id: dict[int, Part] = {}
+            for pl in parts_lists:
+                for part in pl.parts:
+                    part_id = id(part)
+                    if part_id in parts_by_id:
+                        log.debug(
+                            "Skipping duplicate part id:%d in catalog",
+                            part_id,
+                        )
+                    parts_by_id[part_id] = part
+            catalog_parts = list(parts_by_id.values())
+            log.debug(
+                "Collected %d unique parts for catalog from %d parts_lists "
+                "(%d total parts)",
+                len(catalog_parts),
+                len(parts_lists),
+                sum(len(pl.parts) for pl in parts_lists),
+            )
 
         # If no structured content, mark as INFO page
         if not categories:
@@ -146,7 +132,7 @@ class PageClassifier(LabelClassifier):
             progress_bar is not None,
             len(new_bags),
             len(steps),
-            f"{len(catalog.parts)} parts" if catalog else None,
+            f"{len(catalog_parts)} parts" if catalog_parts else None,
         )
 
         # Construct the Page
@@ -157,7 +143,7 @@ class PageClassifier(LabelClassifier):
             progress_bar=progress_bar,
             new_bags=new_bags,
             steps=steps,
-            catalog=catalog,
+            catalog=catalog_parts,
             warnings=[],
             unprocessed_elements=[],
         )
