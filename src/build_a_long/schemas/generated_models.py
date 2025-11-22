@@ -8,6 +8,20 @@ from pydantic import AnyUrl, BaseModel, Field, RootModel
 
 class PdfEntry(BaseModel):
     url: AnyUrl = Field(..., description="The URL to the PDF file.")
+    filename: str = Field(..., description="The suggested filename for the PDF.")
+    filesize: int | None = Field(
+        default=None, description="The size of the PDF file in bytes."
+    )
+    filehash: str | None = Field(
+        default=None, description="SHA256 hash of the PDF file content, if available."
+    )
+    preview_url: AnyUrl | None = Field(
+        default=None, description="An optional URL for a preview image of the PDF."
+    )
+    is_additional_info_booklet: bool | None = Field(
+        default=None,
+        description="Indicates if the PDF is an additional info booklet rather than the main instructions.",
+    )
     sequence_number: int | None = Field(
         default=None,
         description="The sequence number of the PDF in a multi-part instruction set (e.g., 1 for 1/4).",
@@ -15,16 +29,6 @@ class PdfEntry(BaseModel):
     sequence_total: int | None = Field(
         default=None,
         description="The total number of PDFs in a multi-part instruction set (e.g., 4 for 1/4).",
-    )
-    filename: str = Field(..., description="The suggested filename for the PDF.")
-    preview_url: AnyUrl | None = Field(
-        default=None, description="An optional URL for a preview image of the PDF."
-    )
-    filesize: int | None = Field(
-        default=None, description="The size of the PDF file in bytes."
-    )
-    filehash: str | None = Field(
-        default=None, description="SHA256 hash of the PDF file content, if available."
     )
 
 
