@@ -333,8 +333,6 @@ def build_metadata(
                 sequence_total=info.sequence_total,
                 filename=filename,
                 preview_url=info.preview_url,
-                filesize=None,
-                filehash=None,
                 is_additional_info_booklet=info.is_additional_info_booklet,
             )
         )

@@ -142,7 +142,7 @@ def main() -> int:
                             base=LEGO_BASE,
                             debug=args.debug,
                         )
-                        print(meta.model_dump_json(indent=2))
+                        print(meta.model_dump_json(indent=2, exclude_unset=True))
                     except Exception as e:
                         print(
                             f"Error fetching metadata for set {set_number}: {e}",
