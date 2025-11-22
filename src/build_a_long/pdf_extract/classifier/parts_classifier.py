@@ -38,6 +38,8 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartCount,
+    PartNumber,
+    PieceLength,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Image,
@@ -70,7 +72,7 @@ class PartsClassifier(LabelClassifier):
     """Classifier for Part elements (pairs of part_count + image)."""
 
     outputs = frozenset({"part"})
-    requires = frozenset({"part_count"})
+    requires = frozenset({"part_count", "part_number", "piece_length"})
 
     def evaluate(
         self,
@@ -86,11 +88,33 @@ class PartsClassifier(LabelClassifier):
         # Get part_count candidates with type safety, selecting by score
         part_counts = result.get_winners_by_score("part_count", PartCount)
 
+        log.debug(
+            "[parts] Found %d part_counts for pairing",
+            len(part_counts),
+        )
+
         if not part_counts:
             return
 
+        # Get part_number candidates (optional, only on catalog pages)
+        part_numbers = result.get_winners_by_score("part_number", PartNumber)
+
+        # Get piece_length candidates (optional, can appear on any page type)
+        piece_lengths = result.get_winners_by_score("piece_length", PieceLength)
+
+        log.debug(
+            "[parts] Retrieved %d piece_lengths from result",
+            len(piece_lengths),
+        )
+
         # Get all images on the page
         images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
+
+        log.debug(
+            "[parts] Found %d images on page for pairing with %d part_counts",
+            len(images),
+            len(part_counts),
+        )
 
         if not images:
             return
@@ -100,8 +124,16 @@ class PartsClassifier(LabelClassifier):
             part_counts, images, page_data.bbox.width if page_data.bbox else 100.0
         )
 
+        log.debug(
+            "[parts] Built %d candidate edges for %d part_counts",
+            len(candidate_edges),
+            len(part_counts),
+        )
+
         # Match and create Part candidates
-        self._match_and_create_parts(candidate_edges, result)
+        self._match_and_create_parts(
+            candidate_edges, part_numbers, piece_lengths, result
+        )
 
     def _build_candidate_edges(
         self,
@@ -133,16 +165,28 @@ class PartsClassifier(LabelClassifier):
         return edges
 
     def _match_and_create_parts(
-        self, candidate_edges: list[_PartPairScore], result: ClassificationResult
+        self,
+        candidate_edges: list[_PartPairScore],
+        part_numbers: list[PartNumber],
+        piece_lengths: list[PieceLength],
+        result: ClassificationResult,
     ) -> None:
         """Match part counts with images and create Part candidates.
 
         Args:
             candidate_edges: List of candidate pairings to consider
+            part_numbers: List of PartNumber elements (for catalog pages)
+            piece_lengths: List of PieceLength elements (for any page)
             result: Classification result to add Part candidates to
         """
         if not candidate_edges:
+            log.debug("[parts] No candidate edges to match")
             return
+
+        log.debug(
+            "[parts] Matching %d candidate edges to create parts",
+            len(candidate_edges),
+        )
 
         # Sort by distance (closest pairs first)
         candidate_edges.sort(key=lambda score: score.sort_key())
@@ -161,8 +205,14 @@ class PartsClassifier(LabelClassifier):
             matched_counts.add(id(pc))
             matched_images.add(id(img))
 
+            # Find matching part_number (if any) - should be below the part_count
+            part_number = self._find_part_number(pc, part_numbers)
+
+            # Find matching piece_length (if any) - should be in top-right of image
+            piece_length = self._find_piece_length(img, piece_lengths)
+
             # Create a Part from this pairing
-            # The bbox is the union of the part_count and image bboxes
+            # The bbox is the union of the part_count, image, and part_number (if present)
             combined_bbox = BBox(
                 x0=min(pc.bbox.x0, img.bbox.x0),
                 y0=min(pc.bbox.y0, img.bbox.y0),
@@ -170,9 +220,19 @@ class PartsClassifier(LabelClassifier):
                 y1=max(pc.bbox.y1, img.bbox.y1),
             )
 
+            if part_number:
+                combined_bbox = BBox(
+                    x0=min(combined_bbox.x0, part_number.bbox.x0),
+                    y0=min(combined_bbox.y0, part_number.bbox.y0),
+                    x1=max(combined_bbox.x1, part_number.bbox.x1),
+                    y1=max(combined_bbox.y1, part_number.bbox.y1),
+                )
+
             part = Part(
                 bbox=combined_bbox,
                 count=pc,
+                number=part_number,
+                length=piece_length,
                 # Note: diagram field is optional and not set here
                 # The image is tracked via the score_details
             )
@@ -190,3 +250,105 @@ class PartsClassifier(LabelClassifier):
                     failure_reason=None,
                 ),
             )
+
+    def _find_part_number(
+        self, part_count: PartCount, part_numbers: list[PartNumber]
+    ) -> PartNumber | None:
+        """Find the part_number that belongs to this part_count.
+
+        The part_number should be directly below the part_count,
+        left-aligned.
+
+        Args:
+            part_count: The PartCount to find a number for
+            part_numbers: List of available PartNumber elements
+
+        Returns:
+            The matching PartNumber, or None if not found
+        """
+        VERT_EPS = 5.0  # Small vertical tolerance
+        ALIGN_EPS = 3.0  # Horizontal alignment tolerance
+
+        best_number = None
+        best_distance = float("inf")
+
+        for pn in part_numbers:
+            # Part number should be below the count
+            if (
+                pn.bbox.y0 >= part_count.bbox.y1 - VERT_EPS
+                and abs(pn.bbox.x0 - part_count.bbox.x0) <= ALIGN_EPS
+            ):
+                # Calculate vertical distance
+                distance = pn.bbox.y0 - part_count.bbox.y1
+                if distance < best_distance:
+                    best_distance = distance
+                    best_number = pn
+
+        return best_number
+
+    def _find_piece_length(
+        self, image: Image, piece_lengths: list[PieceLength]
+    ) -> PieceLength | None:
+        """Find the piece_length that belongs to this part image.
+
+        The piece_length should be in the top-right area of the image,
+        spatially contained within or very close to the image bbox.
+
+        Args:
+            image: The Image to find a length for
+            piece_lengths: List of available PieceLength elements
+
+        Returns:
+            The matching PieceLength, or None if not found
+        """
+        # Piece length should be near top-right of image
+        # Allow some tolerance for being slightly outside image bounds
+        TOLERANCE = 5.0
+
+        best_length = None
+        best_score = float("inf")
+
+        log.debug(
+            f"Matching piece_length to image id={image.id} bbox={image.bbox} "
+            f"from {len(piece_lengths)} available"
+        )
+
+        for pl in piece_lengths:
+            # Check if piece length is in the vicinity of the image
+            # (within or slightly outside the image bounds)
+            if (
+                pl.bbox.x0 >= image.bbox.x0 - TOLERANCE
+                and pl.bbox.x1 <= image.bbox.x1 + TOLERANCE
+                and pl.bbox.y0 >= image.bbox.y0 - TOLERANCE
+                and pl.bbox.y1 <= image.bbox.y1 + TOLERANCE
+            ):
+                # Prefer piece lengths closer to top-right
+                # Calculate distance from piece length center to image top-right
+                pl_center_x = (pl.bbox.x0 + pl.bbox.x1) / 2
+                pl_center_y = (pl.bbox.y0 + pl.bbox.y1) / 2
+
+                # Distance to top-right corner
+                dx = image.bbox.x1 - pl_center_x
+                dy = pl_center_y - image.bbox.y0
+
+                # Combined score (prefer top-right position)
+                score = dx * dx + dy * dy
+
+                log.debug(
+                    f"  Candidate piece_length value={pl.value} bbox={pl.bbox} "
+                    f"score={score:.2f}"
+                )
+
+                if score < best_score:
+                    best_score = score
+                    best_length = pl
+
+        if best_length:
+            log.debug(
+                f"  Selected piece_length value={best_length.value} "
+                f"for image id={image.id}"
+            )
+        else:
+            log.debug(f"  No matching piece_length found for image id={image.id}")
+
+        return best_length
