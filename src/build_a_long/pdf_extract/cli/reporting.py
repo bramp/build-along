@@ -408,9 +408,13 @@ def print_classification_debug(
             page_num_str = (
                 page_obj.page_number.value if page_obj.page_number else "None"
             )
-            category_str = page_obj.category.name if page_obj.category else "None"
+            categories_str = (
+                ", ".join(c.name for c in page_obj.categories)
+                if page_obj.categories
+                else "None"
+            )
             print(f"Page number: {page_num_str}")
-            print(f"Category: {category_str}")
+            print(f"Categories: {categories_str}")
             print(f"Progress bar: {'Yes' if page_obj.progress_bar else 'No'}")
 
             if page_obj.catalog:
@@ -451,8 +455,10 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
         page_data: PageData containing the raw page number
         page: Structured Page object with steps, parts lists, etc.
     """
-    category_str = f" ({page.category.name})" if page.category else ""
-    print(f"Page {page_data.page_number}{category_str}:")
+    categories_str = (
+        f" ([{', '.join(c.name for c in page.categories)}])" if page.categories else ""
+    )
+    print(f"Page {page_data.page_number}{categories_str}:")
 
     if page.page_number:
         print(f"  ✓ Page Number: {page.page_number.value}")

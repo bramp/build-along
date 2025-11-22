@@ -10,6 +10,7 @@ from annotated_types import Ge, Le
 from pydantic import BaseModel, Field, model_validator
 
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
+from build_a_long.pdf_extract.classifier.page_hints import PageHints
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
@@ -116,6 +117,9 @@ class ClassifierConfig(BaseModel):
 
     font_size_hints: FontSizeHints = Field(default_factory=FontSizeHints.empty)
     """Font size hints derived from analyzing all pages"""
+
+    page_hints: PageHints = Field(default_factory=PageHints.empty)
+    """Page type hints derived from analyzing all pages"""
 
 
 class ClassificationResult(BaseModel):

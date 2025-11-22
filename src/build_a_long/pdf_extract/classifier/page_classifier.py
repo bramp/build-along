@@ -28,6 +28,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     NewBag,
     Page,
     PageNumber,
+    Part,
     PartsList,
     ProgressBar,
     Step,
@@ -85,37 +86,62 @@ class PageClassifier(LabelClassifier):
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
 
-        # Determine page category and catalog field
-        category = None
+        # Determine page categories and catalog field
+        categories: set[Page.PageType] = set()
         catalog = None
 
+        # Check for instruction content
         if steps:
-            # Page with steps is an INSTRUCTION page
-            category = Page.Category.INSTRUCTION
-        elif parts_lists:
-            # Page with parts_lists but no steps is a CATALOG page
-            category = Page.Category.CATALOG
+            categories.add(Page.PageType.INSTRUCTION)
+
+        # Check for catalog content
+        if parts_lists:
+            categories.add(Page.PageType.CATALOG)
             # Merge all parts_lists into a single catalog
             # Use the first parts_list bbox (or combine them if multiple)
             if len(parts_lists) == 1:
                 catalog = parts_lists[0]
             else:
+                log.warning(
+                    "Multiple parts_lists found on catalog page %s; "
+                    "merging into single catalog.",
+                    page_data.page_number,
+                )
                 # Merge multiple parts_lists
-                all_parts = []
+                # Use dict to deduplicate parts by id to avoid having the same
+                # Part object appear multiple times
+                parts_by_id: dict[int, Part] = {}
                 combined_bbox = parts_lists[0].bbox
                 for pl in parts_lists:
-                    all_parts.extend(pl.parts)
+                    for part in pl.parts:
+                        part_id = id(part)
+                        if part_id in parts_by_id:
+                            log.debug(
+                                "Skipping duplicate part id:%d in merged catalog",
+                                part_id,
+                            )
+                        parts_by_id[part_id] = part
                     combined_bbox = combined_bbox.union(pl.bbox)
-                catalog = PartsList(bbox=combined_bbox, parts=all_parts)
-        else:
-            # No steps or parts_lists - likely an INFO page
-            category = Page.Category.INFO
+                log.debug(
+                    "Merged %d parts_lists into catalog with %d unique parts "
+                    "(from %d total)",
+                    len(parts_lists),
+                    len(parts_by_id),
+                    sum(len(pl.parts) for pl in parts_lists),
+                )
+                catalog = PartsList(
+                    bbox=combined_bbox, parts=list(parts_by_id.values())
+                )
+
+        # If no structured content, mark as INFO page
+        if not categories:
+            categories.add(Page.PageType.INFO)
 
         log.debug(
-            "[page] page=%s category=%s page_number=%s progress_bar=%s "
+            "[page] page=%s categories=%s page_number=%s progress_bar=%s "
             "new_bags=%d steps=%d catalog=%s",
             page_data.page_number,
-            category.name if category else None,
+            [c.name for c in categories],
             page_number.value if page_number else None,
             progress_bar is not None,
             len(new_bags),
@@ -126,7 +152,7 @@ class PageClassifier(LabelClassifier):
         # Construct the Page
         constructed = Page(
             bbox=page_data.bbox,
-            category=category,
+            categories=categories,
             page_number=page_number,
             progress_bar=progress_bar,
             new_bags=new_bags,

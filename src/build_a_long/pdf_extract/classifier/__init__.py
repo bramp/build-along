@@ -30,6 +30,10 @@ from .classifier import Classifier, classify_elements, classify_pages
 from .diagram_classifier import DiagramClassifier
 from .label_classifier import LabelClassifier
 from .new_bag_classifier import NewBagClassifier
+from .page_hints import PageHint, PageHints
+from ..extractor.lego_page_elements import Page
+
+PageType = Page.PageType
 from .page_number_classifier import PageNumberClassifier
 from .part_count_classifier import PartCountClassifier
 from .part_number_classifier import PartNumberClassifier
@@ -50,6 +54,9 @@ __all__ = [
     "DiagramClassifier",
     "LabelClassifier",
     "NewBagClassifier",
+    "PageHint",
+    "PageHints",
+    "PageType",
     "StepClassifier",
     "PageNumberClassifier",
     "PartCountClassifier",
