@@ -215,6 +215,11 @@ def parse_instruction_pdf_urls_apollo(
                     with suppress(ValueError, TypeError):
                         sequence_total = int(sequence_data["total"])
 
+        is_additional_info_booklet: bool | None = None
+        if "isAdditionalInfoBooklet" in item:
+            with suppress(ValueError, TypeError):
+                is_additional_info_booklet = bool(item["isAdditionalInfoBooklet"])
+
         pdf = _apollo_resolve(apollo_state, item.get("pdf"))
         if not isinstance(pdf, dict):
             log.debug(
@@ -250,6 +255,7 @@ def parse_instruction_pdf_urls_apollo(
                 preview_url=(
                     AnyUrl(absolute_preview_url) if absolute_preview_url else None
                 ),
+                is_additional_info_booklet=is_additional_info_booklet,
             )
         )
 
@@ -329,6 +335,7 @@ def build_metadata(
                 preview_url=info.preview_url,
                 filesize=None,
                 filehash=None,
+                is_additional_info_booklet=info.is_additional_info_booklet,
             )
         )
 

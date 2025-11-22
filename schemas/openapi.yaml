@@ -15,22 +15,9 @@ components:
           type: string
           format: uri
           description: The URL to the PDF file.
-        sequence_number:
-          type: integer
-          nullable: true
-          description: The sequence number of the PDF in a multi-part instruction set (e.g., 1 for 1/4).
-        sequence_total:
-          type: integer
-          nullable: true
-          description: The total number of PDFs in a multi-part instruction set (e.g., 4 for 1/4).
         filename:
           type: string
           description: The suggested filename for the PDF.
-        preview_url:
-          type: string
-          format: uri
-          nullable: true
-          description: An optional URL for a preview image of the PDF.
         filesize:
           type: integer
           format: int64
@@ -40,6 +27,23 @@ components:
           type: string
           nullable: true
           description: SHA256 hash of the PDF file content, if available.
+        preview_url:
+          type: string
+          format: uri
+          nullable: true
+          description: An optional URL for a preview image of the PDF.
+        is_additional_info_booklet:
+          type: boolean
+          nullable: true
+          description: Indicates if the PDF is an additional info booklet rather than the main instructions.
+        sequence_number:
+          type: integer
+          nullable: true
+          description: The sequence number of the PDF in a multi-part instruction set (e.g., 1 for 1/4).
+        sequence_total:
+          type: integer
+          nullable: true
+          description: The total number of PDFs in a multi-part instruction set (e.g., 4 for 1/4).
       required:
         - url
         - filename

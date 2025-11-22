@@ -23,3 +23,7 @@ class DownloadUrl(BaseModel):
     sequence_total: int | None = Field(
         default=None, description="The total number of instructions in the sequence."
     )
+    is_additional_info_booklet: bool | None = Field(
+        default=None,
+        description="Indicates if the instruction is a supplemental or additional info booklet.",
+    )
