@@ -2,6 +2,7 @@
 Page number classifier.
 """
 
+import logging
 import math
 import re
 from dataclasses import dataclass
@@ -20,6 +21,8 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import PageNumber
 from build_a_long.pdf_extract.extractor.page_blocks import Text
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -108,6 +111,19 @@ class PageNumberClassifier(LabelClassifier):
                 font_size_score=font_size_score,
             )
 
+            combined = score.combined_score(self.config)
+
+            # Skip candidates below minimum score threshold
+            if combined < self.config.page_number_min_score:
+                log.debug(
+                    "[page_number] Skipping low-score candidate: text='%s' "
+                    "score=%.3f (below threshold %.3f)",
+                    block.text,
+                    combined,
+                    self.config.page_number_min_score,
+                )
+                continue
+
             # Try to construct the LegoElement (parse the text)
             value = extract_page_number_value(block.text)
             constructed_elem = None
@@ -133,7 +149,7 @@ class PageNumberClassifier(LabelClassifier):
                 Candidate(
                     bbox=block.bbox,
                     label="page_number",
-                    score=score.combined_score(self.config),
+                    score=combined,
                     score_details=score,
                     constructed=constructed_elem,
                     source_block=block,

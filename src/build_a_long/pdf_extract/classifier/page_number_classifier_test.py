@@ -157,10 +157,9 @@ class TestPageNumberClassification:
         result = classify_elements(page_data)
 
         # Should not be labeled due to text pattern (position is good but text is bad)
-        # Check that no successful page_number candidates exist with this block as source
+        # Low-scoring candidates (< 0.5) are not created to reduce debug spam
         candidate = result.get_candidate_for_block(text_block, "page_number")
-        assert candidate is not None
-        assert candidate.constructed is None
+        assert candidate is None  # No candidate created due to low score
 
-        # Check that score is low
-        assert candidate.score < 0.5
+        # Verify nothing was labeled
+        assert result.count_successful_candidates("page_number") == 0

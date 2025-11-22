@@ -114,6 +114,19 @@ class PartsListClassifier(LabelClassifier):
 
         # Process each drawing in score order
         for drawing, score, contained in drawing_scores:
+            combined = score.combined_score()
+
+            # Skip candidates below minimum score threshold
+            if combined < self.config.parts_list_min_score:
+                log.debug(
+                    "[parts_list] Skipping low-score candidate: drawing=%d "
+                    "score=%.3f (below threshold %.3f)",
+                    drawing.id,
+                    combined,
+                    self.config.parts_list_min_score,
+                )
+                continue
+
             # Determine failure reason if any
             failure_reason = None
             constructed = None
