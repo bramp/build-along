@@ -79,11 +79,27 @@ class PageClassifier(LabelClassifier):
         # deduplication in evaluate(), so all step candidates are valid)
         steps = result.get_winners_by_score("step", Step)
 
-        # Get standalone parts (catalog pages) - these won't be in parts_lists
-        standalone_parts = result.get_winners_by_score("part", Part)
+        # Get all part winners
+        all_parts = result.get_winners_by_score("part", Part)
 
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
+
+        # Collect parts that are already used in steps (to exclude from catalog)
+        parts_in_steps: set[int] = set()
+        for step in steps:
+            for part in step.parts_list.parts:
+                parts_in_steps.add(id(part))
+
+        # Filter to get standalone parts (catalog pages) - parts not in steps
+        standalone_parts = [p for p in all_parts if id(p) not in parts_in_steps]
+
+        log.debug(
+            "[page] Found %d total parts, %d in steps, %d standalone",
+            len(all_parts),
+            len(parts_in_steps),
+            len(standalone_parts),
+        )
 
         # Determine page categories and catalog field
         categories: set[Page.PageType] = set()
