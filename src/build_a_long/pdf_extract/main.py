@@ -121,9 +121,16 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         logger.info("Selected pages: %s", page_ranges)
         page_numbers = list(page_ranges.page_numbers(len(doc)))
 
-        pages = extract_bounding_boxes(
-            doc, page_numbers, include_types=config.include_types
+        # Extract all pages for font hint generation (hints need global context)
+        all_pages = extract_bounding_boxes(
+            doc, list(range(1, len(doc) + 1)), include_types=config.include_types
         )
+
+        # Filter to requested pages for actual processing
+        if page_numbers:
+            pages = [p for p in all_pages if p.page_number in page_numbers]
+        else:
+            pages = all_pages
 
         # Save raw JSON if requested
         if config.save_raw_json:
@@ -139,11 +146,11 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
 
         # Print font hints if requested (before classification)
         if config.print_font_hints:
-            font_hints = FontSizeHints.from_pages(pages)
+            font_hints = FontSizeHints.from_pages(all_pages)
             print_font_hints(font_hints)
 
-        # Classify elements
-        batch_result = classify_pages(pages)
+        # Classify elements (use all_pages for hints, but only classify selected pages)
+        batch_result = classify_pages(pages, pages_for_hints=all_pages)
 
         # Extract page_data from results for compatibility
         classified_pages = [result.page_data for result in batch_result.results]
