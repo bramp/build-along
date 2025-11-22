@@ -376,23 +376,51 @@ class ClassificationResult(BaseModel):
             f"with label '{label}'. Expected at most one."
         )
 
-    def get_label(self, block: Blocks) -> str | None:
-        """Get the label for a block from its successfully constructed candidate.
+    def get_best_candidate(self, block: Blocks) -> Candidate | None:
+        """Get the highest-scoring successfully constructed candidate for a block.
 
-        Returns the label of the first successfully constructed candidate for
-        the given block, or None if no successfully constructed candidate exists.
+        When a block has candidates for multiple labels, this returns the one
+        with the highest score. This is the "winning" candidate for reporting
+        and output purposes.
+
+        Args:
+            block: The block to get the best candidate for
+
+        Returns:
+            The highest-scoring successfully constructed candidate, or None
+            if no successfully constructed candidate exists
+        """
+        candidates = self.get_all_candidates_for_block(block)
+        valid_candidates = [c for c in candidates if c.constructed is not None]
+
+        if not valid_candidates:
+            return None
+
+        # Return the highest-scoring candidate
+        return max(valid_candidates, key=lambda c: c.score)
+
+    # TODO I think this API is broken - there can be multiple labels per block,
+    # but we only return one here.
+    def get_label(self, block: Blocks) -> str | None:
+        """Get the label for a block from its highest-scoring constructed candidate.
+
+        Returns the label of the successfully constructed candidate with the
+        highest score for the given block, or None if no successfully
+        constructed candidate exists.
+
+        This is a convenience method equivalent to:
+            candidate = result.get_best_candidate(block)
+            return candidate.label if candidate else None
 
         Args:
             block: The block to get the label for
 
         Returns:
-            The label string if a successfully constructed candidate exists,
+            The label string of the highest-scoring constructed candidate,
             None otherwise
         """
-        for candidate in self.get_all_candidates_for_block(block):
-            if candidate.constructed is not None:
-                return candidate.label
-        return None
+        best_candidate = self.get_best_candidate(block)
+        return best_candidate.label if best_candidate else None
 
     def add_candidate(self, label: str, candidate: Candidate) -> None:
         """Add a single candidate for a specific label.
