@@ -29,7 +29,6 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Page,
     PageNumber,
     Part,
-    PartsList,
     ProgressBar,
     Step,
 )
@@ -80,8 +79,8 @@ class PageClassifier(LabelClassifier):
         # deduplication in evaluate(), so all step candidates are valid)
         steps = result.get_winners_by_score("step", Step)
 
-        # Get parts_lists that weren't consumed by steps
-        parts_lists = result.get_winners_by_score("parts_list", PartsList)
+        # Get standalone parts (catalog pages) - these won't be in parts_lists
+        standalone_parts = result.get_winners_by_score("part", Part)
 
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
@@ -94,29 +93,25 @@ class PageClassifier(LabelClassifier):
         if steps:
             categories.add(Page.PageType.INSTRUCTION)
 
-        # Check for catalog content
-        if parts_lists:
+        # Check for catalog content (standalone parts not in steps)
+        if standalone_parts:
             categories.add(Page.PageType.CATALOG)
-            # Collect all parts from parts_lists into catalog
+            # Collect standalone parts into catalog
             # Use dict to deduplicate parts by id to avoid having the same
             # Part object appear multiple times
             parts_by_id: dict[int, Part] = {}
-            for pl in parts_lists:
-                for part in pl.parts:
-                    part_id = id(part)
-                    if part_id in parts_by_id:
-                        log.debug(
-                            "Skipping duplicate part id:%d in catalog",
-                            part_id,
-                        )
-                    parts_by_id[part_id] = part
+            for part in standalone_parts:
+                part_id = id(part)
+                if part_id in parts_by_id:
+                    log.debug(
+                        "Skipping duplicate part id:%d in catalog",
+                        part_id,
+                    )
+                parts_by_id[part_id] = part
             catalog_parts = list(parts_by_id.values())
             log.debug(
-                "Collected %d unique parts for catalog from %d parts_lists "
-                "(%d total parts)",
+                "Collected %d unique parts for catalog",
                 len(catalog_parts),
-                len(parts_lists),
-                sum(len(pl.parts) for pl in parts_lists),
             )
 
         # If no structured content, mark as INFO page
