@@ -134,6 +134,31 @@ class PartNumber(LegoPageElement):
         return f"PartNumber(element_id={self.element_id})"
 
 
+class PieceLength(LegoPageElement):
+    """The length indicator for a LEGO piece (e.g., '4' for a 4-stud beam).
+
+    Positional context: Located in the top-right area of a part image, typically
+    surrounded by a circle or oval. Uses a smaller font size than step numbers.
+    Can appear on any page type (instruction, catalog, or info pages).
+
+    This is distinct from a step number - it indicates the physical length of
+    the part being shown, not a construction step.
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["PieceLength"] = Field(
+        default="PieceLength", alias="__tag__", frozen=True
+    )
+
+    value: Annotated[int, Gt(0)]
+    """The length value (number of studs or other measurement units)."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"PieceLength(value={self.value})"
+
+
 class ProgressBar(LegoPageElement):
     """A progress bar showing building progress through the instruction book.
 
@@ -175,6 +200,7 @@ class Part(LegoPageElement):
     label positioned directly below it, both left-aligned.
 
     See layout diagram: lego_page_layout.png
+    See overview of all parts: https://brickarchitect.com/files/LEGO_BRICK_LABELS-CONTACT_SHEET.pdf
     """
 
     tag: Literal["Part"] = Field(default="Part", alias="__tag__", frozen=True)
@@ -186,13 +212,21 @@ class Part(LegoPageElement):
     number: PartNumber | None = None
     """Optional part number used only on catalog pages."""
 
+    length: PieceLength | None = None
+    """Optional piece length indicator (e.g., '4' for a 4-stud axle).
+    
+    Appears in the top-right of the part image, surrounded by a circle.
+    Can appear on any page type.
+    """
+
     # TODO maybe add color?
     # TODO Some parts have a "shiny" highlight - maybe reference that image
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         number_str = self.number.element_id if self.number else "no-number"
-        return f"Part(count={self.count.count}x, number={number_str})"
+        length_str = f", len={self.length.value}" if self.length else ""
+        return f"Part(count={self.count.count}x, number={number_str}{length_str})"
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this Part and all child elements."""
@@ -203,6 +237,8 @@ class Part(LegoPageElement):
         #    yield from self.diagram.iter_elements()
         if self.number:
             yield from self.number.iter_elements()
+        if self.length:
+            yield from self.length.iter_elements()
 
 
 class PartsList(LegoPageElement):
@@ -432,6 +468,7 @@ LegoPageElements = Annotated[
     | StepNumber
     | PartCount
     | PartNumber
+    | PieceLength
     | ProgressBar
     | Part
     | PartsList

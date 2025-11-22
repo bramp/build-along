@@ -11,12 +11,13 @@ labels produced by earlier stages:
 3) PartCountClassifier   → outputs: "part_count"
 4) PartNumberClassifier  → outputs: "part_number" (catalog pages)
 5) StepNumberClassifier  → outputs: "step_number" (uses page_number size)
-6) PartsClassifier       → outputs: "part" (requires part_count, pairs with images)
-7) PartsListClassifier   → outputs: "parts_list" (requires part)
-8) PartsImageClassifier  → outputs: "part_image" (requires parts_list, part_count)
-9) DiagramClassifier     → outputs: "diagram" (requires parts_list)
-10) StepClassifier       → outputs: "step" (requires step_number, parts_list, diagram)
-11) PageClassifier       → outputs: "page" (requires page_number and step)
+6) PieceLengthClassifier → outputs: "piece_length" (piece size indicators)
+7) PartsClassifier       → outputs: "part" (requires part_count, pairs with images)
+8) PartsListClassifier   → outputs: "parts_list" (requires part)
+9) PartsImageClassifier  → outputs: "part_image" (requires parts_list, part_count)
+10) DiagramClassifier    → outputs: "diagram" (requires parts_list)
+11) StepClassifier       → outputs: "step" (requires step_number, parts_list, diagram)
+12) PageClassifier       → outputs: "page" (requires page_number and step)
 
 If the order is changed such that a classifier runs before its requirements
 are available, a ValueError will be raised at initialization time.
@@ -62,6 +63,9 @@ from build_a_long.pdf_extract.classifier.parts_image_classifier import (
 )
 from build_a_long.pdf_extract.classifier.parts_list_classifier import (
     PartsListClassifier,
+)
+from build_a_long.pdf_extract.classifier.piece_length_classifier import (
+    PieceLengthClassifier,
 )
 from build_a_long.pdf_extract.classifier.progress_bar_classifier import (
     ProgressBarClassifier,
@@ -205,6 +209,7 @@ type Classifiers = (
     | PartCountClassifier
     | PartNumberClassifier
     | StepNumberClassifier
+    | PieceLengthClassifier
     | PartsClassifier
     | PartsListClassifier
     | PartsImageClassifier
@@ -230,6 +235,7 @@ class Classifier:
             PartCountClassifier(config),
             PartNumberClassifier(config),
             StepNumberClassifier(config),
+            PieceLengthClassifier(config),
             PartsClassifier(config),
             PartsListClassifier(config),
             PartsImageClassifier(config),

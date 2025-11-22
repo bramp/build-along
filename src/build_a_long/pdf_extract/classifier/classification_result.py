@@ -291,8 +291,12 @@ class ClassificationResult(BaseModel):
 
         Selects candidates by:
         - Successfully constructed (constructed is not None)
+        - Is the highest-scoring label for its source block
         - Highest score
         - Match the specified element type
+
+        Only returns candidates that are the "winner" for their source block,
+        meaning no other label has a higher score for the same block.
 
         Args:
             label: The label to get winners for (e.g., "page_number", "step")
@@ -312,8 +316,21 @@ class ClassificationResult(BaseModel):
             c for c in self.get_candidates(label) if c.constructed is not None
         ]
 
-        # Validate types
+        # Filter to only include candidates that are the best for their block
+        winning_candidates = []
         for candidate in valid_candidates:
+            # Skip candidates without a source block (synthetic elements)
+            if candidate.source_block is None:
+                winning_candidates.append(candidate)
+                continue
+
+            # Check if this candidate is the best for its source block
+            best = self.get_best_candidate(candidate.source_block)
+            if best and best.label == label:
+                winning_candidates.append(candidate)
+
+        # Validate types
+        for candidate in winning_candidates:
             assert isinstance(candidate.constructed, element_type), (
                 f"Type mismatch for label '{label}': requested "
                 f"{element_type.__name__} but got "
@@ -322,14 +339,14 @@ class ClassificationResult(BaseModel):
             )
 
         # Sort by score (highest first)
-        valid_candidates.sort(key=lambda c: c.score, reverse=True)
+        winning_candidates.sort(key=lambda c: c.score, reverse=True)
 
         # Apply max_count if specified
         if max_count is not None:
-            valid_candidates = valid_candidates[:max_count]
+            winning_candidates = winning_candidates[:max_count]
 
         # Extract constructed elements
-        return [cast(T, c.constructed) for c in valid_candidates]
+        return [cast(T, c.constructed) for c in winning_candidates]
 
     def get_all_candidates(self) -> dict[str, list[Candidate]]:
         """Get all candidates across all labels.
