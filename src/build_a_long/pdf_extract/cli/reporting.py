@@ -418,8 +418,8 @@ def print_classification_debug(
             print(f"Progress bar: {'Yes' if page_obj.progress_bar else 'No'}")
 
             if page_obj.catalog:
-                parts_count = len(page_obj.catalog.parts)
-                total_items = page_obj.catalog.total_items
+                parts_count = len(page_obj.catalog)
+                total_items = sum(p.count.count for p in page_obj.catalog)
                 print(f"Catalog: {parts_count} parts ({total_items} total items)")
 
             print(f"Steps: {len(page_obj.steps)}")
@@ -469,12 +469,12 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
             print(f"    - Bag {new_bag.number.value} at {new_bag.bbox}")
 
     if page.catalog:
-        parts_count = len(page.catalog.parts)
-        total_items = page.catalog.total_items
+        parts_count = len(page.catalog)
+        total_items = sum(p.count.count for p in page.catalog)
         print(f"  ✓ Catalog: {parts_count} parts ({total_items} total items)")
-        if page.catalog.parts:
+        if page.catalog:
             print("      Parts:")
-            for part in page.catalog.parts:
+            for part in page.catalog:
                 number_str = part.number.element_id if part.number else "no number"
                 print(f"        • {part.count.count}x ({number_str})")
 
