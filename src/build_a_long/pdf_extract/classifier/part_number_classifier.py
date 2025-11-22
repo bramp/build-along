@@ -123,6 +123,19 @@ class PartNumberClassifier(LabelClassifier):
                 font_size_score=font_size_score,
             )
 
+            combined = detail_score.combined_score(self.config)
+
+            # Skip candidates below minimum score threshold
+            if combined < self.config.part_number_min_score:
+                log.debug(
+                    "[part_number] Skipping low-score candidate: text='%s' "
+                    "score=%.3f (below threshold %.3f)",
+                    block.text,
+                    combined,
+                    self.config.part_number_min_score,
+                )
+                continue
+
             # Construct PartNumber element if extraction succeeded
             constructed_elem = None
             failure_reason = None
@@ -143,7 +156,7 @@ class PartNumberClassifier(LabelClassifier):
                 Candidate(
                     bbox=block.bbox,
                     label="part_number",
-                    score=detail_score.combined_score(self.config),
+                    score=combined,
                     score_details=detail_score,
                     constructed=constructed_elem,
                     source_block=block,
