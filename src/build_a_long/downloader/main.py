@@ -83,9 +83,14 @@ def _parse_args() -> argparse.Namespace:
         help="Only fetch and print metadata as JSON (no downloads)",
     )
     download_parser.add_argument(
-        "--force",
+        "--overwrite-metadata",
         action="store_true",
-        help="Re-download PDFs even if the file already exists",
+        help="Force metadata update, even if it exists.",
+    )
+    download_parser.add_argument(
+        "--overwrite-download",
+        action="store_true",
+        help="Force re-downloading of PDFs, even if they exist.",
     )
     download_parser.add_argument(
         "--debug",
@@ -155,7 +160,8 @@ def main() -> int:
         with LegoInstructionDownloader(
             locale=args.locale,
             out_dir=Path(args.out_dir) if args.out_dir else None,
-            overwrite=args.force,
+            overwrite_metadata=args.overwrite_metadata,
+            overwrite_download=args.overwrite_download,
             show_progress=True,
             debug=args.debug,
         ) as downloader:
@@ -166,7 +172,7 @@ def main() -> int:
     elif args.command == "summarize":
         return summarize_metadata(Path(args.data_dir), Path(args.output_dir))
     else:
-        # This case should ideally not be reached due to argparse `required=True` for subparsers
+        # This case should not be reached.
         print(
             "Error: No command specified. Use 'download' or 'summarize'.",
             file=sys.stderr,

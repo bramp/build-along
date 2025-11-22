@@ -69,7 +69,8 @@ def test_main_single_set_number_from_arg(mock_downloader_class, monkeypatch, cap
     mock_downloader_class.assert_called_once()
     call_kwargs = mock_downloader_class.call_args[1]
     assert call_kwargs["locale"] == "en-us"
-    assert call_kwargs["overwrite"] is False
+    assert call_kwargs["overwrite_metadata"] is False
+    assert call_kwargs["overwrite_download"] is False
 
     # Verify process_sets was called with the set number
     mock_instance.process_sets.assert_called_once_with(["12345"])
@@ -93,7 +94,7 @@ def test_main_multiple_set_numbers_from_stdin(mock_downloader_class, monkeypatch
 
 
 @patch("build_a_long.downloader.main.LegoInstructionDownloader")
-def test_main_custom_locale_and_force(mock_downloader_class, monkeypatch):
+def test_main_custom_locale_and_overwrites(mock_downloader_class, monkeypatch):
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
@@ -101,14 +102,25 @@ def test_main_custom_locale_and_force(mock_downloader_class, monkeypatch):
     mock_downloader_class.return_value = mock_instance
 
     monkeypatch.setattr(
-        sys, "argv", ["main.py", "download", "--locale", "de-de", "--force", "12345"]
+        sys,
+        "argv",
+        [
+            "main.py",
+            "download",
+            "--locale",
+            "de-de",
+            "--overwrite-metadata",
+            "--overwrite-download",
+            "12345",
+        ],
     )
     exit_code = main()
 
     assert exit_code == 0
     call_kwargs = mock_downloader_class.call_args[1]
     assert call_kwargs["locale"] == "de-de"
-    assert call_kwargs["overwrite"] is True
+    assert call_kwargs["overwrite_metadata"] is True
+    assert call_kwargs["overwrite_download"] is True
 
 
 @patch("build_a_long.downloader.main.LegoInstructionDownloader")

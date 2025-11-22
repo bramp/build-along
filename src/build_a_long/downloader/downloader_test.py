@@ -48,7 +48,7 @@ def test_download_skips_if_exists(tmp_path: Path):
     mock_client = MagicMock()
 
     downloader = LegoInstructionDownloader(
-        client=mock_client, overwrite=False, show_progress=False
+        client=mock_client, overwrite_download=False, show_progress=False
     )
     out = downloader.download(url, tmp_path)
 
@@ -76,7 +76,7 @@ def test_download_writes_and_shows_progress(tmp_path: Path, capsys):
         mock_ctx.__exit__ = MagicMock()
         return mock_ctx
 
-    downloader = LegoInstructionDownloader(overwrite=True, show_progress=True)
+    downloader = LegoInstructionDownloader(overwrite_download=True, show_progress=True)
     out = downloader.download(
         AnyUrl("https://example.com/path/file.pdf"),
         tmp_path,
@@ -289,7 +289,7 @@ def test_process_set_skips_if_not_found_file_exists(tmp_path: Path, capsys):
     (out_dir / ".not_found").touch()
 
     downloader = LegoInstructionDownloader(
-        out_dir=out_dir, overwrite=False, show_progress=False
+        out_dir=out_dir, overwrite_metadata=False, show_progress=False
     )
     exit_code = downloader.process_set(set_number)
 
@@ -303,7 +303,7 @@ def test_process_set_skips_if_not_found_file_exists(tmp_path: Path, capsys):
 def test_process_set_creates_not_found_file_on_404(
     mock_fetch_instructions_page, tmp_path: Path, capsys
 ):
-    """Test that process_set creates a .not_found file when fetch_instructions_page returns 404."""
+    """Test that process_set creates a .not_found file on 404."""
     # Configure mock to raise httpx.HTTPStatusError with a 404 response
     mock_request = httpx.Request("GET", "http://test.com")
     mock_response = httpx.Response(404, request=mock_request)
