@@ -79,7 +79,8 @@ class LegoInstructionDownloader:
         self,
         locale: str = "en-us",
         out_dir: Path | None = None,
-        overwrite: bool = False,
+        overwrite_metadata: bool = False,
+        overwrite_download: bool = False,
         show_progress: bool = True,
         client: httpx.Client | None = None,
         debug: bool = False,
@@ -89,14 +90,16 @@ class LegoInstructionDownloader:
         Args:
             locale: LEGO locale to use (e.g., "en-us", "en-gb").
             out_dir: Base output directory for downloads.
-            overwrite: If True, re-download existing files.
+            overwrite_metadata: If True, re-download existing metadata.
+            overwrite_download: If True, re-download existing files.
             show_progress: If True, show download progress.
             client: Optional httpx.Client to use (if None, creates one internally).
             debug: If True, enable debug output.
         """
         self.locale = locale
         self.out_dir = out_dir
-        self.overwrite = overwrite
+        self.overwrite_metadata = overwrite_metadata
+        self.overwrite_download = overwrite_download
         self.show_progress = show_progress
         self._client = client
         self._owns_client = client is None
@@ -168,7 +171,7 @@ class LegoInstructionDownloader:
             raise ValueError(f"Could not extract filename from URL: {url}")
         dest = dest_dir / filename
 
-        if dest.exists() and not self.overwrite:
+        if dest.exists() and not self.overwrite_download:
             if progress_prefix:
                 print(f"{progress_prefix} [cached]")
             else:
@@ -241,13 +244,13 @@ class LegoInstructionDownloader:
         meta_path = out_dir / "metadata.json"
         not_found_path = out_dir / ".not_found"
 
-        if not_found_path.exists() and not self.overwrite:
+        if not_found_path.exists() and not self.overwrite_metadata:
             print(f"Skipping set {set_number} (marked as not found).")
             return 0
 
         # Try to load existing metadata first (if allowed)
         existing_meta: InstructionMetadata | None = None
-        if meta_path.exists() and not self.overwrite:
+        if meta_path.exists() and not self.overwrite_metadata:
             existing_meta = read_metadata(meta_path)
 
         # Decide whether to use cached metadata or fetch fresh
