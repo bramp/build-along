@@ -35,9 +35,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_blocks import (
-    Drawing,
     Image,
-    Text,
 )
 
 log = logging.getLogger(__name__)
@@ -50,8 +48,8 @@ class _PartImageScore:
     distance: float
     """Vertical distance from part count text to image (lower is better)."""
 
-    part_count: Text
-    """The part count text element."""
+    part_count_candidate: Candidate
+    """The part count candidate."""
 
     image: Image
     """The image element."""
@@ -80,59 +78,49 @@ class PartsImageClassifier(LabelClassifier):
         """
         page_data = result.page_data
 
-        # Get source blocks for part_counts and parts_lists
+        # Get candidates that have been successfully constructed
         part_count_candidates = [
-            c
-            for c in result.get_candidates("part_count")
-            if c.constructed is not None
-            and c.source_blocks
-            and isinstance(c.source_blocks[0], Text)
+            c for c in result.get_candidates("part_count") if c.constructed is not None
         ]
         parts_list_candidates = [
-            c
-            for c in result.get_candidates("parts_list")
-            if c.constructed is not None
-            and c.source_blocks
-            and isinstance(c.source_blocks[0], Drawing)
+            c for c in result.get_candidates("parts_list") if c.constructed is not None
         ]
 
         if not part_count_candidates or not parts_list_candidates:
             return
 
-        # Extract source blocks (Text and Drawing) for matching
-        part_counts: list[Text] = [c.source_blocks[0] for c in part_count_candidates]  # type: ignore
-        parts_lists: list[Drawing] = [c.source_blocks[0] for c in parts_list_candidates]  # type: ignore
-        if not part_counts or not parts_lists:
-            return
-
-        images = self._get_images_in_parts_lists(page_data, parts_lists)
+        images = self._get_images_in_parts_lists(page_data, parts_list_candidates)
         if not images:
             return
 
         # Build candidate pairings and match them directly
         candidate_edges = self._build_candidate_edges(
-            part_counts, images, page_data.bbox.width if page_data.bbox else 100.0
+            part_count_candidates,
+            images,
+            page_data.bbox.width if page_data.bbox else 100.0,
         )
-        self._match_and_label_parts(candidate_edges, part_counts, images, result)
+        self._match_and_label_parts(candidate_edges, images, result)
 
     def _match_and_label_parts(
         self,
         edges: list[_PartImageScore],
-        part_counts: list[Text],
         images: list[Image],
         result: ClassificationResult,
     ):
         """Match part counts with images using greedy matching based on distance."""
         edges.sort(key=lambda score: score.sort_key())
-        matched_counts: set[int] = set()
+        matched_count_candidates: set[int] = set()
         matched_images: set[int] = set()
 
         for score in edges:
-            pc = score.part_count
+            pc_candidate = score.part_count_candidate
             img = score.image
-            if id(pc) in matched_counts or id(img) in matched_images:
+            if (
+                id(pc_candidate) in matched_count_candidates
+                or id(img) in matched_images
+            ):
                 continue
-            matched_counts.add(id(pc))
+            matched_count_candidates.add(id(pc_candidate))
             matched_images.add(id(img))
             # Create a candidate for the matched image
             # containing the pair relationship
@@ -150,7 +138,11 @@ class PartsImageClassifier(LabelClassifier):
             )
 
         if log.isEnabledFor(logging.DEBUG):
-            unmatched_c = [pc for pc in part_counts if id(pc) not in matched_counts]
+            unmatched_c = [
+                pc
+                for pc in result.get_candidates("part_count")
+                if pc.constructed is not None and id(pc) not in matched_count_candidates
+            ]
             unmatched_i = [im for im in images if id(im) not in matched_images]
             if unmatched_c:
                 log.debug("[part_image] unmatched part_counts: %d", len(unmatched_c))
@@ -159,11 +151,11 @@ class PartsImageClassifier(LabelClassifier):
 
     def _build_candidate_edges(
         self,
-        part_counts: list[Text],
+        part_count_candidates: list[Candidate],
         images: list[Image],
         page_width: float,
     ) -> list[_PartImageScore]:
-        """Build candidate pairings between part counts and images.
+        """Build candidate pairings between part count candidates and images.
 
         Returns a list of score objects representing valid pairings.
         """
@@ -171,25 +163,30 @@ class PartsImageClassifier(LabelClassifier):
         ALIGN_EPS = max(2.0, 0.02 * page_width)
 
         edges: list[_PartImageScore] = []
-        for pc in part_counts:
-            cb = pc.bbox
+        for pc_candidate in part_count_candidates:
+            cb = pc_candidate.bbox
             for img in images:
                 ib = img.bbox
                 if ib.y1 <= cb.y0 + VERT_EPS and abs(ib.x0 - cb.x0) <= ALIGN_EPS:
                     distance = max(0.0, cb.y0 - ib.y1)
                     score = _PartImageScore(
                         distance=distance,
-                        part_count=pc,
+                        part_count_candidate=pc_candidate,
                         image=img,
                     )
                     edges.append(score)
         return edges
 
     def _get_images_in_parts_lists(
-        self, page_data: PageData, parts_lists: list[Drawing]
+        self, page_data: PageData, parts_list_candidates: list[Candidate]
     ) -> list[Image]:
+        """Get images that are inside any parts_list candidate's bounding box."""
+
         def inside_any_parts_list(img: Image) -> bool:
-            return any(img.bbox.fully_inside(pl.bbox) for pl in parts_lists)
+            return any(
+                img.bbox.fully_inside(candidate.bbox)
+                for candidate in parts_list_candidates
+            )
 
         return [
             e
