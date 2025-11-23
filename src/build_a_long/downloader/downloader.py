@@ -15,6 +15,7 @@ from build_a_long.downloader.legocom import (
     build_metadata,
 )
 from build_a_long.downloader.models import DownloadedFile
+from build_a_long.downloader.transport import RateLimitedTransport
 from build_a_long.schemas import (
     InstructionMetadata,
 )
@@ -86,6 +87,8 @@ class LegoInstructionDownloader:
         show_progress: bool = True,
         client: httpx.Client | None = None,
         debug: bool = False,
+        max_calls: int = 1,
+        period: int = 1,
     ):
         """Initialize the downloader.
 
@@ -97,6 +100,8 @@ class LegoInstructionDownloader:
             show_progress: If True, show download progress.
             client: Optional httpx.Client to use (if None, creates one internally).
             debug: If True, enable debug output.
+            max_calls: Maximum number of calls to allow in a period.
+            period: The time period in seconds.
         """
         self.locale = locale
         self.out_dir = out_dir
@@ -106,11 +111,18 @@ class LegoInstructionDownloader:
         self._client = client
         self._owns_client = client is None
         self.debug = debug
+        self.max_calls = max_calls
+        self.period = period
 
     def _get_client(self) -> httpx.Client:
         """Get or create the HTTP client."""
         if self._client is None:
-            self._client = httpx.Client(follow_redirects=True, timeout=30)
+            transport = RateLimitedTransport(
+                max_calls=self.max_calls, period=self.period
+            )
+            self._client = httpx.Client(
+                transport=transport, follow_redirects=True, timeout=30
+            )
         return self._client
 
     def close(self) -> None:
