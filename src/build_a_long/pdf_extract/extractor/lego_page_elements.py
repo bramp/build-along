@@ -6,7 +6,13 @@ from enum import Enum
 from typing import Annotated, Literal
 
 from annotated_types import Ge, Gt
-from pydantic import BaseModel, ConfigDict, Discriminator, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Discriminator,
+    Field,
+    PlainSerializer,
+)
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
@@ -383,11 +389,18 @@ class Page(LegoPageElement):
 
     tag: Literal["Page"] = Field(default="Page", alias="__tag__", frozen=True)
 
-    categories: set[PageType] = Field(default_factory=set)
+    categories: Annotated[
+        set[PageType],
+        PlainSerializer(
+            lambda cats: sorted(cat.value for cat in cats), return_type=list[str]
+        ),
+    ] = Field(default_factory=set)
     """Set of categories this page belongs to. A page can have multiple categories.
     
     For example, a page might be both INSTRUCTION and CATALOG if it contains
     both building steps and a parts catalog.
+    
+    Note: Serialized as a sorted list for deterministic JSON output.
     """
 
     page_number: PageNumber | None = None

@@ -6,7 +6,9 @@
     "y1": 496.06
   },
   "__tag__": "Page",
-  "category": null,
+  "categories": [
+    "instruction"
+  ],
   "page_number": {
     "bbox": {
       "x0": 14.17,
@@ -115,7 +117,8 @@
               "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "number": null
+            "number": null,
+            "length": null
           },
           {
             "bbox": {
@@ -137,7 +140,8 @@
               "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "number": null
+            "number": null,
+            "length": null
           }
         ]
       },
@@ -198,7 +202,8 @@
               "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "number": null
+            "number": null,
+            "length": null
           }
         ]
       },
@@ -259,7 +264,8 @@
               "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "number": null
+            "number": null,
+            "length": null
           },
           {
             "bbox": {
@@ -281,7 +287,8 @@
               "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "number": null
+            "number": null,
+            "length": null
           }
         ]
       },
@@ -342,7 +349,8 @@
               "matched_hint": "catalog_part_count"
             },
             "diagram": null,
-            "number": null
+            "number": null,
+            "length": null
           }
         ]
       },
@@ -357,6 +365,7 @@
       }
     }
   ],
+  "catalog": [],
   "warnings": [],
   "unprocessed_elements": []
 }

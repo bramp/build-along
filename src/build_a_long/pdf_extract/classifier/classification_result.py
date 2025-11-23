@@ -291,12 +291,11 @@ class ClassificationResult(BaseModel):
 
         Selects candidates by:
         - Successfully constructed (constructed is not None)
-        - Is the highest-scoring label for its source block
-        - Highest score
         - Match the specified element type
+        - Sorted by score (highest first)
 
-        Only returns candidates that are the "winner" for their source block,
-        meaning no other label has a higher score for the same block.
+        Invariant: Each source block should have at most one successfully
+        constructed candidate per label. This method validates that invariant.
 
         Args:
             label: The label to get winners for (e.g., "page_number", "step")
@@ -308,29 +307,18 @@ class ClassificationResult(BaseModel):
             (highest first)
 
         Raises:
-            AssertionError: If element_type doesn't match the actual
-                constructed type
+            AssertionError: If element_type doesn't match the actual constructed type,
+                or if multiple candidates exist for the same source block
         """
         # Get all candidates and filter for successful construction
         valid_candidates = [
             c for c in self.get_candidates(label) if c.constructed is not None
         ]
 
-        # Filter to only include candidates that are the best for their block
-        winning_candidates = []
+        # Validate that each source block has at most one candidate for this label
+        # (candidates without source blocks are synthetic and can have duplicates)
+        seen_blocks: set[int] = set()
         for candidate in valid_candidates:
-            # Skip candidates without a source block (synthetic elements)
-            if candidate.source_block is None:
-                winning_candidates.append(candidate)
-                continue
-
-            # Check if this candidate is the best for its source block
-            best = self.get_best_candidate(candidate.source_block)
-            if best and best.label == label:
-                winning_candidates.append(candidate)
-
-        # Validate types
-        for candidate in winning_candidates:
             assert isinstance(candidate.constructed, element_type), (
                 f"Type mismatch for label '{label}': requested "
                 f"{element_type.__name__} but got "
@@ -338,15 +326,31 @@ class ClassificationResult(BaseModel):
                 f"This indicates a programming error in the caller."
             )
 
-        # Sort by score (highest first)
-        winning_candidates.sort(key=lambda c: c.score, reverse=True)
+            if candidate.source_block is not None:
+                block_id = id(candidate.source_block)
+                assert block_id not in seen_blocks, (
+                    f"Multiple successfully constructed candidates found for "
+                    f"label '{label}' with the same source block id:{block_id}. "
+                    f"This indicates a programming error in the classifier. "
+                    f"Source block: {candidate.source_block}"
+                )
+                seen_blocks.add(block_id)
+
+        # Sort by score (highest first), then by source block ID for determinism
+        # when scores are equal
+        valid_candidates.sort(
+            key=lambda c: (
+                -c.score,  # Negative for descending order
+                c.source_block.id if c.source_block else 0,  # Tie-breaker
+            )
+        )
 
         # Apply max_count if specified
         if max_count is not None:
-            winning_candidates = winning_candidates[:max_count]
+            valid_candidates = valid_candidates[:max_count]
 
         # Extract constructed elements
-        return [cast(T, c.constructed) for c in winning_candidates]
+        return [cast(T, c.constructed) for c in valid_candidates]
 
     def get_all_candidates(self) -> dict[str, list[Candidate]]:
         """Get all candidates across all labels.
