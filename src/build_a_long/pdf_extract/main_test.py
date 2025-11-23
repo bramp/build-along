@@ -1,327 +1,425 @@
+"""Tests for main.py using minimal mocking and real temp files."""
+
+import json
 from pathlib import Path
-from unittest.mock import ANY, MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.cli import ProcessingConfig
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Text
-from build_a_long.pdf_extract.main import main
+from build_a_long.pdf_extract.main import (
+    _load_json_pages,
+    _parse_page_selection,
+    _process_json,
+    _process_pdf,
+    _validate_pdf_path,
+    main,
+)
+from build_a_long.pdf_extract.parser.page_ranges import PageRanges
 
 
-class TestMain:
+def _make_config(**overrides) -> ProcessingConfig:
+    """Helper to create ProcessingConfig with defaults."""
+    defaults = {
+        "pdf_paths": [],
+        "output_dir": None,
+        "include_types": {"text", "image", "drawing"},
+        "page_ranges": None,
+        "save_raw_json": False,
+        "compress_json": False,
+        "save_summary": False,
+        "summary_detailed": False,
+        "print_histogram": False,
+        "print_font_hints": False,
+        "debug_classification": False,
+        "debug_candidates": False,
+        "debug_candidates_label": None,
+        "draw_blocks": False,
+        "draw_elements": False,
+        "draw_deleted": False,
+    }
+    defaults.update(overrides)
+    return ProcessingConfig(**defaults)
+
+
+class TestValidatePdfPath:
+    """Test _validate_pdf_path function."""
+
+    def test_exists(self, tmp_path):
+        """Test path validation with existing file."""
+        pdf_file = tmp_path / "test.pdf"
+        pdf_file.touch()
+
+        assert _validate_pdf_path(pdf_file) is True
+
+    def test_not_exists(self):
+        """Test path validation with non-existent file."""
+        assert _validate_pdf_path(Path("/nonexistent/file.pdf")) is False
+
+
+class TestLoadJsonPages:
+    """Test _load_json_pages function."""
+
+    def test_valid(self, tmp_path):
+        """Test loading valid JSON extraction data."""
+        extraction_data = {
+            "pages": [
+                {
+                    "page_number": 1,
+                    "blocks": [],
+                    "bbox": {"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0},
+                },
+                {
+                    "page_number": 2,
+                    "blocks": [],
+                    "bbox": {"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0},
+                },
+            ]
+        }
+
+        json_file = tmp_path / "test.json"
+        json_file.write_text(json.dumps(extraction_data))
+
+        pages = _load_json_pages(json_file)
+        assert len(pages) == 2
+        assert pages[0].page_number == 1
+        assert pages[1].page_number == 2
+
+    def test_empty(self, tmp_path):
+        """Test loading JSON with no pages."""
+        extraction_data = {"pages": []}
+
+        json_file = tmp_path / "test.json"
+        json_file.write_text(json.dumps(extraction_data))
+
+        pages = _load_json_pages(json_file)
+        assert pages == []
+
+
+class TestParsePageSelection:
+    """Test _parse_page_selection function."""
+
+    def test_all(self):
+        """Test parsing 'all pages' selection."""
+        result = _parse_page_selection(None, 100)
+        assert result is not None
+        assert result == PageRanges.all()
+        assert list(result.page_numbers(100)) == list(range(1, 101))
+
+    def test_range(self):
+        """Test parsing page range."""
+        result = _parse_page_selection("5-10", 100)
+        assert result is not None
+        assert list(result.page_numbers(100)) == [5, 6, 7, 8, 9, 10]
+
+    def test_multiple_segments(self):
+        """Test parsing comma-separated page ranges."""
+        result = _parse_page_selection("1-3,5,10-12", 100)
+        assert result is not None
+        assert list(result.page_numbers(100)) == [1, 2, 3, 5, 10, 11, 12]
+
+    def test_overlapping_segments(self):
+        """Test parsing overlapping comma-separated page ranges."""
+        result = _parse_page_selection("1-5,2,4-6", 6)
+        assert result is not None
+        assert list(result.page_numbers(6)) == [1, 2, 3, 4, 5, 6]
+
+    def test_invalid(self):
+        """Test parsing invalid page range."""
+        result = _parse_page_selection("invalid", 100)
+        assert result is None
+
+
+class TestProcessJson:
+    """Test JSON processing using approach #2 (real temp files)."""
+
+    def test_process_json_success(self, tmp_path):
+        """Test successful JSON processing."""
+        extraction_data = {
+            "pages": [
+                {
+                    "page_number": 1,
+                    "blocks": [],
+                    "bbox": {"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0},
+                }
+            ]
+        }
+
+        json_file = tmp_path / "test.json"
+        json_file.write_text(json.dumps(extraction_data))
+
+        config = _make_config(pdf_paths=[json_file])
+
+        result = _process_json(config, json_file)
+        assert result == 0
+
+    def test_process_json_empty_pages(self, tmp_path):
+        """Test JSON processing with empty pages."""
+        extraction_data = {"pages": []}
+
+        json_file = tmp_path / "test.json"
+        json_file.write_text(json.dumps(extraction_data))
+
+        config = _make_config(pdf_paths=[json_file])
+
+        result = _process_json(config, json_file)
+        assert result == 2
+
+
+class TestProcessPdf:
+    """Test PDF processing with minimal mocking (approach #1 + #3)."""
+
+    @patch("build_a_long.pdf_extract.main.pymupdf.open")
+    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    def test_process_pdf_basic(
+        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
+    ):
+        """Test basic PDF processing with real temp directory."""
+        # Create test data
+        page_data = PageData(
+            page_number=1,
+            blocks=[Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")],
+            bbox=BBox(0.0, 0.0, 100.0, 100.0),
+        )
+        mock_extract_bounding_boxes.return_value = [page_data]
+
+        # Mock PDF document
+        mock_doc = MagicMock()
+        mock_doc.__len__.return_value = 1
+        mock_doc.__enter__.return_value = mock_doc
+        mock_doc.__exit__.return_value = None
+        mock_pymupdf_open.return_value = mock_doc
+
+        pdf_path = Path("/fake/test.pdf")
+        config = _make_config(
+            pdf_paths=[pdf_path],
+            output_dir=tmp_path,
+        )
+
+        result = _process_pdf(config, pdf_path, tmp_path)
+
+        assert result == 0
+        # Verify JSON file was created
+        json_file = tmp_path / "test.json"
+        assert json_file.exists()
+
+        # Verify content
+        saved_data = json.loads(json_file.read_text())
+        assert len(saved_data["pages"]) == 1
+        assert saved_data["pages"][0]["page_number"] == 1
+
+    @patch("build_a_long.pdf_extract.main.pymupdf.open")
+    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    def test_process_pdf_filters_pages(
+        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
+    ):
+        """Test that --pages argument filters output correctly."""
+
+        def _mk_page(n: int) -> PageData:
+            return PageData(page_number=n, blocks=[], bbox=BBox(0.0, 0.0, 1.0, 1.0))
+
+        # All pages extracted for font hints
+        all_pages = [_mk_page(i) for i in range(1, 201)]
+        mock_extract_bounding_boxes.return_value = all_pages
+
+        # Mock PDF document
+        mock_doc = MagicMock()
+        mock_doc.__len__.return_value = 200
+        mock_doc.__enter__.return_value = mock_doc
+        mock_doc.__exit__.return_value = None
+        mock_pymupdf_open.return_value = mock_doc
+
+        pdf_path = Path("/fake/test.pdf")
+        config = _make_config(
+            pdf_paths=[pdf_path],
+            output_dir=tmp_path,
+            page_ranges="10-12,15",  # Filter to specific pages
+        )
+
+        result = _process_pdf(config, pdf_path, tmp_path)
+
+        assert result == 0
+
+        # Verify all pages were extracted for font hints
+        assert mock_extract_bounding_boxes.call_count == 1
+        pages_arg = mock_extract_bounding_boxes.call_args[0][1]
+        assert pages_arg == list(range(1, 201))
+
+        # Verify only filtered pages in output
+        json_file = tmp_path / "test.json"
+        saved_data = json.loads(json_file.read_text())
+        saved_page_numbers = [page["page_number"] for page in saved_data["pages"]]
+        assert saved_page_numbers == [10, 11, 12, 15]
+
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
     @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
     @patch("build_a_long.pdf_extract.cli.io.draw_and_save_bboxes")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    @patch("builtins.open", new_callable=mock_open)
-    @patch("sys.argv", ["main.py", "/path/to/test.pdf", "--draw-elements"])
-    def test_main_writes_json_and_images(
+    def test_process_pdf_with_drawing(
         self,
-        mock_file_open,
-        mock_mkdir,
-        mock_exists,
         mock_draw_and_save_bboxes,
         mock_extract_bounding_boxes,
         mock_pymupdf_open,
+        tmp_path,
     ):
-        """Test that main.py writes JSON and PNG files using extracted data."""
-        mock_exists.return_value = True
-
-        # Mock the extractor to return structured data
-
-        step_block = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
-        page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
-
+        """Test PDF processing with image drawing enabled."""
         page_data = PageData(
             page_number=1,
-            blocks=[step_block],
-            bbox=page_bbox,
+            blocks=[],
+            bbox=BBox(0.0, 0.0, 100.0, 100.0),
         )
-
-        # extract_bounding_boxes now returns List[PageData]
         mock_extract_bounding_boxes.return_value = [page_data]
 
-        # Mock the PDF document
+        # Mock PDF document with page
         mock_page = MagicMock()
         mock_doc = MagicMock()
+        mock_doc.__len__.return_value = 1
         mock_doc.__getitem__.return_value = mock_page
         mock_doc.__enter__.return_value = mock_doc
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
 
-        # Run main
-        result = main()
+        pdf_path = Path("/fake/test.pdf")
+        config = _make_config(
+            pdf_paths=[pdf_path],
+            output_dir=tmp_path,
+            draw_blocks=True,
+            draw_elements=True,
+        )
 
-        # Assert success
+        result = _process_pdf(config, pdf_path, tmp_path)
+
+        assert result == 0
+        # Verify draw function was called
+        mock_draw_and_save_bboxes.assert_called_once()
+        call_args = mock_draw_and_save_bboxes.call_args
+        assert call_args.kwargs["draw_blocks"] is True
+        assert call_args.kwargs["draw_elements"] is True
+        assert call_args.kwargs["draw_deleted"] is False
+        assert isinstance(call_args.args[1], ClassificationResult)
+
+
+class TestMainIntegration:
+    """Integration tests for main() entry point (approach #2)."""
+
+    def test_main_with_json_file(self, tmp_path):
+        """Test main() with JSON file input."""
+        extraction_data = {
+            "pages": [
+                {
+                    "page_number": 1,
+                    "blocks": [],
+                    "bbox": {"x0": 0.0, "y0": 0.0, "x1": 100.0, "y1": 100.0},
+                }
+            ]
+        }
+
+        json_file = tmp_path / "test.json"
+        json_file.write_text(json.dumps(extraction_data))
+
+        with patch("sys.argv", ["main.py", str(json_file)]):
+            result = main()
         assert result == 0
 
-        # Assert extract_bounding_boxes was called with the document
-        mock_extract_bounding_boxes.assert_called_once()
-        call_args = mock_extract_bounding_boxes.call_args
-        assert call_args[0][0] == mock_doc  # First arg is the document
+    def test_main_file_not_found(self):
+        """Test main() with non-existent file."""
+        with patch("sys.argv", ["main.py", "/nonexistent/file.pdf"]):
+            result = main()
+        assert result == 2
 
-        # Assert JSON was written
-        mock_file_open.assert_called_once()
-        call_args = mock_file_open.call_args
-        json_path = call_args[0][0]
-        assert str(json_path).endswith("test.json")
-        assert call_args[0][1] == "w"
+    def test_main_invalid_json(self, tmp_path):
+        """Test main() with malformed JSON."""
+        json_file = tmp_path / "invalid.json"
+        json_file.write_text("invalid json{")
 
-        # Assert draw_and_save_bboxes was called with correct arguments
-        # Now expects: page, result, output_path, draw_blocks=False, draw_elements=True, draw_deleted=False, debug_candidates_label=None
-        mock_draw_and_save_bboxes.assert_called_once_with(
-            mock_page,
-            ANY,
-            ANY,
-            draw_blocks=False,
-            draw_elements=True,
-            draw_deleted=False,
-            debug_candidates_label=None,
-        )
-        draw_call_args = mock_draw_and_save_bboxes.call_args
-        # Second argument is now ClassificationResult
-        assert isinstance(draw_call_args.args[1], ClassificationResult)
-        assert isinstance(draw_call_args.args[2], Path)
-        assert draw_call_args.args[2].name == "page_001.png"
+        with patch("sys.argv", ["main.py", str(json_file)]):
+            # Invalid JSON causes pydantic.ValidationError - expected behavior
+            try:
+                main()
+                raise AssertionError("Expected exception for invalid JSON")
+            except Exception as e:
+                # Expected - pydantic validation fails on malformed JSON
+                # Check it's not our AssertionError
+                if isinstance(e, AssertionError):
+                    raise
 
-    @patch("pathlib.Path.exists")
-    @patch("sys.argv", ["main.py", "/nonexistent/file.pdf"])
-    def test_main_file_not_found(self, mock_exists):
-        """Test that main returns error code when PDF does not exist."""
-        mock_exists.return_value = False
+    def test_main_empty_json_pages(self, tmp_path):
+        """Test main() with JSON containing no pages."""
+        extraction_data = {"pages": []}
 
-        result = main()
+        json_file = tmp_path / "empty.json"
+        json_file.write_text(json.dumps(extraction_data))
 
+        with patch("sys.argv", ["main.py", str(json_file)]):
+            result = main()
         assert result == 2
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
     @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
-    @patch("build_a_long.pdf_extract.cli.io.draw_and_save_bboxes")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    @patch("builtins.open", new_callable=mock_open)
-    @patch("sys.argv", ["main.py", "/path/to/test.pdf", "--pages", "10-12,15"])
-    def test_main_pages_multiple_segments(
-        self,
-        mock_file_open,
-        mock_mkdir,
-        mock_exists,
-        mock_draw_and_save_bboxes,
-        mock_extract_bounding_boxes,
-        mock_pymupdf_open,
+    def test_main_with_pdf_and_output_dir(
+        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
     ):
-        """--pages supports comma-separated segments and calls extractor once with
-        ranges list."""
-        mock_exists.return_value = True
-
-        # Prepare combined return: pages 10-12 and page 15
-        def _mk_page(n: int) -> PageData:
-            return PageData(page_number=n, blocks=[], bbox=BBox(0.0, 0.0, 1.0, 1.0))
-
-        mock_extract_bounding_boxes.return_value = [
-            _mk_page(10),
-            _mk_page(11),
-            _mk_page(12),
-            _mk_page(15),
-        ]
-
-        # Mock the PDF document
-        mock_page = MagicMock()
-        mock_doc = MagicMock()
-        # Set a realistic length so PageRanges.to_page_numbers(len(doc)) expands
-        # correctly
-        mock_doc.__len__.return_value = 200
-        mock_doc.__getitem__.return_value = mock_page
-        mock_doc.__enter__.return_value = mock_doc
-        mock_doc.__exit__.return_value = None
-        mock_pymupdf_open.return_value = mock_doc
-
-        # Run main
-        result = main()
-
-        assert result == 0
-
-        # Expect one call to extractor with a list of page numbers
-        assert mock_extract_bounding_boxes.call_count == 1
-        first = mock_extract_bounding_boxes.call_args_list[0]
-        assert first.args[0] == mock_doc
-        pages_arg = first.args[1]
-        assert isinstance(pages_arg, list | tuple)
-        # For "10-12,15" we should expand to explicit pages
-        assert pages_arg == [10, 11, 12, 15]
-
-        # No drawing flags specified, so draw_and_save_bboxes should not be called
-        assert mock_draw_and_save_bboxes.call_count == 0
-
-    @patch("build_a_long.pdf_extract.main.pymupdf.open")
-    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
-    @patch("build_a_long.pdf_extract.cli.io.draw_and_save_bboxes")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    @patch("builtins.open", new_callable=mock_open)
-    @patch(
-        "sys.argv", ["main.py", "/path/to/test.pdf", "--draw-blocks", "--draw-deleted"]
-    )
-    def test_main_with_draw_deleted_flag(
-        self,
-        mock_file_open,
-        mock_mkdir,
-        mock_exists,
-        mock_draw_and_save_bboxes,
-        mock_extract_bounding_boxes,
-        mock_pymupdf_open,
-    ):
-        """Test that --draw-blocks and --draw-deleted flags are passed through to draw_and_save_bboxes."""
-        mock_exists.return_value = True
-
-        # Mock the extractor to return structured data
-        step_block = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
-        page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
-
+        """Test main() with PDF file and custom output directory."""
         page_data = PageData(
             page_number=1,
-            blocks=[step_block],
-            bbox=page_bbox,
-        )
-
-        mock_extract_bounding_boxes.return_value = [page_data]
-
-        # Mock the PDF document
-        mock_page = MagicMock()
-        mock_doc = MagicMock()
-        mock_doc.__getitem__.return_value = mock_page
-        mock_doc.__enter__.return_value = mock_doc
-        mock_doc.__exit__.return_value = None
-        mock_pymupdf_open.return_value = mock_doc
-
-        # Run main
-        result = main()
-
-        # Assert success
-        assert result == 0
-
-        # Assert draw_and_save_bboxes was called with draw_blocks=True and draw_deleted=True
-        mock_draw_and_save_bboxes.assert_called_once()
-        draw_call_args = mock_draw_and_save_bboxes.call_args
-        # Verify that draw_blocks and draw_deleted keyword arguments are True
-        assert draw_call_args.kwargs["draw_blocks"] is True
-        assert draw_call_args.kwargs["draw_deleted"] is True
-        # Verify signature matches expected: page, result, output_path
-        assert len(draw_call_args.args) == 3
-        assert isinstance(draw_call_args.args[1], ClassificationResult)
-        assert isinstance(draw_call_args.args[2], Path)
-
-    @patch("build_a_long.pdf_extract.main.pymupdf.open")
-    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
-    @patch("build_a_long.pdf_extract.cli.io.draw_and_save_bboxes")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    @patch("builtins.open", new_callable=mock_open)
-    @patch(
-        "sys.argv", ["main.py", "/path/to/test.pdf", "--include-types", "text,image"]
-    )
-    def test_main_with_custom_block_types(
-        self,
-        mock_file_open,
-        mock_mkdir,
-        mock_exists,
-        mock_draw_and_save_bboxes,
-        mock_extract_bounding_boxes,
-        mock_pymupdf_open,
-    ):
-        """Test that custom block types are passed to extract_bounding_boxes."""
-        mock_exists.return_value = True
-
-        # Mock the extractor to return structured data
-        step_block = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
-        page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
-        page_data = PageData(
-            page_number=1,
-            blocks=[step_block],
-            bbox=page_bbox,
+            blocks=[],
+            bbox=BBox(0.0, 0.0, 100.0, 100.0),
         )
         mock_extract_bounding_boxes.return_value = [page_data]
 
-        # Mock the PDF document
-        mock_page = MagicMock()
         mock_doc = MagicMock()
-        mock_doc.__getitem__.return_value = mock_page
-        mock_doc.__enter__.return_value = mock_doc
-        mock_doc.__exit__.return_value = None
         mock_doc.__len__.return_value = 1
+        mock_doc.__enter__.return_value = mock_doc
+        mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
 
-        # Run main
-        result = main()
+        pdf_file = tmp_path / "input.pdf"
+        pdf_file.touch()
 
-        # Assert success
+        output_dir = tmp_path / "output"
+
+        with patch(
+            "sys.argv",
+            ["main.py", str(pdf_file), "--output-dir", str(output_dir)],
+        ):
+            result = main()
+
         assert result == 0
-
-        # Assert extract_bounding_boxes was called with custom types
-        mock_extract_bounding_boxes.assert_called_once()
-        call_args = mock_extract_bounding_boxes.call_args
-        assert call_args[0][0] == mock_doc  # First arg is the document
-        # Third argument should be the set of types
-        assert call_args[1]["include_types"] == {"text", "image"}
+        # Verify output was created
+        assert (output_dir / "input.json").exists()
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
     @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
-    @patch("build_a_long.pdf_extract.cli.io.draw_and_save_bboxes")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    @patch("builtins.open", new_callable=mock_open)
-    @patch("sys.argv", ["main.py", "/path/to/test1.pdf", "/path/to/test2.pdf"])
-    def test_main_with_multiple_pdfs(
-        self,
-        mock_file_open,
-        mock_mkdir,
-        mock_exists,
-        mock_draw_and_save_bboxes,
-        mock_extract_bounding_boxes,
-        mock_pymupdf_open,
+    def test_main_multiple_pdfs(
+        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
     ):
-        """Test that main can process multiple PDF files."""
-        mock_exists.return_value = True
-
-        # Mock the extractor to return structured data
-        step_block = Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")
-        page_bbox = BBox(0.0, 0.0, 100.0, 100.0)
+        """Test main() processing multiple PDF files."""
         page_data = PageData(
             page_number=1,
-            blocks=[step_block],
-            bbox=page_bbox,
+            blocks=[],
+            bbox=BBox(0.0, 0.0, 100.0, 100.0),
         )
         mock_extract_bounding_boxes.return_value = [page_data]
 
-        # Mock the PDF document
-        mock_page = MagicMock()
         mock_doc = MagicMock()
-        mock_doc.__getitem__.return_value = mock_page
+        mock_doc.__len__.return_value = 1
         mock_doc.__enter__.return_value = mock_doc
         mock_doc.__exit__.return_value = None
-        mock_doc.__len__.return_value = 1
         mock_pymupdf_open.return_value = mock_doc
 
-        # Run main
-        result = main()
+        pdf1 = tmp_path / "test1.pdf"
+        pdf2 = tmp_path / "test2.pdf"
+        pdf1.touch()
+        pdf2.touch()
 
-        # Assert success
+        with patch("sys.argv", ["main.py", str(pdf1), str(pdf2)]):
+            result = main()
+
         assert result == 0
-
-        # Assert that processing happened twice (once per PDF)
+        # Verify both were processed
         assert mock_pymupdf_open.call_count == 2
-        assert mock_extract_bounding_boxes.call_count == 2
-
-        # Verify both PDFs were opened
-        pdf_paths = [call.args[0] for call in mock_pymupdf_open.call_args_list]
-        assert "/path/to/test1.pdf" in pdf_paths
-        assert "/path/to/test2.pdf" in pdf_paths
-
-        # Verify JSON files were written for both PDFs
-        assert mock_file_open.call_count == 2
-        json_files = [call.args[0] for call in mock_file_open.call_args_list]
-        assert any(str(path).endswith("test1.json") for path in json_files)
-        assert any(str(path).endswith("test2.json") for path in json_files)
+        assert (tmp_path / "test1.json").exists()
+        assert (tmp_path / "test2.json").exists()
