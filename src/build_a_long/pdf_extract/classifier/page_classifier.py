@@ -25,6 +25,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    LegoPageElements,
     NewBag,
     Page,
     PageNumber,
@@ -44,6 +45,22 @@ class PageClassifier(LabelClassifier):
     requires = frozenset(
         {"page_number", "progress_bar", "new_bag", "step", "parts_list"}
     )
+
+    def score(self, result: ClassificationResult) -> None:
+        """Legacy classifier - uses evaluate() instead of score() + construct()."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} uses legacy evaluate() method. "
+            "Implement score() and construct() to use two-phase classification."
+        )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Legacy classifier - uses evaluate() instead of score() + construct()."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} uses legacy evaluate() method. "
+            "Implement score() and construct() to use two-phase classification."
+        )
 
     def evaluate(
         self,
