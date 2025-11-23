@@ -66,11 +66,9 @@ class TestClassifierRules:
             block_to_label: dict[int, str] = {}
             for label, candidates in result.get_all_candidates().items():
                 for candidate in candidates:
-                    if (
-                        candidate.constructed is not None
-                        and candidate.source_block is not None
-                    ):
-                        block_to_label[id(candidate.source_block)] = label
+                    if candidate.constructed is not None and candidate.source_blocks:
+                        for block in candidate.source_blocks:
+                            block_to_label[id(block)] = label
 
             labeled_and_deleted = []
             for elem in page.blocks:
@@ -119,7 +117,7 @@ class TestClassifierRules:
                     if candidate.constructed is not None:
                         elem_id = id(candidate.constructed)
                         assert elem_id not in element_id_to_candidate, (
-                            f"Source block id:{id(candidate.source_block)} "
+                            f"Source block id:{id(candidate.source_blocks[0]) if candidate.source_blocks else 'None'} "
                             f"produced multiple elements of type "
                             f"{candidate.constructed.__class__.__name__} "
                             f"in {fixture_file} page {page_idx}"
@@ -139,15 +137,15 @@ class TestClassifierRules:
 
                 candidate = element_id_to_candidate[elem_id]
 
-                if candidate.source_block:
-                    if candidate.source_block.id in blocks_to_element:
-                        existing_element = blocks_to_element[candidate.source_block.id]
-                        assert candidate.source_block.id not in blocks_to_element, (
-                            f"Source block id:{candidate.source_block.id} "
-                            f"({candidate.source_block.tag}) mapped to multiple "
+                for source_block in candidate.source_blocks:
+                    if source_block.id in blocks_to_element:
+                        existing_element = blocks_to_element[source_block.id]
+                        assert source_block.id not in blocks_to_element, (
+                            f"Source block id:{source_block.id} "
+                            f"({source_block.tag}) mapped to multiple "
                             f"elements in {fixture_file} page {page_data.page_number}:\n"
                             f"  First:  {existing_element}\n"
                             f"  Second: {element}\n"
-                            f"  Source: {candidate.source_block}"
+                            f"  Source: {source_block}"
                         )
-                    blocks_to_element[candidate.source_block.id] = element
+                    blocks_to_element[source_block.id] = element

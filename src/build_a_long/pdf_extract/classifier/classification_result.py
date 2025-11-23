@@ -81,8 +81,13 @@ class Candidate(BaseModel):
     constructed: LegoPageElements | None
     """The constructed LegoElement if parsing succeeded, None if failed"""
 
-    source_block: Blocks | None = None
-    """The raw element that was scored (None for synthetic elements like Step)"""
+    source_blocks: list[Blocks] = []
+    """The raw elements that were scored (empty for synthetic elements like Step).
+    
+    Multiple source blocks indicate the candidate was derived from multiple inputs.
+    For example, a PieceLength is derived from both a Text block (the number) and
+    a Drawing block (the circle diagram).
+    """
 
     failure_reason: str | None = None
     """Why construction failed, if it did"""
@@ -326,13 +331,13 @@ class ClassificationResult(BaseModel):
                 f"This indicates a programming error in the caller."
             )
 
-            if candidate.source_block is not None:
-                block_id = id(candidate.source_block)
+            for source_block in candidate.source_blocks:
+                block_id = id(source_block)
                 assert block_id not in seen_blocks, (
                     f"Multiple successfully constructed candidates found for "
                     f"label '{label}' with the same source block id:{block_id}. "
                     f"This indicates a programming error in the classifier. "
-                    f"Source block: {candidate.source_block}"
+                    f"Source block: {source_block}"
                 )
                 seen_blocks.add(block_id)
 
@@ -341,7 +346,8 @@ class ClassificationResult(BaseModel):
         valid_candidates.sort(
             key=lambda c: (
                 -c.score,  # Negative for descending order
-                c.source_block.id if c.source_block else 0,  # Tie-breaker
+                # TODO Fix this, so it's deterministic.
+                c.source_blocks[0].id if c.source_blocks else 0,  # Tie-breaker
             )
         )
 
@@ -385,12 +391,12 @@ class ClassificationResult(BaseModel):
             block: The block to find candidates for
 
         Returns:
-            List of all candidates across all labels with this block as source_block
+            List of all candidates across all labels with this block in source_blocks
         """
         results = []
         for candidates in self.candidates.values():
             for candidate in candidates:
-                if candidate.source_block is block:
+                if block in candidate.source_blocks:
                     results.append(candidate)
         return results
 
@@ -410,7 +416,7 @@ class ClassificationResult(BaseModel):
         Raises:
             ValueError: If multiple candidates exist for this block/label pair
         """
-        candidates = [c for c in self.get_candidates(label) if c.source_block is block]
+        candidates = [c for c in self.get_candidates(label) if block in c.source_blocks]
 
         if len(candidates) == 0:
             return None
@@ -477,11 +483,10 @@ class ClassificationResult(BaseModel):
             candidate: The candidate to add
 
         Raises:
-            ValueError: If candidate has a source_block that is not in PageData
+            ValueError: If candidate has source_blocks that are not in PageData
         """
-        self._validate_block_in_page_data(
-            candidate.source_block, "candidate.source_block"
-        )
+        for source_block in candidate.source_blocks:
+            self._validate_block_in_page_data(source_block, "candidate.source_blocks")
 
         if label not in self.candidates:
             self.candidates[label] = []

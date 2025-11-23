@@ -56,9 +56,9 @@ def test_part_count_with_font_hints():
     assert len(candidates) == 2
 
     # Find the candidates
-    matching_candidate = next(c for c in candidates if c.source_block == matching_text)
+    matching_candidate = next(c for c in candidates if matching_text in c.source_blocks)
     different_candidate = next(
-        c for c in candidates if c.source_block == different_text
+        c for c in candidates if different_text in c.source_blocks
     )
 
     # The matching size should have a higher score
@@ -108,9 +108,9 @@ def test_step_number_with_font_hints():
     candidates = result.get_candidates("step_number")
     assert len(candidates) == 2
 
-    matching_candidate = next(c for c in candidates if c.source_block == matching_text)
+    matching_candidate = next(c for c in candidates if matching_text in c.source_blocks)
     different_candidate = next(
-        c for c in candidates if c.source_block == different_text
+        c for c in candidates if different_text in c.source_blocks
     )
 
     print(f"\nMatching size score: {matching_candidate.score:.3f}")
@@ -160,9 +160,9 @@ def test_page_number_with_font_hints():
     candidates = result.get_candidates("page_number")
     assert len(candidates) == 2
 
-    matching_candidate = next(c for c in candidates if c.source_block == matching_text)
+    matching_candidate = next(c for c in candidates if matching_text in c.source_blocks)
     different_candidate = next(
-        c for c in candidates if c.source_block == different_text
+        c for c in candidates if different_text in c.source_blocks
     )
 
     print(f"\nMatching size score: {matching_candidate.score:.3f}")

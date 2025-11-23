@@ -84,20 +84,24 @@ class PartsImageClassifier(LabelClassifier):
         part_count_candidates = [
             c
             for c in result.get_candidates("part_count")
-            if c.constructed is not None and isinstance(c.source_block, Text)
+            if c.constructed is not None
+            and c.source_blocks
+            and isinstance(c.source_blocks[0], Text)
         ]
         parts_list_candidates = [
             c
             for c in result.get_candidates("parts_list")
-            if c.constructed is not None and isinstance(c.source_block, Drawing)
+            if c.constructed is not None
+            and c.source_blocks
+            and isinstance(c.source_blocks[0], Drawing)
         ]
 
         if not part_count_candidates or not parts_list_candidates:
             return
 
         # Extract source blocks (Text and Drawing) for matching
-        part_counts: list[Text] = [c.source_block for c in part_count_candidates]  # type: ignore
-        parts_lists: list[Drawing] = [c.source_block for c in parts_list_candidates]  # type: ignore
+        part_counts: list[Text] = [c.source_blocks[0] for c in part_count_candidates]  # type: ignore
+        parts_lists: list[Drawing] = [c.source_blocks[0] for c in parts_list_candidates]  # type: ignore
         if not part_counts or not parts_lists:
             return
 
@@ -140,7 +144,7 @@ class PartsImageClassifier(LabelClassifier):
                     score=1.0,  # Matched based on distance, not a traditional score
                     score_details=score,
                     constructed=None,
-                    source_block=img,
+                    source_blocks=[img],
                     failure_reason=None,
                 ),
             )

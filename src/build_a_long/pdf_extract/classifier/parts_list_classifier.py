@@ -177,7 +177,7 @@ class PartsListClassifier(LabelClassifier):
                 score=score.combined_score(),
                 score_details=score,
                 constructed=constructed,
-                source_block=drawing,
+                source_blocks=[drawing],
                 failure_reason=failure_reason,
             )
 

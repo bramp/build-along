@@ -108,8 +108,9 @@ class TestClassifyElements:
         blocks_in_candidates = set()
         for candidates_list in all_candidates.values():
             for candidate in candidates_list:
-                if candidate.source_block:
-                    blocks_in_candidates.add(id(candidate.source_block))
+                if candidate.source_blocks:
+                    for block in candidate.source_blocks:
+                        blocks_in_candidates.add(id(block))
 
         # All blocks in candidates should not be removed
         for block in result.page_data.blocks:

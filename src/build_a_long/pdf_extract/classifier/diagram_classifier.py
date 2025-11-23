@@ -137,7 +137,7 @@ class DiagramClassifier(LabelClassifier):
                     score=combined,
                     score_details=score_details,
                     constructed=constructed_elem,
-                    source_block=block,
+                    source_blocks=[block],
                     failure_reason=None,
                 ),
             )
