@@ -140,9 +140,14 @@ class TestClassifierRules:
                 candidate = element_id_to_candidate[elem_id]
 
                 if candidate.source_block:
-                    assert candidate.source_block.id not in blocks_to_element, (
-                        f"Source block id:{candidate.source_block.id} "
-                        f"mapped to multiple elements in {fixture_file} "
-                        f"page {page_idx}"
-                    )
+                    if candidate.source_block.id in blocks_to_element:
+                        existing_element = blocks_to_element[candidate.source_block.id]
+                        assert candidate.source_block.id not in blocks_to_element, (
+                            f"Source block id:{candidate.source_block.id} "
+                            f"({candidate.source_block.tag}) mapped to multiple "
+                            f"elements in {fixture_file} page {page_data.page_number}:\n"
+                            f"  First:  {existing_element}\n"
+                            f"  Second: {element}\n"
+                            f"  Source: {candidate.source_block}"
+                        )
                     blocks_to_element[candidate.source_block.id] = element
