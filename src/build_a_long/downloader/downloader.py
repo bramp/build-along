@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import hashlib
 from collections.abc import Callable, Iterable
 from contextlib import AbstractContextManager
@@ -82,7 +83,7 @@ class LegoInstructionDownloader:
         self,
         locale: str = "en-us",
         out_dir: Path | None = None,
-        overwrite_metadata: bool = False,
+        overwrite_metadata_if_older_than: datetime.timedelta | None = None,
         overwrite_download: bool = False,
         show_progress: bool = True,
         client: httpx.Client | None = None,
@@ -95,7 +96,7 @@ class LegoInstructionDownloader:
         Args:
             locale: LEGO locale to use (e.g., "en-us", "en-gb").
             out_dir: Base output directory for downloads.
-            overwrite_metadata: If True, re-download existing metadata.
+            overwrite_metadata_if_older_than: Overwrite metadata if older than this timedelta.
             overwrite_download: If True, re-download existing files.
             show_progress: If True, show download progress.
             client: Optional httpx.Client to use (if None, creates one internally).
@@ -105,7 +106,7 @@ class LegoInstructionDownloader:
         """
         self.locale = locale
         self.out_dir = out_dir
-        self.overwrite_metadata = overwrite_metadata
+        self.overwrite_metadata_if_older_than = overwrite_metadata_if_older_than
         self.overwrite_download = overwrite_download
         self.show_progress = show_progress
         self._client = client
@@ -235,7 +236,9 @@ class LegoInstructionDownloader:
         return DownloadedFile(path=dest_path, size=file_size, hash=file_hash)
 
     def _process_set_metadata(
-        self, set_number: str, out_dir: Path
+        self,
+        set_number: str,
+        out_dir: Path,
     ) -> tuple[InstructionMetadata, bool] | None:
         """Fetch and cache metadata for a single LEGO set.
 
@@ -256,15 +259,29 @@ class LegoInstructionDownloader:
         meta_path = out_dir / "metadata.json"
         not_found_path = out_dir / self.NOT_FOUND_SUFFIX
 
+        should_overwrite = False
+        if self.overwrite_metadata_if_older_than is not None:
+            if not meta_path.exists():
+                # This is not an overwrite, it's a first download
+                pass
+            else:
+                file_mtime = datetime.datetime.fromtimestamp(meta_path.stat().st_mtime)
+                now = datetime.datetime.now()
+                if (now - file_mtime) > self.overwrite_metadata_if_older_than:
+                    print(
+                        f"Metadata for set {set_number} is older than specified duration. Overwriting."
+                    )
+                    should_overwrite = True
+
         # If a .not_found file exists, and we're not forcing a metadata
         # update, skip this set.
-        if not_found_path.exists() and not self.overwrite_metadata:
+        if not_found_path.exists() and not should_overwrite:
             print(f"Skipping set {set_number} (marked as not found).")
             return None
 
         # If metadata.json exists and we're not forcing an update,
         # try to load it. If it contains PDFs, we can use it.
-        if meta_path.exists() and not self.overwrite_metadata:
+        if meta_path.exists() and not should_overwrite:
             existing_meta = read_metadata(meta_path)
             if existing_meta and existing_meta.pdfs:
                 print(f"Processing set: {set_number} [cached]")

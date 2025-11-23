@@ -1,7 +1,6 @@
 """Tests for downloader.py - LegoInstructionDownloader class (pytest style)."""
 
 import json
-import time
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -303,9 +302,7 @@ def test_process_set_skips_if_not_found_file_exists(tmp_path: Path, capsys):
     out_dir.mkdir()
     (out_dir / ".not_found").touch()
 
-    downloader = LegoInstructionDownloader(
-        out_dir=out_dir, overwrite_metadata=False, show_progress=False
-    )
+    downloader = LegoInstructionDownloader(out_dir=out_dir, show_progress=False)
     exit_code = downloader.process_set(set_number)
 
     assert exit_code == 0

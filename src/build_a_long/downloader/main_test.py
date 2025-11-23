@@ -2,6 +2,7 @@
 
 import io
 import sys
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -69,7 +70,7 @@ def test_main_single_set_number_from_arg(mock_downloader_class, monkeypatch, cap
     mock_downloader_class.assert_called_once()
     call_kwargs = mock_downloader_class.call_args[1]
     assert call_kwargs["locale"] == "en-us"
-    assert call_kwargs["overwrite_metadata"] is False
+    assert call_kwargs["overwrite_metadata_if_older_than"] == timedelta(days=1)
     assert call_kwargs["overwrite_download"] is False
 
     # Verify process_sets was called with the set number
@@ -119,7 +120,7 @@ def test_main_custom_locale_and_overwrites(mock_downloader_class, monkeypatch):
     assert exit_code == 0
     call_kwargs = mock_downloader_class.call_args[1]
     assert call_kwargs["locale"] == "de-de"
-    assert call_kwargs["overwrite_metadata"] is True
+    assert call_kwargs["overwrite_metadata_if_older_than"] == timedelta(seconds=0)
     assert call_kwargs["overwrite_download"] is True
 
 

@@ -15,12 +15,13 @@
 //     "beautifulsoup4~=4.14.2",
 //     "datamodel-code-generator~=0.25.2",
 //     "httpx~=0.28.1",
-//     "limits~=5.6.0",
+//     "limits",
 //     "pydantic~=2.12.4",
 //     "pytest-cov~=7.0.0",
 //     "pytest-randomly~=3.16.0",
 //     "pytest-recording~=0.13.4",
 //     "pytest~=8.4.2",
+//     "pytimeparse2",
 //     "vcrpy~=7.0.0"
 //   ],
 //   "manylinux": "manylinux2014",
@@ -1645,6 +1646,26 @@
           "artifacts": [
             {
               "algorithm": "sha256",
+              "hash": "a162ea6a7707fd0bb82dd99556efb783935f51885c8bdced0fce3fffe85ab002",
+              "url": "https://files.pythonhosted.org/packages/17/9e/85abf91ef5df452f56498927affdb7128194d15644084f6c6722477c305b/pytimeparse2-1.7.1-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "98668cdcba4890e1789e432e8ea0059ccf72402f13f5d52be15bdfaeb3a8b253",
+              "url": "https://files.pythonhosted.org/packages/19/10/cc63fecd69905eb4d300fe71bd580e4a631483e9f53fdcb8c0ad345ce832/pytimeparse2-1.7.1.tar.gz"
+            }
+          ],
+          "project_name": "pytimeparse2",
+          "requires_dists": [
+            "python-dateutil~=2.8.2; extra == \"dateutil\""
+          ],
+          "requires_python": ">=3.6",
+          "version": "1.7.1"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
               "hash": "95b2b5eaf832e469d141a378872480ede3f251a5a5041b8ec6e581d3ac71bbf3",
               "url": "https://files.pythonhosted.org/packages/84/25/d9db8be44e205a124f6c98bc0324b2bb149b7431c53877fc6d1038dddaf5/pytokens-0.3.0-py3-none-any.whl"
             },
@@ -2169,12 +2190,13 @@
     "beautifulsoup4~=4.14.2",
     "datamodel-code-generator~=0.25.2",
     "httpx~=0.28.1",
-    "limits~=5.6.0",
+    "limits",
     "pydantic~=2.12.4",
     "pytest-cov~=7.0.0",
     "pytest-randomly~=3.16.0",
     "pytest-recording~=0.13.4",
     "pytest~=8.4.2",
+    "pytimeparse2",
     "vcrpy~=7.0.0"
   ],
   "requires_python": [
