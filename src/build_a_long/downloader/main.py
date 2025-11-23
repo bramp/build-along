@@ -10,6 +10,7 @@ from build_a_long.downloader.legocom import LEGO_BASE, build_metadata
 from build_a_long.downloader.util import is_valid_set_id
 
 from .summarize_metadata import summarize_metadata
+from .verify import verify_data_integrity
 
 
 def get_set_numbers_from_args(args: argparse.Namespace) -> list[str]:
@@ -121,6 +122,16 @@ def _parse_args() -> argparse.Namespace:
         help="Directory to store the generated index files.",
     )
 
+    # Verify subcommand
+    verify_parser = subparsers.add_parser(
+        "verify", help="Verify integrity of downloaded files."
+    )
+    verify_parser.add_argument(
+        "--data-dir",
+        default="data",
+        help="Directory containing the downloaded LEGO set data.",
+    )
+
     return parser.parse_args()
 
 
@@ -197,10 +208,12 @@ def main() -> int:
         return exit_code
     elif args.command == "summarize":
         return summarize_metadata(Path(args.data_dir), Path(args.output_dir))
+    elif args.command == "verify":
+        return verify_data_integrity(Path(args.data_dir))
     else:
         # This case should not be reached.
         print(
-            "Error: No command specified. Use 'download' or 'summarize'.",
+            "Error: No command specified. Use 'download', 'summarize', or 'verify'.",
             file=sys.stderr,
         )
         return 1
