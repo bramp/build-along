@@ -71,9 +71,23 @@ def test_extract_filename_from_url_special_characters():
     """Test filename extraction with special characters in filename."""
     assert (
         extract_filename_from_url("https://example.com/file%20with%20spaces.pdf")
-        == "file%20with%20spaces.pdf"
+        == "file with spaces.pdf"
     )
     assert (
         extract_filename_from_url("https://example.com/file-name_123.pdf")
         == "file-name_123.pdf"
     )
+
+
+def test_extract_filename_from_url_lego_specific():
+    """Test filename extraction for specific LEGO URLs with special / invalid
+    characters. These get fixed up by _fix_url_encoding_issues."""
+    url1 = "https://www.lego.com/cdn/product-assets/product.bi.additional.extra.pdf/8110_X_8110%20Snow%20Plow%20#1.pdf"
+    url2 = "https://www.lego.com/cdn/product-assets/product.bi.additional.extra.pdf/8110_X_8110%20Snow%20Plow%20#2.pdf"
+
+    filename1 = extract_filename_from_url(url1)
+    filename2 = extract_filename_from_url(url2)
+
+    assert filename1 == "8110_X_8110 Snow Plow "
+    assert filename2 == "8110_X_8110 Snow Plow "
+    assert filename1 == filename2

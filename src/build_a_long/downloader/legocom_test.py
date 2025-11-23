@@ -4,6 +4,7 @@ from pydantic import AnyUrl
 
 from build_a_long.downloader.legocom import (
     LEGO_BASE,
+    _fix_url_encoding_issues,
     build_instructions_url,
     build_metadata,
     parse_instruction_pdf_urls,
@@ -323,3 +324,9 @@ def test_parse_instruction_pdf_urls_fallback_simple():
             preview_url=None,
         ),
     ]
+
+
+def test_fix_url_encoding_issues():
+    assert _fix_url_encoding_issues("#") == "%23"
+    assert _fix_url_encoding_issues("file#name.pdf") == "file%23name.pdf"
+    assert _fix_url_encoding_issues("normalfile.pdf") == "normalfile.pdf"

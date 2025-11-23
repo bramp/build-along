@@ -1,7 +1,7 @@
 """General utility functions for the downloader."""
 
 from pathlib import PurePosixPath
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from pydantic import AnyUrl
 
@@ -47,6 +47,9 @@ def extract_filename_from_url(url: AnyUrl | str) -> str | None:
     # URLs ending with / are directories, not files
     if path.endswith("/"):
         return None
+
+    # URL-decode the filename to handle %20, etc.
+    path = unquote(path)
 
     # Use PurePosixPath to extract the filename (works for URL paths)
     filename = PurePosixPath(path).name
