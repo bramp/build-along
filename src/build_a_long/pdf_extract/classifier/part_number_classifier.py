@@ -159,7 +159,7 @@ class PartNumberClassifier(LabelClassifier):
                     score=combined,
                     score_details=detail_score,
                     constructed=constructed_elem,
-                    source_block=block,
+                    source_blocks=[block],
                     failure_reason=failure_reason,
                 ),
             )

@@ -246,7 +246,7 @@ class PartsClassifier(LabelClassifier):
                     score=1.0,  # Matched based on distance
                     score_details=score,
                     constructed=part,
-                    source_block=None,  # Synthetic element, no single source
+                    source_blocks=[],  # Synthetic element, no single source
                     failure_reason=None,
                 ),
             )

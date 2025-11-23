@@ -125,8 +125,8 @@ class TestStepClassification:
         assert step2_candidate is not None
         assert step1_candidate.constructed is not None
         assert step2_candidate.constructed is not None
-        assert step1_candidate.source_block is step1
-        assert step2_candidate.source_block is step2
+        assert step1 in step1_candidate.source_blocks
+        assert step2 in step2_candidate.source_blocks
 
         # Check that steps are in order by value
         steps_sorted = sorted(steps, key=lambda s: s.step_number.value)

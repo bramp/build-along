@@ -150,7 +150,7 @@ class NewBagClassifier(LabelClassifier):
                     score=combined,
                     score_details=score_details,
                     constructed=constructed_elem,
-                    source_block=None,  # Synthetic element
+                    source_blocks=[],  # Synthetic element
                     failure_reason=None,
                 ),
             )

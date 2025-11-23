@@ -207,7 +207,7 @@ class StepClassifier(LabelClassifier):
             score=score.pairing_score(),
             score_details=score,
             constructed=constructed,
-            source_block=None,
+            source_blocks=[],
             failure_reason=None,
         )
 

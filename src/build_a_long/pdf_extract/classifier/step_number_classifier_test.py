@@ -44,7 +44,7 @@ class TestStepNumberClassification:
         assert len(page_number_winners) == 1
         page_number_candidate = result.get_candidate_for_block(pn, "page_number")
         assert page_number_candidate is not None
-        assert page_number_candidate.source_block is pn
+        assert page_number_candidate.source_blocks == [pn]
 
         step_winners = result.get_winners_by_score("step_number", StepNumber)
         assert len(step_winners) == 2

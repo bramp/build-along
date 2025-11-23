@@ -168,7 +168,7 @@ class PageClassifier(LabelClassifier):
                 score=1.0,
                 score_details=None,
                 constructed=constructed,
-                source_block=None,  # Synthetic element
+                source_blocks=[],  # Synthetic element
                 failure_reason=None,
             ),
         )

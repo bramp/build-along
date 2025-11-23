@@ -52,7 +52,7 @@ def make_candidates(
                 score=1.0,
                 score_details=score_details,
                 constructed=None,
-                source_block=block,
+                source_blocks=[block],
             )
         )
     return candidates

@@ -152,7 +152,7 @@ class PageNumberClassifier(LabelClassifier):
                     score=combined,
                     score_details=score,
                     constructed=constructed_elem,
-                    source_block=block,
+                    source_blocks=[block],
                     failure_reason=failure_reason,
                 ),
             )

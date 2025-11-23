@@ -85,7 +85,7 @@ class TestClassificationResult:
             score=0.95,
             score_details={},
             constructed=constructed,
-            source_block=block,
+            source_blocks=[block],
         )
 
         result = ClassificationResult(page_data=page_data)
@@ -138,7 +138,7 @@ class TestClassificationResultValidation:
             ClassificationResult(page_data=page_data)
 
     def test_add_candidate_validates_source_block_in_page_data(self) -> None:
-        """Test that add_candidate validates source_block is in PageData."""
+        """Test that add_candidate validates source_blocks are in PageData."""
         block1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
         block2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)  # Not in PageData
 
@@ -154,7 +154,7 @@ class TestClassificationResultValidation:
             score=0.95,
             score_details={},
             constructed=None,
-            source_block=block2,  # Not in PageData!
+            source_blocks=[block2],  # Not in PageData!
         )
 
         result = ClassificationResult(page_data=page_data)
@@ -162,7 +162,7 @@ class TestClassificationResultValidation:
             result.add_candidate("page_number", candidate)
 
     def test_add_candidate_allows_source_block_in_page_data(self) -> None:
-        """Test that add_candidate succeeds when source_block is in PageData."""
+        """Test that add_candidate succeeds when source_blocks are in PageData."""
         block = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
 
         page_data = PageData(
@@ -177,7 +177,7 @@ class TestClassificationResultValidation:
             score=0.95,
             score_details={},
             constructed=None,
-            source_block=block,
+            source_blocks=[block],
         )
 
         result = ClassificationResult(page_data=page_data)
@@ -185,7 +185,7 @@ class TestClassificationResultValidation:
         assert len(result.get_candidates("page_number")) == 1
 
     def test_add_candidate_allows_none_source_block(self) -> None:
-        """Test that add_candidate allows None source_block (synthetic candidates)."""
+        """Test that add_candidate allows empty source_blocks (synthetic candidates)."""
         page_data = PageData(
             page_number=1,
             blocks=[],
@@ -198,7 +198,7 @@ class TestClassificationResultValidation:
             score=0.95,
             score_details={},
             constructed=None,
-            source_block=None,  # Synthetic candidate
+            source_blocks=[],  # Synthetic candidate
         )
 
         result = ClassificationResult(page_data=page_data)

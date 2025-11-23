@@ -174,7 +174,7 @@ class PieceLengthClassifier(LabelClassifier):
             score=combined,
             score_details=detail_score,
             constructed=constructed_elem,
-            source_block=text,
+            source_blocks=[text],
             failure_reason=None,
         )
 
