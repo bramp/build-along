@@ -1,6 +1,9 @@
 import argparse
 import sys
+from datetime import timedelta
 from pathlib import Path
+
+import pytimeparse2
 
 from build_a_long.downloader.downloader import LegoInstructionDownloader
 from build_a_long.downloader.legocom import LEGO_BASE, build_metadata
@@ -88,6 +91,11 @@ def _parse_args() -> argparse.Namespace:
         help="Force metadata update, even if it exists.",
     )
     download_parser.add_argument(
+        "--overwrite-metadata-if-older-than",
+        default="1d",
+        help="Overwrite metadata if older than a specified duration (e.g., 1d, 12h, 1m, 30s). Defaults to 1 day.",
+    )
+    download_parser.add_argument(
         "--overwrite-download",
         action="store_true",
         help="Force re-downloading of PDFs, even if they exist.",
@@ -134,6 +142,24 @@ def main() -> int:
             print("Error: No LEGO set numbers provided.", file=sys.stderr)
             return 1
 
+        overwrite_metadata_if_older_than: timedelta | None = None
+        if args.overwrite_metadata_if_older_than:
+            duration_str = args.overwrite_metadata_if_older_than
+            try:
+                duration = pytimeparse2.parse(duration_str, as_timedelta=True)
+                if not isinstance(duration, timedelta):
+                    raise ValueError("Invalid duration string format")
+                overwrite_metadata_if_older_than = duration
+            except (ValueError, TypeError):
+                print(
+                    f"Error: Invalid duration string: {duration_str}",
+                    file=sys.stderr,
+                )
+                return 1
+
+        if args.overwrite_metadata:
+            overwrite_metadata_if_older_than = timedelta(seconds=0)
+
         # Metadata mode: fetch and print JSON without downloading
         if args.metadata:
             with LegoInstructionDownloader(locale=args.locale) as downloader:
@@ -160,7 +186,7 @@ def main() -> int:
         with LegoInstructionDownloader(
             locale=args.locale,
             out_dir=Path(args.out_dir) if args.out_dir else None,
-            overwrite_metadata=args.overwrite_metadata,
+            overwrite_metadata_if_older_than=overwrite_metadata_if_older_than,
             overwrite_download=args.overwrite_download,
             show_progress=True,
             debug=args.debug,
