@@ -15,6 +15,7 @@
 //     "beautifulsoup4~=4.14.2",
 //     "datamodel-code-generator~=0.25.2",
 //     "httpx~=0.28.1",
+//     "limits~=5.6.0",
 //     "pydantic~=2.12.4",
 //     "pytest-cov~=7.0.0",
 //     "pytest-randomly~=3.16.0",
@@ -382,6 +383,32 @@
           "artifacts": [
             {
               "algorithm": "sha256",
+              "hash": "597bfef186b6f60181535a29fbe44865ce137a5079f295b479886c82729d5f3f",
+              "url": "https://files.pythonhosted.org/packages/84/d0/205d54408c08b13550c733c4b85429e7ead111c7f0014309637425520a9a/deprecated-1.3.1-py2.py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "b1b50e0ff0c1fddaa5708a2c6b0a6588bb09b892825ab2b214ac9ea9d92a5223",
+              "url": "https://files.pythonhosted.org/packages/49/85/12f0a49a7c4ffb70572b6c2ef13c90c88fd190debda93b23f026b25f9634/deprecated-1.3.1.tar.gz"
+            }
+          ],
+          "project_name": "deprecated",
+          "requires_dists": [
+            "PyTest-Cov; extra == \"dev\"",
+            "PyTest; extra == \"dev\"",
+            "bump2version<1; extra == \"dev\"",
+            "inspect2; python_version < \"3\"",
+            "setuptools; python_version >= \"3.12\" and extra == \"dev\"",
+            "tox; extra == \"dev\"",
+            "wrapt<3,>=1.10"
+          ],
+          "requires_python": "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,>=2.7",
+          "version": "1.3.1"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
               "hash": "01d9bbc4a2d76bf0db7c1f729812ded6d912bd318d3b1cf81d30c0f845dbf3af",
               "url": "https://files.pythonhosted.org/packages/ba/5a/18ad964b0086c6e62e2e7500f7edc89e3faa45033c71c1893d34eed2b2de/dnspython-2.8.0-py3-none-any.whl"
             },
@@ -643,6 +670,37 @@
           ],
           "requires_python": ">=3.7",
           "version": "3.1.6"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
+              "hash": "b585c2104274528536a5b68864ec3835602b3c4a802cd6aa0b07419798394021",
+              "url": "https://files.pythonhosted.org/packages/40/96/4fcd44aed47b8fcc457653b12915fcad192cd646510ef3f29fd216f4b0ab/limits-5.6.0-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "807fac75755e73912e894fdd61e2838de574c5721876a19f7ab454ae1fffb4b5",
+              "url": "https://files.pythonhosted.org/packages/bb/e5/c968d43a65128cd54fb685f257aafb90cd5e4e1c67d084a58f0e4cbed557/limits-5.6.0.tar.gz"
+            }
+          ],
+          "project_name": "limits",
+          "requires_dists": [
+            "coredis<6,>=3.4.0; extra == \"async-redis\"",
+            "deprecated>=1.2",
+            "memcachio>=0.3; extra == \"async-memcached\"",
+            "motor<4,>=3; extra == \"async-mongodb\"",
+            "packaging>=21",
+            "pymemcache<5.0.0,>3; extra == \"memcached\"",
+            "pymongo<5,>4.1; extra == \"mongodb\"",
+            "redis!=4.5.2,!=4.5.3,<7.0.0,>3; extra == \"redis\"",
+            "redis!=4.5.2,!=4.5.3,>=4.2.0; extra == \"rediscluster\"",
+            "typing-extensions",
+            "valkey>=6; extra == \"async-valkey\"",
+            "valkey>=6; extra == \"valkey\""
+          ],
+          "requires_python": ">=3.10",
+          "version": "5.6.0"
         },
         {
           "artifacts": [
@@ -2111,6 +2169,7 @@
     "beautifulsoup4~=4.14.2",
     "datamodel-code-generator~=0.25.2",
     "httpx~=0.28.1",
+    "limits~=5.6.0",
     "pydantic~=2.12.4",
     "pytest-cov~=7.0.0",
     "pytest-randomly~=3.16.0",

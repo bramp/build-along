@@ -1,6 +1,7 @@
 """Tests for downloader.py - LegoInstructionDownloader class (pytest style)."""
 
 import json
+import time
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -91,6 +92,38 @@ def test_context_manager_creates_and_closes_client():
 
         # Should close the client we created
         mock_instance.close.assert_called_once()
+
+
+def test_rate_limiter_is_used(tmp_path: Path):
+    """Verify that the rate limiter is active and slows down requests."""
+
+    mock_time = MagicMock()
+    mock_time.return_value = 1000
+
+    def sleep_and_advance_time(seconds):
+        mock_time.return_value += seconds
+
+    with (
+        patch("time.time", mock_time),
+        patch("time.sleep", side_effect=sleep_and_advance_time) as mock_sleep,
+    ):
+        downloader = LegoInstructionDownloader(
+            out_dir=tmp_path, max_calls=1, period=1, show_progress=False
+        )
+        client = downloader._get_client()
+
+        with patch("httpx.HTTPTransport.handle_request") as mock_handle_request:
+            mock_handle_request.return_value = httpx.Response(
+                200, content=b"dummy", request=httpx.Request("GET", "/")
+            )
+
+            # First call, should not sleep
+            client.get("https://example.com/1")
+            mock_sleep.assert_not_called()
+
+            # Second call, should sleep
+            client.get("https://example.com/2")
+            mock_sleep.assert_called()
 
 
 def test_process_set_writes_metadata_json(tmp_path: Path, monkeypatch):
