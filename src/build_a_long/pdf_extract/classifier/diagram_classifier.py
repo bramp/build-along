@@ -162,16 +162,21 @@ class DiagramClassifier(LabelClassifier):
             # Parts lists haven't been classified yet, that's fine
             return blocks
 
-        # Collect parts list bboxes and part diagram source blocks
+        # Collect parts list bboxes and check for part diagrams with source blocks
         for pl in parts_lists:
             parts_list_bboxes.append(pl.bbox)
 
+            # For individual part diagrams, check if they have source blocks
+            # by looking up candidates that constructed them
             for part in pl.parts:
-                # Exclude individual part diagrams
-                if part.diagram and hasattr(part.diagram, "source_block"):
-                    source = getattr(part.diagram, "source_block", None)
-                    if source:
-                        blocks.add(id(source))
+                if part.diagram:
+                    # Find candidates that constructed this specific Part
+                    for candidate in result.get_candidates("part"):
+                        if candidate.constructed is part:
+                            # Add all source blocks from this candidate
+                            for source_block in candidate.source_blocks:
+                                blocks.add(id(source_block))
+                            break
 
         # Also exclude any blocks that overlap significantly with parts lists
         # This catches parts list container images/drawings
