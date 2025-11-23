@@ -177,6 +177,36 @@ def _apollo_resolve(apollo_state: dict[str, Any], item_or_ref: Any) -> Any:
     return current
 
 
+def _fix_url_encoding_issues(url: str) -> str:
+    """Fix common URL encoding issues in LEGO.com URLs.
+
+    This addresses cases where characters like '#' are not properly percent-encoded.
+    """
+    # Currently, we only handle '#' character, but more can be added if needed.
+    return re.sub(r"#", "%23", url)
+
+
+def _apollo_resolve_url(
+    apollo_state: dict[str, Any],
+    item_or_ref: Any,
+    base: str = LEGO_BASE,
+) -> AnyUrl | None:
+    """Resolve an Apollo URL reference to a string URL."""
+    url = _apollo_resolve(apollo_state, item_or_ref)
+    if not isinstance(url, str):
+        log.warning(
+            "Skipping invalid url: %s\n%s",
+            url,
+            item_or_ref,
+        )
+        return None
+
+    url = _fix_url_encoding_issues(url)
+
+    # Resolve relative URLs to absolute
+    return AnyUrl(urljoin(base, url))
+
+
 def parse_instruction_pdf_urls_apollo(
     html: str, base: str = LEGO_BASE, debug: bool = False
 ) -> list[DownloadUrl]:
@@ -229,32 +259,28 @@ def parse_instruction_pdf_urls_apollo(
             )
             continue
 
-        pdf_url = _apollo_resolve(apollo_state, pdf.get("pdfUrl"))
-        if not isinstance(pdf_url, str):
-            log.debug(
-                "Skipping building instructions with invalid pdf url: %s\n%s",
+        pdf_url = _apollo_resolve_url(apollo_state, pdf.get("pdfUrl"), base=base)
+        if not pdf_url:
+            log.warning(
+                "Skipping building instructions with invalid pdf url: %s",
                 pdf_url,
-                pdf,
             )
             continue
 
-        # Resolve relative URLs to absolute
-        absolute_pdf_url = urljoin(base, pdf_url)
-
         cover_image = _apollo_resolve(apollo_state, pdf.get("coverImage"))
-        preview_url = cover_image.get("src") if isinstance(cover_image, dict) else None
-
-        # Resolve preview URL if present
-        absolute_preview_url = urljoin(base, preview_url) if preview_url else None
+        if isinstance(cover_image, dict):
+            preview_url = _apollo_resolve_url(
+                apollo_state, cover_image.get("src"), base=base
+            )
+        else:
+            preview_url = None
 
         results.append(
             DownloadUrl(
-                url=AnyUrl(absolute_pdf_url),
+                url=pdf_url,
                 sequence_number=sequence_number,
                 sequence_total=sequence_total,
-                preview_url=(
-                    AnyUrl(absolute_preview_url) if absolute_preview_url else None
-                ),
+                preview_url=preview_url,
                 is_additional_info_booklet=is_additional_info_booklet,
             )
         )

@@ -29,33 +29,15 @@ def _make_mock_httpx_client(html: str):
     return mock_client
 
 
-def _fake_download(self, url: str, dest_dir: Path, **kwargs):
+def _fake_download(self, url: str, dest_path: Path, **kwargs):
     """Helper for tests to stub out actual file downloads."""
-    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
     filename = extract_filename_from_url(url)
     assert filename is not None, f"Could not extract filename from {url}"
-    p = dest_dir / filename
+    p = dest_path
     content = b"dummy"
     p.write_bytes(content)
     return DownloadedFile(path=p, size=len(content), hash="a" * 64)
-
-
-def test_download_skips_if_exists(tmp_path: Path):
-    url = AnyUrl("https://example.com/file.pdf")
-    dest = tmp_path / "file.pdf"
-    dest.write_bytes(b"already")
-
-    mock_client = MagicMock()
-
-    downloader = LegoInstructionDownloader(
-        client=mock_client, overwrite_download=False, show_progress=False
-    )
-    out = downloader.download(url, tmp_path)
-
-    mock_client.stream.assert_not_called()
-
-    assert out.path == dest
-    assert dest.read_bytes() == b"already"
 
 
 def test_download_writes_and_shows_progress(tmp_path: Path, capsys):
@@ -79,7 +61,7 @@ def test_download_writes_and_shows_progress(tmp_path: Path, capsys):
     downloader = LegoInstructionDownloader(overwrite_download=True, show_progress=True)
     out = downloader.download(
         AnyUrl("https://example.com/path/file.pdf"),
-        tmp_path,
+        tmp_path / "file.pdf",
         stream_fn=mock_stream_fn,
     )
 
@@ -330,3 +312,122 @@ def test_process_set_creates_not_found_file_on_404(
     assert exit_code_again == 0
     assert "Skipping set 10516 (marked as not found)." in capsys.readouterr().out
     mock_fetch_instructions_page.assert_not_called()
+
+
+def test_process_set_skips_download_if_exists(tmp_path: Path, monkeypatch, capsys):
+    """Test that `process_set` skips downloading a PDF if it already exists."""
+    out_dir = tmp_path
+    set_number = "99999"
+    pdf_filename = "7000001.pdf"
+    pdf_path = out_dir / pdf_filename
+    pdf_path.write_text("existing content")
+
+    # Mock metadata that points to the existing PDF
+    meta = InstructionMetadata(
+        set=set_number,
+        locale="en-us",
+        name="Test Set",
+        pdfs=[
+            PdfEntry(
+                url=AnyUrl(f"https://www.example.com/{pdf_filename}"),
+                filename=pdf_filename,
+            )
+        ],
+    )
+
+    with (
+        patch(
+            "build_a_long.downloader.downloader.LegoInstructionDownloader.fetch_instructions_page"
+        ),
+        patch("build_a_long.downloader.downloader.build_metadata", return_value=meta),
+        patch.object(LegoInstructionDownloader, "download") as mock_download,
+    ):
+        downloader = LegoInstructionDownloader(
+            out_dir=out_dir, overwrite_download=False, show_progress=False
+        )
+        downloader.process_set(set_number)
+
+        # `download` should not be called because the file exists
+        mock_download.assert_not_called()
+        assert f"{pdf_filename} [cached]" in capsys.readouterr().out
+
+
+def test_process_set_skips_download_if_not_found_exists(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """Test `process_set` skips download if a .not_found file exists for a PDF."""
+    out_dir = tmp_path
+    set_number = "99999"
+    pdf_filename = "7000001.pdf"
+    not_found_path = out_dir / f"{pdf_filename}.not_found"
+    not_found_path.touch()
+
+    meta = InstructionMetadata(
+        set=set_number,
+        locale="en-us",
+        name="Test Set",
+        pdfs=[
+            PdfEntry(
+                url=AnyUrl(f"https://www.example.com/{pdf_filename}"),
+                filename=pdf_filename,
+            )
+        ],
+    )
+
+    with (
+        patch(
+            "build_a_long.downloader.downloader.LegoInstructionDownloader.fetch_instructions_page"
+        ),
+        patch("build_a_long.downloader.downloader.build_metadata", return_value=meta),
+        patch.object(LegoInstructionDownloader, "download") as mock_download,
+    ):
+        downloader = LegoInstructionDownloader(
+            out_dir=out_dir, overwrite_download=False, show_progress=False
+        )
+        downloader.process_set(set_number)
+
+        mock_download.assert_not_called()
+        assert f"{pdf_filename} [cached - not found]" in capsys.readouterr().out
+
+
+def test_process_set_creates_not_found_for_pdf_on_404(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """Test `process_set` creates a .not_found file for a PDF on 404."""
+    out_dir = tmp_path
+    set_number = "99999"
+    pdf_filename = "7000001.pdf"
+    not_found_path = out_dir / f"{pdf_filename}.not_found"
+
+    meta = InstructionMetadata(
+        set=set_number,
+        locale="en-us",
+        name="Test Set",
+        pdfs=[
+            PdfEntry(
+                url=AnyUrl(f"https://www.example.com/{pdf_filename}"),
+                filename=pdf_filename,
+            )
+        ],
+    )
+
+    # Mock the download method to raise a 404
+    mock_download = MagicMock()
+    mock_download.side_effect = httpx.HTTPStatusError(
+        "Not Found",
+        request=MagicMock(),
+        response=MagicMock(status_code=404),
+    )
+
+    with (
+        patch(
+            "build_a_long.downloader.downloader.LegoInstructionDownloader.fetch_instructions_page"
+        ),
+        patch("build_a_long.downloader.downloader.build_metadata", return_value=meta),
+        patch.object(LegoInstructionDownloader, "download", mock_download),
+    ):
+        downloader = LegoInstructionDownloader(out_dir=out_dir, show_progress=False)
+        downloader.process_set(set_number)
+
+        assert not_found_path.exists()
+        assert "Warning: PDF not found" in capsys.readouterr().out

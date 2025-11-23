@@ -15,7 +15,6 @@ from build_a_long.downloader.legocom import (
     build_metadata,
 )
 from build_a_long.downloader.models import DownloadedFile
-from build_a_long.downloader.util import extract_filename_from_url
 from build_a_long.schemas import (
     InstructionMetadata,
 )
@@ -74,6 +73,9 @@ class LegoInstructionDownloader:
     This class maintains state for locale, output directory, and HTTP client,
     making it easier to test and reducing parameter passing.
     """
+
+    # Suffix for files that mark a resource as not found.
+    NOT_FOUND_SUFFIX = ".not_found"
 
     def __init__(
         self,
@@ -147,17 +149,17 @@ class LegoInstructionDownloader:
     def download(
         self,
         url: AnyUrl,
-        dest_dir: Path,
+        dest_path: Path,
         *,
         progress_prefix: str = "",
         stream_fn: Callable[..., AbstractContextManager[Any]] | None = None,
         chunk_iter: Callable[[Any, int], Iterable[bytes]] | None = None,
     ) -> DownloadedFile:
-        """Download a URL to a directory.
+        """Download a URL to a specific path.
 
         Args:
             url: The file URL.
-            dest_dir: Destination directory (created if missing).
+            dest_path: Destination path for the downloaded file (parent dir created if missing).
             progress_prefix: Optional prefix for progress line (e.g., " - url").
             stream_fn: Injectable streaming function (for testing).
             chunk_iter: Optional injector to iterate raw chunks (for testing).
@@ -165,19 +167,8 @@ class LegoInstructionDownloader:
         Returns:
             Path to the downloaded file, its size, and its SHA256 hash.
         """
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        filename = extract_filename_from_url(url)
-        if not filename:
-            raise ValueError(f"Could not extract filename from URL: {url}")
-        dest = dest_dir / filename
-
-        if dest.exists() and not self.overwrite_download:
-            if progress_prefix:
-                print(f"{progress_prefix} [cached]")
-            else:
-                print(f"Skip (exists): {dest}")
-
-            return DownloadedFile(path=dest, size=dest.stat().st_size, hash=None)
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        filename = dest_path.name
 
         # Use injected stream_fn for testing, otherwise use client.stream
         if stream_fn is None:
@@ -190,7 +181,7 @@ class LegoInstructionDownloader:
             total = int(r.headers.get("Content-Length", "0"))
             downloaded = 0
             last_pct = -1
-            with open(dest, "wb") as f:
+            with open(dest_path, "wb") as f:
                 raw_iter = (
                     chunk_iter(r, 64 * 1024)
                     if chunk_iter
@@ -222,17 +213,140 @@ class LegoInstructionDownloader:
             if self.show_progress:
                 if progress_prefix:
                     # Show final size on same line
-                    size = dest.stat().st_size
+                    size = dest_path.stat().st_size
                     print(f"{progress_prefix} [{size / 1_000_000:.2f} MB]")
                 else:
                     # Clear the progress line
                     print(" " * 60, end="\r")
-        file_size = dest.stat().st_size
+        file_size = dest_path.stat().st_size
         file_hash = file_hash_obj.hexdigest()
-        return DownloadedFile(path=dest, size=file_size, hash=file_hash)
+        return DownloadedFile(path=dest_path, size=file_size, hash=file_hash)
+
+    def _process_set_metadata(
+        self, set_number: str, out_dir: Path
+    ) -> tuple[InstructionMetadata, bool] | None:
+        """Fetch and cache metadata for a single LEGO set.
+
+        This method handles the logic for checking for existing metadata,
+        fetching it from the LEGO website if necessary, and storing it
+        in a `metadata.json` file. It also creates a `.not_found` file
+        if the set is not found on the website.
+
+        Args:
+            set_number: The LEGO set number.
+            out_dir: The output directory for the set.
+
+        Returns:
+            A tuple of the `InstructionMetadata` and a boolean indicating
+            if the metadata was loaded from cache, or `None` if the set
+            was not found.
+        """
+        meta_path = out_dir / "metadata.json"
+        not_found_path = out_dir / self.NOT_FOUND_SUFFIX
+
+        # If a .not_found file exists, and we're not forcing a metadata
+        # update, skip this set.
+        if not_found_path.exists() and not self.overwrite_metadata:
+            print(f"Skipping set {set_number} (marked as not found).")
+            return None
+
+        # If metadata.json exists and we're not forcing an update,
+        # try to load it. If it contains PDFs, we can use it.
+        if meta_path.exists() and not self.overwrite_metadata:
+            existing_meta = read_metadata(meta_path)
+            if existing_meta and existing_meta.pdfs:
+                print(f"Processing set: {set_number} [cached]")
+                return existing_meta, True
+
+        # If we're here, we need to fetch the metadata from the website.
+        print(f"Processing set: {set_number}")
+        try:
+            html = self.fetch_instructions_page(set_number)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                print(f"Set {set_number} not found on LEGO.com (404).")
+                out_dir.mkdir(parents=True, exist_ok=True)
+                not_found_path.touch()
+                return None
+            raise
+
+        metadata = build_metadata(
+            html, set_number, self.locale, base=LEGO_BASE, debug=self.debug
+        )
+
+        # If no metadata is found, mark it as not found and return.
+        if not metadata.name:
+            print(f"Set {set_number} not found or has no data on LEGO.com.")
+            out_dir.mkdir(parents=True, exist_ok=True)
+            not_found_path.touch()
+            return None
+
+        # Write the new metadata to disk.
+        write_metadata(meta_path, metadata)
+        return metadata, False
+
+    def _process_set_pdfs(self, metadata: InstructionMetadata, out_dir: Path) -> bool:
+        """Download PDFs for a single LEGO set.
+
+        This method iterates through the PDFs in the metadata, and for each
+        one, it checks if it already exists or is marked as not found. If
+        not, it downloads the PDF and updates the metadata with the file
+        size and hash.
+
+        Args:
+            metadata: The `InstructionMetadata` for the set.
+            out_dir: The output directory for the set.
+
+        Returns:
+            `True` if all PDFs were processed successfully, `False` otherwise.
+        """
+        if not metadata.pdfs:
+            print(f"No PDFs found for set {metadata.set} (locale={metadata.locale}).")
+            return False
+
+        for entry in metadata.pdfs:
+            dest_path = out_dir / entry.filename
+            not_found_path = dest_path.with_suffix(
+                dest_path.suffix + self.NOT_FOUND_SUFFIX
+            )
+            progress_prefix = f" - {entry.url}"
+
+            # If a .not_found file exists for this PDF and we're not forcing
+            # a re-download, skip it.
+            if not_found_path.exists() and not self.overwrite_download:
+                print(f"{progress_prefix} [cached - not found]")
+                continue
+
+            # If the PDF file exists and we're not forcing a re-download,
+            # skip it, but update the filesize from the existing file.
+            if dest_path.exists() and not self.overwrite_download:
+                print(f"{progress_prefix} [cached]")
+                entry.filesize = dest_path.stat().st_size
+                continue
+
+            # Try to download the PDF.
+            try:
+                downloaded_file = self.download(
+                    entry.url, dest_path, progress_prefix=progress_prefix
+                )
+                entry.filesize = downloaded_file.size
+                entry.filehash = downloaded_file.hash
+            except httpx.HTTPStatusError as e:
+                # If the download fails with a 404, create a .not_found file
+                # so we don't try again next time.
+                if e.response.status_code == 404:
+                    print(f"Warning: PDF not found: {entry.url} (404). Skipping.")
+                    not_found_path.touch()
+                else:
+                    # For other HTTP errors, we re-raise the exception.
+                    raise
+        return True
 
     def process_set(self, set_number: str) -> int:
         """Process and download instruction PDFs for a single LEGO set.
+
+        This method coordinates the processing of a single set, by first
+        fetching the metadata and then downloading the associated PDFs.
 
         Args:
             set_number: The LEGO set number to process.
@@ -241,73 +355,27 @@ class LegoInstructionDownloader:
             Exit code: 0 for success, non-zero for errors.
         """
         out_dir = self.out_dir if self.out_dir else Path("data") / set_number
-        meta_path = out_dir / "metadata.json"
-        not_found_path = out_dir / ".not_found"
 
-        if not_found_path.exists() and not self.overwrite_metadata:
-            print(f"Skipping set {set_number} (marked as not found).")
-            return 0
+        # Process the metadata for the set.
+        result = self._process_set_metadata(set_number, out_dir)
+        if not result:
+            return 0  # Metadata processing handled the output
 
-        # Try to load existing metadata first (if allowed)
-        existing_meta: InstructionMetadata | None = None
-        if meta_path.exists() and not self.overwrite_metadata:
-            existing_meta = read_metadata(meta_path)
-
-        # Decide whether to use cached metadata or fetch fresh
-        use_cached = existing_meta is not None and bool(existing_meta.pdfs)
-        if use_cached:
-            print(f"Processing set: {set_number} [cached]")
-            assert existing_meta is not None
-            metadata: InstructionMetadata = existing_meta
-        else:
-            print(f"Processing set: {set_number}")
-            try:
-                html = self.fetch_instructions_page(set_number)
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 404:
-                    print(f"Set {set_number} not found on LEGO.com (404).")
-                    out_dir.mkdir(parents=True, exist_ok=True)
-                    not_found_path.touch()
-                    return 0
-                raise  # Re-raise other HTTP errors
-
-            metadata = build_metadata(
-                html, set_number, self.locale, base=LEGO_BASE, debug=self.debug
-            )
-
-            if not metadata.name:
-                print(f"Set {set_number} not found or has no data on LEGO.com.")
-                out_dir.mkdir(parents=True, exist_ok=True)
-                not_found_path.touch()
-                return 0
-
-            # Write initial metadata.json
-            write_metadata(meta_path, metadata)
-
-        # Print metadata info
+        metadata, use_cached = result
         self._print_metadata_info(set_number, metadata)
 
-        if not metadata.pdfs:
-            print(f"No PDFs found for set {set_number} (locale={self.locale}).")
-            return 0
-
-        # Download each PDF with inline progress
-        for entry in metadata.pdfs:
-            progress_prefix = f" - {entry.url}"
-            downloaded_file = self.download(
-                entry.url, out_dir, progress_prefix=progress_prefix
-            )
-            entry.filesize = downloaded_file.size
-            entry.filehash = downloaded_file.hash
-
-        # After downloads, persist updated filesize/filehash back to metadata.json
-        if not use_cached:
-            write_metadata(meta_path, metadata)
+        # Process the PDFs for the set.
+        if self._process_set_pdfs(metadata, out_dir) and not use_cached:
+            # If the metadata was not loaded from cache (i.e. it's new or
+            # updated), write the updated metadata back to disk.
+            write_metadata(out_dir / "metadata.json", metadata)
 
         return 0
 
     def _print_metadata_info(
-        self, set_number: str, metadata: InstructionMetadata
+        self,
+        set_number: str,
+        metadata: InstructionMetadata,
     ) -> None:
         """Print metadata information on a single line.
 
