@@ -36,6 +36,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    LegoPageElements,
     Part,
     PartCount,
     PartNumber,
@@ -73,6 +74,22 @@ class PartsClassifier(LabelClassifier):
 
     outputs = frozenset({"part"})
     requires = frozenset({"part_count", "part_number", "piece_length"})
+
+    def score(self, result: ClassificationResult) -> None:
+        """Legacy classifier - uses evaluate() instead of score() + construct()."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} uses legacy evaluate() method. "
+            "Implement score() and construct() to use two-phase classification."
+        )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Legacy classifier - uses evaluate() instead of score() + construct()."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} uses legacy evaluate() method. "
+            "Implement score() and construct() to use two-phase classification."
+        )
 
     def evaluate(
         self,

@@ -33,6 +33,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
+    LegoPageElements,
     PartsList,
     Step,
     StepNumber,
@@ -84,6 +85,22 @@ class StepClassifier(LabelClassifier):
 
     outputs = frozenset({"step"})
     requires = frozenset({"step_number", "parts_list"})
+
+    def score(self, result: ClassificationResult) -> None:
+        """Legacy classifier - uses evaluate() instead of score() + construct()."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} uses legacy evaluate() method. "
+            "Implement score() and construct() to use two-phase classification."
+        )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Legacy classifier - uses evaluate() instead of score() + construct()."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} uses legacy evaluate() method. "
+            "Implement score() and construct() to use two-phase classification."
+        )
 
     def evaluate(self, result: ClassificationResult) -> None:
         """Evaluate elements and create deduplicated Step candidates.

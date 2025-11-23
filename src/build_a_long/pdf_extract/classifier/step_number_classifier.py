@@ -15,7 +15,10 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_step_number_value,
 )
-from build_a_long.pdf_extract.extractor.lego_page_elements import StepNumber
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    LegoPageElements,
+    StepNumber,
+)
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
@@ -56,6 +59,22 @@ class StepNumberClassifier(LabelClassifier):
 
     outputs = frozenset({"step_number", "page_number"})
     requires = frozenset()
+
+    def score(self, result: ClassificationResult) -> None:
+        """Legacy classifier - uses evaluate() instead of score() + construct()."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} uses legacy evaluate() method. "
+            "Implement score() and construct() to use two-phase classification."
+        )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Legacy classifier - uses evaluate() instead of score() + construct()."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} uses legacy evaluate() method. "
+            "Implement score() and construct() to use two-phase classification."
+        )
 
     def evaluate(
         self,

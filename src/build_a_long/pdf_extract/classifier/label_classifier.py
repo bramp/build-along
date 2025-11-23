@@ -7,9 +7,11 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.classification_result import (
+    Candidate,
     ClassificationResult,
     ClassifierConfig,
 )
+from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElements
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 # TODO Maybe classifers need a interface, where they have
@@ -69,11 +71,57 @@ class LabelClassifier(ABC):
         return max(0.0, 1.0 - (diff_ratio * 2.0))
 
     @abstractmethod
+    def score(self, result: ClassificationResult) -> None:
+        """Score elements and create candidates WITHOUT construction.
+
+        This method should:
+        1. Score each element for this label
+        2. Create Candidate objects with scores and score_details
+        3. Set constructed=None and failure_reason=None for all candidates
+        4. Store candidates in the result via result.add_candidate()
+
+        This is the first phase of the two-phase classification process.
+        Construction happens later in construct().
+
+        Args:
+            result: The classification result to populate with candidates
+        """
+        pass
+
+    @abstractmethod
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Construct a LegoPageElement from a winning candidate.
+
+        This method should:
+        1. Parse/construct the LegoPageElement from the candidate's source blocks
+        2. Return the constructed element (or raise an exception on failure)
+
+        This is the second phase of the two-phase classification process.
+        Scoring happens first in score().
+
+        Args:
+            candidate: The winning candidate to construct from
+            result: The classification result (for context/dependencies)
+
+        Returns:
+            The constructed LegoPageElement
+
+        Raises:
+            ValueError: If construction fails (will be caught and stored as failure_reason)
+        """
+        pass
+
+    @abstractmethod
     def evaluate(
         self,
         result: ClassificationResult,
     ) -> None:
-        """Evaluate elements and create candidates for the label.
+        """DEPRECATED: Evaluate elements and create candidates for the label.
+
+        This method will be replaced by the two-phase score() + construct() approach.
+        New classifiers should implement score() and construct() instead.
 
         This method should:
         1. Score each element for this label

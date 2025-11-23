@@ -25,7 +25,10 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_element_id,
 )
-from build_a_long.pdf_extract.extractor.lego_page_elements import PartNumber
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    LegoPageElements,
+    PartNumber,
+)
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 log = logging.getLogger(__name__)
@@ -83,6 +86,22 @@ class PartNumberClassifier(LabelClassifier):
 
     outputs = frozenset({"part_number"})
     requires = frozenset()
+
+    def score(self, result: ClassificationResult) -> None:
+        """Legacy classifier - uses evaluate() instead of score() + construct()."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} uses legacy evaluate() method. "
+            "Implement score() and construct() to use two-phase classification."
+        )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Legacy classifier - uses evaluate() instead of score() + construct()."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} uses legacy evaluate() method. "
+            "Implement score() and construct() to use two-phase classification."
+        )
 
     def evaluate(
         self,
