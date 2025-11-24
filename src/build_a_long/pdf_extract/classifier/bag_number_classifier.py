@@ -82,29 +82,14 @@ class BagNumberClassifier(LabelClassifier):
     requires = frozenset()
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
+        """Score text blocks and create candidates WITHOUT construction.
 
-    def construct(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for bag numbers.
-
-        This method scores each text element, attempts to construct BagNumber objects,
-        and stores all candidates with their scores and any failure reasons.
+        This method:
+        1. Iterates through all text blocks on the page
+        2. Calculates component scores (text pattern, position, font size)
+        3. Computes combined score
+        4. Creates Candidates with constructed=None for viable candidates
+        5. Stores score_details for debugging and later construction
         """
         page_data = result.page_data
         if not page_data.blocks:
@@ -136,20 +121,8 @@ class BagNumberClassifier(LabelClassifier):
                 font_size_score=font_size_score,
             )
 
-            # Try to construct (parse bag number value)
-            value = extract_bag_number_value(block.text)
-            constructed_elem = None
-            failure_reason = None
-
-            if value is not None:
-                constructed_elem = BagNumber(
-                    value=value,
-                    bbox=block.bbox,
-                )
-            else:
-                failure_reason = f"Could not parse bag number from text: '{block.text}'"
-
-            # Add candidate
+            # Create candidate WITHOUT construction (constructed=None)
+            # Construction happens later in construct() method
             result.add_candidate(
                 "bag_number",
                 Candidate(
@@ -157,21 +130,56 @@ class BagNumberClassifier(LabelClassifier):
                     label="bag_number",
                     score=detail_score.combined_score(self.config),
                     score_details=detail_score,
-                    constructed=constructed_elem,
+                    constructed=None,  # Not constructed yet!
                     source_blocks=[block],
-                    failure_reason=failure_reason,
+                    failure_reason=None,  # No failure yet, construction happens later
                 ),
             )
 
-            log.debug(
-                "[bag_number] candidate text='%s' value=%s position_score=%.2f "
-                "font_size_score=%.2f combined=%.2f",
-                block.text,
-                value,
-                position_score,
-                font_size_score,
-                detail_score.combined_score(self.config),
-            )
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Construct a BagNumber element from a winning candidate.
+
+        Args:
+            candidate: The winning candidate to construct
+            result: Classification result for context
+
+        Returns:
+            BagNumber: The constructed bag number element
+
+        Raises:
+            ValueError: If construction fails (parse error, etc.)
+        """
+        # Get the source text block
+        assert len(candidate.source_blocks) == 1
+        block = candidate.source_blocks[0]
+        assert isinstance(block, Text)
+
+        # Parse the bag number value
+        value = extract_bag_number_value(block.text)
+        if value is None:
+            raise ValueError(f"Could not parse bag number from text: '{block.text}'")
+
+        # Successfully constructed
+        return BagNumber(value=value, bbox=block.bbox)
+
+    def evaluate(
+        self,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create candidates for bag numbers.
+
+        DEPRECATED: This method implements the legacy one-phase classification.
+        It calls score() to create candidates, then constructs the winners.
+
+        For new code, use score() + construct() separately for two-phase classification.
+        """
+        # Phase 1: Score all candidates
+        self.score(result)
+
+        # Phase 2: Construct all candidates (using base class helper)
+        self._construct_all_candidates(result, "bag_number")
 
     def _score_bag_number_text(self, text: str) -> float:
         """Score text based on how well it matches bag number patterns.
