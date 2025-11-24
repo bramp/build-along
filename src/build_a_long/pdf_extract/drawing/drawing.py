@@ -122,9 +122,10 @@ def _create_drawable_items(
                     )
                 )
 
-                if candidate.source_block:
-                    # Element with source block - track it and add as element
-                    element_source_block_ids.add(candidate.source_block.id)
+                if candidate.source_blocks:
+                    # Element with source blocks - track them and add as element
+                    for source_block in candidate.source_blocks:
+                        element_source_block_ids.add(source_block.id)
 
     # Add regular blocks (skip those that will be drawn as elements)
     if draw_blocks:

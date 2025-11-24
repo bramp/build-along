@@ -391,7 +391,8 @@ def print_classification_debug(
 
             print(f"\n{lbl} ({len(candidates)} candidates):")
             for candidate in sorted_candidates:
-                block = candidate.source_block
+                # TODO Use all source blocks, not just the first one.
+                block = candidate.source_blocks[0] if candidate.source_blocks else None
                 block_id_str = f"{block.id:3d}" if block else "  ?"
 
                 # Determine if this candidate made it into the final Page
