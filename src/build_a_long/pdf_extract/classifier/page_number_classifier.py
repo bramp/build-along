@@ -79,29 +79,14 @@ class PageNumberClassifier(LabelClassifier):
     requires = frozenset()
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
+        """Score text blocks and create candidates WITHOUT construction.
 
-    def construct(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for page numbers.
-
-        This method scores each text element, attempts to construct PageNumber objects,
-        and stores all candidates with their scores and any failure reasons.
+        This method:
+        1. Iterates through all text blocks on the page
+        2. Calculates component scores (text pattern, position, page value, font size)
+        3. Computes combined score
+        4. Creates Candidates with constructed=None for viable candidates
+        5. Stores score_details for debugging and later construction
         """
         page_data = result.page_data
         page_bbox = page_data.bbox
@@ -143,26 +128,8 @@ class PageNumberClassifier(LabelClassifier):
                 )
                 continue
 
-            # Try to construct the LegoElement (parse the text)
-            value = extract_page_number_value(block.text)
-            constructed_elem = None
-            failure_reason = None
-
-            if text_score == 0.0:
-                failure_reason = (
-                    f"Text doesn't match page number pattern: '{block.text}'"
-                )
-            elif position_score == 0.0:
-                failure_reason = "Block not in bottom 10% of page"
-            elif value is None or value < 0:
-                failure_reason = (
-                    f"Could not parse page number from text: '{block.text}'"
-                )
-            else:
-                # Successfully constructed
-                constructed_elem = PageNumber(value=value, bbox=block.bbox)
-
-            # Store candidate (even if construction failed, for debugging)
+            # Create candidate WITHOUT construction (constructed=None)
+            # Construction happens later in construct() method
             result.add_candidate(
                 "page_number",
                 Candidate(
@@ -170,11 +137,72 @@ class PageNumberClassifier(LabelClassifier):
                     label="page_number",
                     score=combined,
                     score_details=score,
-                    constructed=constructed_elem,
+                    constructed=None,  # Not constructed yet!
                     source_blocks=[block],
-                    failure_reason=failure_reason,
+                    failure_reason=None,  # No failure yet, construction happens later
                 ),
             )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Construct a PageNumber element from a winning candidate.
+
+        This method:
+        1. Extracts the text from the candidate's source block
+        2. Parses the page number value
+        3. Validates the extraction and score components
+        4. Returns a constructed PageNumber or raises ValueError
+
+        Args:
+            candidate: The winning candidate to construct
+            result: Classification result for context
+
+        Returns:
+            PageNumber: The constructed page number element
+
+        Raises:
+            ValueError: If construction fails (invalid text, parse error, etc.)
+        """
+        # Get the source text block
+        assert len(candidate.source_blocks) == 1
+        block = candidate.source_blocks[0]
+        assert isinstance(block, Text)
+
+        # Get score details for validation
+        score_details = candidate.score_details
+        assert isinstance(score_details, _PageNumberScore)
+
+        # Validate score components
+        if score_details.text_score == 0.0:
+            raise ValueError(f"Text doesn't match page number pattern: '{block.text}'")
+        if score_details.position_score == 0.0:
+            raise ValueError("Block not in bottom 10% of page")
+
+        # Parse the page number value
+        value = extract_page_number_value(block.text)
+        if value is None or value < 0:
+            raise ValueError(f"Could not parse page number from text: '{block.text}'")
+
+        # Successfully constructed
+        return PageNumber(value=value, bbox=block.bbox)
+
+    def evaluate(
+        self,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create candidates for page numbers.
+
+        DEPRECATED: This method implements the legacy one-phase classification.
+        It calls score() to create candidates, then constructs the winners.
+
+        For new code, use score() + construct() separately for two-phase classification.
+        """
+        # Phase 1: Score all candidates
+        self.score(result)
+
+        # Phase 2: Construct all candidates (using base class helper)
+        self._construct_all_candidates(result, "page_number")
 
     def _score_page_number_text(self, text: str) -> float:
         text = text.strip()

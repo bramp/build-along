@@ -132,3 +132,34 @@ class LabelClassifier(ABC):
             result: The classification result to populate with candidates
         """
         pass
+
+    def _construct_all_candidates(
+        self, result: ClassificationResult, label: str
+    ) -> None:
+        """Helper method to construct all candidates for a label.
+
+        This implements the common pattern for evaluate():
+        1. Get all candidates for the label
+        2. Try to construct each one using construct()
+        3. Update candidate.constructed and candidate.failure_reason
+
+        Subclasses can use this in their evaluate() implementation:
+            def evaluate(self, result: ClassificationResult) -> None:
+                self.score(result)
+                self._construct_all_candidates(result, "my_label")
+
+        Args:
+            result: The classification result containing candidates
+            label: The label name to construct candidates for
+        """
+        candidates = result.get_candidates(label)
+
+        for candidate in candidates:
+            try:
+                constructed_elem = self.construct(candidate, result)
+                candidate.constructed = constructed_elem
+                candidate.failure_reason = None
+            except ValueError as e:
+                # Construction failed - record the reason
+                candidate.failure_reason = str(e)
+                candidate.constructed = None
