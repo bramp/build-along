@@ -74,30 +74,7 @@ class DiagramClassifier(LabelClassifier):
     requires = frozenset({"parts_list", "progress_bar"})
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def construct(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for diagrams.
-
-        This method looks for Drawing/Image elements that appear to be
-        main instruction diagrams.
-        """
+        """Score Drawing/Image elements and create candidates WITHOUT construction."""
         page_data = result.page_data
         page_bbox = page_data.bbox
         assert page_bbox is not None
@@ -142,10 +119,7 @@ class DiagramClassifier(LabelClassifier):
 
             combined = score_details.combined_score(self.config)
 
-            # Construct the Diagram element
-            constructed_elem = Diagram(bbox=block.bbox)
-
-            # Store candidate
+            # Store candidate WITHOUT construction
             result.add_candidate(
                 "diagram",
                 Candidate(
@@ -153,11 +127,29 @@ class DiagramClassifier(LabelClassifier):
                     label="diagram",
                     score=combined,
                     score_details=score_details,
-                    constructed=constructed_elem,
+                    constructed=None,
                     source_blocks=[block],
                     failure_reason=None,
                 ),
             )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Construct a Diagram element from a winning candidate."""
+        # Diagram construction is trivial - just wrap the bbox
+        return Diagram(bbox=candidate.bbox)
+
+    def evaluate(
+        self,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create candidates for diagrams.
+
+        DEPRECATED: Calls score() + construct() for backward compatibility.
+        """
+        self.score(result)
+        self._construct_all_candidates(result, "diagram")
 
     def _get_parts_list_blocks(self, result: ClassificationResult) -> set[int]:
         """Get the set of block IDs that are part of classified parts lists.
