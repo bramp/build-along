@@ -6,9 +6,7 @@ This module wraps the existing summarize_metadata functionality.
 import argparse
 from pathlib import Path
 
-from build_a_long.downloader.summarize_metadata import (
-    summarize_metadata as _summarize_metadata,
-)
+from .summarize_metadata import summarize_metadata as _summarize_metadata
 
 
 def add_summarize_parser(subparsers: argparse._SubParsersAction) -> None:

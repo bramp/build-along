@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from build_a_long.downloader.summarize_metadata import summarize_metadata
+from .summarize_metadata import summarize_metadata
 
 
 @pytest.fixture

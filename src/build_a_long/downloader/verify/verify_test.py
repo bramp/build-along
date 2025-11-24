@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from pydantic import AnyUrl
 
-from build_a_long.downloader.verify import verify_data_integrity
+from .verify import verify_data_integrity
 from build_a_long.schemas import InstructionMetadata, PdfEntry
 
 

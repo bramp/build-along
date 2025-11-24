@@ -8,10 +8,7 @@ from unittest.mock import MagicMock, patch
 
 from pydantic import AnyUrl
 
-from build_a_long.downloader.commands.download import (
-    get_set_numbers_from_args,
-    run_download,
-)
+from .command import get_set_numbers_from_args, run_download
 from build_a_long.schemas import InstructionMetadata, PdfEntry
 
 
@@ -57,7 +54,7 @@ def test_get_set_numbers_from_args_stdin_with_invalid(monkeypatch, capsys):
     assert "Invalid set ID 'invalid_id'" in captured.err
 
 
-@patch("build_a_long.downloader.commands.download.LegoInstructionDownloader")
+@patch("build_a_long.downloader.download.command.LegoInstructionDownloader")
 def test_run_download_single_set(mock_downloader_class, capsys):
     """Test downloading a single set."""
     mock_instance = MagicMock()
@@ -90,7 +87,7 @@ def test_run_download_single_set(mock_downloader_class, capsys):
     assert "All done" in capsys.readouterr().out
 
 
-@patch("build_a_long.downloader.commands.download.LegoInstructionDownloader")
+@patch("build_a_long.downloader.download.command.LegoInstructionDownloader")
 def test_run_download_multiple_sets_stdin(mock_downloader_class, monkeypatch):
     """Test downloading multiple sets from stdin."""
     mock_instance = MagicMock()
@@ -118,7 +115,7 @@ def test_run_download_multiple_sets_stdin(mock_downloader_class, monkeypatch):
     mock_instance.process_sets.assert_called_once_with(["12345", "67890"])
 
 
-@patch("build_a_long.downloader.commands.download.LegoInstructionDownloader")
+@patch("build_a_long.downloader.download.command.LegoInstructionDownloader")
 def test_run_download_custom_locale_and_overwrites(mock_downloader_class):
     """Test download with custom locale and overwrite options."""
     mock_instance = MagicMock()
@@ -147,8 +144,8 @@ def test_run_download_custom_locale_and_overwrites(mock_downloader_class):
     assert call_kwargs["overwrite_download"] is True
 
 
-@patch("build_a_long.downloader.commands.download.LegoInstructionDownloader")
-@patch("build_a_long.downloader.commands.download.build_metadata")
+@patch("build_a_long.downloader.download.command.LegoInstructionDownloader")
+@patch("build_a_long.downloader.download.command.build_metadata")
 def test_run_download_metadata_mode(mock_build_metadata, mock_downloader_class, capsys):
     """Test --metadata flag outputs JSON without downloading."""
     mock_instance = MagicMock()
@@ -203,7 +200,7 @@ def test_run_download_metadata_mode(mock_build_metadata, mock_downloader_class, 
     assert '"age": "9+"' in output
 
 
-@patch("build_a_long.downloader.commands.download.LegoInstructionDownloader")
+@patch("build_a_long.downloader.download.command.LegoInstructionDownloader")
 def test_run_download_custom_out_dir(mock_downloader_class):
     """Test download with custom output directory."""
     mock_instance = MagicMock()
@@ -230,7 +227,7 @@ def test_run_download_custom_out_dir(mock_downloader_class):
     assert call_kwargs["out_dir"] == Path("/tmp/lego")
 
 
-@patch("build_a_long.downloader.commands.download.LegoInstructionDownloader")
+@patch("build_a_long.downloader.download.command.LegoInstructionDownloader")
 def test_run_download_empty_stdin(mock_downloader_class, monkeypatch, capsys):
     """Test error when no set numbers provided from stdin."""
     monkeypatch.setattr(sys, "stdin", io.StringIO("\n\n"))
@@ -246,7 +243,7 @@ def test_run_download_empty_stdin(mock_downloader_class, monkeypatch, capsys):
     assert "Error: No LEGO set numbers provided." in capsys.readouterr().err
 
 
-@patch("build_a_long.downloader.commands.download.LegoInstructionDownloader")
+@patch("build_a_long.downloader.download.command.LegoInstructionDownloader")
 def test_run_download_invalid_set_ids_from_stdin(
     mock_downloader_class, monkeypatch, capsys
 ):

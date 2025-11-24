@@ -6,9 +6,7 @@ This module wraps the existing verify functionality.
 import argparse
 from pathlib import Path
 
-from build_a_long.downloader.verify import (
-    verify_data_integrity as _verify_data_integrity,
-)
+from .verify import verify_data_integrity as _verify_data_integrity
 
 
 def add_verify_parser(subparsers: argparse._SubParsersAction) -> None:
