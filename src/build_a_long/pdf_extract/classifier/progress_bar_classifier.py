@@ -142,10 +142,20 @@ class ProgressBarClassifier(LabelClassifier):
                 ),
             )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct ProgressBar elements from candidates."""
+        candidates = result.get_candidates("progress_bar")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a ProgressBar element from a winning candidate."""
+        """Construct a ProgressBar element from a single candidate."""
         # Get score details
         detail_score = candidate.score_details
         assert isinstance(detail_score, _ProgressBarScore)
@@ -156,17 +166,6 @@ class ProgressBarClassifier(LabelClassifier):
             progress=None,
             full_width=detail_score.original_width,
         )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for progress bars.
-
-        DEPRECATED: Calls score() + construct() for backward compatibility.
-        """
-        self.score(result)
-        self._construct_all_candidates(result, "progress_bar")
 
     def _get_page_number_bbox(self, result: ClassificationResult) -> BBox | None:
         """Get the bbox of the page number if it has been classified."""

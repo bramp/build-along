@@ -136,10 +136,20 @@ class BagNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct BagNumber elements from candidates."""
+        candidates = result.get_candidates("bag_number")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a BagNumber element from a winning candidate.
+        """Construct a BagNumber element from a single candidate.
 
         Args:
             candidate: The winning candidate to construct
@@ -163,23 +173,6 @@ class BagNumberClassifier(LabelClassifier):
 
         # Successfully constructed
         return BagNumber(value=value, bbox=block.bbox)
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for bag numbers.
-
-        DEPRECATED: This method implements the legacy one-phase classification.
-        It calls score() to create candidates, then constructs the winners.
-
-        For new code, use score() + construct() separately for two-phase classification.
-        """
-        # Phase 1: Score all candidates
-        self.score(result)
-
-        # Phase 2: Construct all candidates (using base class helper)
-        self._construct_all_candidates(result, "bag_number")
 
     def _score_bag_number_text(self, text: str) -> float:
         """Score text based on how well it matches bag number patterns.

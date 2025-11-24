@@ -96,15 +96,17 @@ class TestStepClassification:
         step1 = Text(id=1, bbox=BBox(50, 180, 70, 210), text="1")
         d1 = Drawing(id=2, bbox=BBox(30, 100, 170, 160))
         pc1 = Text(id=3, bbox=BBox(40, 110, 55, 120), text="2x")
+        img1 = Image(id=7, bbox=BBox(40, 90, 55, 105))
 
         # Second step
         step2 = Text(id=4, bbox=BBox(250, 180, 270, 210), text="2")
         d2 = Drawing(id=5, bbox=BBox(230, 100, 370, 160))
         pc2 = Text(id=6, bbox=BBox(240, 110, 255, 120), text="3x")
+        img2 = Image(id=8, bbox=BBox(240, 90, 255, 105))
 
         page = PageData(
             page_number=6,
-            blocks=[pn, step1, d1, pc1, step2, d2, pc2],
+            blocks=[pn, step1, d1, pc1, img1, step2, d2, pc2, img2],
             bbox=page_bbox,
         )
 
@@ -191,11 +193,11 @@ class TestStepClassification:
         d1 = Drawing(id=3, bbox=BBox(30, 80, 170, 140))  # Above step1
         d2 = Drawing(id=4, bbox=BBox(30, 230, 170, 290))  # Above step2
 
-        # Part counts inside d1
+        # Part counts and images inside d1
         pc1 = Text(id=5, bbox=BBox(40, 100, 55, 110), text="2x")
         img1 = Image(id=6, bbox=BBox(40, 85, 55, 95))
 
-        # Part counts inside d2
+        # Part counts and images inside d2
         pc2 = Text(id=7, bbox=BBox(40, 250, 55, 260), text="3x")
         img2 = Image(id=8, bbox=BBox(40, 235, 55, 245))
 

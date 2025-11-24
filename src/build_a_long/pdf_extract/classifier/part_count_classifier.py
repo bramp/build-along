@@ -145,10 +145,20 @@ class PartCountClassifier(LabelClassifier):
                 ),
             )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct PartCount elements from candidates."""
+        candidates = result.get_candidates("part_count")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a PartCount element from a winning candidate."""
+        """Construct a PartCount element from a single candidate."""
         # Get the source text block
         assert len(candidate.source_blocks) == 1
         block = candidate.source_blocks[0]
@@ -171,17 +181,6 @@ class PartCountClassifier(LabelClassifier):
         return PartCount(
             count=value, bbox=block.bbox, matched_hint=detail_score.matched_hint
         )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for part counts.
-
-        DEPRECATED: Calls score() + construct() for backward compatibility.
-        """
-        self.score(result)
-        self._construct_all_candidates(result, "part_count")
 
     def _score_part_count_text(self, text: str) -> float:
         """Score text based on how well it matches part count patterns.

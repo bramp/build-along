@@ -163,3 +163,50 @@ class TestPageNumberClassification:
 
         # Verify nothing was labeled
         assert result.count_successful_candidates("page_number") == 0
+
+    def test_two_page_numbers_only_one_constructed(self) -> None:
+        """Test that when two valid page numbers exist, only the highest-scoring one is constructed."""
+        page_bbox = BBox(0, 0, 100, 200)
+
+        # Two page numbers in bottom corners (both valid positions)
+        left_page_num = Text(
+            id=0,
+            bbox=BBox(5, 190, 15, 198),  # Bottom-left corner
+            text="42",
+        )
+        right_page_num = Text(
+            id=1,
+            bbox=BBox(85, 190, 95, 198),  # Bottom-right corner
+            text="42",
+        )
+
+        page_data = PageData(
+            page_number=42,
+            blocks=[left_page_num, right_page_num],
+            bbox=page_bbox,
+        )
+
+        result = classify_elements(page_data)
+
+        # Both should have candidates created
+        left_candidate = result.get_candidate_for_block(left_page_num, "page_number")
+        right_candidate = result.get_candidate_for_block(right_page_num, "page_number")
+        assert left_candidate is not None
+        assert right_candidate is not None
+
+        # But only one should be constructed
+        constructed_count = sum(
+            1 for c in result.get_candidates("page_number") if c.constructed is not None
+        )
+        assert constructed_count == 1, "Expected only one page number to be constructed"
+
+        # Verify the Page uses only one page number
+        assert result.page is not None
+        assert result.page.page_number is not None
+        assert result.page.page_number.value == 42
+
+        # The constructed one should be the higher scoring one
+        if left_candidate.constructed is not None:
+            assert right_candidate.constructed is None
+        else:
+            assert right_candidate.constructed is not None

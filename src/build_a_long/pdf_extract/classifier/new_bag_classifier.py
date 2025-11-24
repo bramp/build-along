@@ -168,27 +168,26 @@ class NewBagClassifier(LabelClassifier):
                 cluster_bbox,
             )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct NewBag elements from candidates."""
+        candidates = result.get_candidates("new_bag")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a NewBag element from a winning candidate."""
+        """Construct a NewBag element from a single candidate."""
         # Get score details
         detail_score = candidate.score_details
         assert isinstance(detail_score, _NewBagScore)
 
         # Construct the NewBag element
         return NewBag(bbox=detail_score.cluster_bbox, number=detail_score.bag_number)
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for new bag elements.
-
-        DEPRECATED: Calls score() + construct() for backward compatibility.
-        """
-        self.score(result)
-        self._construct_all_candidates(result, "new_bag")
 
     def _find_nearby_images(
         self, bag_bbox: BBox, image_blocks: list[Drawing | Image]

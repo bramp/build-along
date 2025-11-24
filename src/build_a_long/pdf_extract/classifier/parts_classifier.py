@@ -149,7 +149,7 @@ class PartsClassifier(LabelClassifier):
 
         for ps in candidate_edges:
             count_id = id(ps.part_count)
-            image_id = ps.image.id
+            image_id = id(ps.image)
 
             if count_id in used_counts or image_id in used_images:
                 continue
@@ -191,10 +191,20 @@ class PartsClassifier(LabelClassifier):
 
             result.add_candidate("part", candidate)
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct Part elements from candidates."""
+        candidates = result.get_candidates("part")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a Part from the candidate's score details.
+        """Construct a Part from a single candidate's score details.
 
         Uses the PartCount, Image, PartNumber, and PieceLength stored in the
         score to build the Part.
@@ -212,18 +222,6 @@ class PartsClassifier(LabelClassifier):
             length=ps.piece_length,
             diagram=diagram,
         )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create scores for part pairings.
-
-        Scores are based on vertical distance and horizontal alignment between
-        part count elements and images.
-        """
-        self.score(result)
-        self._construct_all_candidates(result, "part")
 
     def _build_candidate_edges(
         self,

@@ -168,10 +168,20 @@ class PieceLengthClassifier(LabelClassifier):
             candidates_created,
         )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct PieceLength elements from candidates."""
+        candidates = result.get_candidates("piece_length")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a PieceLength element from a winning candidate."""
+        """Construct a PieceLength element from a single candidate."""
         # Get the source text block
         assert len(candidate.source_blocks) == 1
         text = candidate.source_blocks[0]
@@ -184,17 +194,6 @@ class PieceLengthClassifier(LabelClassifier):
 
         # Successfully constructed
         return PieceLength(value=detail_score.value, bbox=text.bbox)
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for piece lengths.
-
-        DEPRECATED: Calls score() + construct() for backward compatibility.
-        """
-        self.score(result)
-        self._construct_all_candidates(result, "piece_length")
 
     def _create_piece_length_candidate(
         self, text: Text, drawings: list[Drawing]

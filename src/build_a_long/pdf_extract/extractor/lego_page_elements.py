@@ -15,7 +15,7 @@ from pydantic import (
 )
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image
 
 
 class LegoPageElement(BaseModel, ABC):
@@ -163,6 +163,32 @@ class PieceLength(LegoPageElement):
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"PieceLength(value={self.value})"
+
+
+class PartImage(LegoPageElement):
+    """A part image paired with its corresponding part count.
+
+    Positional context: The image appears above its corresponding PartCount text,
+    both left-aligned within a parts list. This pairing is determined by vertical
+    distance and alignment heuristics.
+
+    This element represents the validated pairing between an image and its count,
+    and is used by PartsClassifier to construct Part elements.
+    """
+
+    tag: Literal["PartImage"] = Field(default="PartImage", alias="__tag__", frozen=True)
+
+    image: Image
+    """The image block showing the LEGO part."""
+
+    part_count: PartCount
+    """The part count text associated with this image."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return (
+            f"PartImage(count={self.part_count.count}x, image_bbox={self.image.bbox})"
+        )
 
 
 class ProgressBar(LegoPageElement):
@@ -482,6 +508,7 @@ LegoPageElements = Annotated[
     | PartCount
     | PartNumber
     | PieceLength
+    | PartImage
     | ProgressBar
     | Part
     | PartsList

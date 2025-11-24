@@ -34,7 +34,11 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElements
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    LegoPageElements,
+    PartCount,
+    PartImage,
+)
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Image,
 )
@@ -140,34 +144,55 @@ class PartsImageClassifier(LabelClassifier):
             if unmatched_i:
                 log.debug("[part_image] unmatched images: %d", len(unmatched_i))
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct PartImage elements from candidates."""
+        candidates = result.get_candidates("part_image")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Part images don't produce constructed elements.
+        """Construct a PartImage element from a single part_image candidate.
 
-        This classifier only creates metadata about pairings, not actual elements.
-        Return None to indicate no construction needed.
+        Extracts the part count and image from the score details and creates
+        a PartImage element representing their validated pairing.
+
+        Args:
+            candidate: The part_image candidate to construct
+            result: Classification result for context
+
+        Returns:
+            PartImage: The constructed part image element
+
+        Raises:
+            ValueError: If score_details is invalid or missing required data
         """
-        # PartsImageClassifier doesn't construct elements, it just tracks pairings
-        # Return None is not valid for LegoPageElements, so we need to handle this
-        # differently. Actually, looking at the code, part_image candidates are
-        # never constructed - they're just metadata.
-        raise NotImplementedError(
-            "PartsImageClassifier does not construct elements - "
-            "it only creates metadata candidates"
+        assert isinstance(candidate.score_details, _PartImageScore)
+        score = candidate.score_details
+
+        # Get the part_count element from the part_count candidate
+        part_count_candidate = score.part_count_candidate
+        if part_count_candidate.constructed is None:
+            raise ValueError(
+                "Part count candidate has not been constructed yet - "
+                "this indicates a classifier ordering problem"
+            )
+
+        if not isinstance(part_count_candidate.constructed, PartCount):
+            raise ValueError(
+                f"Expected PartCount but got {type(part_count_candidate.constructed)}"
+            )
+
+        return PartImage(
+            bbox=score.image.bbox.union(part_count_candidate.constructed.bbox),
+            image=score.image,
+            part_count=part_count_candidate.constructed,
         )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create scores for part image pairings.
-
-        Scores are based on vertical distance and horizontal alignment between
-        part count texts and images within parts lists.
-        """
-        # Just call score - no construction needed for this classifier
-        self.score(result)
 
     def _build_candidate_edges(
         self,

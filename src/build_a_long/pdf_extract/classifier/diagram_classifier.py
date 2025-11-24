@@ -133,23 +133,22 @@ class DiagramClassifier(LabelClassifier):
                 ),
             )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct Diagram elements from candidates."""
+        candidates = result.get_candidates("diagram")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a Diagram element from a winning candidate."""
+        """Construct a Diagram element from a single candidate."""
         # Diagram construction is trivial - just wrap the bbox
         return Diagram(bbox=candidate.bbox)
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for diagrams.
-
-        DEPRECATED: Calls score() + construct() for backward compatibility.
-        """
-        self.score(result)
-        self._construct_all_candidates(result, "diagram")
 
     def _get_parts_list_blocks(self, result: ClassificationResult) -> set[int]:
         """Get the set of block IDs that are part of classified parts lists.

@@ -7,11 +7,9 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.classification_result import (
-    Candidate,
     ClassificationResult,
     ClassifierConfig,
 )
-from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElements
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 # TODO Maybe classifers need a interface, where they have
@@ -89,77 +87,29 @@ class LabelClassifier(ABC):
         pass
 
     @abstractmethod
-    def construct(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
-        """Construct a LegoPageElement from a winning candidate.
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct LegoPageElements from candidates.
 
         This method should:
-        1. Parse/construct the LegoPageElement from the candidate's source blocks
-        2. Return the constructed element (or raise an exception on failure)
+        1. Get candidates for each label this classifier outputs
+        2. Select which candidates to construct (all, winners only, etc.)
+        3. Build LegoPageElements from selected candidates
+        4. Update candidate.constructed and candidate.failure_reason
+
+        Default pattern for constructing all candidates:
+            for label in self.outputs:
+                candidates = result.get_candidates(label)
+                for candidate in candidates:
+                    try:
+                        elem = self._construct_single(candidate, result)
+                        candidate.constructed = elem
+                    except Exception as e:
+                        candidate.failure_reason = str(e)
 
         This is the second phase of the two-phase classification process.
         Scoring happens first in score().
 
         Args:
-            candidate: The winning candidate to construct from
-            result: The classification result (for context/dependencies)
-
-        Returns:
-            The constructed LegoPageElement
-
-        Raises:
-            ValueError: If construction fails (will be caught and stored as failure_reason)
+            result: The classification result containing candidates to construct
         """
         pass
-
-    @abstractmethod
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """DEPRECATED: Evaluate elements and create candidates for the label.
-
-        This method will be replaced by the two-phase score() + construct() approach.
-        New classifiers should implement score() and construct() instead.
-
-        This method should:
-        1. Score each element for this label
-        2. Attempt to construct LegoPageElements from viable candidates
-        3. Store candidates (both successful and failed) with rejection reasons
-
-        Args:
-            result: The classification result to populate with candidates
-        """
-        pass
-
-    def _construct_all_candidates(
-        self, result: ClassificationResult, label: str
-    ) -> None:
-        """Helper method to construct all candidates for a label.
-
-        This implements the common pattern for evaluate():
-        1. Get all candidates for the label
-        2. Try to construct each one using construct()
-        3. Update candidate.constructed and candidate.failure_reason
-
-        Subclasses can use this in their evaluate() implementation:
-            def evaluate(self, result: ClassificationResult) -> None:
-                self.score(result)
-                self._construct_all_candidates(result, "my_label")
-
-        Args:
-            result: The classification result containing candidates
-            label: The label name to construct candidates for
-        """
-        candidates = result.get_candidates(label)
-
-        for candidate in candidates:
-            try:
-                constructed_elem = self.construct(candidate, result)
-                candidate.constructed = constructed_elem
-                candidate.failure_reason = None
-            except ValueError as e:
-                # Construction failed - record the reason
-                candidate.failure_reason = str(e)
-                candidate.constructed = None

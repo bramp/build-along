@@ -146,10 +146,20 @@ class PartNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct PartNumber elements from candidates."""
+        candidates = result.get_candidates("part_number")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a PartNumber element from a winning candidate."""
+        """Construct a PartNumber element from a single candidate."""
         # Get the source text block
         assert len(candidate.source_blocks) == 1
         block = candidate.source_blocks[0]
@@ -162,14 +172,3 @@ class PartNumberClassifier(LabelClassifier):
 
         # Successfully constructed
         return PartNumber(element_id=element_id, bbox=block.bbox)
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for part numbers.
-
-        DEPRECATED: Calls score() + construct() for backward compatibility.
-        """
-        self.score(result)
-        self._construct_all_candidates(result, "part_number")
