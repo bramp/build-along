@@ -88,30 +88,7 @@ class PartNumberClassifier(LabelClassifier):
     requires = frozenset()
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def construct(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for part numbers.
-
-        This method scores each text element, attempts to construct PartNumber objects,
-        and stores all candidates with their scores and any failure reasons.
-        """
+        """Score text blocks and create candidates WITHOUT construction."""
         page_data = result.page_data
         if not page_data.blocks:
             return
@@ -155,21 +132,7 @@ class PartNumberClassifier(LabelClassifier):
                 )
                 continue
 
-            # Construct PartNumber element if extraction succeeded
-            constructed_elem = None
-            failure_reason = None
-
-            if element_id is None:
-                failure_reason = (
-                    f"Text doesn't match part number pattern: '{block.text}'"
-                )
-            else:
-                constructed_elem = PartNumber(
-                    element_id=element_id,
-                    bbox=block.bbox,
-                )
-
-            # Add candidate
+            # Create candidate WITHOUT construction
             result.add_candidate(
                 "part_number",
                 Candidate(
@@ -177,8 +140,36 @@ class PartNumberClassifier(LabelClassifier):
                     label="part_number",
                     score=combined,
                     score_details=detail_score,
-                    constructed=constructed_elem,
+                    constructed=None,
                     source_blocks=[block],
-                    failure_reason=failure_reason,
+                    failure_reason=None,
                 ),
             )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Construct a PartNumber element from a winning candidate."""
+        # Get the source text block
+        assert len(candidate.source_blocks) == 1
+        block = candidate.source_blocks[0]
+        assert isinstance(block, Text)
+
+        # Extract and validate element ID
+        element_id = extract_element_id(block.text)
+        if element_id is None:
+            raise ValueError(f"Text doesn't match part number pattern: '{block.text}'")
+
+        # Successfully constructed
+        return PartNumber(element_id=element_id, bbox=block.bbox)
+
+    def evaluate(
+        self,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create candidates for part numbers.
+
+        DEPRECATED: Calls score() + construct() for backward compatibility.
+        """
+        self.score(result)
+        self._construct_all_candidates(result, "part_number")

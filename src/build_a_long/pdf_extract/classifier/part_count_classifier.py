@@ -74,30 +74,7 @@ class PartCountClassifier(LabelClassifier):
     requires = frozenset()
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def construct(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for part counts.
-
-        This method scores each text element, attempts to construct PartCount objects,
-        and stores all candidates with their scores and any failure reasons.
-        """
+        """Score text blocks and create candidates WITHOUT construction."""
         page_data = result.page_data
         if not page_data.blocks:
             return
@@ -122,14 +99,6 @@ class PartCountClassifier(LabelClassifier):
             # Use the better matching font size
             font_size_score = max(instruction_font_score, catalog_font_score)
 
-            # Determine which hint matched best
-            matched_hint = None
-            if font_size_score > 0:
-                if instruction_font_score > catalog_font_score:
-                    matched_hint = "part_count"
-                else:
-                    matched_hint = "catalog_part_count"
-
             # Store detailed score object
             detail_score = _PartCountScore(
                 text_score=text_score,
@@ -149,37 +118,73 @@ class PartCountClassifier(LabelClassifier):
                 )
                 continue
 
-            # Try to construct (parse part count value)
-            value = extract_part_count_value(block.text)
-            constructed_elem = None
-            failure_reason = None
+            # Determine which hint matched best (stored for later construction)
+            matched_hint = None
+            if font_size_score > 0:
+                if instruction_font_score > catalog_font_score:
+                    matched_hint = "part_count"
+                else:
+                    matched_hint = "catalog_part_count"
 
-            if text_score == 0.0:
-                failure_reason = (
-                    f"Text doesn't match part count pattern: '{block.text}'"
-                )
-            elif value is None:
-                failure_reason = f"Could not parse part count from text: '{block.text}'"
-            else:
-                constructed_elem = PartCount(
-                    count=value,
-                    bbox=block.bbox,
-                    matched_hint=matched_hint,
-                )
+            # Store matched_hint in score_details for use in construct()
+            # We'll use a dict to pass extra info
+            score_details_dict = {
+                "score": detail_score,
+                "matched_hint": matched_hint,
+            }
 
-            # Add candidate
+            # Create candidate WITHOUT construction
             result.add_candidate(
                 "part_count",
                 Candidate(
                     bbox=block.bbox,
                     label="part_count",
                     score=combined,
-                    score_details=detail_score,
-                    constructed=constructed_elem,
+                    score_details=score_details_dict,
+                    constructed=None,
                     source_blocks=[block],
-                    failure_reason=failure_reason,
+                    failure_reason=None,
                 ),
             )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Construct a PartCount element from a winning candidate."""
+        # Get the source text block
+        assert len(candidate.source_blocks) == 1
+        block = candidate.source_blocks[0]
+        assert isinstance(block, Text)
+
+        # Get score details
+        score_details_dict = candidate.score_details
+        assert isinstance(score_details_dict, dict)
+        detail_score = score_details_dict["score"]
+        matched_hint = score_details_dict["matched_hint"]
+        assert isinstance(detail_score, _PartCountScore)
+
+        # Validate text score
+        if detail_score.text_score == 0.0:
+            raise ValueError(f"Text doesn't match part count pattern: '{block.text}'")
+
+        # Parse the part count value
+        value = extract_part_count_value(block.text)
+        if value is None:
+            raise ValueError(f"Could not parse part count from text: '{block.text}'")
+
+        # Successfully constructed
+        return PartCount(count=value, bbox=block.bbox, matched_hint=matched_hint)
+
+    def evaluate(
+        self,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create candidates for part counts.
+
+        DEPRECATED: Calls score() + construct() for backward compatibility.
+        """
+        self.score(result)
+        self._construct_all_candidates(result, "part_count")
 
     def _score_part_count_text(self, text: str) -> float:
         """Score text based on how well it matches part count patterns.
