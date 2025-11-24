@@ -71,26 +71,7 @@ class PieceLengthClassifier(LabelClassifier):
     requires = frozenset()
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def construct(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for piece lengths.
+        """Score text blocks and create candidates WITHOUT construction.
 
         Looks for small numbers (1-32) spatially contained within Drawing
         elements (circles/ovals) with small font sizes.
@@ -115,15 +96,104 @@ class PieceLengthClassifier(LabelClassifier):
 
         # Process each text block to find piece length candidates
         for text in text_blocks:
-            candidate = self._create_piece_length_candidate(text, drawings)
-            if candidate:
-                result.add_candidate("piece_length", candidate)
-                candidates_created += 1
+            # Find the smallest drawing containing this text
+            containing_drawing = self._find_smallest_containing_drawing(text, drawings)
+            if not containing_drawing:
+                continue
+
+            # Try to parse as a valid piece length value
+            value = self._parse_piece_length_value(text)
+            if value is None:
+                continue
+
+            log.debug(
+                "[piece_length] Candidate: text='%s' id=%d font_size=%s in drawing id=%d",
+                text.text,
+                text.id,
+                text.font_size,
+                containing_drawing.id,
+            )
+
+            # Calculate scores
+            text_score = 1.0  # Matched simple number pattern
+            context_score = self._score_drawing_fit(text, containing_drawing)
+            font_size_score = self._score_piece_length_font_size(text)
+
+            detail_score = _PieceLengthScore(
+                text_score=text_score,
+                context_score=context_score,
+                font_size_score=font_size_score,
+            )
+
+            combined = detail_score.combined_score()
+
+            log.debug(
+                "[piece_length] Score for '%s': combined=%.3f "
+                "(text=%.3f, context=%.3f, font_size=%.3f)",
+                text.text,
+                combined,
+                text_score,
+                context_score,
+                font_size_score,
+            )
+
+            # Only create candidates with reasonable scores
+            if combined < 0.3:
+                continue
+
+            # Store containing_drawing in score_details for use in construct()
+            score_details_dict = {
+                "score": detail_score,
+                "containing_drawing": containing_drawing,
+                "value": value,
+            }
+
+            result.add_candidate(
+                "piece_length",
+                Candidate(
+                    bbox=text.bbox,
+                    label="piece_length",
+                    score=combined,
+                    score_details=score_details_dict,
+                    constructed=None,
+                    source_blocks=[text],
+                    failure_reason=None,
+                ),
+            )
+            candidates_created += 1
 
         log.debug(
             "[piece_length] Created %d piece_length candidates",
             candidates_created,
         )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Construct a PieceLength element from a winning candidate."""
+        # Get the source text block
+        assert len(candidate.source_blocks) == 1
+        text = candidate.source_blocks[0]
+        assert isinstance(text, Text)
+
+        # Get score details
+        score_details_dict = candidate.score_details
+        assert isinstance(score_details_dict, dict)
+        value = score_details_dict["value"]
+
+        # Successfully constructed
+        return PieceLength(value=value, bbox=text.bbox)
+
+    def evaluate(
+        self,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create candidates for piece lengths.
+
+        DEPRECATED: Calls score() + construct() for backward compatibility.
+        """
+        self.score(result)
+        self._construct_all_candidates(result, "piece_length")
 
     def _create_piece_length_candidate(
         self, text: Text, drawings: list[Drawing]
