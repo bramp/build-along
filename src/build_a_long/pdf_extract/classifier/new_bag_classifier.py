@@ -59,6 +59,12 @@ class _NewBagScore:
     compactness_score: float
     """Score based on how compact the cluster is (0.0-1.0)."""
 
+    bag_number: BagNumber
+    """The bag number element for this new bag."""
+
+    cluster_bbox: BBox
+    """Bounding box encompassing the entire bag cluster."""
+
     def combined_score(self, config: ClassifierConfig) -> float:
         """Calculate final weighted score from components."""
         # Equal weighting for both components
@@ -74,28 +80,9 @@ class NewBagClassifier(LabelClassifier):
     requires = frozenset({"bag_number"})
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
+        """Score bag number + image clusters and create candidates.
 
-    def construct(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for new bag elements.
-
-        This method looks for bag numbers surrounded by clusters of images.
+        Creates candidates WITHOUT construction.
         """
         page_data = result.page_data
 
@@ -139,15 +126,7 @@ class NewBagClassifier(LabelClassifier):
             cluster_score = self._score_image_cluster(len(nearby_images))
             compactness_score = self._score_compactness(bag_bbox, nearby_images)
 
-            score_details = _NewBagScore(
-                image_cluster_score=cluster_score,
-                compactness_score=compactness_score,
-            )
-
-            combined = score_details.combined_score(self.config)
-
-            # Calculate bounding box that includes the bag number and all
-            # nearby images
+            # Calculate bounding box that includes the bag number and all nearby images
             cluster_bbox = self._calculate_cluster_bbox(bag_bbox, nearby_images)
 
             # Clip to page bounds to avoid extending beyond the page
@@ -155,10 +134,16 @@ class NewBagClassifier(LabelClassifier):
             assert page_bbox is not None
             cluster_bbox = cluster_bbox.clip_to(page_bbox)
 
-            # Construct the NewBag element
-            constructed_elem = NewBag(bbox=cluster_bbox, number=bag_number)
+            score_details = _NewBagScore(
+                image_cluster_score=cluster_score,
+                compactness_score=compactness_score,
+                bag_number=bag_number,
+                cluster_bbox=cluster_bbox,
+            )
 
-            # Store candidate
+            combined = score_details.combined_score(self.config)
+
+            # Store candidate WITHOUT construction
             result.add_candidate(
                 "new_bag",
                 Candidate(
@@ -166,7 +151,7 @@ class NewBagClassifier(LabelClassifier):
                     label="new_bag",
                     score=combined,
                     score_details=score_details,
-                    constructed=constructed_elem,
+                    constructed=None,
                     source_blocks=[],  # Synthetic element
                     failure_reason=None,
                 ),
@@ -182,6 +167,28 @@ class NewBagClassifier(LabelClassifier):
                 combined,
                 cluster_bbox,
             )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Construct a NewBag element from a winning candidate."""
+        # Get score details
+        detail_score = candidate.score_details
+        assert isinstance(detail_score, _NewBagScore)
+
+        # Construct the NewBag element
+        return NewBag(bbox=detail_score.cluster_bbox, number=detail_score.bag_number)
+
+    def evaluate(
+        self,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create candidates for new bag elements.
+
+        DEPRECATED: Calls score() + construct() for backward compatibility.
+        """
+        self.score(result)
+        self._construct_all_candidates(result, "new_bag")
 
     def _find_nearby_images(
         self, bag_bbox: BBox, image_blocks: list[Drawing | Image]
