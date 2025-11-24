@@ -136,10 +136,20 @@ class StepClassifier(LabelClassifier):
             len(all_candidates),
         )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct Step elements from candidates."""
+        candidates = result.get_candidates("step")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a Step element from a winning candidate."""
+        """Construct a Step element from a single candidate."""
         score = candidate.score_details
         assert isinstance(score, _StepScore)
 
@@ -157,11 +167,6 @@ class StepClassifier(LabelClassifier):
             parts_list=parts_list or PartsList(bbox=step_num.bbox, parts=[]),
             diagram=diagram,
         )
-
-    def evaluate(self, result: ClassificationResult) -> None:
-        """DEPRECATED: Calls score() + construct() for backward compatibility."""
-        self.score(result)
-        self._construct_all_candidates(result, "step")
 
     def _create_step_candidate(
         self,

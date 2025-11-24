@@ -143,10 +143,30 @@ class PageNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct PageNumber elements from candidates.
+
+        Only constructs the highest-scoring candidate (there should only be one
+        page number per page).
+        """
+        candidates = result.get_candidates("page_number")
+        if not candidates:
+            return
+
+        # Sort by score descending and construct only the top one
+        candidates_sorted = sorted(candidates, key=lambda c: c.score, reverse=True)
+        winner = candidates_sorted[0]
+
+        try:
+            elem = self._construct_single(winner, result)
+            winner.constructed = elem
+        except Exception as e:
+            winner.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a PageNumber element from a winning candidate.
+        """Construct a PageNumber element from a single candidate.
 
         This method:
         1. Extracts the text from the candidate's source block
@@ -186,23 +206,6 @@ class PageNumberClassifier(LabelClassifier):
 
         # Successfully constructed
         return PageNumber(value=value, bbox=block.bbox)
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for page numbers.
-
-        DEPRECATED: This method implements the legacy one-phase classification.
-        It calls score() to create candidates, then constructs the winners.
-
-        For new code, use score() + construct() separately for two-phase classification.
-        """
-        # Phase 1: Score all candidates
-        self.score(result)
-
-        # Phase 2: Construct all candidates (using base class helper)
-        self._construct_all_candidates(result, "page_number")
 
     def _score_page_number_text(self, text: str) -> float:
         text = text.strip()

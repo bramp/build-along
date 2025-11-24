@@ -66,7 +66,17 @@ class PageClassifier(LabelClassifier):
             ),
         )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct Page elements from candidates."""
+        candidates = result.get_candidates("page")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a Page by collecting all page components.
@@ -173,19 +183,3 @@ class PageClassifier(LabelClassifier):
             warnings=[],
             unprocessed_elements=[],
         )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create a Page candidate.
-
-        Collects page_number, progress_bar, and step elements to build a
-        complete Page. Uses get_winners_by_score() to select the best
-        candidates based on scores.
-
-        For catalog pages (pages with parts_list but no steps), creates a
-        catalog Page with all parts_lists merged into a single catalog field.
-        """
-        self.score(result)
-        self._construct_all_candidates(result, "page")

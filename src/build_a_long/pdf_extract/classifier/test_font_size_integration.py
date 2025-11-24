@@ -50,9 +50,15 @@ def test_part_count_with_font_hints():
 
     # Classify
     result = ClassificationResult(page_data=page_data)
-    classifier.evaluate(result)
-
+    classifier.score(result)
+    
+    # Construct all candidates
     candidates = result.get_candidates("part_count")
+    for candidate in candidates:
+        try:
+            candidate.constructed = classifier.construct(candidate, result)
+        except Exception as e:
+            candidate.failure_reason = str(e)
     assert len(candidates) == 2
 
     # Find the candidates
@@ -71,9 +77,9 @@ def test_part_count_with_font_hints():
         f"Different score details: {different_candidate.score_details}"  # type: ignore
     )
 
-    assert (
-        matching_candidate.score > different_candidate.score
-    ), "Matching font size should score higher"
+    assert matching_candidate.score > different_candidate.score, (
+        "Matching font size should score higher"
+    )
     print("✓ PartCountClassifier uses font size hints correctly")
 
 
@@ -103,7 +109,14 @@ def test_step_number_with_font_hints():
     )
 
     result = ClassificationResult(page_data=page_data)
-    classifier.evaluate(result)
+    classifier.score(result)
+    
+    # Construct all candidates
+    for candidate in result.get_candidates("step_number"):
+        try:
+            candidate.constructed = classifier.construct(candidate, result)
+        except Exception as e:
+            candidate.failure_reason = str(e)
 
     candidates = result.get_candidates("step_number")
     assert len(candidates) == 2
@@ -122,9 +135,9 @@ def test_step_number_with_font_hints():
         f"Different score details: {different_candidate.score_details}"  # type: ignore
     )
 
-    assert (
-        matching_candidate.score > different_candidate.score
-    ), "Matching font size should score higher"
+    assert matching_candidate.score > different_candidate.score, (
+        "Matching font size should score higher"
+    )
     print("✓ StepNumberClassifier uses font size hints correctly")
 
 
@@ -155,7 +168,14 @@ def test_page_number_with_font_hints():
     )
 
     result = ClassificationResult(page_data=page_data)
-    classifier.evaluate(result)
+    classifier.score(result)
+    
+    # Construct all candidates
+    for candidate in result.get_candidates("page_number"):
+        try:
+            candidate.constructed = classifier.construct(candidate, result)
+        except Exception as e:
+            candidate.failure_reason = str(e)
 
     candidates = result.get_candidates("page_number")
     assert len(candidates) == 2
@@ -174,9 +194,9 @@ def test_page_number_with_font_hints():
         f"Different score details: {different_candidate.score_details}"  # type: ignore
     )
 
-    assert (
-        matching_candidate.score > different_candidate.score
-    ), "Matching font size should score higher"
+    assert matching_candidate.score > different_candidate.score, (
+        "Matching font size should score higher"
+    )
     print("✓ PageNumberClassifier uses font size hints correctly")
 
 
@@ -185,4 +205,3 @@ if __name__ == "__main__":
     test_step_number_with_font_hints()
     test_page_number_with_font_hints()
     print("\n✓ All font size hint integration tests passed!")
-

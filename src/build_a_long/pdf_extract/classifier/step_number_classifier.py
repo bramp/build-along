@@ -57,7 +57,7 @@ class _StepNumberScore:
 class StepNumberClassifier(LabelClassifier):
     """Classifier for step numbers."""
 
-    outputs = frozenset({"step_number", "page_number"})
+    outputs = frozenset({"step_number"})
     requires = frozenset()
 
     def score(self, result: ClassificationResult) -> None:
@@ -122,10 +122,20 @@ class StepNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct StepNumber elements from candidates."""
+        candidates = result.get_candidates("step_number")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a StepNumber element from a winning candidate.
+        """Construct a StepNumber element from a single candidate.
 
         This method:
         1. Extracts the text from the candidate's source block
@@ -154,23 +164,6 @@ class StepNumberClassifier(LabelClassifier):
 
         # Successfully constructed
         return StepNumber(value=value, bbox=block.bbox)
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for step numbers.
-
-        DEPRECATED: This method implements the legacy one-phase classification.
-        It calls score() to create candidates, then constructs the winners.
-
-        For new code, use score() + construct() separately for two-phase classification.
-        """
-        # Phase 1: Score all candidates
-        self.score(result)
-
-        # Phase 2: Construct all candidates (using base class helper)
-        self._construct_all_candidates(result, "step_number")
 
     def _score_step_number_text(self, text: str) -> float:
         """Score text based on how well it matches step number patterns.

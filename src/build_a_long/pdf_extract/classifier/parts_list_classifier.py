@@ -176,10 +176,20 @@ class PartsListClassifier(LabelClassifier):
             # Add candidate to result
             result.add_candidate("parts_list", candidate)
 
-    def construct(
+    def construct(self, result: ClassificationResult) -> None:
+        """Construct PartsList elements from candidates."""
+        candidates = result.get_candidates("parts_list")
+        for candidate in candidates:
+            try:
+                elem = self._construct_single(candidate, result)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
+
+    def _construct_single(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Construct a PartsList from the candidate's score details.
+        """Construct a PartsList from a single candidate's score details.
 
         Uses the Part elements stored in the score to build the PartsList.
         """
@@ -190,18 +200,6 @@ class PartsListClassifier(LabelClassifier):
             bbox=candidate.bbox,
             parts=score.parts,
         )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for potential parts list drawings.
-
-        Scores drawings based solely on whether they contain Part elements.
-        Does NOT consider StepNumber proximity - that's done by StepClassifier.
-        """
-        self.score(result)
-        self._construct_all_candidates(result, "parts_list")
 
     def _find_containing_parts(
         self, drawing: Drawing, parts: Sequence[Part]
