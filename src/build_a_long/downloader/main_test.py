@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from build_a_long.downloader.main import main
 
 
-@patch("build_a_long.downloader.commands.download.LegoInstructionDownloader")
+@patch("build_a_long.downloader.download.command.LegoInstructionDownloader")
 def test_main_routes_to_download_command(mock_downloader_class, monkeypatch, capsys):
     """Test that main correctly routes to the download command."""
     mock_instance = MagicMock()
@@ -24,7 +24,7 @@ def test_main_routes_to_download_command(mock_downloader_class, monkeypatch, cap
     assert "All done" in capsys.readouterr().out
 
 
-@patch("build_a_long.downloader.commands.summarize._summarize_metadata")
+@patch("build_a_long.downloader.summarize.command._summarize_metadata")
 def test_main_routes_to_summarize_command(mock_summarize, monkeypatch):
     """Test that main correctly routes to the summarize command."""
     mock_summarize.return_value = 0
@@ -37,7 +37,7 @@ def test_main_routes_to_summarize_command(mock_summarize, monkeypatch):
     mock_summarize.assert_called_once_with(Path("/tmp/data"), Path("data/indices"))
 
 
-@patch("build_a_long.downloader.commands.verify._verify_data_integrity")
+@patch("build_a_long.downloader.verify.command._verify_data_integrity")
 def test_main_routes_to_verify_command(mock_verify, monkeypatch):
     """Test that main correctly routes to the verify command."""
     mock_verify.return_value = 0

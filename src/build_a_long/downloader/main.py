@@ -3,15 +3,9 @@
 import argparse
 import sys
 
-from build_a_long.downloader.commands.download import (
-    add_download_parser,
-    run_download,
-)
-from build_a_long.downloader.commands.summarize import (
-    add_summarize_parser,
-    run_summarize,
-)
-from build_a_long.downloader.commands.verify import add_verify_parser, run_verify
+from build_a_long.downloader.download import add_download_parser, run_download
+from build_a_long.downloader.summarize import add_summarize_parser, run_summarize
+from build_a_long.downloader.verify import add_verify_parser, run_verify
 
 
 def _parse_args() -> argparse.Namespace:
