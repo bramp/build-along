@@ -12,6 +12,7 @@ Enable DEBUG logs with LOG_LEVEL=DEBUG.
 
 import logging
 from dataclasses import dataclass
+from typing import Literal
 
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
@@ -42,6 +43,9 @@ class _PartCountScore:
 
     font_size_score: float
     """Score based on font size match to expected part count size (0.0-1.0)."""
+
+    matched_hint: Literal["part_count", "catalog_part_count"] | None = None
+    """Which font size hint matched best ('part_count' or 'catalog_part_count')."""
 
     def combined_score(self, config: ClassifierConfig) -> float:
         """Calculate final weighted score from components.
@@ -99,10 +103,19 @@ class PartCountClassifier(LabelClassifier):
             # Use the better matching font size
             font_size_score = max(instruction_font_score, catalog_font_score)
 
-            # Store detailed score object
+            # Determine which hint matched best
+            matched_hint = None
+            if font_size_score > 0:
+                if instruction_font_score > catalog_font_score:
+                    matched_hint = "part_count"
+                else:
+                    matched_hint = "catalog_part_count"
+
+            # Store detailed score object with matched_hint
             detail_score = _PartCountScore(
                 text_score=text_score,
                 font_size_score=font_size_score,
+                matched_hint=matched_hint,
             )
 
             combined = detail_score.combined_score(self.config)
@@ -118,21 +131,6 @@ class PartCountClassifier(LabelClassifier):
                 )
                 continue
 
-            # Determine which hint matched best (stored for later construction)
-            matched_hint = None
-            if font_size_score > 0:
-                if instruction_font_score > catalog_font_score:
-                    matched_hint = "part_count"
-                else:
-                    matched_hint = "catalog_part_count"
-
-            # Store matched_hint in score_details for use in construct()
-            # We'll use a dict to pass extra info
-            score_details_dict = {
-                "score": detail_score,
-                "matched_hint": matched_hint,
-            }
-
             # Create candidate WITHOUT construction
             result.add_candidate(
                 "part_count",
@@ -140,7 +138,7 @@ class PartCountClassifier(LabelClassifier):
                     bbox=block.bbox,
                     label="part_count",
                     score=combined,
-                    score_details=score_details_dict,
+                    score_details=detail_score,
                     constructed=None,
                     source_blocks=[block],
                     failure_reason=None,
@@ -157,10 +155,7 @@ class PartCountClassifier(LabelClassifier):
         assert isinstance(block, Text)
 
         # Get score details
-        score_details_dict = candidate.score_details
-        assert isinstance(score_details_dict, dict)
-        detail_score = score_details_dict["score"]
-        matched_hint = score_details_dict["matched_hint"]
+        detail_score = candidate.score_details
         assert isinstance(detail_score, _PartCountScore)
 
         # Validate text score
@@ -173,7 +168,9 @@ class PartCountClassifier(LabelClassifier):
             raise ValueError(f"Could not parse part count from text: '{block.text}'")
 
         # Successfully constructed
-        return PartCount(count=value, bbox=block.bbox, matched_hint=matched_hint)
+        return PartCount(
+            count=value, bbox=block.bbox, matched_hint=detail_score.matched_hint
+        )
 
     def evaluate(
         self,

@@ -55,6 +55,12 @@ class _PieceLengthScore:
     font_size_score: float
     """Score based on small font size (0.0-1.0)."""
 
+    value: int | None = None
+    """The parsed piece length value (1-32)."""
+
+    containing_drawing: Drawing | None = None
+    """The Drawing element that contains this piece length text."""
+
     def combined_score(self) -> float:
         """Calculate final score from components.
 
@@ -123,6 +129,8 @@ class PieceLengthClassifier(LabelClassifier):
                 text_score=text_score,
                 context_score=context_score,
                 font_size_score=font_size_score,
+                value=value,
+                containing_drawing=containing_drawing,
             )
 
             combined = detail_score.combined_score()
@@ -141,20 +149,13 @@ class PieceLengthClassifier(LabelClassifier):
             if combined < 0.3:
                 continue
 
-            # Store containing_drawing in score_details for use in construct()
-            score_details_dict = {
-                "score": detail_score,
-                "containing_drawing": containing_drawing,
-                "value": value,
-            }
-
             result.add_candidate(
                 "piece_length",
                 Candidate(
                     bbox=text.bbox,
                     label="piece_length",
                     score=combined,
-                    score_details=score_details_dict,
+                    score_details=detail_score,
                     constructed=None,
                     source_blocks=[text],
                     failure_reason=None,
@@ -177,12 +178,12 @@ class PieceLengthClassifier(LabelClassifier):
         assert isinstance(text, Text)
 
         # Get score details
-        score_details_dict = candidate.score_details
-        assert isinstance(score_details_dict, dict)
-        value = score_details_dict["value"]
+        detail_score = candidate.score_details
+        assert isinstance(detail_score, _PieceLengthScore)
+        assert detail_score.value is not None
 
         # Successfully constructed
-        return PieceLength(value=value, bbox=text.bbox)
+        return PieceLength(value=detail_score.value, bbox=text.bbox)
 
     def evaluate(
         self,
