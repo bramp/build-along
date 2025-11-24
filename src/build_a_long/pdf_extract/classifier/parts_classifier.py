@@ -43,6 +43,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PieceLength,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
+    Drawing,
     Image,
 )
 
@@ -62,6 +63,12 @@ class _PartPairScore:
     image: Image
     """The image element (will become diagram in Part)."""
 
+    part_number: PartNumber | None
+    """The associated part number (if any)."""
+
+    piece_length: PieceLength | None
+    """The associated piece length (if any)."""
+
     def sort_key(self) -> float:
         """Return sort key for matching (prefer smaller distance)."""
         return self.distance
@@ -76,19 +83,134 @@ class PartsClassifier(LabelClassifier):
     requires = frozenset({"part_count", "part_number", "piece_length"})
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
+        """Score part pairings and create candidates.
+
+        Creates candidates with score details containing the PartCount and Image,
+        but does not construct the Part yet.
+        """
+        page_data = result.page_data
+
+        # Get part_count candidates with type safety, selecting by score
+        part_counts = result.get_winners_by_score("part_count", PartCount)
+
+        # Get optional part_number candidates
+        part_numbers = result.get_winners_by_score("part_number", PartNumber)
+
+        # Get optional piece_length candidates
+        piece_lengths = result.get_winners_by_score("piece_length", PieceLength)
+
+        images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
+
+        if not part_counts:
+            log.debug(
+                "[parts] No part_count candidates found on page %s",
+                page_data.page_number,
+            )
+            return
+
+        if not images:
+            log.debug(
+                "[parts] No images found on page %s",
+                page_data.page_number,
+            )
+            return
+
+        log.debug(
+            "[parts] page=%s part_counts=%d images=%d",
+            page_data.page_number,
+            len(part_counts),
+            len(images),
         )
+
+        # Build candidate pairings using existing helper
+        candidate_edges = self._build_candidate_edges(
+            part_counts, images, page_data.bbox.width if page_data.bbox else 100.0
+        )
+
+        log.debug(
+            "[parts] Built %d candidate edges for %d part_counts",
+            len(candidate_edges),
+            len(part_counts),
+        )
+
+        if not candidate_edges:
+            log.debug(
+                "[parts] No valid part-image pairs found on page %s",
+                page_data.page_number,
+            )
+            return
+
+        # Sort by distance (prefer closer pairs)
+        candidate_edges.sort(key=lambda ps: ps.sort_key())
+
+        # Greedy matching to enforce one-to-one pairing
+        used_counts: set[int] = set()
+        used_images: set[int] = set()
+
+        for ps in candidate_edges:
+            count_id = id(ps.part_count)
+            image_id = ps.image.id
+
+            if count_id in used_counts or image_id in used_images:
+                continue
+
+            # Mark as used
+            used_counts.add(count_id)
+            used_images.add(image_id)
+
+            # Find associated elements
+            part_number = self._find_part_number(ps.part_count, part_numbers)
+            piece_length = self._find_piece_length(ps.image, piece_lengths)
+
+            # Create enhanced score with associated elements
+            enhanced_score = _PartPairScore(
+                distance=ps.distance,
+                part_count=ps.part_count,
+                image=ps.image,
+                part_number=part_number,
+                piece_length=piece_length,
+            )
+
+            # Create bounding box for the Part
+            bbox = ps.part_count.bbox.union(ps.image.bbox)
+            if part_number:
+                bbox = bbox.union(part_number.bbox)
+            if piece_length:
+                bbox = bbox.union(piece_length.bbox)
+
+            # Create candidate WITHOUT construction
+            candidate = Candidate(
+                bbox=bbox,
+                label="part",
+                score=1.0,
+                score_details=enhanced_score,
+                constructed=None,
+                source_blocks=[ps.image],
+                failure_reason=None,
+            )
+
+            result.add_candidate("part", candidate)
 
     def construct(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
+        """Construct a Part from the candidate's score details.
+
+        Uses the PartCount, Image, PartNumber, and PieceLength stored in the
+        score to build the Part.
+        """
+        assert isinstance(candidate.score_details, _PartPairScore)
+        ps = candidate.score_details
+
+        # Wrap Image in Drawing for the diagram field
+        diagram = Drawing(bbox=ps.image.bbox, id=ps.image.id)
+
+        return Part(
+            bbox=candidate.bbox,
+            count=ps.part_count,
+            number=ps.part_number,
+            length=ps.piece_length,
+            diagram=diagram,
         )
 
     def evaluate(
@@ -100,57 +222,8 @@ class PartsClassifier(LabelClassifier):
         Scores are based on vertical distance and horizontal alignment between
         part count elements and images.
         """
-        page_data = result.page_data
-
-        # Get part_count candidates with type safety, selecting by score
-        part_counts = result.get_winners_by_score("part_count", PartCount)
-
-        log.debug(
-            "[parts] Found %d part_counts for pairing",
-            len(part_counts),
-        )
-
-        if not part_counts:
-            return
-
-        # Get part_number candidates (optional, only on catalog pages)
-        part_numbers = result.get_winners_by_score("part_number", PartNumber)
-
-        # Get piece_length candidates (optional, can appear on any page type)
-        piece_lengths = result.get_winners_by_score("piece_length", PieceLength)
-
-        log.debug(
-            "[parts] Retrieved %d piece_lengths from result",
-            len(piece_lengths),
-        )
-
-        # Get all images on the page
-        images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
-
-        log.debug(
-            "[parts] Found %d images on page for pairing with %d part_counts",
-            len(images),
-            len(part_counts),
-        )
-
-        if not images:
-            return
-
-        # Build candidate pairings and match them directly
-        candidate_edges = self._build_candidate_edges(
-            part_counts, images, page_data.bbox.width if page_data.bbox else 100.0
-        )
-
-        log.debug(
-            "[parts] Built %d candidate edges for %d part_counts",
-            len(candidate_edges),
-            len(part_counts),
-        )
-
-        # Match and create Part candidates
-        self._match_and_create_parts(
-            candidate_edges, part_numbers, piece_lengths, result
-        )
+        self.score(result)
+        self._construct_all_candidates(result, "part")
 
     def _build_candidate_edges(
         self,
@@ -177,6 +250,8 @@ class PartsClassifier(LabelClassifier):
                         distance=distance,
                         part_count=pc,
                         image=img,
+                        part_number=None,  # Will be filled in during matching
+                        piece_length=None,  # Will be filled in during matching
                     )
                     edges.append(score)
         return edges
@@ -229,7 +304,8 @@ class PartsClassifier(LabelClassifier):
             piece_length = self._find_piece_length(img, piece_lengths)
 
             # Create a Part from this pairing
-            # The bbox is the union of the part_count, image, and part_number (if present)
+            # The bbox is the union of the part_count, image,
+            # and part_number (if present)
             combined_bbox = BBox(
                 x0=min(pc.bbox.x0, img.bbox.x0),
                 y0=min(pc.bbox.y0, img.bbox.y0),
