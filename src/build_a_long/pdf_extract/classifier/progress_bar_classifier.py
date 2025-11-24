@@ -60,6 +60,12 @@ class _ProgressBarScore:
     aspect_ratio_score: float
     """Score based on horizontal aspect ratio (wide and thin) (0.0-1.0)."""
 
+    original_width: float
+    """Original width before clipping to page boundaries."""
+
+    clipped_bbox: BBox
+    """Bounding box clipped to page boundaries."""
+
     def combined_score(self, config: ClassifierConfig) -> float:
         """Calculate final weighted score from components."""
         # Equal weighting for all components
@@ -75,30 +81,7 @@ class ProgressBarClassifier(LabelClassifier):
     requires = frozenset({"page_number"})
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def construct(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create candidates for progress bars.
-
-        This method looks for horizontal elements at the bottom of the page
-        that span most of the page width.
-        """
+        """Score Drawing/Image elements and create candidates WITHOUT construction."""
         page_data = result.page_data
         page_bbox = page_data.bbox
         assert page_bbox is not None
@@ -131,26 +114,21 @@ class ProgressBarClassifier(LabelClassifier):
             if aspect_ratio_score == 0.0:
                 continue
 
+            # Clip the bbox to page boundaries
+            original_width = block.bbox.width
+            clipped_bbox = block.bbox.clip_to(page_bbox)
+
             score_details = _ProgressBarScore(
                 position_score=position_score,
                 width_score=width_score,
                 aspect_ratio_score=aspect_ratio_score,
+                original_width=original_width,
+                clipped_bbox=clipped_bbox,
             )
 
             combined = score_details.combined_score(self.config)
 
-            # Clip the bbox to page boundaries to handle extraction artifacts
-            # where progress bars may extend beyond the page boundaries.
-            # Preserve the original width for potential progress calculation.
-            original_width = block.bbox.width
-            clipped_bbox = block.bbox.clip_to(page_bbox)
-
-            # Try to construct the ProgressBar element with clipped bbox
-            constructed_elem = ProgressBar(
-                bbox=clipped_bbox, progress=None, full_width=original_width
-            )
-
-            # Store candidate
+            # Store candidate WITHOUT construction
             result.add_candidate(
                 "progress_bar",
                 Candidate(
@@ -158,11 +136,37 @@ class ProgressBarClassifier(LabelClassifier):
                     label="progress_bar",
                     score=combined,
                     score_details=score_details,
-                    constructed=constructed_elem,
+                    constructed=None,
                     source_blocks=[block],
                     failure_reason=None,
                 ),
             )
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Construct a ProgressBar element from a winning candidate."""
+        # Get score details
+        detail_score = candidate.score_details
+        assert isinstance(detail_score, _ProgressBarScore)
+
+        # Construct the ProgressBar element
+        return ProgressBar(
+            bbox=detail_score.clipped_bbox,
+            progress=None,
+            full_width=detail_score.original_width,
+        )
+
+    def evaluate(
+        self,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create candidates for progress bars.
+
+        DEPRECATED: Calls score() + construct() for backward compatibility.
+        """
+        self.score(result)
+        self._construct_all_candidates(result, "progress_bar")
 
     def _get_page_number_bbox(self, result: ClassificationResult) -> BBox | None:
         """Get the bbox of the page number if it has been classified."""
