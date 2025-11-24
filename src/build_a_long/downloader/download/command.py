@@ -76,9 +76,14 @@ def add_download_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Directory to store PDFs. Defaults to data/<set_number>",
     )
     download_parser.add_argument(
-        "--metadata",
+        "--print-metadata",
         action="store_true",
-        help="Only fetch and print metadata as JSON (no downloads)",
+        help="Only fetch and print metadata as JSON (no downloads or saving)",
+    )
+    download_parser.add_argument(
+        "--skip-pdfs",
+        action="store_true",
+        help="Download and save metadata files only, skip PDF downloads",
     )
     download_parser.add_argument(
         "--overwrite-metadata",
@@ -94,7 +99,7 @@ def add_download_parser(subparsers: argparse._SubParsersAction) -> None:
         ),
     )
     download_parser.add_argument(
-        "--overwrite-download",
+        "--overwrite-pdfs",
         action="store_true",
         help="Force re-downloading of PDFs, even if they exist.",
     )
@@ -120,6 +125,14 @@ def run_download(args: argparse.Namespace) -> int:
         print("Error: No LEGO set numbers provided.", file=sys.stderr)
         return 1
 
+    # Validate conflicting flags
+    if args.skip_pdfs and args.overwrite_pdfs:
+        print(
+            "Error: --skip-pdfs and --overwrite-pdfs cannot be used together.",
+            file=sys.stderr,
+        )
+        return 1
+
     overwrite_metadata_if_older_than: timedelta | None = None
     if args.overwrite_metadata_if_older_than:
         duration_str = args.overwrite_metadata_if_older_than
@@ -138,8 +151,8 @@ def run_download(args: argparse.Namespace) -> int:
     if args.overwrite_metadata:
         overwrite_metadata_if_older_than = timedelta(seconds=0)
 
-    # Metadata mode: fetch and print JSON without downloading
-    if args.metadata:
+    # Print metadata mode: fetch and print JSON without downloading or saving
+    if args.print_metadata:
         with LegoInstructionDownloader(locale=args.locale) as downloader:
             for set_number in all_set_numbers:
                 try:
@@ -165,9 +178,10 @@ def run_download(args: argparse.Namespace) -> int:
         locale=args.locale,
         out_dir=Path(args.out_dir) if args.out_dir else None,
         overwrite_metadata_if_older_than=overwrite_metadata_if_older_than,
-        overwrite_download=args.overwrite_download,
+        overwrite_download=args.overwrite_pdfs,
         show_progress=True,
         debug=args.debug,
+        skip_pdfs=args.skip_pdfs,
     ) as downloader:
         exit_code = downloader.process_sets(all_set_numbers)
 

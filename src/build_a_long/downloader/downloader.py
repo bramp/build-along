@@ -90,6 +90,7 @@ class LegoInstructionDownloader:
         debug: bool = False,
         max_calls: int = 1,
         period: int = 1,
+        skip_pdfs: bool = False,
     ):
         """Initialize the downloader.
 
@@ -103,6 +104,7 @@ class LegoInstructionDownloader:
             debug: If True, enable debug output.
             max_calls: Maximum number of calls to allow in a period.
             period: The time period in seconds.
+            skip_pdfs: If True, only download metadata, skip PDF downloads.
         """
         self.locale = locale
         self.out_dir = out_dir
@@ -114,6 +116,7 @@ class LegoInstructionDownloader:
         self.debug = debug
         self.max_calls = max_calls
         self.period = period
+        self.skip_pdfs = skip_pdfs
 
     def _get_client(self) -> httpx.Client:
         """Get or create the HTTP client."""
@@ -392,6 +395,13 @@ class LegoInstructionDownloader:
 
         metadata, use_cached = result
         self._print_metadata_info(set_number, metadata)
+
+        # Skip PDF downloads if skip_pdfs is True
+        if self.skip_pdfs:
+            if not use_cached:
+                # Write the metadata if it's new or updated
+                write_metadata(out_dir / "metadata.json", metadata)
+            return 0
 
         # Process the PDFs for the set.
         if self._process_set_pdfs(metadata, out_dir) and not use_cached:
