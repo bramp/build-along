@@ -69,29 +69,10 @@ class PartsImageClassifier(LabelClassifier):
     requires = frozenset({"parts_list", "part_count"})
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
+        """Score part image pairings and create candidates.
 
-    def construct(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
-
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create scores for part image pairings.
-
-        Scores are based on vertical distance and horizontal alignment between
-        part count texts and images within parts lists.
+        Creates candidates with score details containing the part count candidate
+        and image, but does not construct any element (this is metadata only).
         """
         page_data = result.page_data
 
@@ -110,26 +91,19 @@ class PartsImageClassifier(LabelClassifier):
         if not images:
             return
 
-        # Build candidate pairings and match them directly
+        # Build candidate pairings
         candidate_edges = self._build_candidate_edges(
             part_count_candidates,
             images,
             page_data.bbox.width if page_data.bbox else 100.0,
         )
-        self._match_and_label_parts(candidate_edges, images, result)
 
-    def _match_and_label_parts(
-        self,
-        edges: list[_PartImageScore],
-        images: list[Image],
-        result: ClassificationResult,
-    ):
-        """Match part counts with images using greedy matching based on distance."""
-        edges.sort(key=lambda score: score.sort_key())
+        # Sort and match
+        candidate_edges.sort(key=lambda score: score.sort_key())
         matched_count_candidates: set[int] = set()
         matched_images: set[int] = set()
 
-        for score in edges:
+        for score in candidate_edges:
             pc_candidate = score.part_count_candidate
             img = score.image
             if (
@@ -139,14 +113,14 @@ class PartsImageClassifier(LabelClassifier):
                 continue
             matched_count_candidates.add(id(pc_candidate))
             matched_images.add(id(img))
-            # Create a candidate for the matched image
-            # containing the pair relationship
+
+            # Create candidate WITHOUT construction (part_image is metadata only)
             result.add_candidate(
                 "part_image",
                 Candidate(
                     bbox=img.bbox,
                     label="part_image",
-                    score=1.0,  # Matched based on distance, not a traditional score
+                    score=1.0,
                     score_details=score,
                     constructed=None,
                     source_blocks=[img],
@@ -165,6 +139,35 @@ class PartsImageClassifier(LabelClassifier):
                 log.debug("[part_image] unmatched part_counts: %d", len(unmatched_c))
             if unmatched_i:
                 log.debug("[part_image] unmatched images: %d", len(unmatched_i))
+
+    def construct(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Part images don't produce constructed elements.
+
+        This classifier only creates metadata about pairings, not actual elements.
+        Return None to indicate no construction needed.
+        """
+        # PartsImageClassifier doesn't construct elements, it just tracks pairings
+        # Return None is not valid for LegoPageElements, so we need to handle this
+        # differently. Actually, looking at the code, part_image candidates are
+        # never constructed - they're just metadata.
+        raise NotImplementedError(
+            "PartsImageClassifier does not construct elements - "
+            "it only creates metadata candidates"
+        )
+
+    def evaluate(
+        self,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create scores for part image pairings.
+
+        Scores are based on vertical distance and horizontal alignment between
+        part count texts and images within parts lists.
+        """
+        # Just call score - no construction needed for this classifier
+        self.score(result)
 
     def _build_candidate_edges(
         self,

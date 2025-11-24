@@ -47,33 +47,32 @@ class PageClassifier(LabelClassifier):
     )
 
     def score(self, result: ClassificationResult) -> None:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
+        """Create a single page candidate.
+
+        PageClassifier doesn't do any scoring - it just creates a placeholder
+        candidate that will be constructed with all page components.
+        """
+        # Create a simple candidate - all logic is in construct()
+        result.add_candidate(
+            "page",
+            Candidate(
+                bbox=result.page_data.bbox,
+                label="page",
+                score=1.0,
+                score_details=None,
+                constructed=None,
+                source_blocks=[],  # Synthetic element
+                failure_reason=None,
+            ),
         )
 
     def construct(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
-        """Legacy classifier - uses evaluate() instead of score() + construct()."""
-        raise NotImplementedError(
-            f"{self.__class__.__name__} uses legacy evaluate() method. "
-            "Implement score() and construct() to use two-phase classification."
-        )
+        """Construct a Page by collecting all page components.
 
-    def evaluate(
-        self,
-        result: ClassificationResult,
-    ) -> None:
-        """Evaluate elements and create a Page candidate.
-
-        Collects page_number, progress_bar, and step elements to build a
-        complete Page. Uses get_winners_by_score() to select the best
-        candidates based on scores.
-
-        For catalog pages (pages with parts_list but no steps), creates a
-        catalog Page with all parts_lists merged into a single catalog field.
+        Gathers page_number, progress_bar, new_bags, steps, and catalog parts
+        to build the complete Page element.
         """
         page_data = result.page_data
 
@@ -163,9 +162,8 @@ class PageClassifier(LabelClassifier):
             f"{len(catalog_parts)} parts" if catalog_parts else None,
         )
 
-        # Construct the Page
-        constructed = Page(
-            bbox=page_data.bbox,
+        return Page(
+            bbox=candidate.bbox,
             categories=categories,
             page_number=page_number,
             progress_bar=progress_bar,
@@ -176,16 +174,18 @@ class PageClassifier(LabelClassifier):
             unprocessed_elements=[],
         )
 
-        # Add candidate
-        result.add_candidate(
-            "page",
-            Candidate(
-                bbox=page_data.bbox,
-                label="page",
-                score=1.0,
-                score_details=None,
-                constructed=constructed,
-                source_blocks=[],  # Synthetic element
-                failure_reason=None,
-            ),
-        )
+    def evaluate(
+        self,
+        result: ClassificationResult,
+    ) -> None:
+        """Evaluate elements and create a Page candidate.
+
+        Collects page_number, progress_bar, and step elements to build a
+        complete Page. Uses get_winners_by_score() to select the best
+        candidates based on scores.
+
+        For catalog pages (pages with parts_list but no steps), creates a
+        catalog Page with all parts_lists merged into a single catalog field.
+        """
+        self.score(result)
+        self._construct_all_candidates(result, "page")
