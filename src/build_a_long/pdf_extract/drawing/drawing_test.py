@@ -38,7 +38,7 @@ def _make_candidate(
     return Candidate(
         label=label,
         bbox=bbox,
-        source_block=source_block,
+        source_blocks=[source_block] if source_block else [],
         score=0.9,
         score_details={},
         constructed=PageNumber(bbox=bbox, value=1) if has_constructed else None,
@@ -89,7 +89,7 @@ def test_create_drawable_items_elements_only():
     candidate = Candidate(
         label="PageNumber",
         bbox=block.bbox,
-        source_block=block,
+        source_blocks=[block],
         score=0.9,
         score_details={},
         constructed=page_number,
@@ -101,7 +101,7 @@ def test_create_drawable_items_elements_only():
     page_candidate = Candidate(
         label="page",
         bbox=BBox(0, 0, 200, 200),
-        source_block=None,
+        source_blocks=[],
         score=1.0,
         score_details={},
         constructed=page,
@@ -131,7 +131,7 @@ def test_create_drawable_items_no_duplicate_blocks():
     candidate = Candidate(
         label="PageNumber",
         bbox=block.bbox,
-        source_block=block,
+        source_blocks=[block],
         score=0.9,
         score_details={},
         constructed=page_number,
@@ -143,7 +143,7 @@ def test_create_drawable_items_no_duplicate_blocks():
     page_candidate = Candidate(
         label="page",
         bbox=BBox(0, 0, 200, 200),
-        source_block=None,
+        source_blocks=[],
         score=1.0,
         score_details={},
         constructed=page,
@@ -172,7 +172,7 @@ def test_create_drawable_items_element_without_source_block():
     candidate = Candidate(
         label="page",
         bbox=BBox(5, 5, 15, 15),
-        source_block=None,
+        source_blocks=[],
         score=1.0,
         score_details={},
         constructed=page,
@@ -242,7 +242,7 @@ def test_create_drawable_items_filter_non_winner_elements():
     winner_candidate = Candidate(
         label="PageNumber",
         bbox=block.bbox,
-        source_block=block,
+        source_blocks=[block],
         score=0.9,
         score_details={},
         constructed=page_number,
@@ -255,7 +255,7 @@ def test_create_drawable_items_filter_non_winner_elements():
     non_winner_candidate = Candidate(
         label="StepNumber",
         bbox=block.bbox,
-        source_block=block,
+        source_blocks=[block],
         score=0.8,
         score_details={},
         constructed=step_number_elem,
@@ -270,7 +270,7 @@ def test_create_drawable_items_filter_non_winner_elements():
     page_candidate = Candidate(
         label="page",
         bbox=BBox(0, 0, 200, 200),
-        source_block=None,
+        source_blocks=[],
         score=1.0,
         score_details={},
         constructed=page,
@@ -300,7 +300,7 @@ def test_create_drawable_items_include_non_winner_elements():
     winner_candidate = Candidate(
         label="PageNumber",
         bbox=block.bbox,
-        source_block=block,
+        source_blocks=[block],
         score=0.9,
         score_details={},
         constructed=page_number,
@@ -313,7 +313,7 @@ def test_create_drawable_items_include_non_winner_elements():
     non_winner_candidate = Candidate(
         label="StepNumber",
         bbox=block.bbox,
-        source_block=block,
+        source_blocks=[block],
         score=0.8,
         score_details={},
         constructed=step_number_elem,
@@ -327,7 +327,7 @@ def test_create_drawable_items_include_non_winner_elements():
     page_candidate = Candidate(
         label="page",
         bbox=BBox(0, 0, 200, 200),
-        source_block=None,
+        source_blocks=[],
         score=1.0,
         score_details={},
         constructed=page,
