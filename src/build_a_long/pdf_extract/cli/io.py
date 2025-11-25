@@ -12,8 +12,12 @@ import pymupdf
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.cli.output_models import (
+    DebugOutput,
+)
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
+from build_a_long.schemas.generated_models import InstructionBook
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +95,66 @@ def load_json(path: Path) -> dict[str, Any]:
         ) from e
 
 
-# TODO I don't think this works, as it doesn't actually output the classified results
+def save_debug_json(
+    results: list[ClassificationResult],
+    output_dir: Path,
+    pdf_path: Path,
+) -> None:
+    """Save debug data with raw blocks and all candidates as JSON.
+
+    This includes all the classification details: blocks, candidates with scores,
+    removal reasons, etc. Useful for debugging and understanding the classification
+    process.
+
+    Args:
+        results: List of ClassificationResult with candidates and classifications
+        output_dir: Directory where JSON should be saved
+        pdf_path: Original PDF path (used for naming the JSON file)
+    """
+    # Build debug structure using Pydantic models
+    debug_output = DebugOutput(pages=results)
+
+    output_json_path = output_dir / (pdf_path.stem + "_debug.json")
+    with open(output_json_path, "w") as f:
+        f.write(debug_output.model_dump_json(indent=2))
+    logger.info("Saved debug JSON to %s", output_json_path)
+
+
+def save_pages_json(
+    results: list[ClassificationResult],
+    output_dir: Path,
+    pdf_path: Path,
+) -> None:
+    """Save final classified Page elements as JSON.
+
+    This outputs the structured, hierarchical Page elements with their catalog,
+    steps, parts lists, etc. This is the "final result" of classification.
+
+    Args:
+        results: List of ClassificationResult with constructed Page elements
+        output_dir: Directory where JSON should be saved
+        pdf_path: Original PDF path (used for naming the JSON file)
+    """
+    # Collect pages using the page property from each result
+    pages = []
+    for result in results:
+        if result.page:
+            pages.append(result.page)
+        else:
+            logger.warning("No valid page for page %s", result.page_data.page_number)
+
+    # Create InstructionBook and serialize using Pydantic
+    instruction_book = InstructionBook(
+        pages=[page.model_dump(mode="json") for page in pages]
+    )
+
+    output_json_path = output_dir / (pdf_path.stem + ".json")
+    with open(output_json_path, "w") as f:
+        f.write(instruction_book.model_dump_json(indent=2))
+    logger.info("Saved pages JSON to %s", output_json_path)
+
+
+# TODO: Deprecated - remove after updating callers to use save_pages_json
 def save_classified_json(
     pages: list[PageData],
     results: list[ClassificationResult],
@@ -100,17 +163,17 @@ def save_classified_json(
 ) -> None:
     """Save extracted data as JSON file.
 
+    DEPRECATED: This function saves raw PageData instead of classified Page elements.
+    Use save_pages_json() for final results or save_debug_json() for debug output.
+
     Args:
         pages: List of PageData to serialize
         results: List of ClassificationResult (one per page) - not currently serialized
         output_dir: Directory where JSON should be saved
         pdf_path: Original PDF path (used for naming the JSON file)
     """
-    json_data = ExtractionResult(pages=pages).model_dump()
-    output_json_path = output_dir / (pdf_path.stem + ".json")
-    with open(output_json_path, "w") as f:
-        json.dump(json_data, f, indent=4)
-    logger.info("Saved JSON to %s", output_json_path)
+    # Delegate to new function
+    save_pages_json(results, output_dir, pdf_path)
 
 
 def save_raw_json(

@@ -268,8 +268,12 @@ class ClassificationResult(BaseModel):
     @property
     def page(self) -> Page | None:
         """Returns the Page object built from this classification result."""
-        pages = self.get_winners_by_score("page", Page, max_count=1)
-        return pages[0] if pages else None
+        page_candidates = self.get_scored_candidates("page", valid_only=True)
+        if page_candidates:
+            page = page_candidates[0].constructed
+            assert isinstance(page, Page)
+            return page
+        return None
 
     def add_warning(self, warning: str) -> None:
         """Add a warning message to the classification result.

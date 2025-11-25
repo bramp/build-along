@@ -17,6 +17,8 @@ Set environment variables to aid investigation without code changes:
 import logging
 from dataclasses import dataclass
 
+from pydantic import BaseModel
+
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
@@ -37,6 +39,16 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 log = logging.getLogger(__name__)
 
 
+class _PageScore(BaseModel):
+    """Score details for Page candidates.
+
+    PageClassifier always succeeds with score 1.0 since it's a synthetic
+    element that aggregates other classified components.
+    """
+
+    score: float = 1.0
+
+
 @dataclass(frozen=True)
 class PageClassifier(LabelClassifier):
     """Classifier for building the complete Page element."""
@@ -49,17 +61,17 @@ class PageClassifier(LabelClassifier):
     def score(self, result: ClassificationResult) -> None:
         """Create a single page candidate.
 
-        PageClassifier doesn't do any scoring - it just creates a placeholder
-        candidate that will be constructed with all page components.
+        PageClassifier doesn't do complex scoring - it just creates a candidate
+        that will be constructed with all page components.
         """
-        # Create a simple candidate - all logic is in construct()
+        # Create a candidate with score_details for consistency
         result.add_candidate(
             "page",
             Candidate(
                 bbox=result.page_data.bbox,
                 label="page",
                 score=1.0,
-                score_details=None,
+                score_details=_PageScore(),
                 constructed=None,
                 source_blocks=[],  # Synthetic element
                 failure_reason=None,

@@ -6,8 +6,11 @@ from .io import (
     open_compressed,
     render_annotated_images,
     save_classified_json,
+    save_debug_json,
+    save_pages_json,
     save_raw_json,
 )
+from .output_models import DebugOutput
 from .reporting import (
     print_classification_debug,
     print_font_hints,
@@ -23,7 +26,10 @@ __all__ = [
     "open_compressed",
     "render_annotated_images",
     "save_classified_json",
+    "save_debug_json",
+    "save_pages_json",
     "save_raw_json",
+    "DebugOutput",
     "print_classification_debug",
     "print_font_hints",
     "print_histogram",
