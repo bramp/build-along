@@ -35,7 +35,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
-from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.bbox import BBox, build_connected_cluster
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     BagNumber,
     LegoPageElements,
@@ -208,39 +208,77 @@ class NewBagClassifier(LabelClassifier):
     def _find_nearby_images(
         self, bag_bbox: BBox, image_blocks: list[Drawing | Image]
     ) -> list[Drawing | Image]:
-        """Find image/drawing blocks near the bag number.
+        """Find image/drawing blocks that form a connected cluster with the bag number.
 
-        An image is considered "nearby" if it overlaps with or is within
-        a reasonable distance of the bag number's bounding box.
+        The new bag graphic is composed of many small overlapping images.
+        This method:
+        1. Filters out problematic elements (too large, invalid coordinates)
+        2. Finds images that overlap the bag number
+        3. Uses build_connected_cluster to find all connected images
 
         Args:
             bag_bbox: Bounding box of the bag number
             image_blocks: All image/drawing blocks on the page
 
         Returns:
-            List of nearby image blocks
+            List of images in the connected cluster
         """
-        # Expand the bag bbox to include nearby images
-        # Typical "New Bag" graphics extend significantly around the number
-        expansion_factor = 3.0  # Allow images within 3x the bag bbox size
-        expansion_width = bag_bbox.width * expansion_factor
-        expansion_height = bag_bbox.height * expansion_factor
+        # Filter out very large images that are likely backgrounds
+        # A background image typically takes up > 50% of page width or height
+        # TODO Get actual page dimensions
+        page_width = max(img.bbox.x1 for img in image_blocks) if image_blocks else 0
+        page_height = max(img.bbox.y1 for img in image_blocks) if image_blocks else 0
 
-        # Create expanded search area
-        search_bbox = BBox(
-            x0=bag_bbox.x0 - expansion_width,
-            y0=bag_bbox.y0 - expansion_height,
-            x1=bag_bbox.x1 + expansion_width,
-            y1=bag_bbox.y1 + expansion_height,
+        max_image_width = page_width * 0.5
+        max_image_height = page_height * 0.5
+
+        # Also filter out large Drawing elements (circles/paths) that might
+        # be decorative and images with invalid coordinates
+        candidate_images = [
+            img
+            for img in image_blocks
+            if (
+                img.bbox.width < max_image_width
+                and img.bbox.height < max_image_height
+                and img.bbox.x0 >= 0
+                and img.bbox.y0 >= 0
+                and img.bbox.x1 <= page_width
+                and img.bbox.y1 <= page_height
+                # Exclude very large Drawing elements (> 30% of page)
+                and not (
+                    isinstance(img, Drawing)
+                    and (
+                        img.bbox.width > page_width * 0.3
+                        or img.bbox.height > page_height * 0.3
+                    )
+                )
+            )
+        ]
+
+        if not candidate_images:
+            return []
+
+        # Find initial images that overlap the bag number
+        seed_images = [img for img in candidate_images if img.bbox.overlaps(bag_bbox)]
+
+        if not seed_images:
+            return []
+
+        log.debug(
+            "[new_bag] Found %d seed images overlapping bag bbox",
+            len(seed_images),
         )
 
-        nearby = []
-        for img in image_blocks:
-            # Check if image overlaps with or is contained in search area
-            if img.bbox.overlaps(search_bbox) or search_bbox.fully_inside(img.bbox):
-                nearby.append(img)
+        # Build connected cluster starting from seed images
+        cluster = build_connected_cluster(seed_images, candidate_images)
 
-        return nearby
+        log.debug(
+            "[new_bag] Connected cluster has %d images (from %d seeds)",
+            len(cluster),
+            len(seed_images),
+        )
+
+        return cluster
 
     def _score_image_cluster(self, num_images: int) -> float:
         """Score based on the number of images in the cluster.
@@ -272,8 +310,8 @@ class NewBagClassifier(LabelClassifier):
     ) -> float:
         """Score based on how compact the cluster is.
 
-        A good NewBag cluster should be relatively compact, with images
-        clustered around the bag number rather than spread across the page.
+        A good NewBag cluster should have the bag number taking up
+        roughly 1/4 of the height of the overall circular area.
 
         Args:
             bag_bbox: Bounding box of the bag number
@@ -287,25 +325,29 @@ class NewBagClassifier(LabelClassifier):
 
         cluster_bbox = self._calculate_cluster_bbox(bag_bbox, images)
 
-        # Calculate compactness as the ratio of bag number size to cluster size
-        # A compact cluster has the bag number taking up a reasonable portion
-        bag_area = bag_bbox.area
-        cluster_area = cluster_bbox.area
+        # Calculate the ratio of bag number height to cluster height
+        bag_height = bag_bbox.height
+        cluster_height = cluster_bbox.height
 
-        if cluster_area == 0:
+        if cluster_height == 0:
             return 0.0
 
-        # Ideal ratio: bag number is 10-30% of total cluster
-        ratio = bag_area / cluster_area
+        # Ideal ratio: bag number is ~25% (1/4) of cluster height
+        height_ratio = bag_height / cluster_height
 
-        if 0.1 <= ratio <= 0.3:
+        # Score based on how close we are to the ideal 0.25 ratio
+        if 0.2 <= height_ratio <= 0.35:
+            # Very close to ideal (20-35%)
             return 1.0
-        elif ratio < 0.1:
-            # Cluster too large relative to bag number
-            return max(0.0, ratio / 0.1)
+        elif 0.15 <= height_ratio < 0.2 or 0.35 < height_ratio <= 0.45:
+            # Somewhat close (15-20% or 35-45%)
+            return 0.8
+        elif 0.1 <= height_ratio < 0.15 or 0.45 < height_ratio <= 0.6:
+            # Getting farther from ideal
+            return 0.5
         else:
-            # Bag number too large relative to cluster (unusual)
-            return max(0.5, 1.0 - (ratio - 0.3) / 0.7)
+            # Too far from ideal ratio
+            return max(0.0, 0.3 - abs(height_ratio - 0.25))
 
     def _calculate_cluster_bbox(
         self, bag_bbox: BBox, images: list[Drawing | Image]
