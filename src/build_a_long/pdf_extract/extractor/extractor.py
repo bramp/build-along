@@ -15,10 +15,10 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
     Text,
 )
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
-    BBoxTuple,
-    BlockDict,
+    DrawingDict,
     ImageBlockDict,
     RawDict,
+    RectLikeTuple,
     TextBlockDict,
 )
 
@@ -62,7 +62,9 @@ class Extractor:
         self._next_id += 1
         return current_id
 
-    def _extract_text_blocks(self, blocks: list[BlockDict]) -> list[Text]:
+    def _extract_text_blocks(
+        self, blocks: list[TextBlockDict | ImageBlockDict]
+    ) -> list[Text]:
         """Extract text blocks from a page's raw dictionary blocks.
 
         Args:
@@ -87,7 +89,7 @@ class Extractor:
 
             for line in text_block.get("lines", []):
                 for span in line.get("spans", []):
-                    sbbox: BBoxTuple = span.get("bbox", (0.0, 0.0, 0.0, 0.0))
+                    sbbox: RectLikeTuple = span.get("bbox", (0.0, 0.0, 0.0, 0.0))
                     nbbox = BBox.from_tuple(sbbox)
 
                     text: str = span.get("text", None)
@@ -119,7 +121,9 @@ class Extractor:
 
         return text_blocks
 
-    def _extract_image_blocks(self, blocks: list[BlockDict]) -> list[Image]:
+    def _extract_image_blocks(
+        self, blocks: list[TextBlockDict | ImageBlockDict]
+    ) -> list[Image]:
         """Extract image blocks from a page's raw dictionary blocks.
 
         Args:
@@ -142,7 +146,7 @@ class Extractor:
             # Now we know b is an image block
             image_block: ImageBlockDict = b  # type: ignore[assignment]
 
-            bbox: BBoxTuple = image_block.get("bbox", (0.0, 0.0, 0.0, 0.0))
+            bbox: RectLikeTuple = image_block.get("bbox", (0.0, 0.0, 0.0, 0.0))
             nbbox = BBox.from_tuple(bbox)
 
             image_blocks.append(
@@ -156,7 +160,7 @@ class Extractor:
 
         return image_blocks
 
-    def _extract_drawing_blocks(self, drawings: list[Any]) -> list[Drawing]:
+    def _extract_drawing_blocks(self, drawings: list[DrawingDict]) -> list[Drawing]:
         """Extract drawing (vector path) blocks from a page.
 
         Args:
@@ -168,6 +172,8 @@ class Extractor:
         drawing_blocks: list[Drawing] = []
 
         for d in drawings:
+            assert isinstance(d, dict)
+
             drect = d["rect"]
             nbbox = BBox.from_tuple((drect.x0, drect.y0, drect.x1, drect.y1))
             drawing_blocks.append(Drawing(bbox=nbbox, id=self._get_next_id()))
