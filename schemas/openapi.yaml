@@ -17,6 +17,7 @@ components:
           description: The URL to the PDF file.
         filename:
           type: string
+          nullable: true
           description: The suggested filename for the PDF.
         filesize:
           type: integer
@@ -46,7 +47,6 @@ components:
           description: The total number of PDFs in a multi-part instruction set (e.g., 4 for 1/4).
       required:
         - url
-        - filename
 
     InstructionMetadata:
       type: object

@@ -8,7 +8,9 @@ from pydantic import AnyUrl, BaseModel, Field, RootModel
 
 class PdfEntry(BaseModel):
     url: AnyUrl = Field(..., description="The URL to the PDF file.")
-    filename: str = Field(..., description="The suggested filename for the PDF.")
+    filename: str | None = Field(
+        default=None, description="The suggested filename for the PDF."
+    )
     filesize: int | None = Field(
         default=None, description="The size of the PDF file in bytes."
     )

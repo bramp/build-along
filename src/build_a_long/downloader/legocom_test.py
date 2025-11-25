@@ -260,12 +260,12 @@ def test_build_metadata():
     assert metadata.pdfs[0].url == AnyUrl("https://www.lego.com/6602000.pdf")
     assert metadata.pdfs[0].sequence_number == 1
     assert metadata.pdfs[0].sequence_total == 2
-    assert metadata.pdfs[0].filename == "6602000.pdf"
+    assert metadata.pdfs[0].filename is None
     assert metadata.pdfs[0].preview_url == AnyUrl("https://www.lego.com/preview1.png")
     assert metadata.pdfs[1].url == AnyUrl("https://www.lego.com/6602001.pdf")
     assert metadata.pdfs[1].sequence_number == 2
     assert metadata.pdfs[1].sequence_total == 2
-    assert metadata.pdfs[1].filename == "6602001.pdf"
+    assert metadata.pdfs[1].filename is None
     assert metadata.pdfs[1].preview_url == AnyUrl("https://www.lego.com/preview2.png")
 
 
