@@ -117,8 +117,13 @@ def _resolve_conflict(
 ) -> tuple[Candidate, str]:
     """Resolve a conflict between multiple labels for the same block.
 
-    Currently uses LABEL_PRIORITY to select the winner. Logs when conflicts occur
-    so we can build up domain-specific rules over time.
+    Resolution strategy:
+    1. If one candidate scores significantly higher (>= 2x another), pick the
+       higher-scoring one regardless of priority
+    2. Otherwise, use LABEL_PRIORITY to select the winner
+
+    This allows confident classifiers to override priority when they have strong
+    evidence (e.g., step_number with score 0.97 beats piece_length with score 0.34).
 
     Args:
         labels: Set of conflicting labels
@@ -127,8 +132,39 @@ def _resolve_conflict(
     Returns:
         Tuple of (winning_candidate, reason)
     """
+    # Get all candidates with their scores and sort by score descending
+    candidates_with_scores = sorted(
+        [
+            (label, candidate, candidate.score)
+            for label, candidate in label_candidate_pairs
+        ],
+        key=lambda x: x[2],
+        reverse=True,
+    )
 
-    # TODO Add more complex resolution logic here in the future
+    # Must have at least 2 candidates to have a conflict
+    assert len(candidates_with_scores) >= 2, "Conflicts require at least 2 candidates"
+
+    # Get the highest and second highest scoring candidates
+    max_score_label, max_score_candidate, max_score = candidates_with_scores[0]
+    _second_label, _second_candidate, second_max_score = candidates_with_scores[1]
+
+    # If the highest score is significantly better (>= 2x the second best),
+    # use it regardless of priority
+    SCORE_THRESHOLD_MULTIPLIER = 2.0
+    if (
+        max_score >= SCORE_THRESHOLD_MULTIPLIER * second_max_score
+        and second_max_score > 0
+    ):
+        reason = (
+            f"'{max_score_label}' has much higher score "
+            f"({max_score:.3f} vs {second_max_score:.3f})"
+        )
+        logger.warning(
+            f"Conflict resolved using score: winner={max_score_label} "
+            f"(score={max_score:.3f}), all_labels=[{', '.join(sorted(labels))}]"
+        )
+        return max_score_candidate, reason
 
     # Use priority system to select winner
     # Find the label with highest priority (lowest priority number)

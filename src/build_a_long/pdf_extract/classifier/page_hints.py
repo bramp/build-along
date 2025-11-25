@@ -7,6 +7,7 @@ during a pre-pass before full classification.
 from __future__ import annotations
 
 import logging
+from typing import ClassVar
 
 from pydantic import BaseModel
 
@@ -86,7 +87,7 @@ class PageHints(BaseModel):
     """Page type hints derived from preliminary analysis of all pages.
 
     This class analyzes pages in a pre-pass to determine their types:
-    - CATALOG pages: Have many part numbers (element IDs), typically >10
+    - CATALOG pages: Have many part numbers (element IDs), typically >3
     - INSTRUCTION pages: Have step numbers and part counts but few/no part numbers
     - INFO pages: Have minimal structured content
 
@@ -97,6 +98,10 @@ class PageHints(BaseModel):
 
     hints: dict[int, PageHint]
     """Mapping from page number to page hint"""
+
+    # Threshold for classifying a page as CATALOG based on part number count
+    # Pages with more than this many element IDs are considered catalog pages
+    CATALOG_ELEMENT_ID_THRESHOLD: ClassVar[int] = 3
 
     @classmethod
     def empty(cls) -> PageHints:
@@ -154,8 +159,8 @@ class PageHints(BaseModel):
             confidences: dict[PageType, float] = {}
 
             # CATALOG confidence: based on number of part numbers
-            if part_number_count >= 10:
-                # Strong catalog indicator
+            if part_number_count > cls.CATALOG_ELEMENT_ID_THRESHOLD:
+                # Catalog indicator
                 confidences[PageType.CATALOG] = min(
                     0.95, 0.6 + (part_number_count / 100)
                 )
