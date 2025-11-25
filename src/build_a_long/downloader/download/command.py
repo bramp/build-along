@@ -183,7 +183,20 @@ def run_download(args: argparse.Namespace) -> int:
         debug=args.debug,
         skip_pdfs=args.skip_pdfs,
     ) as downloader:
-        exit_code = downloader.process_sets(all_set_numbers)
+        stats = downloader.process_sets(all_set_numbers)
 
-    print("All done.")
-    return exit_code
+    print("\nSummary:")
+    print(f"  Sets Processed: {stats.sets_processed}")
+    print(f"  Sets Found:     {stats.sets_found}")
+    print(f"  Sets Not Found: {stats.sets_not_found}")
+    print(f"  PDFs Found:     {stats.pdfs_found}")
+    if args.skip_pdfs:
+        print("  PDFs Downloaded: (skipped)")
+    else:
+        print(f"  PDFs Downloaded: {stats.pdfs_downloaded}")
+        print(f"  PDFs Skipped:    {stats.pdfs_skipped}")
+
+    # Determine exit code based on sets_not_found
+    # (If any set was not found, we might consider it a partial failure,
+    # but currently we just return 0 unless an exception occurred)
+    return 0

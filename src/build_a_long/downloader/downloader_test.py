@@ -596,3 +596,92 @@ def test_skip_pdfs_has_no_filename(tmp_path: Path, capsys):
         pdf = new_data["pdfs"][0]
         assert pdf["filename"] is None
         assert not (out_dir / "77777.pdf").exists()
+
+
+def test_statistics_successful_download(tmp_path: Path):
+    """Verify downloader tracks statistics for successful downloads."""
+    out_dir = tmp_path
+    set_number = "12345"
+
+    mock_client = _make_mock_httpx_client(HTML_WITH_METADATA_AND_PDF)
+    downloader = LegoInstructionDownloader(
+        client=mock_client, out_dir=out_dir, show_progress=False
+    )
+
+    # Mock download to avoid actual file IO and hashing, but return correct path
+    def mock_download_side_effect(url, dest_path, **kwargs):
+        return SimpleNamespace(path=dest_path, size=100, hash="abc")
+
+    downloader.download = MagicMock(side_effect=mock_download_side_effect)
+
+    stats = downloader.process_sets([set_number])
+
+    assert stats.sets_processed == 1
+    assert stats.sets_found == 1
+    assert stats.sets_not_found == 0
+    assert stats.pdfs_found == 2
+    assert stats.pdfs_downloaded == 2
+    assert stats.pdfs_skipped == 0
+
+
+def test_statistics_cached_downloads(tmp_path: Path):
+    """Verify that the downloader correctly tracks statistics for cached downloads."""
+    out_dir = tmp_path
+    set_number = "12345"
+
+    mock_client = _make_mock_httpx_client(HTML_WITH_METADATA_AND_PDF)
+
+    # First run: download everything
+    downloader = LegoInstructionDownloader(
+        client=mock_client, out_dir=out_dir, show_progress=False
+    )
+
+    def mock_download_side_effect(url, dest_path, **kwargs):
+        return SimpleNamespace(path=dest_path, size=100, hash="abc")
+
+    downloader.download = MagicMock(side_effect=mock_download_side_effect)
+    downloader.process_sets([set_number])
+
+    # Create the PDF files to simulate they were downloaded
+    (out_dir / "6602000.pdf").touch()
+    (out_dir / "6602001.pdf").touch()
+
+    # Second run: everything should be cached
+    downloader_cached = LegoInstructionDownloader(
+        client=mock_client,
+        out_dir=out_dir,
+        show_progress=False,
+        overwrite_download=False,
+        debug=True,
+    )
+    downloader_cached.download = MagicMock(side_effect=mock_download_side_effect)
+
+    stats_cached = downloader_cached.process_sets([set_number])
+    assert stats_cached.sets_found == 1
+    assert stats_cached.pdfs_found == 2
+    assert stats_cached.pdfs_downloaded == 0
+    assert stats_cached.pdfs_skipped == 2
+
+
+def test_statistics_not_found(tmp_path: Path):
+    """Verify that the downloader correctly tracks statistics for sets not found."""
+    out_dir = tmp_path
+
+    mock_client = _make_mock_httpx_client(HTML_WITH_METADATA_AND_PDF)
+    downloader = LegoInstructionDownloader(
+        client=mock_client, out_dir=out_dir, show_progress=False
+    )
+
+    # Force a 404
+    with patch.object(
+        downloader,
+        "fetch_instructions_page",
+        side_effect=httpx.HTTPStatusError(
+            "404", request=MagicMock(), response=MagicMock(status_code=404)
+        ),
+    ):
+        stats = downloader.process_sets(["99999"])
+
+    assert stats.sets_processed == 1
+    assert stats.sets_not_found == 1
+    assert stats.sets_found == 0

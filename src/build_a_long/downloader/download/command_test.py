@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 from pydantic import AnyUrl
 
+from build_a_long.downloader.models import DownloaderStats
 from build_a_long.schemas import InstructionMetadata, PdfEntry
 
 from .command import get_set_numbers_from_args, run_download
@@ -71,7 +72,7 @@ def test_run_download_single_set(mock_downloader_class, capsys):
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
-    mock_instance.process_sets.return_value = 0
+    mock_instance.process_sets.return_value = DownloaderStats()
     mock_downloader_class.return_value = mock_instance
 
     args = make_args(set_number="12345")
@@ -86,7 +87,9 @@ def test_run_download_single_set(mock_downloader_class, capsys):
     assert call_kwargs["overwrite_download"] is False
 
     mock_instance.process_sets.assert_called_once_with(["12345"])
-    assert "All done" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Summary:" in output
+    assert "Sets Processed:" in output
 
 
 @patch("downloader.download.command.LegoInstructionDownloader")
@@ -95,7 +98,7 @@ def test_run_download_multiple_sets_stdin(mock_downloader_class, monkeypatch):
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
-    mock_instance.process_sets.return_value = 0
+    mock_instance.process_sets.return_value = DownloaderStats()
     mock_downloader_class.return_value = mock_instance
 
     monkeypatch.setattr(sys, "stdin", io.StringIO("12345\n67890\n"))
@@ -114,7 +117,7 @@ def test_run_download_custom_locale_and_overwrites(mock_downloader_class):
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
-    mock_instance.process_sets.return_value = 0
+    mock_instance.process_sets.return_value = DownloaderStats()
     mock_downloader_class.return_value = mock_instance
 
     args = make_args(
@@ -191,7 +194,7 @@ def test_run_download_custom_out_dir(mock_downloader_class):
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
-    mock_instance.process_sets.return_value = 0
+    mock_instance.process_sets.return_value = DownloaderStats()
     mock_downloader_class.return_value = mock_instance
 
     args = make_args(set_number="12345", out_dir="/tmp/lego")
@@ -225,7 +228,7 @@ def test_run_download_invalid_set_ids_from_stdin(
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
-    mock_instance.process_sets.return_value = 0
+    mock_instance.process_sets.return_value = DownloaderStats()
     mock_downloader_class.return_value = mock_instance
 
     monkeypatch.setattr(sys, "stdin", io.StringIO("12345\ninvalid_id\n67890\n"))

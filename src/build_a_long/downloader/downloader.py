@@ -16,7 +16,7 @@ from build_a_long.downloader.legocom import (
     build_metadata,
 )
 from build_a_long.downloader.metadata import read_metadata, write_metadata
-from build_a_long.downloader.models import DownloadedFile
+from build_a_long.downloader.models import DownloadedFile, DownloaderStats
 from build_a_long.downloader.transport import RateLimitedTransport
 from build_a_long.downloader.util import extract_filename_from_url
 from build_a_long.schemas import (
@@ -76,6 +76,9 @@ class LegoInstructionDownloader:
         self.max_calls = max_calls
         self.period = period
         self.skip_pdfs = skip_pdfs
+
+        # Statistics
+        self.stats = DownloaderStats()
 
     def _get_client(self) -> httpx.Client:
         """Get or create the HTTP client."""
@@ -239,6 +242,7 @@ class LegoInstructionDownloader:
         # update, skip this set.
         if not_found_path.exists() and not should_overwrite:
             print(f"Skipping set {set_number} (marked as not found).")
+            self.stats.sets_not_found += 1
             return None
 
         existing_meta = None
@@ -252,6 +256,7 @@ class LegoInstructionDownloader:
         # use the loaded metadata.
         if existing_meta and existing_meta.pdfs and not should_overwrite:
             print(f"Processing set: {set_number} [cached]")
+            self.stats.sets_found += 1
             return existing_meta, True
 
         # If we're here, we need to fetch the metadata from the website.
@@ -263,6 +268,7 @@ class LegoInstructionDownloader:
                 print(f"Set {set_number} not found on LEGO.com (404).")
                 out_dir.mkdir(parents=True, exist_ok=True)
                 not_found_path.touch()
+                self.stats.sets_not_found += 1
                 return None
             raise
 
@@ -275,6 +281,7 @@ class LegoInstructionDownloader:
             print(f"Set {set_number} not found or has no data on LEGO.com.")
             out_dir.mkdir(parents=True, exist_ok=True)
             not_found_path.touch()
+            self.stats.sets_not_found += 1
             return None
 
         # If we have existing metadata, try to carry over file size and hash
@@ -295,6 +302,7 @@ class LegoInstructionDownloader:
             print(f"Wrote metadata: {meta_path}")
         except OSError as e:
             print(f"Warning: Failed to write {meta_path}: {e}")
+        self.stats.sets_found += 1
         return metadata, False
 
     def _process_set_pdfs(self, metadata: InstructionMetadata, out_dir: Path) -> bool:
@@ -316,6 +324,8 @@ class LegoInstructionDownloader:
             print(f"No PDFs found for set {metadata.set} (locale={metadata.locale}).")
             return False
 
+        self.stats.pdfs_found += len(metadata.pdfs)
+
         for entry in metadata.pdfs:
             # Determine destination filename:
             # 1. Use existing entry.filename if present
@@ -334,10 +344,14 @@ class LegoInstructionDownloader:
             )
             progress_prefix = f" - {entry.url}"
 
+            if self.debug:
+                print(f"DEBUG: Checking {dest_path} (Exists: {dest_path.exists()})")
+
             # If a .not_found file exists for this PDF and we're not forcing
             # a re-download, skip it.
             if not_found_path.exists() and not self.overwrite_download:
                 print(f"{progress_prefix} [cached - not found]")
+                self.stats.pdfs_skipped += 1
                 continue
 
             # If the PDF file exists and we're not forcing a re-download,
@@ -347,6 +361,7 @@ class LegoInstructionDownloader:
                 entry.filesize = dest_path.stat().st_size
                 # Ensure filename is set if it was missing
                 entry.filename = filename
+                self.stats.pdfs_skipped += 1
                 continue
 
             # Try to download the PDF.
@@ -358,6 +373,7 @@ class LegoInstructionDownloader:
                 entry.filehash = downloaded_file.hash
                 # Update filename in entry to match downloaded file
                 entry.filename = downloaded_file.path.name
+                self.stats.pdfs_downloaded += 1
             except httpx.HTTPStatusError as e:
                 # If the download fails with a 404, create a .not_found file
                 # so we don't try again next time.
@@ -381,6 +397,7 @@ class LegoInstructionDownloader:
         Returns:
             Exit code: 0 for success, non-zero for errors.
         """
+        self.stats.sets_processed += 1
         out_dir = self.out_dir if self.out_dir else Path("data") / set_number
 
         # Process the metadata for the set.
@@ -403,7 +420,11 @@ class LegoInstructionDownloader:
             return 0
 
         # Process the PDFs for the set.
-        if self._process_set_pdfs(metadata, out_dir) and not use_cached:
+        # We always call this to ensure stats are updated and missing files are downloaded,
+        # even if metadata was cached.
+        pdfs_processed = self._process_set_pdfs(metadata, out_dir)
+
+        if pdfs_processed and not use_cached:
             # If the metadata was not loaded from cache (i.e. it's new or
             # updated), write the updated metadata back to disk.
             try:
@@ -440,18 +461,20 @@ class LegoInstructionDownloader:
 
         print(" - ".join(parts) + ":")
 
-    def process_sets(self, set_numbers: list[str]) -> int:
+    def process_sets(self, set_numbers: list[str]) -> DownloaderStats:
         """Process multiple LEGO sets.
 
         Args:
             set_numbers: List of LEGO set numbers to process.
 
         Returns:
-            Exit code: 0 for success, non-zero if any set failed.
+            A DownloaderStats object containing statistics of the operation.
         """
         overall_exit_code = 0
         for set_number in set_numbers:
             exit_code = self.process_set(set_number)
             if exit_code != 0:
-                overall_exit_code = exit_code
-        return overall_exit_code
+                overall_exit_code = (
+                    exit_code  # We keep track but stats are more important now
+                )
+        return self.stats
