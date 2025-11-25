@@ -70,13 +70,30 @@ class LabelClassifier(ABC):
 
     @abstractmethod
     def score(self, result: ClassificationResult) -> None:
-        """Score elements and create candidates WITHOUT construction.
+        """Score blocks and create candidates.
 
         This method should:
-        1. Score each element for this label
+        1. Score each blocks for this label
         2. Create Candidate objects with scores and score_details
-        3. Set constructed=None and failure_reason=None for all candidates
-        4. Store candidates in the result via result.add_candidate()
+        3. Store candidates in the result via result.add_candidate()
+
+        **For classifiers that depend on other classifiers:**
+
+        Use result.get_scored_candidates() to get parent candidates, then
+        store references to those candidates (not their constructed elements)
+        in your score_details:
+
+            # CORRECT - store candidate references
+            parent_candidates = result.get_scored_candidates("parent_label")
+            for parent_cand in parent_candidates:
+                score_details = MyScore(
+                    parent_candidate=parent_cand,  # Store the candidate!
+                    ...
+                )
+
+        This ensures your classifier works with candidates and preserves the
+        dependency chain. During construct(), you can then validate that parent
+        candidates are still winners before using their constructed elements.
 
         This is the first phase of the two-phase classification process.
         Construction happens later in construct().

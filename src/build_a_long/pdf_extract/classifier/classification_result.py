@@ -289,10 +289,87 @@ class ClassificationResult(BaseModel):
         """
         return self.candidates.get(label, []).copy()
 
+    def get_scored_candidates(
+        self, label: str, min_score: float = 0.0
+    ) -> list[Candidate]:
+        """Get candidates for a label that have been scored.
+
+        **Use this method in score() when working with dependency classifiers.**
+
+        This enforces the pattern of working with candidates (not constructed
+        elements or raw blocks) when one classifier depends on another. The
+        returned candidates are sorted by score (highest first).
+
+        During score(), you should:
+        1. Get parent candidates using this method
+        2. Store references to parent candidates in your score_details
+        3. In construct(), validate parent candidates before using their elements
+
+        Example:
+            # In PartsClassifier.score()
+            part_count_candidates = result.get_scored_candidates("part_count")
+            for pc_cand in part_count_candidates:
+                # Store the CANDIDATE reference in score details
+                score_details = _PartPairScore(
+                    part_count_candidate=pc_cand,  # Not pc_cand.constructed!
+                    image=img,
+                )
+
+            # Later in _construct_single()
+            def _construct_single(self, candidate, result):
+                pc_cand = candidate.score_details.part_count_candidate
+
+                # Validate parent candidate is still valid
+                if pc_cand.failure_reason:
+                    raise ValueError(f"Parent failed: {pc_cand.failure_reason}")
+                if pc_cand.constructed is None:
+                    raise ValueError("Parent not constructed")
+
+                # Now safe to use the constructed element
+                assert isinstance(pc_cand.constructed, PartCount)
+                return Part(count=pc_cand.constructed, ...)
+
+        Args:
+            label: The label to get candidates for
+            min_score: Optional minimum score threshold (default: 0.0)
+
+        Returns:
+            List of scored candidates sorted by score (highest first).
+            Only includes candidates that have score_details set.
+            Does NOT filter by construction status - that violates the
+            two-phase separation between score() and construct().
+        """
+        candidates = self.get_candidates(label)
+
+        # Filter to candidates that have been scored
+        scored = [c for c in candidates if c.score_details is not None]
+
+        # Apply score threshold if specified
+        if min_score > 0:
+            scored = [c for c in scored if c.score >= min_score]
+
+        # Sort by score descending
+        # TODO add a tie breaker for determinism.
+        scored.sort(key=lambda c: -c.score)
+
+        return scored
+
     def get_winners_by_score[T: LegoPageElements](
         self, label: str, element_type: type[T], max_count: int | None = None
     ) -> list[T]:
         """Get the best candidates for a specific label by score.
+
+        **DEPRECATED for use in score() methods.**
+
+        This method returns constructed LegoPageElements, which encourages the
+        anti-pattern of looking at constructed elements during the score() phase.
+
+        - **In score()**: Use get_scored_candidates() instead to work with candidates
+        - **In construct()**: It's OK to use this method when you need fully
+          constructed dependency elements
+
+        Prefer get_scored_candidates() in score() to maintain proper separation
+        between the scoring and construction phases.
 
         Selects candidates by:
         - Successfully constructed (constructed is not None)
