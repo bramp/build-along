@@ -1,15 +1,17 @@
 """Reporting and output formatting for PDF extraction."""
 
 import logging
-from collections import defaultdict
+from dataclasses import dataclass
 from typing import Any
 
 from build_a_long.pdf_extract.classifier.classification_result import (
+    Candidate,
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks
@@ -19,6 +21,30 @@ logger = logging.getLogger(__name__)
 # ANSI color codes
 GREY = "\033[90m"
 RESET = "\033[0m"
+
+
+@dataclass
+class TreeNode:
+    """Unified node for the classification debug tree.
+
+    Represents either a Block with optional candidates, or a synthetic Candidate.
+    """
+
+    bbox: BBox
+    """Bounding box for this node"""
+
+    block: Blocks | None = None
+    """The source block, if this node represents a block"""
+
+    candidates: list[Candidate] = None  # type: ignore
+    """Candidates for this block (empty if synthetic or no candidates)"""
+
+    synthetic_candidate: Candidate | None = None
+    """If this is a synthetic candidate (no source blocks)"""
+
+    def __post_init__(self):
+        if self.candidates is None:
+            self.candidates = []
 
 
 def print_summary(
@@ -245,10 +271,8 @@ def print_classification_debug(
 ) -> None:
     """Print comprehensive classification debug information.
 
-    Shows all classification details in one consolidated view:
-    - Block hierarchy with labels and removal status
-    - Detailed candidate analysis (if requested)
-    - Page hierarchy summary (if requested)
+    Shows all classification details in one consolidated view with blocks
+    and candidates intermixed in a unified tree.
 
     Args:
         page: PageData containing all elements
@@ -261,11 +285,50 @@ def print_classification_debug(
     print(f"CLASSIFICATION DEBUG - Page {page.page_number}")
     print(f"{'=' * 80}\n")
 
-    # Build block hierarchy tree
-    block_tree = build_hierarchy_from_blocks(page.blocks)
+    # Build mapping from blocks to their candidates
+    block_to_candidates: dict[int, list[Candidate]] = {}
+    all_candidates = result.get_all_candidates()
 
-    def print_block(block: Blocks, depth: int, is_last: bool = True) -> None:
-        """Recursively print a block and its children."""
+    for _label_name, candidates in all_candidates.items():
+        for candidate in candidates:
+            for source_block in candidate.source_blocks:
+                if source_block.id not in block_to_candidates:
+                    block_to_candidates[source_block.id] = []
+                block_to_candidates[source_block.id].append(candidate)
+
+    # Create TreeNode for each block
+    block_nodes: list[TreeNode] = []
+    block_node_map: dict[int, TreeNode] = {}  # block.id -> TreeNode
+
+    for block in page.blocks:
+        candidates_list = block_to_candidates.get(block.id, [])
+        node = TreeNode(
+            bbox=block.bbox,
+            block=block,
+            candidates=candidates_list,
+        )
+        block_nodes.append(node)
+        block_node_map[block.id] = node
+
+    # Create TreeNode for synthetic candidates
+    synthetic_nodes: list[TreeNode] = []
+    for _label_name, candidates in all_candidates.items():
+        for candidate in candidates:
+            if not candidate.source_blocks:
+                node = TreeNode(
+                    bbox=candidate.bbox,
+                    synthetic_candidate=candidate,
+                )
+                synthetic_nodes.append(node)
+
+    # Combine all nodes for hierarchy building
+    all_nodes = block_nodes + synthetic_nodes
+
+    # Build unified hierarchy
+    tree = build_hierarchy_from_blocks(all_nodes)
+
+    def print_node(node: TreeNode, depth: int, is_last: bool = True) -> None:
+        """Recursively print a node and its children."""
         # Build tree characters
         if depth == 0:
             tree_prefix = ""
@@ -275,65 +338,97 @@ def print_classification_debug(
             indent = "  " * (depth - 1)
             tree_prefix = f"{indent}{tree_char} "
 
-        # Base info
-        is_removed = result.is_removed(block)
+        # Check if this is a removed block
+        is_removed = node.block and result.is_removed(node.block)
         color = GREY if is_removed else ""
         reset = RESET if is_removed else ""
 
-        # Build line - get best candidate and its constructed element
-        elem_str = str(block)
-        best_candidate = result.get_best_candidate(block)
-        if best_candidate:
-            label = best_candidate.label
-            if best_candidate.constructed:
-                elem_str = str(best_candidate.constructed)
-        else:
-            label = None
+        line = f"{color}{tree_prefix}"
 
-        line = f"{color}{tree_prefix}{block.id:3d} "
+        if node.synthetic_candidate:
+            # Synthetic candidate (Page, Step, NewBag, etc.)
+            candidate = node.synthetic_candidate
+            elem_str = (
+                str(candidate.constructed)
+                if candidate.constructed
+                else "NOT CONSTRUCTED"
+            )
+            line += f"[{candidate.label}] {elem_str} (score={candidate.score:.3f})"
+        elif node.block:
+            # Regular block
+            block = node.block
+            block_type = type(block).__name__
+            line += f"{block.id:3d} ({block_type}) "
 
-        if is_removed:
-            reason = result.get_removal_reason(block)
-            reason_text = reason.reason_type if reason else "unknown"
-            line += f"* REMOVED: {reason_text}"
-            if reason:
-                target = reason.target_block
-                line += f" by {target.id}"
-                target_best = result.get_best_candidate(target)
-                if target_best:
-                    line += f" ({target_best.label})"
-            line += f"* {elem_str}"
-        elif label:
-            line += f"[{label}] {elem_str}"
-        else:
-            line += f"[no candidates] {elem_str}"
+            if is_removed:
+                reason = result.get_removal_reason(block)
+                reason_text = reason.reason_type if reason else "unknown"
+                line += f"* REMOVED: {reason_text}"
+                if reason:
+                    target = reason.target_block
+                    line += f" by {target.id}"
+                    target_best = result.get_best_candidate(target)
+                    if target_best:
+                        line += f" ({target_best.label})"
+                line += f"* {str(block)}"
+            elif node.candidates:
+                # Show all candidates for this block
+                sorted_candidates = sorted(
+                    node.candidates, key=lambda c: c.score, reverse=True
+                )
+                best = sorted_candidates[0]
 
-        line += reset
-        print(line)
+                # Show best candidate prominently
+                elem_str = str(best.constructed) if best.constructed else str(block)
+                line += f"[{best.label}] {elem_str} (score={best.score:.3f})"
+
+                # If multiple candidates, show others on additional lines
+                if len(sorted_candidates) > 1:
+                    print(line + reset)
+                    for other in sorted_candidates[1:]:
+                        other_indent = indent + ("  " if is_last else "│ ")
+                        elem_str = (
+                            str(other.constructed) if other.constructed else str(block)
+                        )
+                        alt_line = (
+                            f"{color}{other_indent}   alt [{other.label}] "
+                            f"{elem_str} (score={other.score:.3f}){reset}"
+                        )
+                        print(alt_line)
+                    line = None  # Already printed
+            else:
+                line += f"[no candidates] {str(block)}"
+
+        if line:
+            print(line + reset)
 
         # Print children
-        children = block_tree.get_children(block)
-        sorted_children = sorted(children, key=lambda e: e.id)
+        children = tree.get_children(node)
+        sorted_children = sorted(
+            children, key=lambda n: (n.block.id if n.block else -1)
+        )
         for i, child in enumerate(sorted_children):
             child_is_last = i == len(sorted_children) - 1
-            print_block(child, depth + 1, child_is_last)
+            print_node(child, depth + 1, child_is_last)
 
-    # Print root blocks
-    sorted_roots = sorted(block_tree.roots, key=lambda e: e.id)
-    for root in sorted_roots:
-        print_block(root, 0)
+    # Print tree
+    for root in tree.roots:
+        print_node(root, 0)
 
     # Summary stats
     total = len(page.blocks)
     with_labels = sum(1 for b in page.blocks if result.get_label(b) is not None)
     removed = sum(1 for b in page.blocks if result.is_removed(b))
     no_candidates = total - with_labels - removed
+    total_candidates = sum(len(candidates) for candidates in all_candidates.values())
+    num_synthetic = len(synthetic_nodes)
 
     print(f"\n{'─' * 80}")
     print(
-        f"Total: {total} | Winners: {with_labels} | "
-        f"Removed: {removed} | No candidates: {no_candidates}"
+        f"Blocks: {total} total | {with_labels} labeled | "
+        f"{removed} removed | {no_candidates} no candidates"
     )
+    print(f"Candidates: {total_candidates} total | {num_synthetic} synthetic")
 
     warnings = result.get_warnings()
     if warnings:
@@ -444,23 +539,6 @@ def print_classification_debug(
                 print(f"  Step {i}: #{step.step_number.value} ({parts_count} parts)")
 
     print(f"\n{'=' * 80}\n")
-
-
-def print_label_counts(page: PageData, result: ClassificationResult) -> None:
-    """Print label count statistics for a page.
-
-    Args:
-        page: PageData containing all elements
-        result: ClassificationResult with labels
-    """
-    label_counts = defaultdict(int)
-    for e in page.blocks:
-        label = result.get_label(e) or "<unknown>"
-        label_counts[label] += 1
-
-    # TODO The following logging shows "defaultdict(<class 'int'>,..." figure
-    # out how to avoid that.
-    logger.info(f"Page {page.page_number} Label counts: {label_counts}")
 
 
 def print_page_hierarchy(page_data: PageData, page: Page) -> None:
