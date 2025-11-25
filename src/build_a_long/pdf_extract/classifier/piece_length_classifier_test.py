@@ -126,28 +126,33 @@ class TestPieceLengthClassifier:
         assert score == 0.1
 
     def test_score_font_size_ideal_range(self) -> None:
-        """Test font size scoring for ideal range."""
+        """Test font size scoring for exact match."""
         config = ClassifierConfig()
         classifier = PieceLengthClassifier(config=config)
         classifier.config.font_size_hints.part_count_size = 6.0
         classifier.config.font_size_hints.step_number_size = 16.0
 
-        text = Text(id=1, bbox=BBox(0, 0, 10, 10), text="4", font_size=8.0)
+        # Exact match to part_count_size gets 1.0
+        text = Text(id=1, bbox=BBox(0, 0, 10, 10), text="4", font_size=6.0)
 
         score = classifier._score_piece_length_font_size(text)
         assert score == 1.0
 
     def test_score_font_size_too_large(self) -> None:
-        """Test font size scoring for too large font."""
+        """Test font size scoring for too large font.
+
+        Fonts significantly larger than part_count_size get a score of 0.0.
+        """
         config = ClassifierConfig()
         classifier = PieceLengthClassifier(config=config)
         classifier.config.font_size_hints.part_count_size = 6.0
         classifier.config.font_size_hints.step_number_size = 16.0
 
+        # font_size=20.0 vs expected=6.0: diff_ratio=14/6=2.33, score=max(0, 1-2.33*2)=0.0
         text = Text(id=1, bbox=BBox(0, 0, 10, 10), text="4", font_size=20.0)
 
         score = classifier._score_piece_length_font_size(text)
-        assert score == 0.1
+        assert score == 0.0
 
     def test_end_to_end_classification(self) -> None:
         """Test full classification pipeline with piece lengths."""

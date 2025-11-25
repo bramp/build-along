@@ -125,6 +125,12 @@ class PieceLengthClassifier(LabelClassifier):
             context_score = self._score_drawing_fit(text, containing_drawing)
             font_size_score = self._score_piece_length_font_size(text)
 
+            # Piece lengths MUST be in a circle - if context_score is low, heavily penalize
+            # This prevents misclassifying step numbers as piece lengths
+            if context_score < 0.5:
+                # Not in a tight circle - unlikely to be a piece length
+                context_score *= 0.1  # Reduce to near-zero
+
             detail_score = _PieceLengthScore(
                 text_score=text_score,
                 context_score=context_score,
@@ -327,12 +333,10 @@ class PieceLengthClassifier(LabelClassifier):
         return value
 
     def _score_piece_length_font_size(self, text: Text) -> float:
-        """Score based on font size - should be >= part count, < step number.
+        """Score based on font size - should match part_count_size.
 
-        Uses font hints to distinguish piece lengths from other elements:
-        - Piece lengths should be >= part_count_size (or catalog_part_count_size)
-        - Piece lengths should be < step_number_size
-        - This puts them in the range between part counts and step numbers
+        Uses font hints to distinguish piece lengths from other elements.
+        Piece lengths typically use the same font size as part counts.
 
         Args:
             text: Text block to score
@@ -340,30 +344,12 @@ class PieceLengthClassifier(LabelClassifier):
         Returns:
             Score from 0.0 to 1.0, where 1.0 is ideal piece length font size
         """
-        if text.font_size is None:
-            return 0.5  # Unknown, neutral score
-
         hints = self.config.font_size_hints
-        font_size = text.font_size
 
-        # Determine the expected range based on hints
-        # Lower bound: part count sizes (whichever is available)
-        lower_bound = hints.part_count_size or hints.catalog_part_count_size or 4.0
+        # Prefer part_count_size, fall back to catalog_part_count_size
+        expected_size = hints.part_count_size or hints.catalog_part_count_size
 
-        # Upper bound: step number size
-        upper_bound = hints.step_number_size or 10.0
-
-        # Check if font size is in the ideal range
-        if lower_bound <= font_size < upper_bound:
-            # Perfect range
-            return 1.0
-        elif font_size < lower_bound:
-            # Too small - penalize based on how far below
-            diff = lower_bound - font_size
-            return max(0.0, 1.0 - (diff / 4.0))
-        else:
-            # Too large (>= step_number_size) - heavily penalize
-            return 0.1
+        return self._score_font_size(text, expected_size)
 
     def _score_drawing_fit(self, text: Text, drawing: Drawing) -> float:
         """Score how well the drawing size fits the text.
