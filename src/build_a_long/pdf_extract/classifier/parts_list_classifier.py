@@ -48,12 +48,12 @@ log = logging.getLogger(__name__)
 class _PartsListScore:
     """Internal score representation for parts list classification."""
 
-    parts: list[Part]
-    """The Part elements contained in this drawing."""
+    part_candidates: list[Candidate]
+    """The Part candidates contained in this drawing."""
 
     def combined_score(self) -> float:
         """Calculate final score (simply 1.0 if has parts, 0.0 otherwise)."""
-        return 1.0 if len(self.parts) > 0 else 0.0
+        return 1.0 if len(self.part_candidates) > 0 else 0.0
 
 
 @dataclass(frozen=True)
@@ -66,12 +66,12 @@ class PartsListClassifier(LabelClassifier):
     def score(self, result: ClassificationResult) -> None:
         """Score drawings and create candidates for potential parts lists.
 
-        Creates candidates with score details containing the Part elements,
+        Creates candidates with score details containing the Part candidates,
         but does not construct the PartsList yet.
         """
-        # Get part winners with type safety
-        parts = result.get_winners_by_score("part", Part)
-        if not parts:
+        # Get part candidates (not constructed elements)
+        part_candidates = result.get_scored_candidates("part")
+        if not part_candidates:
             return
 
         page_data = result.page_data
@@ -82,21 +82,21 @@ class PartsListClassifier(LabelClassifier):
             return
 
         log.debug(
-            "[parts_list] page=%s blocks=%d drawings=%d parts=%d",
+            "[parts_list] page=%s blocks=%d drawings=%d part_candidates=%d",
             page_data.page_number,
             len(page_data.blocks),
             len(drawings),
-            len(parts),
+            len(part_candidates),
         )
 
         # Pre-score all drawings to sort them by quality
         drawing_scores: list[tuple[Drawing, _PartsListScore]] = []
         for drawing in drawings:
-            # Find all parts contained in this drawing
-            contained = self._find_containing_parts(drawing, parts)
+            # Find all part candidates contained in this drawing
+            contained = self._find_containing_part_candidates(drawing, part_candidates)
 
-            # Create score with Part references
-            score = _PartsListScore(parts=contained)
+            # Create score with Candidate references
+            score = _PartsListScore(part_candidates=contained)
             drawing_scores.append((drawing, score))
 
         # Sort by score (highest first), then by drawing ID for determinism
@@ -126,7 +126,7 @@ class PartsListClassifier(LabelClassifier):
             # Determine failure reason if any
             failure_reason = None
 
-            if not len(score.parts) > 0:
+            if not len(score.part_candidates) > 0:
                 failure_reason = "Drawing contains no parts"
 
             # Check if drawing is suspiciously large
@@ -191,26 +191,42 @@ class PartsListClassifier(LabelClassifier):
     ) -> LegoPageElements:
         """Construct a PartsList from a single candidate's score details.
 
-        Uses the Part elements stored in the score to build the PartsList.
+        Validates and extracts Part elements from the parent candidates.
         """
         assert isinstance(candidate.score_details, _PartsListScore)
         score = candidate.score_details
 
+        # Validate and extract Part elements from parent candidates
+        parts: list[Part] = []
+        for part_candidate in score.part_candidates:
+            if part_candidate.failure_reason:
+                continue
+            if not part_candidate.constructed:
+                continue
+
+            part = part_candidate.constructed
+            assert isinstance(part, Part)
+            parts.append(part)
+
         return PartsList(
             bbox=candidate.bbox,
-            parts=score.parts,
+            parts=parts,
         )
 
-    def _find_containing_parts(
-        self, drawing: Drawing, parts: Sequence[Part]
-    ) -> list[Part]:
-        """Find all parts that are contained within a drawing.
+    def _find_containing_part_candidates(
+        self, drawing: Drawing, part_candidates: list[Candidate]
+    ) -> list[Candidate]:
+        """Find all part candidates that are contained within a drawing.
 
         Args:
             drawing: The drawing element to check
-            parts: List of all Part elements on the page
+            part_candidates: List of all Part candidates on the page
 
         Returns:
-            List of Part elements whose bboxes are fully inside the drawing
+            List of Candidate objects whose bboxes are fully inside the drawing
         """
-        return [part for part in parts if part.bbox.fully_inside(drawing.bbox)]
+        return [
+            candidate
+            for candidate in part_candidates
+            if candidate.bbox.fully_inside(drawing.bbox)
+        ]

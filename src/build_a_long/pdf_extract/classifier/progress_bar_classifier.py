@@ -169,9 +169,14 @@ class ProgressBarClassifier(LabelClassifier):
 
     def _get_page_number_bbox(self, result: ClassificationResult) -> BBox | None:
         """Get the bbox of the page number if it has been classified."""
-        page_numbers = result.get_winners_by_score("page_number", PageNumber)
-        if page_numbers:
-            return page_numbers[0].bbox
+        page_number_candidates = result.get_scored_candidates("page_number")
+
+        # Get the first constructed page number
+        for candidate in page_number_candidates:
+            if candidate.constructed and not candidate.failure_reason:
+                assert isinstance(candidate.constructed, PageNumber)
+                return candidate.bbox
+
         return None
 
     def _score_bottom_position(
