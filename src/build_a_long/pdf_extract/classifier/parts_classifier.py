@@ -34,7 +34,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
-from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     LegoPageElements,
     Part,
@@ -57,17 +56,17 @@ class _PartPairScore:
     distance: float
     """Vertical distance from part count text to image (lower is better)."""
 
-    part_count: PartCount
-    """The constructed PartCount element."""
+    part_count_candidate: Candidate
+    """The part_count candidate (not the constructed element)."""
 
     image: Image
     """The image element (will become diagram in Part)."""
 
-    part_number: PartNumber | None
-    """The associated part number (if any)."""
+    part_number_candidate: Candidate | None
+    """The associated part_number candidate (if any)."""
 
-    piece_length: PieceLength | None
-    """The associated piece length (if any)."""
+    piece_length_candidate: Candidate | None
+    """The associated piece_length candidate (if any)."""
 
     def sort_key(self) -> float:
         """Return sort key for matching (prefer smaller distance)."""
@@ -85,23 +84,24 @@ class PartsClassifier(LabelClassifier):
     def score(self, result: ClassificationResult) -> None:
         """Score part pairings and create candidates.
 
-        Creates candidates with score details containing the PartCount and Image,
-        but does not construct the Part yet.
+        Creates candidates with score details containing references to parent
+        candidates (not constructed elements), following the recommended pattern
+        for dependent classifiers.
         """
         page_data = result.page_data
 
-        # Get part_count candidates with type safety, selecting by score
-        part_counts = result.get_winners_by_score("part_count", PartCount)
+        # Get part_count candidates (not elements!) using new API
+        part_count_candidates = result.get_scored_candidates("part_count")
 
         # Get optional part_number candidates
-        part_numbers = result.get_winners_by_score("part_number", PartNumber)
+        part_number_candidates = result.get_scored_candidates("part_number")
 
         # Get optional piece_length candidates
-        piece_lengths = result.get_winners_by_score("piece_length", PieceLength)
+        piece_length_candidates = result.get_scored_candidates("piece_length")
 
         images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
 
-        if not part_counts:
+        if not part_count_candidates:
             log.debug(
                 "[parts] No part_count candidates found on page %s",
                 page_data.page_number,
@@ -118,19 +118,21 @@ class PartsClassifier(LabelClassifier):
         log.debug(
             "[parts] page=%s part_counts=%d images=%d",
             page_data.page_number,
-            len(part_counts),
+            len(part_count_candidates),
             len(images),
         )
 
         # Build candidate pairings using existing helper
         candidate_edges = self._build_candidate_edges(
-            part_counts, images, page_data.bbox.width if page_data.bbox else 100.0
+            part_count_candidates,
+            images,
+            page_data.bbox.width if page_data.bbox else 100.0,
         )
 
         log.debug(
             "[parts] Built %d candidate edges for %d part_counts",
             len(candidate_edges),
-            len(part_counts),
+            len(part_count_candidates),
         )
 
         if not candidate_edges:
@@ -144,39 +146,43 @@ class PartsClassifier(LabelClassifier):
         candidate_edges.sort(key=lambda ps: ps.sort_key())
 
         # Greedy matching to enforce one-to-one pairing
-        used_counts: set[int] = set()
+        used_count_candidates: set[int] = set()
         used_images: set[int] = set()
 
         for ps in candidate_edges:
-            count_id = id(ps.part_count)
+            count_cand_id = id(ps.part_count_candidate)
             image_id = id(ps.image)
 
-            if count_id in used_counts or image_id in used_images:
+            if count_cand_id in used_count_candidates or image_id in used_images:
                 continue
 
             # Mark as used
-            used_counts.add(count_id)
+            used_count_candidates.add(count_cand_id)
             used_images.add(image_id)
 
-            # Find associated elements
-            part_number = self._find_part_number(ps.part_count, part_numbers)
-            piece_length = self._find_piece_length(ps.image, piece_lengths)
+            # Find associated candidates (not elements!)
+            part_number_cand = self._find_part_number_candidate(
+                ps.part_count_candidate, part_number_candidates
+            )
+            piece_length_cand = self._find_piece_length_candidate(
+                ps.image, piece_length_candidates
+            )
 
-            # Create enhanced score with associated elements
+            # Create enhanced score with candidate references
             enhanced_score = _PartPairScore(
                 distance=ps.distance,
-                part_count=ps.part_count,
+                part_count_candidate=ps.part_count_candidate,
                 image=ps.image,
-                part_number=part_number,
-                piece_length=piece_length,
+                part_number_candidate=part_number_cand,
+                piece_length_candidate=piece_length_cand,
             )
 
             # Create bounding box for the Part
-            bbox = ps.part_count.bbox.union(ps.image.bbox)
-            if part_number:
-                bbox = bbox.union(part_number.bbox)
-            if piece_length:
-                bbox = bbox.union(piece_length.bbox)
+            bbox = ps.part_count_candidate.bbox.union(ps.image.bbox)
+            if part_number_cand:
+                bbox = bbox.union(part_number_cand.bbox)
+            if piece_length_cand:
+                bbox = bbox.union(piece_length_cand.bbox)
 
             # Create candidate WITHOUT construction
             candidate = Candidate(
@@ -206,30 +212,65 @@ class PartsClassifier(LabelClassifier):
     ) -> LegoPageElements:
         """Construct a Part from a single candidate's score details.
 
-        Uses the PartCount, Image, PartNumber, and PieceLength stored in the
-        score to build the Part.
+        Validates parent candidates and extracts their constructed elements.
         """
         assert isinstance(candidate.score_details, _PartPairScore)
         ps = candidate.score_details
+
+        # Validate and extract part_count from candidate
+        if ps.part_count_candidate.failure_reason:
+            raise ValueError(
+                f"Part count candidate failed: {ps.part_count_candidate.failure_reason}"
+            )
+        if ps.part_count_candidate.constructed is None:
+            raise ValueError("Part count candidate not constructed")
+        assert isinstance(ps.part_count_candidate.constructed, PartCount)
+        part_count = ps.part_count_candidate.constructed
+
+        # Extract optional part_number from candidate
+        part_number: PartNumber | None = None
+        if ps.part_number_candidate:
+            if ps.part_number_candidate.failure_reason:
+                raise ValueError(
+                    f"Part number candidate failed: "
+                    f"{ps.part_number_candidate.failure_reason}"
+                )
+            if ps.part_number_candidate.constructed is None:
+                raise ValueError("Part number candidate not constructed")
+            assert isinstance(ps.part_number_candidate.constructed, PartNumber)
+            part_number = ps.part_number_candidate.constructed
+
+        # Extract optional piece_length from candidate
+        piece_length: PieceLength | None = None
+        if ps.piece_length_candidate:
+            if ps.piece_length_candidate.failure_reason:
+                raise ValueError(
+                    f"Piece length candidate failed: "
+                    f"{ps.piece_length_candidate.failure_reason}"
+                )
+            if ps.piece_length_candidate.constructed is None:
+                raise ValueError("Piece length candidate not constructed")
+            assert isinstance(ps.piece_length_candidate.constructed, PieceLength)
+            piece_length = ps.piece_length_candidate.constructed
 
         # Wrap Image in Drawing for the diagram field
         diagram = Drawing(bbox=ps.image.bbox, id=ps.image.id)
 
         return Part(
             bbox=candidate.bbox,
-            count=ps.part_count,
-            number=ps.part_number,
-            length=ps.piece_length,
+            count=part_count,
+            number=part_number,
+            length=piece_length,
             diagram=diagram,
         )
 
     def _build_candidate_edges(
         self,
-        part_counts: list[PartCount],
+        part_count_candidates: list[Candidate],
         images: list[Image],
         page_width: float,
     ) -> list[_PartPairScore]:
-        """Build candidate pairings between part counts and images.
+        """Build candidate pairings between part count candidates and images.
 
         Returns a list of score objects representing valid pairings.
         """
@@ -237,8 +278,8 @@ class PartsClassifier(LabelClassifier):
         ALIGN_EPS = max(2.0, 0.02 * page_width)
 
         edges: list[_PartPairScore] = []
-        for pc in part_counts:
-            cb = pc.bbox
+        for pc_cand in part_count_candidates:
+            cb = pc_cand.bbox
             for img in images:
                 ib = img.bbox
                 # Image should be above the count and left-aligned
@@ -246,177 +287,81 @@ class PartsClassifier(LabelClassifier):
                     distance = max(0.0, cb.y0 - ib.y1)
                     score = _PartPairScore(
                         distance=distance,
-                        part_count=pc,
+                        part_count_candidate=pc_cand,
                         image=img,
-                        part_number=None,  # Will be filled in during matching
-                        piece_length=None,  # Will be filled in during matching
+                        part_number_candidate=None,  # Will be filled during matching
+                        piece_length_candidate=None,  # Will be filled during matching
                     )
                     edges.append(score)
         return edges
 
-    def _match_and_create_parts(
-        self,
-        candidate_edges: list[_PartPairScore],
-        part_numbers: list[PartNumber],
-        piece_lengths: list[PieceLength],
-        result: ClassificationResult,
-    ) -> None:
-        """Match part counts with images and create Part candidates.
+    def _find_part_number_candidate(
+        self, part_count_candidate: Candidate, part_number_candidates: list[Candidate]
+    ) -> Candidate | None:
+        """Find the part_number candidate that belongs to this part_count candidate.
+
+        The part_number should be directly below the part_count, left-aligned.
 
         Args:
-            candidate_edges: List of candidate pairings to consider
-            part_numbers: List of PartNumber elements (for catalog pages)
-            piece_lengths: List of PieceLength elements (for any page)
-            result: Classification result to add Part candidates to
-        """
-        if not candidate_edges:
-            log.debug("[parts] No candidate edges to match")
-            return
-
-        log.debug(
-            "[parts] Matching %d candidate edges to create parts",
-            len(candidate_edges),
-        )
-
-        # Sort by distance (closest pairs first)
-        candidate_edges.sort(key=lambda score: score.sort_key())
-
-        matched_counts: set[int] = set()
-        matched_images: set[int] = set()
-
-        for score in candidate_edges:
-            pc = score.part_count
-            img = score.image
-
-            # Skip if already matched
-            if id(pc) in matched_counts or id(img) in matched_images:
-                continue
-
-            matched_counts.add(id(pc))
-            matched_images.add(id(img))
-
-            # Find matching part_number (if any) - should be below the part_count
-            part_number = self._find_part_number(pc, part_numbers)
-
-            # Find matching piece_length (if any) - should be in top-right of image
-            piece_length = self._find_piece_length(img, piece_lengths)
-
-            # Create a Part from this pairing
-            # The bbox is the union of the part_count, image,
-            # and part_number (if present)
-            combined_bbox = BBox(
-                x0=min(pc.bbox.x0, img.bbox.x0),
-                y0=min(pc.bbox.y0, img.bbox.y0),
-                x1=max(pc.bbox.x1, img.bbox.x1),
-                y1=max(pc.bbox.y1, img.bbox.y1),
-            )
-
-            if part_number:
-                combined_bbox = BBox(
-                    x0=min(combined_bbox.x0, part_number.bbox.x0),
-                    y0=min(combined_bbox.y0, part_number.bbox.y0),
-                    x1=max(combined_bbox.x1, part_number.bbox.x1),
-                    y1=max(combined_bbox.y1, part_number.bbox.y1),
-                )
-
-            part = Part(
-                bbox=combined_bbox,
-                count=pc,
-                number=part_number,
-                length=piece_length,
-                # Note: diagram field is optional and not set here
-                # The image is tracked via the score_details
-            )
-
-            # Create a candidate for this Part
-            result.add_candidate(
-                "part",
-                Candidate(
-                    bbox=combined_bbox,
-                    label="part",
-                    score=1.0,  # Matched based on distance
-                    score_details=score,
-                    constructed=part,
-                    source_blocks=[],  # Synthetic element, no single source
-                    failure_reason=None,
-                ),
-            )
-
-    def _find_part_number(
-        self, part_count: PartCount, part_numbers: list[PartNumber]
-    ) -> PartNumber | None:
-        """Find the part_number that belongs to this part_count.
-
-        The part_number should be directly below the part_count,
-        left-aligned.
-
-        Args:
-            part_count: The PartCount to find a number for
-            part_numbers: List of available PartNumber elements
+            part_count_candidate: The part_count candidate to find a number for
+            part_number_candidates: List of available part_number candidates
 
         Returns:
-            The matching PartNumber, or None if not found
+            The matching part_number candidate, or None if not found
         """
         VERT_EPS = 5.0  # Small vertical tolerance
         ALIGN_EPS = 3.0  # Horizontal alignment tolerance
 
-        best_number = None
+        best_candidate = None
         best_distance = float("inf")
 
-        for pn in part_numbers:
+        for pn_cand in part_number_candidates:
             # Part number should be below the count
             if (
-                pn.bbox.y0 >= part_count.bbox.y1 - VERT_EPS
-                and abs(pn.bbox.x0 - part_count.bbox.x0) <= ALIGN_EPS
+                pn_cand.bbox.y0 >= part_count_candidate.bbox.y1 - VERT_EPS
+                and abs(pn_cand.bbox.x0 - part_count_candidate.bbox.x0) <= ALIGN_EPS
             ):
                 # Calculate vertical distance
-                distance = pn.bbox.y0 - part_count.bbox.y1
+                distance = pn_cand.bbox.y0 - part_count_candidate.bbox.y1
                 if distance < best_distance:
                     best_distance = distance
-                    best_number = pn
+                    best_candidate = pn_cand
 
-        return best_number
+        return best_candidate
 
-    def _find_piece_length(
-        self, image: Image, piece_lengths: list[PieceLength]
-    ) -> PieceLength | None:
-        """Find the piece_length that belongs to this part image.
+    def _find_piece_length_candidate(
+        self, image: Image, piece_length_candidates: list[Candidate]
+    ) -> Candidate | None:
+        """Find the piece_length candidate that belongs to this part image.
 
         The piece_length should be in the top-right area of the image,
         spatially contained within or very close to the image bbox.
 
         Args:
             image: The Image to find a length for
-            piece_lengths: List of available PieceLength elements
+            piece_length_candidates: List of available piece_length candidates
 
         Returns:
-            The matching PieceLength, or None if not found
+            The matching piece_length candidate, or None if not found
         """
         # Piece length should be near top-right of image
         # Allow some tolerance for being slightly outside image bounds
         TOLERANCE = 5.0
 
-        best_length = None
+        best_candidate = None
         best_score = float("inf")
 
-        log.debug(
-            f"Matching piece_length to image id={image.id} bbox={image.bbox} "
-            f"from {len(piece_lengths)} available"
-        )
-
-        for pl in piece_lengths:
+        for pl_cand in piece_length_candidates:
             # Check if piece length is in the vicinity of the image
-            # (within or slightly outside the image bounds)
             if (
-                pl.bbox.x0 >= image.bbox.x0 - TOLERANCE
-                and pl.bbox.x1 <= image.bbox.x1 + TOLERANCE
-                and pl.bbox.y0 >= image.bbox.y0 - TOLERANCE
-                and pl.bbox.y1 <= image.bbox.y1 + TOLERANCE
+                pl_cand.bbox.x0 >= image.bbox.x0 - TOLERANCE
+                and pl_cand.bbox.x1 <= image.bbox.x1 + TOLERANCE
+                and pl_cand.bbox.y0 >= image.bbox.y0 - TOLERANCE
+                and pl_cand.bbox.y1 <= image.bbox.y1 + TOLERANCE
             ):
                 # Prefer piece lengths closer to top-right
-                # Calculate distance from piece length center to image top-right
-                pl_center_x = (pl.bbox.x0 + pl.bbox.x1) / 2
-                pl_center_y = (pl.bbox.y0 + pl.bbox.y1) / 2
+                pl_center_x = (pl_cand.bbox.x0 + pl_cand.bbox.x1) / 2
+                pl_center_y = (pl_cand.bbox.y0 + pl_cand.bbox.y1) / 2
 
                 # Distance to top-right corner
                 dx = image.bbox.x1 - pl_center_x
@@ -425,21 +370,8 @@ class PartsClassifier(LabelClassifier):
                 # Combined score (prefer top-right position)
                 score = dx * dx + dy * dy
 
-                log.debug(
-                    f"  Candidate piece_length value={pl.value} bbox={pl.bbox} "
-                    f"score={score:.2f}"
-                )
-
                 if score < best_score:
                     best_score = score
-                    best_length = pl
+                    best_candidate = pl_cand
 
-        if best_length:
-            log.debug(
-                f"  Selected piece_length value={best_length.value} "
-                f"for image id={image.id}"
-            )
-        else:
-            log.debug(f"  No matching piece_length found for image id={image.id}")
-
-        return best_length
+        return best_candidate
