@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 from build_a_long.pdf_extract.extractor import (
@@ -10,6 +10,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
     Image,
     Text,
 )
+from build_a_long.pdf_extract.extractor.pymupdf_types import DrawingDict
 
 
 class TestBoundingBoxExtractor:
@@ -303,7 +304,7 @@ class TestExtractor:
         rect.y0 = 20.0
         rect.x1 = 30.0
         rect.y1 = 40.0
-        drawings = [{"rect": rect}]
+        drawings = cast(list[DrawingDict], [{"rect": rect}])
 
         # Extract in order and verify IDs increment
         texts = extractor._extract_text_blocks(text_blocks)
@@ -403,10 +404,13 @@ class TestExtractorMethods:
         rect2.x1 = 70.0
         rect2.y1 = 80.0
 
-        drawings = [
-            {"rect": rect1},
-            {"rect": rect2},
-        ]
+        drawings = cast(
+            list[DrawingDict],
+            [
+                {"rect": rect1},
+                {"rect": rect2},
+            ],
+        )
 
         result = extractor._extract_drawing_blocks(drawings)
 
