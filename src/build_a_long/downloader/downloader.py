@@ -15,6 +15,7 @@ from build_a_long.downloader.legocom import (
     build_instructions_url,
     build_metadata,
 )
+from build_a_long.downloader.metadata import read_metadata, write_metadata
 from build_a_long.downloader.models import DownloadedFile
 from build_a_long.downloader.transport import RateLimitedTransport
 from build_a_long.schemas import (
@@ -24,49 +25,6 @@ from build_a_long.schemas import (
 __all__ = [
     "LegoInstructionDownloader",
 ]
-
-
-def read_metadata(path: Path) -> InstructionMetadata | None:
-    """Read a metadata.json file from disk using Pydantic.
-
-    Args:
-        path: Path to the metadata.json file.
-
-    Returns:
-        The parsed InstructionMetadata object if successful; otherwise None.
-    """
-    try:
-        text = path.read_text(encoding="utf-8")
-        return InstructionMetadata.model_validate_json(text)
-    except (
-        OSError,
-        ValueError,
-    ) as e:
-        print(f"Warning: Could not read existing metadata ({e}); ignoring")
-    return None
-
-
-def write_metadata(path: Path, data: InstructionMetadata) -> None:
-    """Write metadata to disk atomically as UTF-8 JSON.
-
-    This creates parent directories if they do not exist and writes with
-    pretty formatting. In case of failure, it emits a warning and does
-    not raise to keep downloads non-fatal.
-
-    Args:
-        path: Destination path for metadata.json
-        data: The InstructionMetadata object to write
-    """
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(path.suffix + ".tmp")
-        tmp.write_text(
-            data.model_dump_json(indent=2, exclude_unset=True), encoding="utf-8"
-        )
-        tmp.replace(path)
-        print(f"Wrote metadata: {path}")
-    except Exception as e:  # pragma: no cover - non-fatal write error
-        print(f"Warning: Failed to write metadata.json: {e}")
 
 
 class LegoInstructionDownloader:
@@ -285,10 +243,13 @@ class LegoInstructionDownloader:
         # If metadata.json exists and we're not forcing an update,
         # try to load it. If it contains PDFs, we can use it.
         if meta_path.exists() and not should_overwrite:
-            existing_meta = read_metadata(meta_path)
-            if existing_meta and existing_meta.pdfs:
-                print(f"Processing set: {set_number} [cached]")
-                return existing_meta, True
+            try:
+                existing_meta = read_metadata(meta_path)
+                if existing_meta.pdfs:
+                    print(f"Processing set: {set_number} [cached]")
+                    return existing_meta, True
+            except (OSError, ValueError) as e:
+                print(f"Warning: Could not read {meta_path}: {e}; refetching")
 
         # If we're here, we need to fetch the metadata from the website.
         print(f"Processing set: {set_number}")
@@ -314,7 +275,11 @@ class LegoInstructionDownloader:
             return None
 
         # Write the new metadata to disk.
-        write_metadata(meta_path, metadata)
+        try:
+            write_metadata(meta_path, metadata)
+            print(f"Wrote metadata: {meta_path}")
+        except OSError as e:
+            print(f"Warning: Failed to write {meta_path}: {e}")
         return metadata, False
 
     def _process_set_pdfs(self, metadata: InstructionMetadata, out_dir: Path) -> bool:
@@ -400,14 +365,22 @@ class LegoInstructionDownloader:
         if self.skip_pdfs:
             if not use_cached:
                 # Write the metadata if it's new or updated
-                write_metadata(out_dir / "metadata.json", metadata)
+                try:
+                    write_metadata(out_dir / "metadata.json", metadata)
+                    print(f"Wrote metadata: {out_dir / 'metadata.json'}")
+                except OSError as e:
+                    print(f"Warning: Failed to write {out_dir / 'metadata.json'}: {e}")
             return 0
 
         # Process the PDFs for the set.
         if self._process_set_pdfs(metadata, out_dir) and not use_cached:
             # If the metadata was not loaded from cache (i.e. it's new or
             # updated), write the updated metadata back to disk.
-            write_metadata(out_dir / "metadata.json", metadata)
+            try:
+                write_metadata(out_dir / "metadata.json", metadata)
+                print(f"Wrote metadata: {out_dir / 'metadata.json'}")
+            except OSError as e:
+                print(f"Warning: Failed to write {out_dir / 'metadata.json'}: {e}")
 
         return 0
 

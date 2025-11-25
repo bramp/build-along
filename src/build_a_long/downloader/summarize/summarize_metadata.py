@@ -5,6 +5,28 @@ import collections
 import json
 from pathlib import Path
 
+from tqdm.auto import tqdm
+from tqdm.contrib.concurrent import process_map
+
+from build_a_long.downloader.metadata import read_metadata
+from build_a_long.schemas import InstructionMetadata
+
+
+def _load_single_metadata(metadata_file: Path) -> InstructionMetadata | None:
+    """Load and parse a single metadata file.
+
+    Args:
+        metadata_file: Path to the metadata.json file.
+
+    Returns:
+        The parsed InstructionMetadata object, or None if there was an error.
+    """
+    try:
+        return read_metadata(metadata_file)
+    except (OSError, ValueError) as e:
+        tqdm.write(f"Warning: Could not read {metadata_file}: {e}; ignoring")
+        return None
+
 
 def summarize_metadata(data_dir: Path, output_dir: Path) -> int:
     """Summarize all metadata.json files into a yearly index.
@@ -23,16 +45,23 @@ def summarize_metadata(data_dir: Path, output_dir: Path) -> int:
         print(f"No metadata.json files found in {data_dir}")
         return 1
 
-    for metadata_file in metadata_files:
-        with open(metadata_file) as f:
-            try:
-                metadata = json.load(f)
-                year = metadata.get("year")
-                if year:
-                    yearly_metadata[year].append(metadata)
-            except json.JSONDecodeError:
-                print(f"Error decoding JSON from {metadata_file}")
-                continue
+    # Use process_map for parallel loading of metadata files
+    metadata_list = process_map(
+        _load_single_metadata,
+        metadata_files,
+        desc="Loading metadata",
+        unit="file",
+        max_workers=4,
+        chunksize=10,
+    )
+
+    # Group metadata by year
+    for metadata in metadata_list:
+        if metadata is None:
+            continue
+        year = metadata.year
+        if year:
+            yearly_metadata[year].append(metadata)
 
     output_dir.mkdir(exist_ok=True)
 
@@ -41,11 +70,16 @@ def summarize_metadata(data_dir: Path, output_dir: Path) -> int:
 
     for year in sorted_years:
         metadata_list = yearly_metadata[year]
-        metadata_list.sort(key=lambda x: x.get("set_id", ""))
+        metadata_list.sort(key=lambda x: x.set)
         filename = f"index-{year}.json"
         output_file = output_dir / filename
         with open(output_file, "w") as f:
-            json.dump(metadata_list, f, indent=2)
+            # Convert to dict for JSON serialization with mode='json' to serialize URLs
+            json.dump(
+                [m.model_dump(mode="json", exclude_unset=True) for m in metadata_list],
+                f,
+                indent=2,
+            )
 
         all_years_summary.append(
             {
