@@ -6,4 +6,4 @@ pytest-cov~=7.0.0
 pytest-randomly~=3.16.0
 pytest-recording~=0.13.4
 vcrpy~=7.0.0
-datamodel-code-generator~=0.25.2
+datamodel-code-generator~=0.35.0
