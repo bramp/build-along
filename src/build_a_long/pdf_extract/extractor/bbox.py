@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Protocol, TypeVar
 
 from annotated_types import Ge
 from pydantic import BaseModel, ConfigDict
@@ -232,3 +232,74 @@ class BBox(BaseModel):
             y0 = y1 = max(bounds.y0, min(self.y0, bounds.y1))
 
         return BBox(x0=x0, y0=y0, x1=x1, y1=y1)
+
+
+class HasBBox(Protocol):
+    """Protocol for objects that have a bbox attribute."""
+
+    @property
+    def bbox(self) -> BBox: ...
+
+
+T = TypeVar("T", bound=HasBBox)
+
+
+def build_connected_cluster(
+    seed_items: list[T],
+    candidate_items: list[T],
+) -> list[T]:
+    """Build a connected cluster of items based on bbox overlap.
+
+    Starts with seed items and recursively adds candidates that overlap
+    with any item already in the cluster.
+
+    Args:
+        seed_items: Initial items to start the cluster
+        candidate_items: Items to consider adding to the cluster
+
+    Returns:
+        List of items in the connected cluster (includes seed items)
+
+    Example:
+        >>> # Find images that form a connected cluster with a bag number
+        >>> bag_images = [img for img in images if img.bbox.overlaps(bag_bbox)]
+        >>> cluster = build_connected_cluster(bag_images, images)
+    """
+    if not seed_items:
+        return []
+
+    # Build index mapping for quick lookup
+    candidate_set = set(range(len(candidate_items)))
+    cluster_indices: set[int] = set()
+    to_process: list[int] = []
+
+    # Add seed items to cluster
+    for seed in seed_items:
+        for idx, candidate in enumerate(candidate_items):
+            if candidate is seed or candidate.bbox.equals(seed.bbox):
+                if idx in candidate_set:
+                    cluster_indices.add(idx)
+                    to_process.append(idx)
+                    candidate_set.discard(idx)
+                break
+
+    # Expand cluster by finding overlapping items
+    processed: set[int] = set()
+    while to_process:
+        current_idx = to_process.pop()
+        if current_idx in processed:
+            continue
+        processed.add(current_idx)
+
+        current_item = candidate_items[current_idx]
+
+        # Find candidates that overlap with current item
+        for idx in list(candidate_set):
+            candidate = candidate_items[idx]
+            if candidate.bbox.overlaps(current_item.bbox):
+                cluster_indices.add(idx)
+                to_process.append(idx)
+                candidate_set.discard(idx)
+
+    # Return clustered items in original order
+    return [candidate_items[idx] for idx in sorted(cluster_indices)]
