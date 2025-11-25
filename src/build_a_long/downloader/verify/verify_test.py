@@ -143,6 +143,7 @@ def test_verify_data_integrity_hash_mismatch(data_dir: Path, capsys):
     assert verify_data_integrity(data_dir) == 1
     captured = capsys.readouterr()
     assert "Error: Hash mismatch" in captured.out
+    assert "Hash Mismatch: 1" in captured.out
 
 
 def test_verify_data_integrity_no_metadata(data_dir: Path, capsys):
@@ -163,6 +164,7 @@ def test_verify_data_integrity_invalid_metadata(data_dir: Path, capsys):
     assert verify_data_integrity(data_dir) == 1
     captured = capsys.readouterr()
     assert "Could not validate or parse metadata" in captured.out
+    assert "Invalid Metadata: 1" in captured.out
 
 
 def test_verify_data_integrity_missing_filename(data_dir: Path, capsys):
@@ -193,6 +195,7 @@ def test_verify_data_integrity_missing_filename(data_dir: Path, capsys):
         "Error: Missing filename in metadata for set 12345, URL: http://example.com/missing.pdf"
         in captured.out
     )
+    assert "Missing Filename: 1" in captured.out
 
 
 def test_verify_data_integrity_orphaned_pdf(data_dir: Path, capsys):
@@ -235,3 +238,4 @@ def test_verify_data_integrity_orphaned_pdf(data_dir: Path, capsys):
         f"Error: Orphaned PDF file found in {set_dir}: {orphaned_pdf_path}"
         in captured.out
     )
+    assert "Orphaned File: 1" in captured.out
