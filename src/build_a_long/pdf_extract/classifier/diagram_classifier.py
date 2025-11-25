@@ -165,14 +165,20 @@ class DiagramClassifier(LabelClassifier):
 
         # Only attempt to get parts lists if they've been classified
         try:
-            parts_lists = result.get_winners_by_score("parts_list", PartsList)
+            parts_list_candidates = result.get_scored_candidates("parts_list")
         except (KeyError, AttributeError):
             # Parts lists haven't been classified yet, that's fine
             return blocks
 
         # Collect parts list bboxes and check for part diagrams with source blocks
-        for pl in parts_lists:
-            parts_list_bboxes.append(pl.bbox)
+        for pl_candidate in parts_list_candidates:
+            # Skip failed or unconstructed candidates
+            if not pl_candidate.constructed or pl_candidate.failure_reason:
+                continue
+
+            pl = pl_candidate.constructed
+            assert isinstance(pl, PartsList)
+            parts_list_bboxes.append(pl_candidate.bbox)
 
             # For individual part diagrams, check if they have source blocks
             # by looking up candidates that constructed them
@@ -213,11 +219,13 @@ class DiagramClassifier(LabelClassifier):
         Returns:
             BBox of the progress bar, or None if not found.
         """
-        progress_bars = result.get_winners_by_score("progress_bar", ProgressBar)
+        progress_bar_candidates = result.get_scored_candidates("progress_bar")
 
-        if progress_bars:
-            # Should only be one progress bar per page
-            return progress_bars[0].bbox
+        # Return the first constructed progress bar
+        for candidate in progress_bar_candidates:
+            if candidate.constructed and not candidate.failure_reason:
+                assert isinstance(candidate.constructed, ProgressBar)
+                return candidate.bbox
 
         return None
 

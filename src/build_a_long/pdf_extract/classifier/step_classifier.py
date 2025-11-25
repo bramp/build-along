@@ -46,11 +46,11 @@ log = logging.getLogger(__name__)
 class _StepScore:
     """Internal score representation for step classification."""
 
-    step_number: StepNumber
-    """The step number this step is associated with."""
+    step_number_candidate: Candidate
+    """The step number candidate this step is associated with."""
 
-    parts_list: PartsList | None
-    """The parts list paired with this step (if any)."""
+    parts_list_candidate: Candidate | None
+    """The parts list candidate paired with this step (if any)."""
 
     has_parts_list: bool
     """Whether this step has an associated parts list."""
@@ -79,7 +79,13 @@ class _StepScore:
         1. Higher pairing scores (better StepNumber-PartsList match)
         2. Lower step number values (to break ties and maintain order)
         """
-        return (-self.pairing_score(), self.step_number.value)
+        # Extract step number value from candidate
+        step_num_candidate = self.step_number_candidate
+        if step_num_candidate.constructed:
+            step_num = step_num_candidate.constructed
+            assert isinstance(step_num, StepNumber)
+            return (-self.pairing_score(), step_num.value)
+        return (-self.pairing_score(), 0)
 
 
 @dataclass(frozen=True)
@@ -93,33 +99,35 @@ class StepClassifier(LabelClassifier):
         """Score step pairings and create candidates WITHOUT construction."""
         page_data = result.page_data
 
-        # Get step numbers and parts lists using score-based selection
-        steps = result.get_winners_by_score("step_number", StepNumber)
+        # Get step number and parts list candidates (not constructed elements)
+        step_candidates = result.get_scored_candidates("step_number")
 
-        if not steps:
+        if not step_candidates:
             return
 
-        # Get parts_list candidates by score
-        parts_lists = result.get_winners_by_score("parts_list", PartsList)
+        # Get parts_list candidates
+        parts_list_candidates = result.get_scored_candidates("parts_list")
 
         log.debug(
-            "[step] page=%s steps=%d parts_lists=%d",
+            "[step] page=%s step_candidates=%d parts_list_candidates=%d",
             page_data.page_number,
-            len(steps),
-            len(parts_lists),
+            len(step_candidates),
+            len(parts_list_candidates),
         )
 
         # Create all possible Step candidates for pairings
         all_candidates: list[Candidate] = []
-        for step_num in steps:
+        for step_candidate in step_candidates:
             # Create candidates for this StepNumber paired with each PartsList
-            for parts_list in parts_lists:
-                candidate = self._create_step_candidate(step_num, parts_list, result)
+            for parts_list_candidate in parts_list_candidates:
+                candidate = self._create_step_candidate(
+                    step_candidate, parts_list_candidate, result
+                )
                 if candidate:
                     all_candidates.append(candidate)
 
             # Also create a candidate with no PartsList (fallback)
-            candidate = self._create_step_candidate(step_num, None, result)
+            candidate = self._create_step_candidate(step_candidate, None, result)
             if candidate:
                 all_candidates.append(candidate)
 
@@ -153,8 +161,31 @@ class StepClassifier(LabelClassifier):
         score = candidate.score_details
         assert isinstance(score, _StepScore)
 
-        step_num = score.step_number
-        parts_list = score.parts_list
+        # Validate and extract step number from parent candidate
+        step_num_candidate = score.step_number_candidate
+        if step_num_candidate.failure_reason:
+            raise ValueError(
+                f"Step number candidate failed: {step_num_candidate.failure_reason}"
+            )
+        if not step_num_candidate.constructed:
+            raise ValueError("Step number candidate not constructed")
+
+        step_num = step_num_candidate.constructed
+        assert isinstance(step_num, StepNumber)
+
+        # Validate and extract parts list from parent candidate (if present)
+        parts_list = None
+        if score.parts_list_candidate:
+            parts_list_candidate = score.parts_list_candidate
+            if parts_list_candidate.failure_reason:
+                raise ValueError(
+                    f"Parts list candidate failed: {parts_list_candidate.failure_reason}"
+                )
+            if not parts_list_candidate.constructed:
+                raise ValueError("Parts list candidate not constructed")
+
+            parts_list = parts_list_candidate.constructed
+            assert isinstance(parts_list, PartsList)
 
         # Identify diagram region
         diagram_bbox = self._identify_diagram_region(step_num, parts_list, result)
@@ -170,15 +201,15 @@ class StepClassifier(LabelClassifier):
 
     def _create_step_candidate(
         self,
-        step_num: StepNumber,
-        parts_list: PartsList | None,
+        step_candidate: Candidate,
+        parts_list_candidate: Candidate | None,
         result: ClassificationResult,
     ) -> Candidate | None:
         """Create a Step candidate WITHOUT construction.
 
         Args:
-            step_num: The StepNumber for this candidate
-            parts_list: The PartsList to pair with (or None for no pairing)
+            step_candidate: The StepNumber candidate for this step
+            parts_list_candidate: The PartsList candidate to pair with (or None)
             result: Classification result
 
         Returns:
@@ -187,6 +218,24 @@ class StepClassifier(LabelClassifier):
         ABOVE_EPS = 2.0  # Small epsilon for "above" check
         ALIGNMENT_THRESHOLD_MULTIPLIER = 1.0  # Max horizontal offset
         DISTANCE_THRESHOLD_MULTIPLIER = 1.0  # Max vertical distance
+
+        # Validate parent candidates and extract elements for scoring
+        if step_candidate.failure_reason or not step_candidate.constructed:
+            return None
+
+        step_num = step_candidate.constructed
+        assert isinstance(step_num, StepNumber)
+
+        parts_list = None
+        if parts_list_candidate:
+            if (
+                parts_list_candidate.failure_reason
+                or not parts_list_candidate.constructed
+            ):
+                parts_list_candidate = None  # Treat as no pairing
+            else:
+                parts_list = parts_list_candidate.constructed
+                assert isinstance(parts_list, PartsList)
 
         # Calculate pairing scores if there's a parts_list above the step
         proximity_score = 0.0
@@ -213,10 +262,10 @@ class StepClassifier(LabelClassifier):
         # Estimate diagram bbox for scoring purposes
         diagram_bbox = self._identify_diagram_region(step_num, parts_list, result)
 
-        # Create score object
+        # Create score object with candidate references
         score = _StepScore(
-            step_number=step_num,
-            parts_list=parts_list,
+            step_number_candidate=step_candidate,
+            parts_list_candidate=parts_list_candidate,
             has_parts_list=parts_list is not None,
             step_proximity_score=proximity_score,
             step_alignment_score=alignment_score,
@@ -334,8 +383,20 @@ class StepClassifier(LabelClassifier):
             # Get step info from score_details (candidates not yet constructed)
             assert isinstance(candidate.score_details, _StepScore)
             score = candidate.score_details
-            step_value = score.step_number.value
-            parts_list = score.parts_list
+
+            # Extract step number value from parent candidate
+            step_num_candidate = score.step_number_candidate
+            if not step_num_candidate.constructed:
+                continue
+            step_num = step_num_candidate.constructed
+            assert isinstance(step_num, StepNumber)
+            step_value = step_num.value
+
+            # Extract parts list from parent candidate (if present)
+            parts_list = None
+            if score.parts_list_candidate and score.parts_list_candidate.constructed:
+                parts_list = score.parts_list_candidate.constructed
+                assert isinstance(parts_list, PartsList)
 
             # Skip if this step number value is already used
             if step_value in used_step_values:

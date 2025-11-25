@@ -59,8 +59,8 @@ class _NewBagScore:
     compactness_score: float
     """Score based on how compact the cluster is (0.0-1.0)."""
 
-    bag_number: BagNumber
-    """The bag number element for this new bag."""
+    bag_number_candidate: Candidate
+    """The bag number candidate for this new bag."""
 
     cluster_bbox: BBox
     """Bounding box encompassing the entire bag cluster."""
@@ -86,9 +86,9 @@ class NewBagClassifier(LabelClassifier):
         """
         page_data = result.page_data
 
-        # Get bag number candidates
-        bag_numbers = result.get_winners_by_score("bag_number", BagNumber)
-        if not bag_numbers:
+        # Get bag number candidates (not constructed elements)
+        bag_number_candidates = result.get_scored_candidates("bag_number")
+        if not bag_number_candidates:
             return
 
         # Get all image/drawing blocks on the page
@@ -100,15 +100,23 @@ class NewBagClassifier(LabelClassifier):
             return
 
         log.debug(
-            "[new_bag] page=%s bag_numbers=%d image_blocks=%d",
+            "[new_bag] page=%s bag_number_candidates=%d image_blocks=%d",
             page_data.page_number,
-            len(bag_numbers),
+            len(bag_number_candidates),
             len(image_blocks),
         )
 
-        # For each bag number, try to find a surrounding cluster of images
-        for bag_number in bag_numbers:
-            bag_bbox = bag_number.bbox
+        # For each bag number candidate, try to find a surrounding cluster of images
+        for bag_number_candidate in bag_number_candidates:
+            # Validate parent candidate
+            if bag_number_candidate.failure_reason:
+                continue
+            if not bag_number_candidate.constructed:
+                continue
+
+            bag_number = bag_number_candidate.constructed
+            assert isinstance(bag_number, BagNumber)
+            bag_bbox = bag_number_candidate.bbox
 
             # Find nearby images (within a reasonable distance)
             nearby_images = self._find_nearby_images(bag_bbox, image_blocks)
@@ -137,7 +145,7 @@ class NewBagClassifier(LabelClassifier):
             score_details = _NewBagScore(
                 image_cluster_score=cluster_score,
                 compactness_score=compactness_score,
-                bag_number=bag_number,
+                bag_number_candidate=bag_number_candidate,
                 cluster_bbox=cluster_bbox,
             )
 
@@ -186,8 +194,20 @@ class NewBagClassifier(LabelClassifier):
         detail_score = candidate.score_details
         assert isinstance(detail_score, _NewBagScore)
 
+        # Validate and extract the bag number from parent candidate
+        bag_number_candidate = detail_score.bag_number_candidate
+        if bag_number_candidate.failure_reason:
+            raise ValueError(
+                f"Bag number candidate failed: {bag_number_candidate.failure_reason}"
+            )
+        if not bag_number_candidate.constructed:
+            raise ValueError("Bag number candidate not constructed")
+
+        bag_number = bag_number_candidate.constructed
+        assert isinstance(bag_number, BagNumber)
+
         # Construct the NewBag element
-        return NewBag(bbox=detail_score.cluster_bbox, number=detail_score.bag_number)
+        return NewBag(bbox=detail_score.cluster_bbox, number=bag_number)
 
     def _find_nearby_images(
         self, bag_bbox: BBox, image_blocks: list[Drawing | Image]
