@@ -240,16 +240,18 @@ class LegoInstructionDownloader:
             print(f"Skipping set {set_number} (marked as not found).")
             return None
 
-        # If metadata.json exists and we're not forcing an update,
-        # try to load it. If it contains PDFs, we can use it.
-        if meta_path.exists() and not should_overwrite:
+        existing_meta = None
+        if meta_path.exists():
             try:
                 existing_meta = read_metadata(meta_path)
-                if existing_meta.pdfs:
-                    print(f"Processing set: {set_number} [cached]")
-                    return existing_meta, True
             except (OSError, ValueError) as e:
-                print(f"Warning: Could not read {meta_path}: {e}; refetching")
+                print(f"Warning: Could not read {meta_path}: {e}")
+
+        # If metadata.json exists and we're not forcing an update,
+        # use the loaded metadata.
+        if existing_meta and existing_meta.pdfs and not should_overwrite:
+            print(f"Processing set: {set_number} [cached]")
+            return existing_meta, True
 
         # If we're here, we need to fetch the metadata from the website.
         print(f"Processing set: {set_number}")
@@ -273,6 +275,18 @@ class LegoInstructionDownloader:
             out_dir.mkdir(parents=True, exist_ok=True)
             not_found_path.touch()
             return None
+
+        # If we have existing metadata, try to carry over file size and hash
+        # from matching PDFs to avoid losing this data when overwriting.
+        if existing_meta:
+            existing_pdfs_by_url = {str(p.url): p for p in existing_meta.pdfs}
+            for pdf in metadata.pdfs:
+                if str(pdf.url) in existing_pdfs_by_url:
+                    existing_pdf = existing_pdfs_by_url[str(pdf.url)]
+                    if not pdf.filesize:
+                        pdf.filesize = existing_pdf.filesize
+                    if not pdf.filehash:
+                        pdf.filehash = existing_pdf.filehash
 
         # Write the new metadata to disk.
         try:
