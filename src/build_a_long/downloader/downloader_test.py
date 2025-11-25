@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import httpx
+import pytest
 from pydantic import AnyUrl
 
 from build_a_long.downloader.downloader import (
@@ -232,8 +233,8 @@ def test_read_metadata_handles_invalid_json(tmp_path: Path):
     meta_path = tmp_path / "metadata.json"
     meta_path.write_text("{ invalid json }", encoding="utf-8")
 
-    data = read_metadata(meta_path)
-    assert data is None
+    with pytest.raises(ValueError):
+        read_metadata(meta_path)
 
 
 def test_write_and_read_metadata_round_trip(tmp_path: Path):
