@@ -22,6 +22,8 @@ def _verify_single_metadata(metadata_path: Path) -> list[str]:
         A list of error messages. An empty list means no errors were found.
     """
     errors = []
+    declared_pdf_paths = set()  # To store paths of PDFs mentioned in metadata
+    set_dir = metadata_path.parent
     try:
         with open(metadata_path) as f:
             data = json.load(f)
@@ -32,9 +34,16 @@ def _verify_single_metadata(metadata_path: Path) -> list[str]:
         )
         return errors
 
-    set_dir = metadata_path.parent
     for pdf_entry in metadata.pdfs:
+        # Check for missing filename
+        if not pdf_entry.filename:
+            errors.append(
+                f"Error: Missing filename in metadata for set {metadata.set}, URL: {pdf_entry.url}"
+            )
+            continue  # Can't proceed without a filename
+
         pdf_path = set_dir / pdf_entry.filename
+        declared_pdf_paths.add(pdf_path)  # Add to our declared set
 
         if not pdf_path.exists():
             errors.append(f"Error: Missing file {pdf_path} for set {metadata.set}")
@@ -61,6 +70,14 @@ def _verify_single_metadata(metadata_path: Path) -> list[str]:
                     f"Error: Hash mismatch for {pdf_path} "
                     f"(expected: {pdf_entry.filehash}, actual: {actual_hash})"
                 )
+
+    # Check for orphaned PDFs in this set's directory
+    all_pdfs_in_set_dir = set(set_dir.glob("*.pdf"))
+    orphaned_pdfs = all_pdfs_in_set_dir - declared_pdf_paths
+
+    for pdf in orphaned_pdfs:
+        errors.append(f"Error: Orphaned PDF file found in {set_dir}: {pdf}")
+
     return errors
 
 

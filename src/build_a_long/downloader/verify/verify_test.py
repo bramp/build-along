@@ -163,3 +163,75 @@ def test_verify_data_integrity_invalid_metadata(data_dir: Path, capsys):
     assert verify_data_integrity(data_dir) == 1
     captured = capsys.readouterr()
     assert "Could not validate or parse metadata" in captured.out
+
+
+def test_verify_data_integrity_missing_filename(data_dir: Path, capsys):
+    """Test for a missing filename in PdfEntry."""
+    set_dir = data_dir / "12345"
+    set_dir.mkdir()
+
+    # Metadata with a PdfEntry lacking a filename
+    metadata = InstructionMetadata(
+        set="12345",
+        locale="en-us",
+        pdfs=[
+            PdfEntry(
+                url=AnyUrl("http://example.com/missing.pdf"),
+                filename=None,  # Filename is None
+                filesize=123,
+                filehash="abc",
+            )
+        ],
+    )
+
+    metadata_path = set_dir / "metadata.json"
+    metadata_path.write_text(metadata.model_dump_json(indent=2))
+
+    assert verify_data_integrity(data_dir) == 1
+    captured = capsys.readouterr()
+    assert (
+        "Error: Missing filename in metadata for set 12345, URL: http://example.com/missing.pdf"
+        in captured.out
+    )
+
+
+def test_verify_data_integrity_orphaned_pdf(data_dir: Path, capsys):
+    """Test for an orphaned PDF file."""
+    set_dir = data_dir / "12345"
+    set_dir.mkdir()
+
+    # Create a PDF file that is not in the metadata
+    orphaned_pdf_path = set_dir / "orphaned.pdf"
+    create_dummy_file(orphaned_pdf_path, b"orphaned content")
+
+    pdf_content = b"dummy pdf content"
+    pdf_path = set_dir / "12345-1.pdf"
+    create_dummy_file(pdf_path, pdf_content)
+
+    hasher = hashlib.sha256()
+    hasher.update(pdf_content)
+    pdf_hash = hasher.hexdigest()
+    pdf_size = len(pdf_content)
+
+    metadata = InstructionMetadata(
+        set="12345",
+        locale="en-us",
+        pdfs=[
+            PdfEntry(
+                url=AnyUrl("http://example.com/1.pdf"),
+                filename="12345-1.pdf",
+                filesize=pdf_size,
+                filehash=pdf_hash,
+            )
+        ],
+    )
+
+    metadata_path = set_dir / "metadata.json"
+    metadata_path.write_text(metadata.model_dump_json(indent=2))
+
+    assert verify_data_integrity(data_dir) == 1
+    captured = capsys.readouterr()
+    assert (
+        f"Error: Orphaned PDF file found in {set_dir}: {orphaned_pdf_path}"
+        in captured.out
+    )
