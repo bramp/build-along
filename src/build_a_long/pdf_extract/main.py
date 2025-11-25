@@ -13,7 +13,6 @@ from build_a_long.pdf_extract.cli import (
     print_classification_debug,
     print_font_hints,
     print_histogram,
-    print_label_counts,
     render_annotated_images,
     save_classified_json,
     save_raw_json,
@@ -242,7 +241,6 @@ def _print_debug_output(
 
     if config.debug_classification:
         for page, result in zip(pages, results, strict=True):
-            print_label_counts(page, result)
             print_classification_debug(page, result)
         build_and_print_page_hierarchy(pages, results)
 

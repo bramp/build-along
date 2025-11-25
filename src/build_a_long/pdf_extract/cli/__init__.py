@@ -12,7 +12,6 @@ from .reporting import (
     print_classification_debug,
     print_font_hints,
     print_histogram,
-    print_label_counts,
     print_page_hierarchy,
     print_summary,
 )
@@ -28,7 +27,6 @@ __all__ = [
     "print_classification_debug",
     "print_font_hints",
     "print_histogram",
-    "print_label_counts",
     "print_page_hierarchy",
     "print_summary",
 ]
