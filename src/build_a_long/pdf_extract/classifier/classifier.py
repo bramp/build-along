@@ -44,6 +44,9 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassifierConfig,
     RemovalReason,
 )
+from build_a_long.pdf_extract.classifier.conflict_resolution import (
+    resolve_label_conflicts,
+)
 from build_a_long.pdf_extract.classifier.diagram_classifier import (
     DiagramClassifier,
 )
@@ -320,6 +323,10 @@ class Classifier:
         """
         Runs the classification logic and returns a result.
         It does NOT modify page_data directly.
+
+        The classification process runs in batches based on dependencies:
+        - For each batch: score → resolve conflicts → construct
+        - This ensures candidates are available for dependent batches
         """
         result = ClassificationResult(page_data=page_data)
 
@@ -328,17 +335,22 @@ class Classifier:
             f"for page {page_data.page_number}"
         )
 
-        # Execute each batch in order
+        # Process each batch: score, resolve conflicts, construct
         for batch_idx, batch in enumerate(self.batches):
             logger.debug(
                 f"  Batch {batch_idx + 1}: "
                 f"{', '.join(c.__class__.__name__ for c in batch)}"
             )
 
-            # All classifiers in a batch can run in parallel (same dependencies)
-            # For now, run them sequentially within the batch
+            # Phase 1: Score all classifiers in this batch
             for classifier in batch:
                 classifier.score(result)
+
+            # Phase 2: Resolve conflicts for this batch
+            resolve_label_conflicts(result)
+
+            # Phase 3: Construct all classifiers in this batch
+            for classifier in batch:
                 classifier.construct(result)
 
         warnings = self._log_post_classification_warnings(page_data, result)
