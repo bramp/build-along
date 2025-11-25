@@ -163,12 +163,10 @@ class StepClassifier(LabelClassifier):
 
         # Validate and extract step number from parent candidate
         step_num_candidate = score.step_number_candidate
-        if step_num_candidate.failure_reason:
+        if not step_num_candidate.is_valid:
             raise ValueError(
-                f"Step number candidate failed: {step_num_candidate.failure_reason}"
+                f"Step number candidate invalid: {step_num_candidate.failure_reason or 'not constructed'}"
             )
-        if not step_num_candidate.constructed:
-            raise ValueError("Step number candidate not constructed")
 
         step_num = step_num_candidate.constructed
         assert isinstance(step_num, StepNumber)
@@ -177,12 +175,10 @@ class StepClassifier(LabelClassifier):
         parts_list = None
         if score.parts_list_candidate:
             parts_list_candidate = score.parts_list_candidate
-            if parts_list_candidate.failure_reason:
+            if not parts_list_candidate.is_valid:
                 raise ValueError(
-                    f"Parts list candidate failed: {parts_list_candidate.failure_reason}"
+                    f"Parts list candidate invalid: {parts_list_candidate.failure_reason or 'not constructed'}"
                 )
-            if not parts_list_candidate.constructed:
-                raise ValueError("Parts list candidate not constructed")
 
             parts_list = parts_list_candidate.constructed
             assert isinstance(parts_list, PartsList)
@@ -220,7 +216,7 @@ class StepClassifier(LabelClassifier):
         DISTANCE_THRESHOLD_MULTIPLIER = 1.0  # Max vertical distance
 
         # Validate parent candidates and extract elements for scoring
-        if step_candidate.failure_reason or not step_candidate.constructed:
+        if not step_candidate.is_valid:
             return None
 
         step_num = step_candidate.constructed

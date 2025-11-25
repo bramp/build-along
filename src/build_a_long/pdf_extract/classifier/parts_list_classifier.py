@@ -199,9 +199,7 @@ class PartsListClassifier(LabelClassifier):
         # Validate and extract Part elements from parent candidates
         parts: list[Part] = []
         for part_candidate in score.part_candidates:
-            if part_candidate.failure_reason:
-                continue
-            if not part_candidate.constructed:
+            if not part_candidate.is_valid:
                 continue
 
             part = part_candidate.constructed

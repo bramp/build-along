@@ -173,7 +173,7 @@ class ProgressBarClassifier(LabelClassifier):
 
         # Get the first constructed page number
         for candidate in page_number_candidates:
-            if candidate.constructed and not candidate.failure_reason:
+            if candidate.is_valid:
                 assert isinstance(candidate.constructed, PageNumber)
                 return candidate.bbox
 

@@ -87,51 +87,39 @@ class PageClassifier(LabelClassifier):
         page_data = result.page_data
 
         # Get best candidates using score-based selection
-        # Extract constructed elements from candidates
+        # get_scored_candidates returns only valid candidates by default
         page_number = None
         page_number_candidates = result.get_scored_candidates("page_number")
         if page_number_candidates:
-            for pn_candidate in page_number_candidates[:1]:  # Take first
-                if pn_candidate.constructed and not pn_candidate.failure_reason:
-                    page_number = pn_candidate.constructed
-                    assert isinstance(page_number, PageNumber)
-                    break
+            page_number = page_number_candidates[0].constructed
+            assert isinstance(page_number, PageNumber)
 
         progress_bar = None
         progress_bar_candidates = result.get_scored_candidates("progress_bar")
         if progress_bar_candidates:
-            for pb_candidate in progress_bar_candidates[:1]:  # Take first
-                if pb_candidate.constructed and not pb_candidate.failure_reason:
-                    progress_bar = pb_candidate.constructed
-                    assert isinstance(progress_bar, ProgressBar)
-                    break
+            progress_bar = progress_bar_candidates[0].constructed
+            assert isinstance(progress_bar, ProgressBar)
 
         # Get new bags from candidates
         new_bags: list[NewBag] = []
-        new_bag_candidates = result.get_scored_candidates("new_bag")
-        for nb_candidate in new_bag_candidates:
-            if nb_candidate.constructed and not nb_candidate.failure_reason:
-                new_bag = nb_candidate.constructed
-                assert isinstance(new_bag, NewBag)
-                new_bags.append(new_bag)
+        for nb_candidate in result.get_scored_candidates("new_bag"):
+            assert nb_candidate.constructed is not None
+            assert isinstance(nb_candidate.constructed, NewBag)
+            new_bags.append(nb_candidate.constructed)
 
         # Get steps from candidates
         steps: list[Step] = []
-        step_candidates = result.get_scored_candidates("step")
-        for step_candidate in step_candidates:
-            if step_candidate.constructed and not step_candidate.failure_reason:
-                step = step_candidate.constructed
-                assert isinstance(step, Step)
-                steps.append(step)
+        for step_candidate in result.get_scored_candidates("step"):
+            assert step_candidate.constructed is not None
+            assert isinstance(step_candidate.constructed, Step)
+            steps.append(step_candidate.constructed)
 
         # Get all parts from candidates
         all_parts: list[Part] = []
-        part_candidates = result.get_scored_candidates("part")
-        for part_candidate in part_candidates:
-            if part_candidate.constructed and not part_candidate.failure_reason:
-                part = part_candidate.constructed
-                assert isinstance(part, Part)
-                all_parts.append(part)
+        for part_candidate in result.get_scored_candidates("part"):
+            assert part_candidate.constructed is not None
+            assert isinstance(part_candidate.constructed, Part)
+            all_parts.append(part_candidate.constructed)
 
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
