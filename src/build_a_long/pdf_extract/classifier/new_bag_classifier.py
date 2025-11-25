@@ -109,9 +109,7 @@ class NewBagClassifier(LabelClassifier):
         # For each bag number candidate, try to find a surrounding cluster of images
         for bag_number_candidate in bag_number_candidates:
             # Validate parent candidate
-            if bag_number_candidate.failure_reason:
-                continue
-            if not bag_number_candidate.constructed:
+            if not bag_number_candidate.is_valid:
                 continue
 
             bag_number = bag_number_candidate.constructed
@@ -196,12 +194,10 @@ class NewBagClassifier(LabelClassifier):
 
         # Validate and extract the bag number from parent candidate
         bag_number_candidate = detail_score.bag_number_candidate
-        if bag_number_candidate.failure_reason:
+        if not bag_number_candidate.is_valid:
             raise ValueError(
-                f"Bag number candidate failed: {bag_number_candidate.failure_reason}"
+                f"Bag number candidate invalid: {bag_number_candidate.failure_reason or 'not constructed'}"
             )
-        if not bag_number_candidate.constructed:
-            raise ValueError("Bag number candidate not constructed")
 
         bag_number = bag_number_candidate.constructed
         assert isinstance(bag_number, BagNumber)

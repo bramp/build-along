@@ -92,6 +92,18 @@ class Candidate(BaseModel):
     failure_reason: str | None = None
     """Why construction failed, if it did"""
 
+    @property
+    def is_valid(self) -> bool:
+        """Check if this candidate is valid (constructed and no failure).
+
+        A valid candidate has been successfully constructed and has no failure reason.
+        Use this to filter candidates when working with dependencies.
+
+        Returns:
+            True if candidate.constructed is not None and failure_reason is None
+        """
+        return self.constructed is not None and self.failure_reason is None
+
 
 class ClassifierConfig(BaseModel):
     """Configuration for the classifier.
@@ -290,7 +302,7 @@ class ClassificationResult(BaseModel):
         return self.candidates.get(label, []).copy()
 
     def get_scored_candidates(
-        self, label: str, min_score: float = 0.0
+        self, label: str, min_score: float = 0.0, valid_only: bool = True
     ) -> list[Candidate]:
         """Get candidates for a label that have been scored.
 
@@ -320,10 +332,10 @@ class ClassificationResult(BaseModel):
                 pc_cand = candidate.score_details.part_count_candidate
 
                 # Validate parent candidate is still valid
-                if pc_cand.failure_reason:
-                    raise ValueError(f"Parent failed: {pc_cand.failure_reason}")
-                if pc_cand.constructed is None:
-                    raise ValueError("Parent not constructed")
+                if not pc_cand.is_valid:
+                    raise ValueError(
+                        f"Parent invalid: {pc_cand.failure_reason or 'not constructed'}"
+                    )
 
                 # Now safe to use the constructed element
                 assert isinstance(pc_cand.constructed, PartCount)
@@ -332,12 +344,13 @@ class ClassificationResult(BaseModel):
         Args:
             label: The label to get candidates for
             min_score: Optional minimum score threshold (default: 0.0)
+            valid_only: If True (default), only return valid candidates
+                (constructed and no failure). Set to False to get all scored
+                candidates regardless of construction status.
 
         Returns:
             List of scored candidates sorted by score (highest first).
-            Only includes candidates that have score_details set.
-            Does NOT filter by construction status - that violates the
-            two-phase separation between score() and construct().
+            By default, only includes valid candidates (is_valid=True).
         """
         candidates = self.get_candidates(label)
 
@@ -347,6 +360,10 @@ class ClassificationResult(BaseModel):
         # Apply score threshold if specified
         if min_score > 0:
             scored = [c for c in scored if c.score >= min_score]
+
+        # Filter to valid candidates if requested (default)
+        if valid_only:
+            scored = [c for c in scored if c.is_valid]
 
         # Sort by score descending
         # TODO add a tie breaker for determinism.

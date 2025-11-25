@@ -172,8 +172,8 @@ class DiagramClassifier(LabelClassifier):
 
         # Collect parts list bboxes and check for part diagrams with source blocks
         for pl_candidate in parts_list_candidates:
-            # Skip failed or unconstructed candidates
-            if not pl_candidate.constructed or pl_candidate.failure_reason:
+            # Skip invalid candidates
+            if not pl_candidate.is_valid:
                 continue
 
             pl = pl_candidate.constructed
@@ -223,7 +223,7 @@ class DiagramClassifier(LabelClassifier):
 
         # Return the first constructed progress bar
         for candidate in progress_bar_candidates:
-            if candidate.constructed and not candidate.failure_reason:
+            if candidate.is_valid:
                 assert isinstance(candidate.constructed, ProgressBar)
                 return candidate.bbox
 

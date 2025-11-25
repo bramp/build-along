@@ -218,38 +218,32 @@ class PartsClassifier(LabelClassifier):
         ps = candidate.score_details
 
         # Validate and extract part_count from candidate
-        if ps.part_count_candidate.failure_reason:
+        if not ps.part_count_candidate.is_valid:
             raise ValueError(
-                f"Part count candidate failed: {ps.part_count_candidate.failure_reason}"
+                f"Part count candidate invalid: {ps.part_count_candidate.failure_reason or 'not constructed'}"
             )
-        if ps.part_count_candidate.constructed is None:
-            raise ValueError("Part count candidate not constructed")
         assert isinstance(ps.part_count_candidate.constructed, PartCount)
         part_count = ps.part_count_candidate.constructed
 
         # Extract optional part_number from candidate
         part_number: PartNumber | None = None
         if ps.part_number_candidate:
-            if ps.part_number_candidate.failure_reason:
+            if not ps.part_number_candidate.is_valid:
                 raise ValueError(
-                    f"Part number candidate failed: "
-                    f"{ps.part_number_candidate.failure_reason}"
+                    f"Part number candidate invalid: "
+                    f"{ps.part_number_candidate.failure_reason or 'not constructed'}"
                 )
-            if ps.part_number_candidate.constructed is None:
-                raise ValueError("Part number candidate not constructed")
             assert isinstance(ps.part_number_candidate.constructed, PartNumber)
             part_number = ps.part_number_candidate.constructed
 
         # Extract optional piece_length from candidate
         piece_length: PieceLength | None = None
         if ps.piece_length_candidate:
-            if ps.piece_length_candidate.failure_reason:
+            if not ps.piece_length_candidate.is_valid:
                 raise ValueError(
-                    f"Piece length candidate failed: "
-                    f"{ps.piece_length_candidate.failure_reason}"
+                    f"Piece length candidate invalid: "
+                    f"{ps.piece_length_candidate.failure_reason or 'not constructed'}"
                 )
-            if ps.piece_length_candidate.constructed is None:
-                raise ValueError("Piece length candidate not constructed")
             assert isinstance(ps.piece_length_candidate.constructed, PieceLength)
             piece_length = ps.piece_length_candidate.constructed
 
