@@ -1,5 +1,6 @@
 """Tests for downloader.py - LegoInstructionDownloader class (pytest style)."""
 
+import datetime
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -462,3 +463,82 @@ def test_process_set_creates_not_found_for_pdf_on_404(
 
         assert not_found_path.exists()
         assert "Warning: PDF not found" in capsys.readouterr().out
+
+
+def test_process_set_preserves_filesize_and_hash_on_overwrite(tmp_path: Path, capsys):
+    """Test that existing filesize and hash are preserved when overwriting metadata."""
+    set_number = "88888"
+    out_dir = tmp_path / set_number
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    pdf_url = "https://www.lego.com/88888.pdf"
+    pdf_filename = "88888.pdf"
+
+    # Create existing metadata with file info
+    existing_meta = {
+        "set": set_number,
+        "locale": "en-us",
+        "name": "Old Name",  # Name will change to verify overwrite happened
+        "pdfs": [
+            {
+                "url": pdf_url,
+                "filename": pdf_filename,
+                "filesize": 12345,
+                "filehash": "cafebabe" * 8,
+            }
+        ],
+    }
+    (out_dir / "metadata.json").write_text(json.dumps(existing_meta), encoding="utf-8")
+
+    # Set modification time to the past to trigger overwrite
+    import os
+    import time
+
+    past_time = time.time() - (10 * 24 * 3600)
+    os.utime(out_dir / "metadata.json", (past_time, past_time))
+
+    new_meta_obj = InstructionMetadata(
+        set=set_number,
+        locale="en-us",
+        name="New Name",
+        pdfs=[
+            PdfEntry(
+                url=AnyUrl(pdf_url),
+                filename=pdf_filename,
+                # filesize and filehash are None by default
+            )
+        ],
+    )
+
+    with (
+        patch(
+            "build_a_long.downloader.downloader.LegoInstructionDownloader.fetch_instructions_page",
+            return_value="<html></html>",
+        ),
+        patch(
+            "build_a_long.downloader.downloader.build_metadata",
+            return_value=new_meta_obj,
+        ),
+    ):
+        downloader = LegoInstructionDownloader(
+            out_dir=out_dir,
+            overwrite_metadata_if_older_than=datetime.timedelta(
+                days=1
+            ),  # 1 day is less than 10 days
+            show_progress=False,
+            skip_pdfs=True,
+        )
+
+        exit_code = downloader.process_set(set_number)
+
+        assert exit_code == 0
+
+        # Check that metadata.json was updated
+        new_data = json.loads((out_dir / "metadata.json").read_text(encoding="utf-8"))
+        assert new_data["name"] == "New Name"  # Confirms we overwrote
+
+        # Check that filesize and hash were preserved
+        assert len(new_data["pdfs"]) == 1
+        pdf = new_data["pdfs"][0]
+        assert pdf["filesize"] == 12345
+        assert pdf["filehash"] == "cafebabe" * 8
