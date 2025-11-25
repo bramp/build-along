@@ -1,0 +1,61 @@
+---
+name: Dependabot Lockfile Update
+
+"on":
+    pull_request:
+        paths:
+            - "3rdparty/requirements*.txt"
+    # Allow manual testing
+    workflow_dispatch:
+        inputs:
+            pr_number:
+                description: "PR number to test on"
+                required: true
+                type: number
+
+jobs:
+    update-lockfile:
+        name: Update Lockfile
+        # Only run on Dependabot PRs
+        if: github.actor == 'dependabot[bot]'
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: [3.14]
+        permissions:
+            contents: write
+            pull-requests: write
+
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  submodules: true
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: ${{ matrix.python-version }}
+            - uses: pantsbuild/actions/init-pants@v10
+              with:
+                  gha-cache-key: v0-py${{ matrix.python-version }}
+                  named-caches-hash: ${{ hashFiles('python-default.lock') }}
+                  cache-lmdb-store: true
+
+            - name: Generate lockfiles
+              run: pants generate-lockfiles
+
+            - name: Check for lockfile changes
+              id: check_changes
+              run: |
+                  if git diff --quiet python-default.lock; then
+                    echo "changed=false" >> $GITHUB_OUTPUT
+                  else
+                    echo "changed=true" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Commit lockfile changes
+              if: steps.check_changes.outputs.changed == 'true'
+              run: |
+                  git config --global user.name 'github-actions[bot]'
+                  git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+                  git add python-default.lock
+                  git commit -m "Update lockfile"
+                  git push
