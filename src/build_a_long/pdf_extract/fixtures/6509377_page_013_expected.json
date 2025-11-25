@@ -7,7 +7,7 @@
   },
   "__tag__": "Page",
   "categories": [
-    "instruction"
+    "catalog"
   ],
   "page_number": {
     "bbox": {
@@ -31,114 +31,75 @@
     "full_width": 1035.48
   },
   "new_bags": [],
-  "steps": [
+  "steps": [],
+  "catalog": [
     {
       "bbox": {
-        "x0": 34.02,
-        "y0": 14.67,
-        "x1": 552.76,
-        "y1": 496.06
+        "x0": 73.82,
+        "y0": 28.42,
+        "x1": 95.65,
+        "y1": 51.53
       },
-      "__tag__": "Step",
-      "step_number": {
+      "__tag__": "Part",
+      "count": {
         "bbox": {
-          "x0": 34.02,
-          "y0": 64.51,
-          "x1": 60.2,
-          "y1": 96.9
+          "x0": 74.3,
+          "y0": 41.56,
+          "x1": 82.87,
+          "y1": 51.53
         },
-        "__tag__": "StepNumber",
-        "value": 10
-      },
-      "parts_list": {
-        "bbox": {
-          "x0": 34.52,
-          "y0": 14.67,
-          "x1": 186.59,
-          "y1": 61.91
-        },
-        "__tag__": "PartsList",
-        "parts": [
-          {
-            "bbox": {
-              "x0": 73.82,
-              "y0": 28.42,
-              "x1": 95.65,
-              "y1": 51.53
-            },
-            "__tag__": "Part",
-            "count": {
-              "bbox": {
-                "x0": 74.3,
-                "y0": 41.56,
-                "x1": 82.87,
-                "y1": 51.53
-              },
-              "__tag__": "PartCount",
-              "count": 4,
-              "matched_hint": "catalog_part_count"
-            },
-            "diagram": {
-              "bbox": {
-                "x0": 73.82,
-                "y0": 28.42,
-                "x1": 95.65,
-                "y1": 42.56
-              },
-              "id": 9,
-              "__tag__": "Drawing",
-              "image_id": null
-            },
-            "number": null,
-            "length": null
-          },
-          {
-            "bbox": {
-              "x0": 123.05,
-              "y0": 26.02,
-              "x1": 147.28,
-              "y1": 51.53
-            },
-            "__tag__": "Part",
-            "count": {
-              "bbox": {
-                "x0": 123.52,
-                "y0": 41.56,
-                "x1": 132.1,
-                "y1": 51.53
-              },
-              "__tag__": "PartCount",
-              "count": 4,
-              "matched_hint": "catalog_part_count"
-            },
-            "diagram": {
-              "bbox": {
-                "x0": 123.05,
-                "y0": 26.02,
-                "x1": 147.28,
-                "y1": 42.57
-              },
-              "id": 10,
-              "__tag__": "Drawing",
-              "image_id": null
-            },
-            "number": null,
-            "length": null
-          }
-        ]
+        "__tag__": "PartCount",
+        "count": 4,
+        "matched_hint": "catalog_part_count"
       },
       "diagram": {
         "bbox": {
-          "x0": 34.02,
-          "y0": 96.9,
-          "x1": 552.76,
-          "y1": 496.06
+          "x0": 73.82,
+          "y0": 28.42,
+          "x1": 95.65,
+          "y1": 42.56
         },
-        "__tag__": "Diagram"
-      }
+        "id": 9,
+        "__tag__": "Drawing",
+        "image_id": null
+      },
+      "number": null,
+      "length": null
+    },
+    {
+      "bbox": {
+        "x0": 123.05,
+        "y0": 26.02,
+        "x1": 147.28,
+        "y1": 51.53
+      },
+      "__tag__": "Part",
+      "count": {
+        "bbox": {
+          "x0": 123.52,
+          "y0": 41.56,
+          "x1": 132.1,
+          "y1": 51.53
+        },
+        "__tag__": "PartCount",
+        "count": 4,
+        "matched_hint": "catalog_part_count"
+      },
+      "diagram": {
+        "bbox": {
+          "x0": 123.05,
+          "y0": 26.02,
+          "x1": 147.28,
+          "y1": 42.57
+        },
+        "id": 10,
+        "__tag__": "Drawing",
+        "image_id": null
+      },
+      "number": null,
+      "length": null
     }
   ],
-  "catalog": [],
   "warnings": [],
   "unprocessed_elements": []
 }
