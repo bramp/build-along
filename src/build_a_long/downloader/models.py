@@ -27,3 +27,14 @@ class DownloadUrl(BaseModel):
         default=None,
         description="Indicates if the instruction is a supplemental or additional info booklet.",
     )
+
+
+class DownloaderStats(BaseModel):
+    """Statistics for the downloader execution."""
+
+    sets_processed: int = 0
+    sets_not_found: int = 0
+    sets_found: int = 0
+    pdfs_found: int = 0
+    pdfs_downloaded: int = 0
+    pdfs_skipped: int = 0  # Cached or already exists

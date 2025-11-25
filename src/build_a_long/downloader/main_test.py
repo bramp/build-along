@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from build_a_long.downloader.main import main
+from build_a_long.downloader.models import DownloaderStats
 
 
 @patch("build_a_long.downloader.download.command.LegoInstructionDownloader")
@@ -13,7 +14,7 @@ def test_main_routes_to_download_command(mock_downloader_class, monkeypatch, cap
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
-    mock_instance.process_sets.return_value = 0
+    mock_instance.process_sets.return_value = DownloaderStats()
     mock_downloader_class.return_value = mock_instance
 
     monkeypatch.setattr(sys, "argv", ["main.py", "download", "12345"])
@@ -21,7 +22,9 @@ def test_main_routes_to_download_command(mock_downloader_class, monkeypatch, cap
 
     assert exit_code == 0
     mock_instance.process_sets.assert_called_once_with(["12345"])
-    assert "All done" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Summary:" in output
+    assert "Sets Processed:" in output
 
 
 @patch("build_a_long.downloader.summarize.command._summarize_metadata")
