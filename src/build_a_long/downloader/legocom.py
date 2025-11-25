@@ -345,19 +345,12 @@ def build_metadata(
     # Add PDFs to the metadata
     metadata.pdfs = []
     for info in pdf_infos:
-        filename = extract_filename_from_url(info.url)
-        if filename is None:
-            log.warning(
-                "Could not extract filename from URL: %s. Skipping PDF.", info.url
-            )
-            continue
-
         metadata.pdfs.append(
             PdfEntry(
                 url=info.url,
                 sequence_number=info.sequence_number,
                 sequence_total=info.sequence_total,
-                filename=filename,
+                filename=None,
                 preview_url=info.preview_url,
                 is_additional_info_booklet=info.is_additional_info_booklet,
             )

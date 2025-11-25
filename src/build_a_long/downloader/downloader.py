@@ -18,6 +18,7 @@ from build_a_long.downloader.legocom import (
 from build_a_long.downloader.metadata import read_metadata, write_metadata
 from build_a_long.downloader.models import DownloadedFile
 from build_a_long.downloader.transport import RateLimitedTransport
+from build_a_long.downloader.util import extract_filename_from_url
 from build_a_long.schemas import (
     InstructionMetadata,
 )
@@ -316,7 +317,18 @@ class LegoInstructionDownloader:
             return False
 
         for entry in metadata.pdfs:
-            dest_path = out_dir / entry.filename
+            # Determine destination filename:
+            # 1. Use existing entry.filename if present
+            # 2. Extract from URL
+            # 3. Skip if undetermined (should likely warn)
+            filename = entry.filename or extract_filename_from_url(entry.url)
+            if not filename:
+                print(
+                    f"Warning: Could not determine filename for {entry.url}. Skipping."
+                )
+                continue
+
+            dest_path = out_dir / filename
             not_found_path = dest_path.with_suffix(
                 dest_path.suffix + self.NOT_FOUND_SUFFIX
             )
@@ -333,6 +345,8 @@ class LegoInstructionDownloader:
             if dest_path.exists() and not self.overwrite_download:
                 print(f"{progress_prefix} [cached]")
                 entry.filesize = dest_path.stat().st_size
+                # Ensure filename is set if it was missing
+                entry.filename = filename
                 continue
 
             # Try to download the PDF.
@@ -342,6 +356,8 @@ class LegoInstructionDownloader:
                 )
                 entry.filesize = downloaded_file.size
                 entry.filehash = downloaded_file.hash
+                # Update filename in entry to match downloaded file
+                entry.filename = downloaded_file.path.name
             except httpx.HTTPStatusError as e:
                 # If the download fails with a 404, create a .not_found file
                 # so we don't try again next time.

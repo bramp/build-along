@@ -542,3 +542,57 @@ def test_process_set_preserves_filesize_and_hash_on_overwrite(tmp_path: Path, ca
         pdf = new_data["pdfs"][0]
         assert pdf["filesize"] == 12345
         assert pdf["filehash"] == "cafebabe" * 8
+
+
+def test_skip_pdfs_has_no_filename(tmp_path: Path, capsys):
+    """Test that filename is None when skip_pdfs is used and no download occurs."""
+    set_number = "77777"
+    out_dir = tmp_path / set_number
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    pdf_url = "https://www.lego.com/77777.pdf"
+
+    meta_obj = InstructionMetadata(
+        set=set_number,
+        locale="en-us",
+        name="Metadata Only Set",
+        pdfs=[
+            PdfEntry(
+                url=AnyUrl(pdf_url),
+                filename=None,  # Filename is None initially
+            )
+        ],
+    )
+
+    with (
+        patch(
+            "build_a_long.downloader.downloader.LegoInstructionDownloader.fetch_instructions_page",
+            return_value="<html></html>",
+        ),
+        patch(
+            "build_a_long.downloader.downloader.build_metadata",
+            return_value=meta_obj,
+        ),
+    ):
+        downloader = LegoInstructionDownloader(
+            out_dir=out_dir,
+            show_progress=False,
+            skip_pdfs=True,  # Enable skip_pdfs
+        )
+
+        exit_code = downloader.process_set(set_number)
+
+        assert exit_code == 0
+
+        # Check that metadata.json was created
+        meta_path = out_dir / "metadata.json"
+        assert meta_path.exists()
+
+        new_data = json.loads(meta_path.read_text(encoding="utf-8"))
+        assert new_data["name"] == "Metadata Only Set"
+
+        # Check that filename is None
+        assert len(new_data["pdfs"]) == 1
+        pdf = new_data["pdfs"][0]
+        assert pdf["filename"] is None
+        assert not (out_dir / "77777.pdf").exists()
