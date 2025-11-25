@@ -256,9 +256,9 @@ class Part(LegoPageElement):
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        number_str = self.number.element_id if self.number else "no-number"
+        number_str = f", number={self.number.element_id}" if self.number else ""
         length_str = f", len={self.length.value}" if self.length else ""
-        return f"Part(count={self.count.count}x, number={number_str}{length_str})"
+        return f"Part(count={self.count.count}x{number_str}{length_str})"
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this Part and all child elements."""
