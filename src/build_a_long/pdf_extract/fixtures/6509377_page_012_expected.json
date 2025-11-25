@@ -78,7 +78,17 @@
               "count": 1,
               "matched_hint": "catalog_part_count"
             },
-            "diagram": null,
+            "diagram": {
+              "bbox": {
+                "x0": 45.76,
+                "y0": 24.34,
+                "x1": 78.38,
+                "y1": 44.25
+              },
+              "id": 21,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
             "number": null,
             "length": null
           },
@@ -101,7 +111,17 @@
               "count": 1,
               "matched_hint": "catalog_part_count"
             },
-            "diagram": null,
+            "diagram": {
+              "bbox": {
+                "x0": 105.67,
+                "y0": 26.26,
+                "x1": 135.66,
+                "y1": 44.25
+              },
+              "id": 22,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
             "number": null,
             "length": null
           }
@@ -163,7 +183,17 @@
               "count": 2,
               "matched_hint": "catalog_part_count"
             },
-            "diagram": null,
+            "diagram": {
+              "bbox": {
+                "x0": 36.72,
+                "y0": 260.36,
+                "x1": 58.55,
+                "y1": 278.82
+              },
+              "id": 14,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
             "number": null,
             "length": null
           },
@@ -186,7 +216,17 @@
               "count": 2,
               "matched_hint": "catalog_part_count"
             },
-            "diagram": null,
+            "diagram": {
+              "bbox": {
+                "x0": 79.31,
+                "y0": 257.48,
+                "x1": 103.54,
+                "y1": 278.83
+              },
+              "id": 15,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
             "number": null,
             "length": null
           },
@@ -209,7 +249,17 @@
               "count": 1,
               "matched_hint": "catalog_part_count"
             },
-            "diagram": null,
+            "diagram": {
+              "bbox": {
+                "x0": 124.31,
+                "y0": 263.97,
+                "x1": 144.7,
+                "y1": 278.81
+              },
+              "id": 16,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
             "number": null,
             "length": null
           }
@@ -228,7 +278,7 @@
     {
       "bbox": {
         "x0": 280.63,
-        "y0": 14.67,
+        "y0": 14.17,
         "x1": 552.76,
         "y1": 496.06
       },
@@ -245,10 +295,10 @@
       },
       "parts_list": {
         "bbox": {
-          "x0": 281.13,
-          "y0": 14.67,
-          "x1": 433.2,
-          "y1": 61.91
+          "x0": 280.63,
+          "y0": 14.17,
+          "x1": 433.7,
+          "y1": 62.41
         },
         "__tag__": "PartsList",
         "parts": [
@@ -271,7 +321,17 @@
               "count": 1,
               "matched_hint": "catalog_part_count"
             },
-            "diagram": null,
+            "diagram": {
+              "bbox": {
+                "x0": 344.09,
+                "y0": 26.98,
+                "x1": 374.08,
+                "y1": 44.97
+              },
+              "id": 18,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
             "number": null,
             "length": null
           },
@@ -294,7 +354,17 @@
               "count": 1,
               "matched_hint": "catalog_part_count"
             },
-            "diagram": null,
+            "diagram": {
+              "bbox": {
+                "x0": 301.13,
+                "y0": 23.62,
+                "x1": 325.36,
+                "y1": 44.97
+              },
+              "id": 19,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
             "number": null,
             "length": null
           },
@@ -317,7 +387,17 @@
               "count": 1,
               "matched_hint": "catalog_part_count"
             },
-            "diagram": null,
+            "diagram": {
+              "bbox": {
+                "x0": 392.81,
+                "y0": 30.11,
+                "x1": 413.2,
+                "y1": 44.96
+              },
+              "id": 20,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
             "number": null,
             "length": null
           }
