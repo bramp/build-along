@@ -3,24 +3,31 @@ Rule-based classifier for labeling page elements.
 
 Pipeline order and dependencies
 --------------------------------
-Classifiers run in a fixed, enforced order because later stages depend on
-labels produced by earlier stages:
+Classifiers run in dependency order, automatically determined at runtime.
+Each classifier declares its `requires` (input labels) and `outputs` (produced labels).
 
-1) PageNumberClassifier  → outputs: "page_number"
-2) ProgressBarClassifier → outputs: "progress_bar" (optional, near page_number)
-3) PartCountClassifier   → outputs: "part_count"
-4) PartNumberClassifier  → outputs: "part_number" (catalog pages)
-5) StepNumberClassifier  → outputs: "step_number" (uses page_number size)
-6) PieceLengthClassifier → outputs: "piece_length" (piece size indicators)
-7) PartsClassifier       → outputs: "part" (requires part_count, pairs with images)
-8) PartsListClassifier   → outputs: "parts_list" (requires part)
-9) PartsImageClassifier  → outputs: "part_image" (requires parts_list, part_count)
-10) DiagramClassifier    → outputs: "diagram" (requires parts_list)
-11) StepClassifier       → outputs: "step" (requires step_number, parts_list, diagram)
-12) PageClassifier       → outputs: "page" (requires page_number and step)
+The Classifier batches classifiers into groups where:
+- All classifiers in a batch have their dependencies satisfied by previous batches
+- Classifiers within a batch can theoretically run in parallel (same dependencies)
 
-If the order is changed such that a classifier runs before its requirements
-are available, a ValueError will be raised at initialization time.
+Example dependency chain:
+1) PageNumberClassifier  → outputs: "page_number" (no dependencies)
+2) ProgressBarClassifier → outputs: "progress_bar" (requires: page_number)
+3) PartCountClassifier   → outputs: "part_count" (no dependencies)
+4) StepNumberClassifier  → outputs: "step_number" (requires: page_number)
+5) PartsClassifier       → outputs: "part"
+                            (requires: part_count, part_number?, piece_length?)
+6) PartsListClassifier   → outputs: "parts_list" (requires: part)
+7) DiagramClassifier     → outputs: "diagram"
+                            (requires: parts_list, progress_bar)
+8) StepClassifier        → outputs: "step"
+                            (requires: step_number, parts_list)
+9) PageClassifier        → outputs: "page"
+                            (requires: page_number, progress_bar, new_bag,
+                             step, parts_list)
+
+The actual execution order is determined by the dependency graph and may differ
+from the order classifiers are registered in __init__.
 """
 
 from __future__ import annotations
@@ -41,6 +48,7 @@ from build_a_long.pdf_extract.classifier.diagram_classifier import (
     DiagramClassifier,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
+from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.new_bag_classifier import (
     NewBagClassifier,
 )
@@ -228,7 +236,7 @@ class Classifier:
 
     def __init__(self, config: ClassifierConfig):
         self.config = config
-        self.classifiers: list[Classifiers] = [
+        self.classifiers: list[LabelClassifier] = [
             PageNumberClassifier(config),
             ProgressBarClassifier(config),
             BagNumberClassifier(config),
@@ -245,18 +253,68 @@ class Classifier:
             PageClassifier(config),
         ]
 
-        # TODO Create a directed graph, and run it in order.
+        # Order classifiers by dependencies and cache the batches
+        # This will raise ValueError if there are circular or missing dependencies
+        self.batches = self._order_classifiers_by_dependencies()
+
+    def _order_classifiers_by_dependencies(
+        self,
+    ) -> list[list[LabelClassifier]]:
+        """Order classifiers into batches based on their dependencies.
+
+        Returns a list of batches, where each batch contains classifiers that can
+        run in parallel (all their dependencies are satisfied by previous batches).
+
+        Returns:
+            List of batches, where each batch is a list of classifiers.
+
+        Raises:
+            ValueError: If circular dependencies are detected.
+        """
+        batches: list[list[LabelClassifier]] = []
+        remaining = list(self.classifiers)
         produced: set[str] = set()
-        for c in self.classifiers:
-            cls = c.__class__
-            need = getattr(c, "requires", set())
-            if not need.issubset(produced):
-                missing = ", ".join(sorted(need - produced))
+        max_iterations = len(self.classifiers) + 1  # Safety limit
+
+        for _ in range(max_iterations):
+            if not remaining:
+                break
+
+            # Find all classifiers whose dependencies are satisfied
+            current_batch: list[LabelClassifier] = []
+            for classifier in remaining:
+                if classifier.requires.issubset(produced):
+                    current_batch.append(classifier)
+
+            # If no classifiers can run, we have circular dependencies or missing deps
+            if not current_batch:
+                unsatisfied = []
+                for classifier in remaining:
+                    missing = classifier.requires - produced
+                    if missing:
+                        cls_name = classifier.__class__.__name__
+                        unsatisfied.append(f"{cls_name} (needs: {sorted(missing)})")
+
                 raise ValueError(
-                    f"Classifier order invalid: {cls.__name__} requires "
-                    f"labels not yet produced: {missing}"
+                    f"Circular dependency or missing dependencies detected. "
+                    f"Cannot satisfy: {'; '.join(unsatisfied)}"
                 )
-            produced |= getattr(c, "outputs", set())
+
+            # Add this batch and update state
+            batches.append(current_batch)
+            for classifier in current_batch:
+                produced |= classifier.outputs
+
+            # Remove processed classifiers
+            remaining = [c for c in remaining if c not in current_batch]
+
+        if remaining:
+            # This shouldn't happen if max_iterations is sufficient
+            raise ValueError(
+                f"Failed to schedule all classifiers after {max_iterations} iterations"
+            )
+
+        return batches
 
     def classify(self, page_data: PageData) -> ClassificationResult:
         """
@@ -265,9 +323,23 @@ class Classifier:
         """
         result = ClassificationResult(page_data=page_data)
 
-        for classifier in self.classifiers:
-            classifier.score(result)
-            classifier.construct(result)
+        logger.debug(
+            f"Running classifiers in {len(self.batches)} batches "
+            f"for page {page_data.page_number}"
+        )
+
+        # Execute each batch in order
+        for batch_idx, batch in enumerate(self.batches):
+            logger.debug(
+                f"  Batch {batch_idx + 1}: "
+                f"{', '.join(c.__class__.__name__ for c in batch)}"
+            )
+
+            # All classifiers in a batch can run in parallel (same dependencies)
+            # For now, run them sequentially within the batch
+            for classifier in batch:
+                classifier.score(result)
+                classifier.construct(result)
 
         warnings = self._log_post_classification_warnings(page_data, result)
         for warning in warnings:
