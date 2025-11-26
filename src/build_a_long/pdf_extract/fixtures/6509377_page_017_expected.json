@@ -27,7 +27,6 @@
       "y1": 482.59
     },
     "__tag__": "ProgressBar",
-    "progress": null,
     "full_width": 1035.48
   },
   "new_bags": [],
@@ -86,11 +85,8 @@
                 "y1": 39.68
               },
               "id": 17,
-              "__tag__": "Drawing",
-              "image_id": null
-            },
-            "number": null,
-            "length": null
+              "__tag__": "Drawing"
+            }
           },
           {
             "bbox": {
@@ -119,11 +115,8 @@
                 "y1": 39.68
               },
               "id": 18,
-              "__tag__": "Drawing",
-              "image_id": null
-            },
-            "number": null,
-            "length": null
+              "__tag__": "Drawing"
+            }
           },
           {
             "bbox": {
@@ -152,11 +145,8 @@
                 "y1": 39.68
               },
               "id": 19,
-              "__tag__": "Drawing",
-              "image_id": null
-            },
-            "number": null,
-            "length": null
+              "__tag__": "Drawing"
+            }
           },
           {
             "bbox": {
@@ -185,11 +175,8 @@
                 "y1": 39.68
               },
               "id": 20,
-              "__tag__": "Drawing",
-              "image_id": null
-            },
-            "number": null,
-            "length": null
+              "__tag__": "Drawing"
+            }
           },
           {
             "bbox": {
@@ -218,11 +205,8 @@
                 "y1": 39.67
               },
               "id": 21,
-              "__tag__": "Drawing",
-              "image_id": null
-            },
-            "number": null,
-            "length": null
+              "__tag__": "Drawing"
+            }
           }
         ]
       },

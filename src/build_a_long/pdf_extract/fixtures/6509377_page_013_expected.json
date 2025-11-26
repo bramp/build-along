@@ -27,7 +27,6 @@
       "y1": 482.59
     },
     "__tag__": "ProgressBar",
-    "progress": null,
     "full_width": 1035.48
   },
   "new_bags": [],
@@ -86,11 +85,8 @@
                 "y1": 42.56
               },
               "id": 9,
-              "__tag__": "Drawing",
-              "image_id": null
-            },
-            "number": null,
-            "length": null
+              "__tag__": "Drawing"
+            }
           },
           {
             "bbox": {
@@ -119,11 +115,8 @@
                 "y1": 42.57
               },
               "id": 10,
-              "__tag__": "Drawing",
-              "image_id": null
-            },
-            "number": null,
-            "length": null
+              "__tag__": "Drawing"
+            }
           }
         ]
       },

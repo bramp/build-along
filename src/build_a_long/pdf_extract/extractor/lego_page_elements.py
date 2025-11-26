@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Iterator
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from annotated_types import Ge, Gt
 from pydantic import (
@@ -37,6 +37,24 @@ class LegoPageElement(BaseModel, ABC):
     model_config = ConfigDict(populate_by_name=True)
 
     bbox: BBox
+
+    def to_dict(self, **kwargs: Any) -> dict:
+        """Serialize to dict with proper defaults (by_alias=True, exclude_none=True).
+
+        Override by passing explicit kwargs if different behavior is needed.
+        """
+        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
+        defaults.update(kwargs)
+        return self.model_dump(**defaults)
+
+    def to_json(self, **kwargs: Any) -> str:
+        """Serialize to JSON with proper defaults (by_alias=True, exclude_none=True).
+
+        Override by passing explicit kwargs if different behavior is needed.
+        """
+        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
+        defaults.update(kwargs)
+        return self.model_dump_json(**defaults)
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""

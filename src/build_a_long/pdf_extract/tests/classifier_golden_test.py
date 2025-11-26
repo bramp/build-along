@@ -112,7 +112,7 @@ class TestClassifierGolden:
 
         # Serialize the Page using Pydantic's JSON encoder
         assert page_element is not None, "Page element should not be None"
-        actual_json = page_element.model_dump_json(by_alias=True, indent=2) + "\n"
+        actual_json = page_element.to_json(indent=2) + "\n"
 
         # Load expected golden data
         expected_json = golden_path.read_text()

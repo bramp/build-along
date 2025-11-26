@@ -19,7 +19,6 @@
     "__tag__": "PageNumber",
     "value": 180
   },
-  "progress_bar": null,
   "new_bags": [],
   "steps": [],
   "catalog": [
@@ -50,8 +49,7 @@
           "y1": 22.01
         },
         "id": 181,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -62,8 +60,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "614101"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -92,8 +89,7 @@
           "y1": 57.28
         },
         "id": 182,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -104,8 +100,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "300501"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -134,8 +129,7 @@
           "y1": 90.01
         },
         "id": 183,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -146,8 +140,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "302301"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -176,8 +169,7 @@
           "y1": 126.35
         },
         "id": 184,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -188,8 +180,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6469441"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -218,8 +209,7 @@
           "y1": 179.24
         },
         "id": 185,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -230,8 +220,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "447701"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -260,8 +249,7 @@
           "y1": 211.61
         },
         "id": 186,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -272,8 +260,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6092587"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -302,8 +289,7 @@
           "y1": 246.87
         },
         "id": 187,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -314,8 +300,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6251252"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -344,8 +329,7 @@
           "y1": 282.12
         },
         "id": 188,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -356,8 +340,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4121921"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -386,8 +369,7 @@
           "y1": 317.92
         },
         "id": 189,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -398,8 +380,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4666999"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -428,8 +409,7 @@
           "y1": 358.2
         },
         "id": 190,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -440,8 +420,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6273851"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -470,8 +449,7 @@
           "y1": 399.58
         },
         "id": 191,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -482,8 +460,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4114309"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -512,8 +489,7 @@
           "y1": 451.04
         },
         "id": 192,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -524,8 +500,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4181134"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -554,8 +529,7 @@
           "y1": 467.96
         },
         "id": 193,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -566,8 +540,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6344819"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -596,8 +569,7 @@
           "y1": 25.09
         },
         "id": 194,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -608,8 +580,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6210270"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -638,8 +609,7 @@
           "y1": 55.62
         },
         "id": 195,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -650,8 +620,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "403226"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -680,8 +649,7 @@
           "y1": 82.92
         },
         "id": 196,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -692,8 +660,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6279875"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -722,8 +689,7 @@
           "y1": 112.01
         },
         "id": 197,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -734,8 +700,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "302326"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -764,8 +729,7 @@
           "y1": 146.16
         },
         "id": 198,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -776,8 +740,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "300426"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -806,8 +769,7 @@
           "y1": 174.16
         },
         "id": 199,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -818,8 +780,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6156991"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -848,8 +809,7 @@
           "y1": 207.23
         },
         "id": 200,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -860,8 +820,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6114987"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -890,8 +849,7 @@
           "y1": 248.74
         },
         "id": 201,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -902,8 +860,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4593678"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -932,8 +889,7 @@
           "y1": 298.0
         },
         "id": 202,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -944,8 +900,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6228588"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -974,8 +929,7 @@
           "y1": 327.63
         },
         "id": 203,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -986,8 +940,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6313116"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1016,8 +969,7 @@
           "y1": 363.58
         },
         "id": 204,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1028,8 +980,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6000650"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1058,8 +1009,7 @@
           "y1": 396.8
         },
         "id": 205,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1070,8 +1020,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6016172"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1100,8 +1049,7 @@
           "y1": 436.34
         },
         "id": 206,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1112,8 +1060,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6117973"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1142,8 +1089,7 @@
           "y1": 24.9
         },
         "id": 207,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1154,8 +1100,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6121485"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1184,8 +1129,7 @@
           "y1": 61.41
         },
         "id": 208,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1196,8 +1140,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6271346"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1226,8 +1169,7 @@
           "y1": 93.96
         },
         "id": 209,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1238,8 +1180,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "302226"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1268,8 +1209,7 @@
           "y1": 123.98
         },
         "id": 210,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1280,8 +1220,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "242026"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1310,8 +1249,7 @@
           "y1": 154.72
         },
         "id": 211,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1322,8 +1260,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4124096"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1352,8 +1289,7 @@
           "y1": 187.27
         },
         "id": 212,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1364,8 +1300,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "368026"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1394,8 +1329,7 @@
           "y1": 222.33
         },
         "id": 213,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1406,8 +1340,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6211476"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1436,8 +1369,7 @@
           "y1": 252.17
         },
         "id": 214,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1448,8 +1380,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6089119"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1478,8 +1409,7 @@
           "y1": 283.64
         },
         "id": 215,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1490,8 +1420,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "362326"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1520,8 +1449,7 @@
           "y1": 320.14
         },
         "id": 216,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1532,8 +1460,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "362226"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1562,8 +1489,7 @@
           "y1": 364.22
         },
         "id": 217,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1574,8 +1500,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6154860"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1604,8 +1529,7 @@
           "y1": 399.81
         },
         "id": 218,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1616,8 +1540,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6168620"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1646,8 +1569,7 @@
           "y1": 432.89
         },
         "id": 219,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1658,8 +1580,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6327548"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1688,8 +1609,7 @@
           "y1": 467.96
         },
         "id": 220,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1700,8 +1620,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "302126"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1730,8 +1649,7 @@
           "y1": 21.47
         },
         "id": 221,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1742,8 +1660,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6426359"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1772,8 +1689,7 @@
           "y1": 55.97
         },
         "id": 222,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1784,8 +1700,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6162892"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1814,8 +1729,7 @@
           "y1": 89.92
         },
         "id": 223,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1826,8 +1740,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "371026"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1856,8 +1769,7 @@
           "y1": 128.9
         },
         "id": 224,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1868,8 +1780,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "301026"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1898,8 +1809,7 @@
           "y1": 162.48
         },
         "id": 225,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1910,8 +1820,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "243126"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1940,8 +1849,7 @@
           "y1": 216.6
         },
         "id": 226,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1952,8 +1860,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6483080"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -1982,8 +1889,7 @@
           "y1": 250.17
         },
         "id": 227,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -1994,8 +1900,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6439175"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2024,8 +1929,7 @@
           "y1": 292.77
         },
         "id": 228,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2036,8 +1940,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "300126"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2066,8 +1969,7 @@
           "y1": 329.77
         },
         "id": 229,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2078,8 +1980,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4560182"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2108,8 +2009,7 @@
           "y1": 367.31
         },
         "id": 230,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2120,8 +2020,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "302026"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2150,8 +2049,7 @@
           "y1": 403.77
         },
         "id": 231,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2162,8 +2060,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6350415"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2192,8 +2089,7 @@
           "y1": 467.97
         },
         "id": 232,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2204,8 +2100,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4116854"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2234,8 +2129,7 @@
           "y1": 36.24
         },
         "id": 233,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2246,8 +2140,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "366626"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2276,8 +2169,7 @@
           "y1": 87.63
         },
         "id": 234,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2288,8 +2180,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "389426"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2318,8 +2209,7 @@
           "y1": 139.01
         },
         "id": 235,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2330,8 +2220,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "300926"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2360,8 +2249,7 @@
           "y1": 191.1
         },
         "id": 236,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2372,8 +2260,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6484084"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2402,8 +2289,7 @@
           "y1": 241.04
         },
         "id": 237,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2414,8 +2300,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "379526"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2444,8 +2329,7 @@
           "y1": 291.69
         },
         "id": 238,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2456,8 +2340,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6170702"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2486,8 +2369,7 @@
           "y1": 346.67
         },
         "id": 239,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2498,8 +2380,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "303426"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2528,8 +2409,7 @@
           "y1": 406.69
         },
         "id": 240,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2540,8 +2420,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6037390"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2570,8 +2449,7 @@
           "y1": 467.97
         },
         "id": 241,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2582,8 +2460,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4514845"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2612,8 +2489,7 @@
           "y1": 64.87
         },
         "id": 242,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2624,8 +2500,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6240515"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2654,8 +2529,7 @@
           "y1": 99.69
         },
         "id": 243,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2666,8 +2540,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4527943"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2696,8 +2569,7 @@
           "y1": 141.7
         },
         "id": 244,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2708,8 +2580,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4165967"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2738,8 +2609,7 @@
           "y1": 183.72
         },
         "id": 245,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2750,8 +2620,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4621548"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2780,8 +2649,7 @@
           "y1": 304.5
         },
         "id": 246,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2792,8 +2660,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6315781"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2822,8 +2689,7 @@
           "y1": 337.16
         },
         "id": 247,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2834,8 +2700,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6167936"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2864,8 +2729,7 @@
           "y1": 207.71
         },
         "id": 248,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2876,8 +2740,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6021623"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2906,8 +2769,7 @@
           "y1": 231.73
         },
         "id": 249,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2918,8 +2780,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6314247"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2948,8 +2809,7 @@
           "y1": 255.2
         },
         "id": 250,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -2960,8 +2820,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6311890"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -2990,8 +2849,7 @@
           "y1": 280.47
         },
         "id": 251,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3002,8 +2860,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4550169"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3032,8 +2889,7 @@
           "y1": 376.83
         },
         "id": 252,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3044,8 +2900,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6267492"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3074,8 +2929,7 @@
           "y1": 404.08
         },
         "id": 253,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3086,8 +2940,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6448315"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3116,8 +2969,7 @@
           "y1": 436.03
         },
         "id": 254,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3128,8 +2980,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6210310"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3158,8 +3009,7 @@
           "y1": 467.97
         },
         "id": 255,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3170,8 +3020,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4585479"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3200,8 +3049,7 @@
           "y1": 30.48
         },
         "id": 256,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3212,8 +3060,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6249809"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3242,8 +3089,7 @@
           "y1": 68.83
         },
         "id": 257,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3254,8 +3100,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6174925"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3284,8 +3129,7 @@
           "y1": 101.22
         },
         "id": 258,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3296,8 +3140,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6321305"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3326,8 +3169,7 @@
           "y1": 128.94
         },
         "id": 259,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3338,8 +3180,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6378120"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3368,8 +3209,7 @@
           "y1": 158.11
         },
         "id": 260,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3380,8 +3220,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6360104"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3410,8 +3249,7 @@
           "y1": 187.81
         },
         "id": 261,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3422,8 +3260,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4142865"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3452,8 +3289,7 @@
           "y1": 224.36
         },
         "id": 262,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3464,8 +3300,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6019155"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3494,8 +3329,7 @@
           "y1": 266.84
         },
         "id": 263,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3506,8 +3340,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "300221"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3536,8 +3369,7 @@
           "y1": 334.9
         },
         "id": 264,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3548,8 +3380,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "614123"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3578,8 +3409,7 @@
           "y1": 364.77
         },
         "id": 265,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3590,8 +3420,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "4206482"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3620,8 +3449,7 @@
           "y1": 402.41
         },
         "id": 266,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3632,8 +3460,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "6307924"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3662,8 +3489,7 @@
           "y1": 429.58
         },
         "id": 267,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3674,8 +3500,7 @@
         },
         "__tag__": "PartNumber",
         "element_id": "614124"
-      },
-      "length": null
+      }
     },
     {
       "bbox": {
@@ -3704,8 +3529,7 @@
           "y1": 307.73
         },
         "id": 268,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {
@@ -3755,8 +3579,7 @@
           "y1": 467.96
         },
         "id": 269,
-        "__tag__": "Drawing",
-        "image_id": null
+        "__tag__": "Drawing"
       },
       "number": {
         "bbox": {

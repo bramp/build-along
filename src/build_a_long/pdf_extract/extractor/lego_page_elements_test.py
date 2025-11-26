@@ -1,5 +1,7 @@
 """Tests for LEGO page elements serialization and deserialization."""
 
+import json
+
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PageNumber,
@@ -16,7 +18,7 @@ def test_page_number_serialization_with_tag():
     page_num = PageNumber(bbox=BBox(0, 0, 10, 10), value=5)
 
     # Serialize with by_alias=True to get __tag__ instead of tag
-    json_data = page_num.model_dump(by_alias=True)
+    json_data = page_num.to_dict()
 
     assert json_data["__tag__"] == "PageNumber"
     assert json_data["value"] == 5
@@ -26,12 +28,12 @@ def test_page_number_serialization_with_tag():
 
 def test_step_number_serialization_with_tag():
     """Test that StepNumber serializes with __tag__ field."""
-    step_num = StepNumber(bbox=BBox(0, 0, 10, 10), value=3)
+    step_num = StepNumber(bbox=BBox(0, 0, 10, 10), value=7)
 
-    json_data = step_num.model_dump(by_alias=True)
+    json_data = step_num.to_dict()
 
     assert json_data["__tag__"] == "StepNumber"
-    assert json_data["value"] == 3
+    assert json_data["value"] == 7
     assert "bbox" in json_data
     assert "tag" not in json_data
 
@@ -40,7 +42,7 @@ def test_part_count_serialization_with_tag():
     """Test that PartCount serializes with __tag__ field."""
     part_count = PartCount(bbox=BBox(0, 0, 10, 10), count=2)
 
-    json_data = part_count.model_dump(by_alias=True)
+    json_data = part_count.to_dict()
 
     assert json_data["__tag__"] == "PartCount"
     assert json_data["count"] == 2
@@ -51,21 +53,20 @@ def test_part_count_serialization_with_tag():
 def test_part_serialization_with_nested_elements():
     """Test that Part serializes correctly with nested PartCount and Drawing."""
     count = PartCount(bbox=BBox(0, 0, 5, 5), count=3)
-    diagram = Drawing(bbox=BBox(10, 10, 20, 20), id=1, image_id="img_123")
+    diagram = Drawing(bbox=BBox(10, 10, 20, 20), id=1)
     part = Part(
         bbox=BBox(0, 0, 25, 25),
         count=count,
         diagram=diagram,
     )
 
-    json_data = part.model_dump(by_alias=True)
+    json_data = part.to_dict()
 
     assert json_data["__tag__"] == "Part"
-    assert json_data["number"] is None
+    assert "number" not in json_data  # None values excluded
     assert json_data["count"]["__tag__"] == "PartCount"
     assert json_data["count"]["count"] == 3
     assert json_data["diagram"]["__tag__"] == "Drawing"
-    assert json_data["diagram"]["image_id"] == "img_123"
 
 
 def test_parts_list_serialization():
@@ -80,7 +81,7 @@ def test_parts_list_serialization():
     )
     parts_list = PartsList(bbox=BBox(0, 0, 100, 100), parts=[part1, part2])
 
-    json_data = parts_list.model_dump(by_alias=True)
+    json_data = parts_list.to_dict()
 
     assert json_data["__tag__"] == "PartsList"
     assert len(json_data["parts"]) == 2
@@ -131,8 +132,7 @@ def test_part_deserialization_with_nested_elements():
         "diagram": {
             "__tag__": "Drawing",
             "bbox": {"x0": 10, "y0": 10, "x1": 20, "y1": 20},
-            "id": 1,
-            "image_id": "img_123"
+            "id": 1
         },
         "number": null
     }
@@ -144,7 +144,6 @@ def test_part_deserialization_with_nested_elements():
     assert part.number is None
     assert part.count.count == 3
     assert isinstance(part.diagram, Drawing)
-    assert part.diagram.image_id == "img_123"
 
 
 def test_lego_element_round_trip_serialization():
@@ -152,7 +151,7 @@ def test_lego_element_round_trip_serialization():
     original = StepNumber(bbox=BBox(1.5, 2.5, 10.5, 20.5), value=42)
 
     # Serialize with alias
-    json_str = original.model_dump_json(by_alias=True)
+    json_str = original.to_json()
 
     # Deserialize
     restored = StepNumber.model_validate_json(json_str)
@@ -173,9 +172,50 @@ def test_parts_list_round_trip():
         ],
     )
 
-    json_str = original.model_dump_json(by_alias=True)
+    json_str = original.to_json()
     restored = PartsList.model_validate_json(json_str)
 
     assert restored.bbox == original.bbox
     assert len(restored.parts) == 1
     assert restored.parts[0].count.count == 2
+
+
+def test_to_dict_excludes_none_and_uses_tag():
+    """Test that to_dict() helper enforces by_alias=True and exclude_none=True."""
+    # Part with None fields
+    part = Part(
+        bbox=BBox(0, 0, 10, 10),
+        count=PartCount(bbox=BBox(0, 0, 5, 5), count=3),
+    )
+
+    # Use the helper method
+    data = part.to_dict()
+
+    # Should use __tag__ not tag
+    assert "__tag__" in data
+    assert data["__tag__"] == "Part"
+    assert "tag" not in data
+
+    # None fields should be excluded
+    assert "diagram" not in data
+    assert "number" not in data
+    assert "length" not in data
+
+    # Nested elements should also use __tag__
+    assert data["count"]["__tag__"] == "PartCount"
+
+
+def test_to_json_excludes_none_and_uses_tag():
+    """Test that to_json() helper enforces by_alias=True and exclude_none=True."""
+    # StepNumber with no None fields
+    step = StepNumber(bbox=BBox(0, 0, 10, 10), value=5)
+
+    # Use the helper method
+    json_str = step.to_json()
+    data = json.loads(json_str)
+
+    # Should use __tag__ not tag
+    assert "__tag__" in data
+    assert data["__tag__"] == "StepNumber"
+    assert "tag" not in data
+    assert data["value"] == 5

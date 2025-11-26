@@ -34,7 +34,7 @@ def test_page_serialization() -> None:
 
     # This should not raise an error
     assert page_element is not None, "Page element should not be None"
-    golden_data = page_element.model_dump(by_alias=True)
+    golden_data = page_element.to_dict()
 
     # Verify it's valid JSON
     json_str = json.dumps(golden_data)

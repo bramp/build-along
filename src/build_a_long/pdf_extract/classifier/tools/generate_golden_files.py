@@ -65,7 +65,7 @@ def main() -> None:
         # Serialize with by_alias=True to use __tag__ instead of tag
         # Use Pydantic's JSON encoder for consistent serialization
         assert page_element is not None, "Page element should not be None"
-        golden_json = page_element.model_dump_json(by_alias=True, indent=2) + "\n"
+        golden_json = page_element.to_json(indent=2) + "\n"
 
         # Write golden file
         golden_path.write_text(golden_json)

@@ -1,3 +1,5 @@
+import json
+
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
@@ -20,9 +22,7 @@ def test_step_number():
 
 def test_drawing_optional_id():
     d = Drawing(bbox=BBox(1, 1, 100, 100), id=0)
-    assert d.image_id is None
-    d2 = Drawing(bbox=BBox(1, 1, 100, 100), image_id="img_1", id=1)
-    assert d2.image_id == "img_1"
+    assert d.bbox == BBox(1, 1, 100, 100)
 
 
 def test_part_and_count():
@@ -60,7 +60,7 @@ def test_text_serialization_with_tag():
     text = Text(bbox=BBox(0, 0, 10, 10), id=0, text="Hello World")
 
     # Serialize with by_alias=True to get __tag__ instead of tag
-    json_data = text.model_dump(by_alias=True)
+    json_data = text.to_dict()
 
     assert json_data["__tag__"] == "Text"
     assert json_data["text"] == "Hello World"
@@ -70,12 +70,11 @@ def test_text_serialization_with_tag():
 
 def test_drawing_serialization_with_tag():
     """Test that Drawing blocks serialize with __tag__ field."""
-    drawing = Drawing(bbox=BBox(0, 0, 10, 10), id=1, image_id="img_123")
+    drawing = Drawing(bbox=BBox(0, 0, 10, 10), id=1)
 
     json_data = drawing.model_dump(by_alias=True)
 
     assert json_data["__tag__"] == "Drawing"
-    assert json_data["image_id"] == "img_123"
     assert json_data["id"] == 1
 
 
@@ -115,7 +114,6 @@ def test_drawing_deserialization_from_tagged_json():
 
     assert isinstance(drawing, Drawing)
     assert drawing.id == 1
-    assert drawing.image_id is None
 
 
 def test_image_deserialization_from_tagged_json():
@@ -143,7 +141,7 @@ def test_block_round_trip_serialization():
     )
 
     # Serialize with alias
-    json_str = original_text.model_dump_json(by_alias=True)
+    json_str = original_text.to_json()
 
     # Deserialize
     restored = Text.model_validate_json(json_str)
@@ -153,3 +151,44 @@ def test_block_round_trip_serialization():
     assert restored.text == original_text.text
     assert restored.font_name == original_text.font_name
     assert restored.font_size == original_text.font_size
+
+
+def test_to_dict_excludes_none_and_uses_tag():
+    """Test that to_dict() helper enforces by_alias=True and exclude_none=True."""
+    # Text with some None fields
+    text = Text(bbox=BBox(0, 0, 10, 10), id=1, text="Test")
+
+    # Use the helper method
+    data = text.to_dict()
+
+    # Should use __tag__ not tag
+    assert "__tag__" in data
+    assert data["__tag__"] == "Text"
+    assert "tag" not in data
+
+    # None fields should be excluded
+    assert "font_name" not in data
+    assert "font_size" not in data
+    assert "color" not in data
+    assert "font_flags" not in data
+
+
+def test_to_json_excludes_none_and_uses_tag():
+    """Test that to_json() helper enforces by_alias=True and exclude_none=True."""
+    # Drawing with some None fields
+    drawing = Drawing(bbox=BBox(0, 0, 10, 10), id=2)
+
+    # Use the helper method
+    json_str = drawing.to_json()
+    data = json.loads(json_str)
+
+    # Should use __tag__ not tag
+    assert "__tag__" in data
+    assert data["__tag__"] == "Drawing"
+    assert "tag" not in data
+
+    # None fields should be excluded
+    assert "fill_color" not in data
+    assert "stroke_color" not in data
+    assert "line_width" not in data
+    assert "visible_bbox" not in data

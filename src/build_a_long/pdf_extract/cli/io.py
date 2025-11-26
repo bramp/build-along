@@ -116,7 +116,9 @@ def save_debug_json(
 
     output_json_path = output_dir / (pdf_path.stem + "_debug.json")
     with open(output_json_path, "w") as f:
-        f.write(debug_output.model_dump_json(indent=2))
+        f.write(
+            debug_output.model_dump_json(by_alias=True, indent=2, exclude_none=True)
+        )
     logger.info("Saved debug JSON to %s", output_json_path)
 
 
@@ -145,12 +147,14 @@ def save_pages_json(
 
     # Create InstructionBook and serialize using Pydantic
     instruction_book = InstructionBook(
-        pages=[page.model_dump(mode="json") for page in pages]
+        pages=[page.to_dict(mode="json") for page in pages]
     )
 
     output_json_path = output_dir / (pdf_path.stem + ".json")
     with open(output_json_path, "w") as f:
-        f.write(instruction_book.model_dump_json(indent=2))
+        f.write(
+            instruction_book.model_dump_json(by_alias=True, indent=2, exclude_none=True)
+        )
     logger.info("Saved pages JSON to %s", output_json_path)
 
 
@@ -198,7 +202,9 @@ def save_raw_json(
     if per_page:
         # Save individual JSON files for each page
         for page_data in pages:
-            json_data = ExtractionResult(pages=[page_data]).model_dump()
+            json_data = ExtractionResult(pages=[page_data]).model_dump(
+                by_alias=True, exclude_none=True
+            )
             page_num = page_data.page_number
             output_path = (
                 output_dir / f"{pdf_path.stem}_page_{page_num:03d}_raw{suffix}"
@@ -206,7 +212,9 @@ def save_raw_json(
             _save_json_file(json_data, output_path, f"page {page_num}")
     else:
         # Save all pages in a single JSON file
-        json_data = ExtractionResult(pages=pages).model_dump()
+        json_data = ExtractionResult(pages=pages).model_dump(
+            by_alias=True, exclude_none=True
+        )
         output_path = output_dir / f"{pdf_path.stem}_raw{suffix}"
         _save_json_file(json_data, output_path, f"{len(pages)} pages")
 
