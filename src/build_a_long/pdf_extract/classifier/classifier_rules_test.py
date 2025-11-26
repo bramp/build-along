@@ -16,7 +16,11 @@ import pytest
 from build_a_long.pdf_extract.classifier import classify_elements
 from build_a_long.pdf_extract.classifier.classification_result import Candidate
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
-from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    Diagram,
+    LegoPageElement,
+    PartsList,
+)
 from build_a_long.pdf_extract.fixtures import FIXTURES_DIR, RAW_FIXTURE_FILES
 
 log = logging.getLogger(__name__)
@@ -162,3 +166,72 @@ class TestClassifierRules:
                             f"  Source: {source_block}"
                         )
                     blocks_to_element[source_block.id] = element
+
+    @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
+    def test_all_lego_elements_come_from_candidates(self, fixture_file: str) -> None:
+        """All LegoPageElements in the final Page tree must come from candidates.
+
+        This validates that classifiers don't create "orphan" elements directly
+        without a corresponding candidate. Every LegoPageElement should be either:
+        1. The constructed element of a candidate, or
+        2. A synthetic/fallback element (e.g., empty PartsList when Step has no
+           parts_list candidate)
+
+        Ensures proper tracking of all elements through the classification pipeline.
+        """
+        pages = _load_pages_from_fixture(fixture_file)
+
+        for page_idx, page_data in enumerate(pages):
+            # Run the full classification pipeline on the page
+            result = classify_elements(page_data)
+            page = result.page
+
+            if page is None:
+                continue
+
+            # Build a set of all constructed element IDs from candidates
+            all_candidates = result.get_all_candidates()
+            constructed_element_ids: set[int] = set()
+            for _label, candidates in all_candidates.items():
+                for candidate in candidates:
+                    if candidate.constructed is not None:
+                        constructed_element_ids.add(id(candidate.constructed))
+
+            # Traverse all LegoPageElements in the Page tree
+            orphan_elements: list[tuple[LegoPageElement, str]] = []
+            for element in page.iter_elements():
+                elem_id = id(element)
+                elem_type = element.__class__.__name__
+
+                # Skip the Page itself (it's the root container)
+                if elem_type == "Page":
+                    continue
+
+                # Check if this element came from a candidate
+                if elem_id not in constructed_element_ids:
+                    # TODO Remove the following lines
+                    # Known synthetic/fallback elements that are expected:
+                    # - Empty PartsList when Step has no parts_list candidate
+                    # - Diagram when Step couldn't find a matching diagram candidate
+                    if isinstance(element, PartsList) and len(element.parts) == 0:
+                        continue
+                    if isinstance(element, Diagram):
+                        # Fallback diagrams are allowed when StepClassifier
+                        # can't find a matching diagram candidate
+                        continue
+
+                    orphan_elements.append((element, elem_type))
+
+            if orphan_elements:
+                log.error(
+                    f"Found {len(orphan_elements)} orphan elements not from "
+                    f"candidates in {fixture_file} page {page_idx}:"
+                )
+                for elem, elem_type in orphan_elements:
+                    log.error(f"  - {elem_type} bbox:{elem.bbox}")
+
+            assert len(orphan_elements) == 0, (
+                f"Found {len(orphan_elements)} orphan LegoPageElements not from "
+                f"candidates in {fixture_file} page {page_idx}. "
+                f"All elements should come from candidates or be known fallbacks."
+            )
