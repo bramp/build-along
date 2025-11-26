@@ -62,6 +62,7 @@ class Drawing(Block):
     dashes: str | None = None  # dashed line specification
     even_odd: bool | None = None  # fill behavior for overlaps
     items: tuple[tuple, ...] | None = None  # list of draw commands
+    visible_bbox: BBox | None = None  # actual visible bbox after clipping
 
     model_config = ConfigDict(frozen=True, populate_by_name=True)
 

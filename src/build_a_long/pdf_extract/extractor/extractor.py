@@ -269,23 +269,93 @@ class Extractor:
 
         return tuple(converted_items)
 
+    def _compute_visible_bbox(
+        self,
+        bbox: BBox,
+        level: int,
+        drawings: list[DrawingDict],
+        current_index: int,
+    ) -> BBox:
+        """Compute visible bbox by intersecting with applicable clip paths.
+
+        Args:
+            bbox: The original bounding box
+            level: The hierarchy level of this drawing
+            drawings: Full list of drawings (with extended=True)
+            current_index: Index of current drawing in the list
+
+        Returns:
+            The visible bbox after applying all relevant clips
+        """
+        visible = bbox
+
+        # Build the clip stack by walking backwards
+        # A clip at level L applies to drawings at level > L
+        # A clip's scope ends when we see a non-clip at level <= L
+        clip_stack: dict[int, BBox] = {}  # level -> clip bbox
+
+        for i in range(current_index - 1, -1, -1):
+            prev = drawings[i]
+            prev_level = prev.get("level", 0)
+            prev_type = prev.get("type")
+
+            # If we see a non-clip at or below our level, we can stop
+            # (we've exited all relevant clip scopes)
+            if prev_type != "clip" and prev_level < level:
+                logger.debug("  Stop at drawing %d (L%d non-clip)", i, prev_level)
+                break
+
+            # If it's a clip at a level less than ours, it applies
+            if prev_type == "clip" and prev_level < level:
+                # Only add if we haven't seen a clip at this level yet
+                # (we're walking backwards, so first encountered is most recent)
+                if prev_level not in clip_stack:
+                    scissor = prev.get("scissor")
+                    if scissor:
+                        clip_bbox = BBox.from_tuple(
+                            (scissor.x0, scissor.y0, scissor.x1, scissor.y1)
+                        )
+                        clip_stack[prev_level] = clip_bbox
+                        logger.debug(
+                            "  Adding clip from drawing %d (L%d): %s",
+                            i,
+                            prev_level,
+                            clip_bbox,
+                        )
+
+        # Apply all clips by intersecting
+        for clip_bbox in clip_stack.values():
+            visible = visible.intersect(clip_bbox)
+
+        return visible
+
     def _extract_drawing_blocks(
         self, drawings: list[DrawingDict], page: pymupdf.Page
     ) -> list[Drawing]:
         """Extract drawing (vector path) blocks from a page.
 
         Args:
-            drawings: List of drawing dictionaries from page.get_drawings()
+            drawings: List of drawing dictionaries from page.get_drawings(extended=True)
             page: The PyMuPDF page object (needed for coordinate transformation)
 
         Returns:
             List of Drawing blocks with assigned IDs
         """
         drawing_blocks: list[Drawing] = []
-        for d in drawings:
+        for idx, d in enumerate(drawings):
             assert isinstance(d, dict)
 
-            drect = d["rect"]
+            # Skip clip paths - they're not visible drawings, just clipping regions
+            if d.get("type") == "clip":
+                continue
+
+            drect = d.get("rect")
+            if not drect:
+                logger.warning(
+                    "Drawing at index %d has no 'rect' field, skipping: %s", idx, d
+                )
+                continue
+
             nbbox = BBox.from_tuple(
                 (
                     drect.x0,
@@ -318,6 +388,19 @@ class Extractor:
                 # Convert PyMuPDF objects to tuples for JSON serialization
                 items = self._convert_drawing_items(d.get("items"))
 
+            # Compute visible bbox considering clipping
+            visible_bbox: BBox | None = None
+            if "level" in d:  # Only available with extended=True
+                level = d.get("level", 0)
+                visible_bbox = self._compute_visible_bbox(nbbox, level, drawings, idx)
+                logger.debug(
+                    "Drawing %d at level %d: bbox=%s, visible_bbox=%s",
+                    idx,
+                    level,
+                    nbbox,
+                    visible_bbox,
+                )
+
             drawing_blocks.append(
                 Drawing(
                     bbox=nbbox,
@@ -330,10 +413,13 @@ class Extractor:
                     dashes=dashes,
                     even_odd=even_odd,
                     items=items,
+                    visible_bbox=visible_bbox,
                     id=self._get_next_id(),
                 )
             )
-            logger.debug("Found drawing with %s", nbbox)
+            logger.debug(
+                "Found drawing with bbox=%s, visible_bbox=%s", nbbox, visible_bbox
+            )
 
         return drawing_blocks
 
@@ -387,7 +473,8 @@ class Extractor:
         if "image" in include_types:
             typed_blocks.extend(self._extract_image_blocks(blocks))
         if "drawing" in include_types:
-            drawings = page.get_drawings()
+            # Use extended=True to get clipping hierarchy
+            drawings = page.get_drawings(extended=True)
             typed_blocks.extend(self._extract_drawing_blocks(drawings, page))
 
         page_rect = page.rect

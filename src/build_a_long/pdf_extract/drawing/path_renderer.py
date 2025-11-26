@@ -43,6 +43,7 @@ def draw_path_items(
     items: tuple[tuple, ...],
     scale_x: float,
     scale_y: float,
+    color: str = "cyan",
 ) -> None:
     """Draw the actual vector path from drawing items.
 
@@ -54,12 +55,12 @@ def draw_path_items(
         items: Drawing path items (PyMuPDF get_drawings), converted to tuples
         scale_x: X scaling factor
         scale_y: Y scaling factor
+        color: Color for the path lines (default: cyan)
     """
     # Convert path items to coordinates
     path_points: list[tuple[float, float]] = []
 
     commands_processed = 0
-    unknown_commands: set[str] = set()
 
     for item in items:
         if not isinstance(item, tuple):
@@ -82,15 +83,15 @@ def draw_path_items(
         if cmd == "l":  # line to
             if len(item) >= 2:
                 point = item[1]
-                # Point is already converted to (x, y) tuple
-                if isinstance(point, tuple) and len(point) == 2:
+                # Point could be tuple or list after JSON deserialization
+                if isinstance(point, tuple | list) and len(point) == 2:
                     if not all(isinstance(v, int | float) for v in point):
                         logger.warning("Line point has non-numeric values: %s", point)
                     else:
                         path_points.append((point[0] * scale_x, point[1] * scale_y))
                 else:
                     logger.warning(
-                        "Line command unexpected point format: %s (expected 2-tuple)",
+                        "Line command unexpected point format: %s",
                         item,
                     )
             else:
@@ -99,15 +100,15 @@ def draw_path_items(
             if len(item) >= 2:
                 # NOTE: This renders as straight line to endpoint, not true bezier
                 # Last point is the end of the curve
-                point = item[-1] if isinstance(item[-1], tuple) else item[1]
-                if isinstance(point, tuple) and len(point) == 2:
+                point = item[-1] if isinstance(item[-1], tuple | list) else item[1]
+                if isinstance(point, tuple | list) and len(point) == 2:
                     if not all(isinstance(v, int | float) for v in point):
                         logger.warning("Curve point has non-numeric values: %s", point)
                     else:
                         path_points.append((point[0] * scale_x, point[1] * scale_y))
                 else:
                     logger.warning(
-                        "Curve command unexpected point format: %s (expected 2-tuple)",
+                        "Curve command unexpected point format: %s",
                         item,
                     )
             else:
@@ -115,7 +116,8 @@ def draw_path_items(
         elif cmd == "re" and len(item) >= 2:  # rectangle
             point = item[1]
             # For rectangles, we get corner coordinates as (x0, y0, x1, y1)
-            if isinstance(point, tuple) and len(point) == 4:
+            # Note: Could be list or tuple after JSON deserialization
+            if isinstance(point, tuple | list) and len(point) == 4:
                 if not all(isinstance(v, int | float) for v in point):
                     logger.warning(
                         "Rectangle coords have non-numeric values: %s", point
@@ -134,7 +136,7 @@ def draw_path_items(
                     )
             else:
                 logger.warning(
-                    "Rectangle command unexpected point format: %s (expected 4-tuple)",
+                    "Rectangle command unexpected point format: %s",
                     item,
                 )
         else:
@@ -145,13 +147,14 @@ def draw_path_items(
 
     # Draw the path as connected line segments
     if len(path_points) >= 2:
-        draw.line(path_points, fill="cyan", width=1)
+        draw.line(path_points, fill=color, width=1)
     elif len(path_points) == 1:
-        logger.warning("Only 1 path point, cannot draw line")
-
-    # Debug logging (only log if there were items but no points rendered)
-    if commands_processed > 0 and len(path_points) == 0:
-        logger.warning(
+        # Single point - draw as a small dot
+        x, y = path_points[0]
+        draw.ellipse([(x - 1, y - 1), (x + 1, y + 1)], fill=color)
+    elif len(path_points) == 0 and commands_processed > 0:
+        # Commands were processed but no points generated - log for debugging
+        logger.debug(
             "Processed %d drawing commands but generated 0 path points",
             commands_processed,
         )
