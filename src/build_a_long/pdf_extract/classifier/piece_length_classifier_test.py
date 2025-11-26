@@ -1,6 +1,7 @@
 """Unit tests for PieceLengthClassifier."""
 
 from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
     ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
@@ -173,26 +174,28 @@ class TestPieceLengthClassifier:
             bbox=BBox(0, 0, 100, 100),
         )
 
-        result = classify_elements(page)
+        config = ClassifierConfig()
+        piece_length_classifier = PieceLengthClassifier(config)
+        result = ClassificationResult(page_data=page)
+        piece_length_classifier.score(result)
+        result.register_classifier("piece_length", piece_length_classifier)
 
         # Check that text1 and text2 are classified as piece_length
         candidate1 = result.get_candidate_for_block(text1, "piece_length")
         assert candidate1 is not None
-        assert candidate1.constructed is not None
-        assert isinstance(candidate1.constructed, PieceLength)
-        assert candidate1.constructed.value == 4
+        constructed_pl1 = result.construct_candidate(candidate1)
+        assert isinstance(constructed_pl1, PieceLength)
+        assert constructed_pl1.value == 4
 
         candidate2 = result.get_candidate_for_block(text2, "piece_length")
         assert candidate2 is not None
-        assert candidate2.constructed is not None
-        assert isinstance(candidate2.constructed, PieceLength)
-        assert candidate2.constructed.value == 12
+        constructed_pl2 = result.construct_candidate(candidate2)
+        assert isinstance(constructed_pl2, PieceLength)
+        assert constructed_pl2.value == 12
 
         # text3 should not be classified (no circle)
         candidate3 = result.get_candidate_for_block(text3, "piece_length")
-        # Should be None or have no constructed element
-        if candidate3 is not None:
-            assert candidate3.constructed is None
+        assert candidate3 is None or candidate3.constructed is None
 
     def test_rejects_non_numeric_text(self) -> None:
         """Test that non-numeric text is rejected."""
@@ -255,12 +258,17 @@ class TestPieceLengthClassifier:
             bbox=BBox(0, 0, 500, 500),
         )
 
-        result = classify_elements(page)
+        config = ClassifierConfig()
+        piece_length_classifier = PieceLengthClassifier(config)
+        result = ClassificationResult(page_data=page)
+        piece_length_classifier.score(result)
+        result.register_classifier("piece_length", piece_length_classifier)
+
         candidate = result.get_candidate_for_block(text, "piece_length")
 
         assert candidate is not None
-        assert candidate.constructed is not None
-        assert isinstance(candidate.constructed, PieceLength)
-        assert candidate.constructed.value == 8
+        constructed_pl = result.construct_candidate(candidate)
+        assert isinstance(constructed_pl, PieceLength)
+        assert constructed_pl.value == 8
         # Should have high score due to small, well-fitting circle
         assert candidate.score > 0.5

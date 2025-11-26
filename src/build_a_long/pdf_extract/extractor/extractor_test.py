@@ -1,6 +1,8 @@
 from typing import Any, cast
 from unittest.mock import MagicMock
 
+import pymupdf
+
 from build_a_long.pdf_extract.extractor import (
     extract_bounding_boxes,
 )
@@ -161,9 +163,10 @@ class TestBoundingBoxExtractor:
             ]
         }
         mock_page.get_drawings.return_value = [
-            {"rect": MagicMock(x0=100, y0=100, x1=200, y1=200)},
+            {"rect": pymupdf.Rect(100, 100, 200, 200)},
         ]
         mock_page.rect = MagicMock(x0=0, y0=0, x1=612, y1=792)
+        mock_page.transformation_matrix = pymupdf.Identity
 
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 1
@@ -304,12 +307,18 @@ class TestExtractor:
         rect.y0 = 20.0
         rect.x1 = 30.0
         rect.y1 = 40.0
-        drawings = cast(list[DrawingDict], [{"rect": rect}])
+        drawings = cast(
+            list[DrawingDict], [{"rect": pymupdf.Rect(10.0, 20.0, 30.0, 40.0)}]
+        )
+
+        # Create mock page with identity transformation matrix
+        mock_page = MagicMock()
+        mock_page.transformation_matrix = pymupdf.Identity
 
         # Extract in order and verify IDs increment
         texts = extractor._extract_text_blocks(text_blocks)
         images = extractor._extract_image_blocks(image_blocks)
-        draw = extractor._extract_drawing_blocks(drawings)
+        draw = extractor._extract_drawing_blocks(drawings, mock_page)
 
         assert texts[0].id == 0
         assert images[0].id == 1
@@ -391,28 +400,20 @@ class TestExtractorMethods:
         """Test Extractor._extract_drawing_blocks extracts drawings from
         page.get_drawings()."""
         extractor = Extractor()
-        # Create mock rectangle objects
-        rect1 = MagicMock()
-        rect1.x0 = 10.0
-        rect1.y0 = 20.0
-        rect1.x1 = 30.0
-        rect1.y1 = 40.0
-
-        rect2 = MagicMock()
-        rect2.x0 = 50.0
-        rect2.y0 = 60.0
-        rect2.x1 = 70.0
-        rect2.y1 = 80.0
-
+        # Create real rectangle objects for PyMuPDF compatibility
         drawings = cast(
             list[DrawingDict],
             [
-                {"rect": rect1},
-                {"rect": rect2},
+                {"rect": pymupdf.Rect(10.0, 20.0, 30.0, 40.0)},
+                {"rect": pymupdf.Rect(50.0, 60.0, 70.0, 80.0)},
             ],
         )
 
-        result = extractor._extract_drawing_blocks(drawings)
+        # Create mock page with identity transformation matrix
+        mock_page = MagicMock()
+        mock_page.transformation_matrix = pymupdf.Identity
+
+        result = extractor._extract_drawing_blocks(drawings, mock_page)
 
         assert len(result) == 2
         assert isinstance(result[0], Drawing)
@@ -465,5 +466,8 @@ class TestExtractorMethods:
     def test_extract_drawing_blocks_empty_drawings(self):
         """Test Extractor._extract_drawing_blocks handles empty drawings list."""
         extractor = Extractor()
-        result = extractor._extract_drawing_blocks([])
+        # Create mock page with identity transformation matrix
+        mock_page = MagicMock()
+        mock_page.transformation_matrix = pymupdf.Identity
+        result = extractor._extract_drawing_blocks([], mock_page)
         assert result == []

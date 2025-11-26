@@ -69,7 +69,9 @@ class PartsListClassifier(LabelClassifier):
         but does not construct the PartsList yet.
         """
         # Get part candidates (not constructed elements)
-        part_candidates = result.get_scored_candidates("part")
+        part_candidates = result.get_scored_candidates(
+            "part", valid_only=False, exclude_failed=True
+        )
         if not part_candidates:
             return
 
@@ -180,12 +182,12 @@ class PartsListClassifier(LabelClassifier):
         candidates = result.get_candidates("parts_list")
         for candidate in candidates:
             try:
-                elem = self._construct_single(candidate, result)
+                elem = self.construct_candidate(candidate, result)
                 candidate.constructed = elem
             except Exception as e:
                 candidate.failure_reason = str(e)
 
-    def _construct_single(
+    def construct_candidate(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a PartsList from a single candidate's score details.
@@ -198,12 +200,17 @@ class PartsListClassifier(LabelClassifier):
         # Validate and extract Part elements from parent candidates
         parts: list[Part] = []
         for part_candidate in score.part_candidates:
-            if not part_candidate.is_valid:
-                continue
-
-            part = part_candidate.constructed
-            assert isinstance(part, Part)
-            parts.append(part)
+            try:
+                # Construct the part via the result orchestrator
+                part_elem = result.construct_candidate(part_candidate)
+                assert isinstance(part_elem, Part)
+                parts.append(part_elem)
+            except Exception as e:
+                log.warning(
+                    "Failed to construct part candidate at %s: %s",
+                    part_candidate.bbox,
+                    e,
+                )
 
         return PartsList(
             bbox=candidate.bbox,

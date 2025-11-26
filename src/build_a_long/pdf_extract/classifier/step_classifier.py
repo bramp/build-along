@@ -30,6 +30,9 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
+from build_a_long.pdf_extract.classifier.text_extractors import (
+    extract_step_number_value,
+)
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
@@ -38,6 +41,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Step,
     StepNumber,
 )
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 log = logging.getLogger(__name__)
 
@@ -79,13 +83,19 @@ class _StepScore:
         1. Higher pairing scores (better StepNumber-PartsList match)
         2. Lower step number values (to break ties and maintain order)
         """
-        # Extract step number value from candidate
+        # Extract step number value from candidate's source block
         step_num_candidate = self.step_number_candidate
-        if step_num_candidate.constructed:
-            step_num = step_num_candidate.constructed
-            assert isinstance(step_num, StepNumber)
-            return (-self.pairing_score(), step_num.value)
-        return (-self.pairing_score(), 0)
+
+        # Assume single source block for step number
+        if step_num_candidate.source_blocks and isinstance(
+            step_num_candidate.source_blocks[0], Text
+        ):
+            text_block = step_num_candidate.source_blocks[0]
+            step_value = extract_step_number_value(text_block.text)
+            if step_value is not None:
+                return (-self.pairing_score(), step_value)
+
+        return (-self.pairing_score(), 0)  # Fallback if value cannot be extracted
 
 
 @dataclass(frozen=True)
@@ -100,13 +110,19 @@ class StepClassifier(LabelClassifier):
         page_data = result.page_data
 
         # Get step number and parts list candidates (not constructed elements)
-        step_candidates = result.get_scored_candidates("step_number")
+        step_candidates = result.get_scored_candidates(
+            "step_number", valid_only=False, exclude_failed=True
+        )
 
         if not step_candidates:
             return
 
         # Get parts_list candidates
-        parts_list_candidates = result.get_scored_candidates("parts_list")
+        parts_list_candidates = result.get_scored_candidates(
+            "parts_list",
+            valid_only=False,
+            exclude_failed=True,
+        )
 
         log.debug(
             "[step] page=%s step_candidates=%d parts_list_candidates=%d",
@@ -149,12 +165,12 @@ class StepClassifier(LabelClassifier):
         candidates = result.get_candidates("step")
         for candidate in candidates:
             try:
-                elem = self._construct_single(candidate, result)
+                elem = self.construct_candidate(candidate, result)
                 candidate.constructed = elem
             except Exception as e:
                 candidate.failure_reason = str(e)
 
-    def _construct_single(
+    def construct_candidate(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a Step element from a single candidate."""
@@ -163,30 +179,23 @@ class StepClassifier(LabelClassifier):
 
         # Validate and extract step number from parent candidate
         step_num_candidate = score.step_number_candidate
-        if not step_num_candidate.is_valid:
-            raise ValueError(
-                f"Step number candidate invalid: "
-                f"{step_num_candidate.failure_reason or 'not constructed'}"
-            )
 
-        step_num = step_num_candidate.constructed
-        assert isinstance(step_num, StepNumber)
+        step_num_elem = result.construct_candidate(step_num_candidate)
+        assert isinstance(step_num_elem, StepNumber)
+        step_num = step_num_elem
 
         # Validate and extract parts list from parent candidate (if present)
         parts_list = None
         if score.parts_list_candidate:
             parts_list_candidate = score.parts_list_candidate
-            if not parts_list_candidate.is_valid:
-                raise ValueError(
-                    f"Parts list candidate invalid: "
-                    f"{parts_list_candidate.failure_reason or 'not constructed'}"
-                )
-
-            parts_list = parts_list_candidate.constructed
-            assert isinstance(parts_list, PartsList)
+            parts_list_elem = result.construct_candidate(parts_list_candidate)
+            assert isinstance(parts_list_elem, PartsList)
+            parts_list = parts_list_elem
 
         # Identify diagram region
-        diagram_bbox = self._identify_diagram_region(step_num, parts_list, result)
+        diagram_bbox = self._identify_diagram_region(
+            step_num.bbox, parts_list.bbox if parts_list else None, result
+        )
 
         # Build Step
         diagram = Diagram(bbox=diagram_bbox)
@@ -217,63 +226,48 @@ class StepClassifier(LabelClassifier):
         ALIGNMENT_THRESHOLD_MULTIPLIER = 1.0  # Max horizontal offset
         DISTANCE_THRESHOLD_MULTIPLIER = 1.0  # Max vertical distance
 
-        # Validate parent candidates and extract elements for scoring
-        if not step_candidate.is_valid:
-            return None
-
-        step_num = step_candidate.constructed
-        assert isinstance(step_num, StepNumber)
-
-        parts_list = None
-        if parts_list_candidate:
-            if (
-                parts_list_candidate.failure_reason
-                or not parts_list_candidate.constructed
-            ):
-                parts_list_candidate = None  # Treat as no pairing
-            else:
-                parts_list = parts_list_candidate.constructed
-                assert isinstance(parts_list, PartsList)
+        step_bbox = step_candidate.bbox
+        parts_list_bbox = parts_list_candidate.bbox if parts_list_candidate else None
 
         # Calculate pairing scores if there's a parts_list above the step
         proximity_score = 0.0
         alignment_score = 0.0
 
         if (
-            parts_list is not None
-            and parts_list.bbox.y1 <= step_num.bbox.y0 + ABOVE_EPS
+            parts_list_bbox is not None
+            and parts_list_bbox.y1 <= step_bbox.y0 + ABOVE_EPS
         ):
             # Calculate distance (how far apart vertically)
-            distance = step_num.bbox.y0 - parts_list.bbox.y1
+            distance = step_bbox.y0 - parts_list_bbox.y1
 
             # Calculate proximity score
-            max_distance = step_num.bbox.height * DISTANCE_THRESHOLD_MULTIPLIER
+            max_distance = step_bbox.height * DISTANCE_THRESHOLD_MULTIPLIER
             if max_distance > 0:
                 proximity_score = max(0.0, 1.0 - (distance / max_distance))
 
             # Calculate alignment score (how well left edges align)
-            max_alignment_diff = step_num.bbox.width * ALIGNMENT_THRESHOLD_MULTIPLIER
-            left_diff = abs(parts_list.bbox.x0 - step_num.bbox.x0)
+            max_alignment_diff = step_bbox.width * ALIGNMENT_THRESHOLD_MULTIPLIER
+            left_diff = abs(parts_list_bbox.x0 - step_bbox.x0)
             if max_alignment_diff > 0:
                 alignment_score = max(0.0, 1.0 - (left_diff / max_alignment_diff))
 
         # Estimate diagram bbox for scoring purposes
-        diagram_bbox = self._identify_diagram_region(step_num, parts_list, result)
+        diagram_bbox = self._identify_diagram_region(step_bbox, parts_list_bbox, result)
 
         # Create score object with candidate references
         score = _StepScore(
             step_number_candidate=step_candidate,
             parts_list_candidate=parts_list_candidate,
-            has_parts_list=parts_list is not None,
+            has_parts_list=parts_list_candidate is not None,
             step_proximity_score=proximity_score,
             step_alignment_score=alignment_score,
             diagram_area=diagram_bbox.area,
         )
 
         # Calculate combined bbox for the candidate
-        bboxes = [step_num.bbox, diagram_bbox]
-        if parts_list:
-            bboxes.append(parts_list.bbox)
+        bboxes = [step_bbox, diagram_bbox]
+        if parts_list_bbox:
+            bboxes.append(parts_list_bbox)
         combined_bbox = BBox.union_all(bboxes)
 
         # Create candidate WITHOUT construction
@@ -289,8 +283,8 @@ class StepClassifier(LabelClassifier):
 
     def _identify_diagram_region(
         self,
-        step_num: StepNumber,
-        parts_list: PartsList | None,
+        step_bbox: BBox,
+        parts_list_bbox: BBox | None,
         result: ClassificationResult,
     ) -> BBox:
         """Identify the diagram region for a step.
@@ -299,8 +293,8 @@ class StepClassifier(LabelClassifier):
         For now, we create a simple heuristic-based region.
 
         Args:
-            step_num: The step number
-            parts_list: The associated parts list (if any)
+            step_bbox: The step number bbox
+            parts_list_bbox: The associated parts list bbox (if any)
             result: Classification result containing page_data
 
         Returns:
@@ -311,12 +305,12 @@ class StepClassifier(LabelClassifier):
         # In the future, we should look for actual drawing elements below the step
 
         # Start with step number position
-        x0 = step_num.bbox.x0
-        y0 = step_num.bbox.y1  # Below the step number
+        x0 = step_bbox.x0
+        y0 = step_bbox.y1  # Below the step number
 
         # If there's a parts list, the diagram should be below it
-        if parts_list:
-            y0 = max(y0, parts_list.bbox.y1)
+        if parts_list_bbox:
+            y0 = max(y0, parts_list_bbox.y1)
 
         # Extend to a reasonable area (placeholder logic)
         # TODO: Find actual drawing elements and use their bounds
@@ -382,19 +376,22 @@ class StepClassifier(LabelClassifier):
             assert isinstance(candidate.score_details, _StepScore)
             score = candidate.score_details
 
-            # Extract step number value from parent candidate
+            # Extract step number value from parent candidate source block
             step_num_candidate = score.step_number_candidate
-            if not step_num_candidate.constructed:
+
+            # Extract step value from text block
+            if not step_num_candidate.source_blocks:
                 continue
-            step_num = step_num_candidate.constructed
-            assert isinstance(step_num, StepNumber)
-            step_value = step_num.value
+            text_block = step_num_candidate.source_blocks[0]
+            if not isinstance(text_block, Text):
+                continue
+
+            step_value = extract_step_number_value(text_block.text)
+            if step_value is None:
+                continue
 
             # Extract parts list from parent candidate (if present)
-            parts_list = None
-            if score.parts_list_candidate and score.parts_list_candidate.constructed:
-                parts_list = score.parts_list_candidate.constructed
-                assert isinstance(parts_list, PartsList)
+            parts_list_candidate = score.parts_list_candidate
 
             # Skip if this step number value is already used
             if step_value in used_step_values:
@@ -405,17 +402,25 @@ class StepClassifier(LabelClassifier):
                 continue
 
             # Skip if this parts_list is already used (if it has parts)
-            if parts_list is not None and len(parts_list.parts) > 0:
-                parts_list_id = id(parts_list)
-                if parts_list_id in used_parts_list_ids:
-                    log.debug(
-                        "[step] Skipping candidate for step %d - "
-                        "PartsList already used",
-                        step_value,
+            if parts_list_candidate is not None:
+                # Check if parts list has parts (look at its score details)
+                has_parts = False
+                if hasattr(parts_list_candidate.score_details, "part_candidates"):
+                    has_parts = (
+                        len(parts_list_candidate.score_details.part_candidates) > 0
                     )
-                    continue
-                # Claim this parts_list
-                used_parts_list_ids.add(parts_list_id)
+
+                if has_parts:
+                    parts_list_id = id(parts_list_candidate)
+                    if parts_list_id in used_parts_list_ids:
+                        log.debug(
+                            "[step] Skipping candidate for step %d - "
+                            "PartsList candidate already used",
+                            step_value,
+                        )
+                        continue
+                    # Claim this parts_list
+                    used_parts_list_ids.add(parts_list_id)
 
             # Select this candidate
             selected.append(candidate)
@@ -424,7 +429,7 @@ class StepClassifier(LabelClassifier):
             log.debug(
                 "[step] Selected step %d (parts_list=%s, pairing_score=%.2f)",
                 step_value,
-                "yes" if parts_list is not None else "no",
+                "yes" if parts_list_candidate is not None else "no",
                 score.pairing_score(),
             )
 

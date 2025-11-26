@@ -1,12 +1,8 @@
 """Tests for the element classifier."""
 
 from build_a_long.pdf_extract.classifier import (
-    Classifier,
-    ClassifierConfig,
-    StepNumberClassifier,
     classify_pages,
 )
-from build_a_long.pdf_extract.classifier.page_classifier import PageClassifier
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Text
@@ -123,88 +119,4 @@ class TestClassifyElements:
         # The removed duplicate should not appear in candidates
         assert id(removed_block) not in blocks_in_candidates, (
             "Removed duplicate block should not be referenced in candidates"
-        )
-
-
-class TestPipelineEnforcement:
-    """Tests to ensure classifier pipeline dependencies are enforced at init time."""
-
-    def test_dependency_violation_raises(self) -> None:
-        original_requires = StepNumberClassifier.requires
-        try:
-            # Inject an impossible requirement to trigger the enforcement failure.
-            StepNumberClassifier.requires = frozenset(
-                {"page_number", "__missing_label__"}
-            )
-            raised = False
-            try:
-                _ = Classifier(ClassifierConfig())
-            except ValueError as e:  # expected
-                raised = True
-                # The new dependency validation detects missing labels
-                assert "dependencies cannot be satisfied" in str(
-                    e
-                ) or "Circular dependency" in str(e)
-                assert "__missing_label__" in str(e)
-            assert raised, "Expected ValueError due to unmet classifier requirements"
-        finally:
-            # Restore original declaration to avoid impacting other tests
-            StepNumberClassifier.requires = original_requires
-
-    def test_dependency_ordered_execution(self) -> None:
-        """Test that classifiers are executed in dependency order."""
-        classifier = Classifier(ClassifierConfig())
-
-        # Get the batches
-        batches = classifier._order_classifiers_by_dependencies()
-
-        # Verify batches are ordered correctly
-        assert len(batches) > 0, "Should have at least one batch"
-
-        # Track what labels have been produced so far
-        produced: set[str] = set()
-
-        for batch_idx, batch in enumerate(batches):
-            # All classifiers in this batch should have their dependencies met
-            for cls in batch:
-                requires = getattr(cls, "requires", frozenset())
-                assert requires.issubset(produced), (
-                    f"Batch {batch_idx}: {cls.__class__.__name__} requires "
-                    f"{requires - produced} which haven't been produced yet"
-                )
-
-            # After this batch, add all outputs to produced
-            for cls in batch:
-                outputs = getattr(cls, "outputs", frozenset())
-                produced |= outputs
-
-    def test_first_batch_has_no_dependencies(self) -> None:
-        """Test that classifiers in the first batch have no dependencies."""
-        classifier = Classifier(ClassifierConfig())
-        batches = classifier._order_classifiers_by_dependencies()
-
-        assert len(batches) > 0, "Should have at least one batch"
-
-        # First batch should contain only classifiers with no dependencies
-        for cls in batches[0]:
-            requires = getattr(cls, "requires", frozenset())
-            assert len(requires) == 0, (
-                f"{cls.__class__.__name__} in first batch should have no "
-                f"dependencies, but requires {requires}"
-            )
-
-    def test_page_classifier_in_last_batch(self) -> None:
-        """Test that PageClassifier is in the last batch (depends on most labels)."""
-        classifier = Classifier(ClassifierConfig())
-        batches = classifier._order_classifiers_by_dependencies()
-
-        assert len(batches) > 0, "Should have at least one batch"
-
-        # PageClassifier should be in the last batch
-        last_batch = batches[-1]
-        page_classifier_found = any(
-            isinstance(cls, PageClassifier) for cls in last_batch
-        )
-        assert page_classifier_found, (
-            "PageClassifier should be in the last batch since it depends on many labels"
         )

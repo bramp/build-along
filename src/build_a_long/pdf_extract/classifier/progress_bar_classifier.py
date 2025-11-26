@@ -36,7 +36,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     LegoPageElements,
-    PageNumber,
     ProgressBar,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
@@ -147,12 +146,12 @@ class ProgressBarClassifier(LabelClassifier):
         candidates = result.get_candidates("progress_bar")
         for candidate in candidates:
             try:
-                elem = self._construct_single(candidate, result)
+                elem = self.construct_candidate(candidate, result)
                 candidate.constructed = elem
             except Exception as e:
                 candidate.failure_reason = str(e)
 
-    def _construct_single(
+    def construct_candidate(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a ProgressBar element from a single candidate."""
@@ -169,13 +168,13 @@ class ProgressBarClassifier(LabelClassifier):
 
     def _get_page_number_bbox(self, result: ClassificationResult) -> BBox | None:
         """Get the bbox of the page number if it has been classified."""
-        page_number_candidates = result.get_scored_candidates("page_number")
+        page_number_candidates = result.get_scored_candidates(
+            "page_number", valid_only=False, exclude_failed=True
+        )
 
-        # Get the first constructed page number
-        for candidate in page_number_candidates:
-            if candidate.is_valid:
-                assert isinstance(candidate.constructed, PageNumber)
-                return candidate.bbox
+        if page_number_candidates:
+            # Assume the highest scoring candidate is the page number
+            return page_number_candidates[0].bbox
 
         return None
 

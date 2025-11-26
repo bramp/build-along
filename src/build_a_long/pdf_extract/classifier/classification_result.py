@@ -4,18 +4,24 @@ Data classes for the classifier.
 
 from __future__ import annotations
 
-from typing import Annotated, Any, cast
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 from annotated_types import Ge, Le
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.page_hints import PageHints
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
-from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElements, Page
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    LegoPageElements,
+    Page,
+)
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks
+
+if TYPE_CHECKING:
+    from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 
 # Score key can be either a single Block or a tuple of Blocks (for pairings)
 ScoreKey = Blocks | tuple[Blocks, ...]
@@ -223,6 +229,9 @@ class ClassificationResult(BaseModel):
     Public for serialization. Prefer using get_* accessor methods.
     """
 
+    _classifiers: dict[str, LabelClassifier] = PrivateAttr(default_factory=dict)
+    _consumed_blocks: set[int] = PrivateAttr(default_factory=set)
+
     @model_validator(mode="after")
     def validate_unique_block_ids(self) -> ClassificationResult:
         """Validate that all block IDs in page_data are unique.
@@ -240,6 +249,75 @@ class ClassificationResult(BaseModel):
                 f"Found duplicates: {set(duplicates)}"
             )
         return self
+
+    def register_classifier(self, label: str, classifier: LabelClassifier) -> None:
+        """Register a classifier for a specific label."""
+        self._classifiers[label] = classifier
+
+    def construct_candidate(self, candidate: Candidate) -> LegoPageElements:
+        """Construct a candidate using the registered classifier.
+
+        This is the entry point for top-down construction.
+        """
+        if candidate.constructed:
+            return candidate.constructed
+
+        if candidate.failure_reason:
+            raise ValueError(f"Candidate failed: {candidate.failure_reason}")
+
+        # Check if any source block is already consumed
+        for block in candidate.source_blocks:
+            if block.id in self._consumed_blocks:
+                # Find who consumed it (for better error message)
+                # This is expensive but only happens on failure
+                winner_label = "unknown"
+                for cat_label, cat_candidates in self.candidates.items():
+                    for c in cat_candidates:
+                        if c.constructed and any(
+                            b.id == block.id for b in c.source_blocks
+                        ):
+                            winner_label = cat_label
+                            break
+
+                failure_msg = f"Block {block.id} already consumed by '{winner_label}'"
+                candidate.failure_reason = failure_msg
+                raise ValueError(failure_msg)
+
+        classifier = self._classifiers.get(candidate.label)
+        if not classifier:
+            raise ValueError(f"No classifier registered for label '{candidate.label}'")
+
+        element = classifier.construct_candidate(candidate, self)
+        candidate.constructed = element
+
+        # Mark blocks as consumed
+        for block in candidate.source_blocks:
+            self._consumed_blocks.add(block.id)
+
+        # Fail other candidates that use these blocks
+        self._fail_conflicting_candidates(candidate)
+
+        return element
+
+    def _fail_conflicting_candidates(self, winner: Candidate) -> None:
+        """Mark other candidates sharing blocks with winner as failed."""
+        winner_block_ids = {b.id for b in winner.source_blocks}
+
+        for label, candidates in self.candidates.items():
+            for candidate in candidates:
+                if candidate is winner:
+                    continue
+                if candidate.failure_reason:
+                    continue
+
+                # Check for overlap
+                for block in candidate.source_blocks:
+                    if block.id in winner_block_ids:
+                        candidate.failure_reason = (
+                            f"Lost conflict to '{winner.label}' "
+                            f"(score={winner.score:.3f})"
+                        )
+                        break
 
     def _validate_block_in_page_data(
         self, block: Blocks | None, param_name: str = "block"
@@ -306,7 +384,11 @@ class ClassificationResult(BaseModel):
         return self.candidates.get(label, []).copy()
 
     def get_scored_candidates(
-        self, label: str, min_score: float = 0.0, valid_only: bool = True
+        self,
+        label: str,
+        min_score: float = 0.0,
+        valid_only: bool = True,
+        exclude_failed: bool = False,
     ) -> list[Candidate]:
         """Get candidates for a label that have been scored.
 
@@ -351,6 +433,8 @@ class ClassificationResult(BaseModel):
             valid_only: If True (default), only return valid candidates
                 (constructed and no failure). Set to False to get all scored
                 candidates regardless of construction status.
+            exclude_failed: If True, filter out candidates with failure_reason,
+                even if valid_only is False. (default: False)
 
         Returns:
             List of scored candidates sorted by score (highest first).
@@ -368,6 +452,8 @@ class ClassificationResult(BaseModel):
         # Filter to valid candidates if requested (default)
         if valid_only:
             scored = [c for c in scored if c.is_valid]
+        elif exclude_failed:
+            scored = [c for c in scored if c.failure_reason is None]
 
         # Sort by score descending
         # TODO add a tie breaker for determinism.

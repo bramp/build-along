@@ -39,8 +39,6 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
     LegoPageElements,
-    PartsList,
-    ProgressBar,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
@@ -138,12 +136,12 @@ class DiagramClassifier(LabelClassifier):
         candidates = result.get_candidates("diagram")
         for candidate in candidates:
             try:
-                elem = self._construct_single(candidate, result)
+                elem = self.construct_candidate(candidate, result)
                 candidate.constructed = elem
             except Exception as e:
                 candidate.failure_reason = str(e)
 
-    def _construct_single(
+    def construct_candidate(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a Diagram element from a single candidate."""
@@ -165,32 +163,26 @@ class DiagramClassifier(LabelClassifier):
 
         # Only attempt to get parts lists if they've been classified
         try:
-            parts_list_candidates = result.get_scored_candidates("parts_list")
+            parts_list_candidates = result.get_scored_candidates(
+                "parts_list", valid_only=False, exclude_failed=True
+            )
         except (KeyError, AttributeError):
             # Parts lists haven't been classified yet, that's fine
             return blocks
 
         # Collect parts list bboxes and check for part diagrams with source blocks
         for pl_candidate in parts_list_candidates:
-            # Skip invalid candidates
-            if not pl_candidate.is_valid:
-                continue
-
-            pl = pl_candidate.constructed
-            assert isinstance(pl, PartsList)
             parts_list_bboxes.append(pl_candidate.bbox)
 
-            # For individual part diagrams, check if they have source blocks
-            # by looking up candidates that constructed them
-            for part in pl.parts:
-                if part.diagram:
-                    # Find candidates that constructed this specific Part
-                    for candidate in result.get_candidates("part"):
-                        if candidate.constructed is part:
-                            # Add all source blocks from this candidate
-                            for source_block in candidate.source_blocks:
-                                blocks.add(id(source_block))
-                            break
+            # To exclude part diagrams, we need to look at part candidates
+            # that are contained in this parts list candidate.
+            # We can look at the score details of the parts list candidate
+            # if available.
+            if hasattr(pl_candidate.score_details, "part_candidates"):
+                part_candidates = pl_candidate.score_details.part_candidates
+                for part_candidate in part_candidates:
+                    for source_block in part_candidate.source_blocks:
+                        blocks.add(id(source_block))
 
         # Also exclude any blocks that overlap significantly with parts lists
         # This catches parts list container images/drawings
@@ -219,13 +211,13 @@ class DiagramClassifier(LabelClassifier):
         Returns:
             BBox of the progress bar, or None if not found.
         """
-        progress_bar_candidates = result.get_scored_candidates("progress_bar")
+        progress_bar_candidates = result.get_scored_candidates(
+            "progress_bar", valid_only=False, exclude_failed=True
+        )
 
-        # Return the first constructed progress bar
-        for candidate in progress_bar_candidates:
-            if candidate.is_valid:
-                assert isinstance(candidate.constructed, ProgressBar)
-                return candidate.bbox
+        # Return the first progress bar candidate's bbox
+        if progress_bar_candidates:
+            return progress_bar_candidates[0].bbox
 
         return None
 

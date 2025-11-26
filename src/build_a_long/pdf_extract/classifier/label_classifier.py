@@ -7,9 +7,11 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.classification_result import (
+    Candidate,
     ClassificationResult,
     ClassifierConfig,
 )
+from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElements
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 # TODO Maybe classifers need a interface, where they have
@@ -128,5 +130,26 @@ class LabelClassifier(ABC):
 
         Args:
             result: The classification result containing candidates to construct
+        """
+        pass
+
+    @abstractmethod
+    def construct_candidate(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        """Construct a single candidate into a LegoPageElement.
+
+        This method is called during the top-down construction phase.
+        It should:
+        1. Resolve any dependencies (e.g. ask result to construct parent candidates)
+        2. Build the LegoPageElement
+        3. Return it (do not set candidate.constructed, the caller does that)
+
+        Args:
+            candidate: The candidate to construct
+            result: The classification result context
+
+        Returns:
+            The constructed LegoPageElement
         """
         pass

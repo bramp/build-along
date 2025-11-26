@@ -1,6 +1,12 @@
 """Tests for the bag number classifier."""
 
-from build_a_long.pdf_extract.classifier.classifier import classify_elements
+from build_a_long.pdf_extract.classifier.bag_number_classifier import (
+    BagNumberClassifier,
+)
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
+    ClassifierConfig,
+)
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import BagNumber
@@ -17,8 +23,15 @@ class TestBagNumberClassification:
             blocks=[],
             bbox=BBox(0, 0, 100, 200),
         )
-        # Run end-to-end classification; should not raise any errors
-        classify_elements(page_data)
+        config = ClassifierConfig()
+        bag_number_classifier = BagNumberClassifier(config)
+        result = ClassificationResult(page_data=page_data)
+        bag_number_classifier.score(result)
+        result.register_classifier("bag_number", bag_number_classifier)
+
+        # Should not create any candidates
+        candidates = result.get_candidates("bag_number")
+        assert not candidates
 
     def test_single_bag_number_top_left(self) -> None:
         """Test identifying a bag number in the top-left area."""
@@ -37,14 +50,17 @@ class TestBagNumberClassification:
             bbox=page_bbox,
         )
 
-        result = classify_elements(page_data)
+        config = ClassifierConfig()
+        bag_number_classifier = BagNumberClassifier(config)
+        result = ClassificationResult(page_data=page_data)
+        bag_number_classifier.score(result)
+        result.register_classifier("bag_number", bag_number_classifier)
 
         # Check the bag_number candidate exists and has a good score
         candidate = result.get_candidate_for_block(bag_number_text, "bag_number")
         assert candidate is not None
-        assert candidate.constructed is not None
-        assert isinstance(candidate.constructed, BagNumber)
-        bag_number = candidate.constructed
+        bag_number = result.construct_candidate(candidate)
+        assert isinstance(bag_number, BagNumber)
         assert bag_number.value == 1
         assert candidate.score > 0.5
 
@@ -63,8 +79,11 @@ class TestBagNumberClassification:
             blocks=[text_block],
             bbox=page_bbox,
         )
-
-        result = classify_elements(page_data)
+        config = ClassifierConfig()
+        bag_number_classifier = BagNumberClassifier(config)
+        result = ClassificationResult(page_data=page_data)
+        bag_number_classifier.score(result)
+        result.register_classifier("bag_number", bag_number_classifier)
 
         # Should not classify non-numeric text as bag number
         candidate = result.get_candidate_for_block(text_block, "bag_number")
@@ -86,8 +105,11 @@ class TestBagNumberClassification:
             blocks=[bottom_text],
             bbox=page_bbox,
         )
-
-        result = classify_elements(page_data)
+        config = ClassifierConfig()
+        bag_number_classifier = BagNumberClassifier(config)
+        result = ClassificationResult(page_data=page_data)
+        bag_number_classifier.score(result)
+        result.register_classifier("bag_number", bag_number_classifier)
 
         # Should not classify bottom text as bag number
         candidate = result.get_candidate_for_block(bottom_text, "bag_number")
@@ -96,6 +118,8 @@ class TestBagNumberClassification:
     def test_bag_number_accepts_values_1_to_99(self) -> None:
         """Test that bag numbers accept values from 1 to 99."""
         page_bbox = BBox(0, 0, 552.76, 496.06)
+        config = ClassifierConfig()
+        bag_number_classifier = BagNumberClassifier(config)
 
         for value in [1, 2, 5, 10, 50, 99]:
             bag_number_text = Text(
@@ -111,17 +135,21 @@ class TestBagNumberClassification:
                 bbox=page_bbox,
             )
 
-            result = classify_elements(page_data)
+            result = ClassificationResult(page_data=page_data)
+            bag_number_classifier.score(result)
+            result.register_classifier("bag_number", bag_number_classifier)
+
             candidate = result.get_candidate_for_block(bag_number_text, "bag_number")
             assert candidate is not None
-            assert candidate.constructed is not None
-            assert isinstance(candidate.constructed, BagNumber)
-            bag_number = candidate.constructed
+            bag_number = result.construct_candidate(candidate)
+            assert isinstance(bag_number, BagNumber)
             assert bag_number.value == value
 
     def test_bag_number_rejects_zero_and_large_numbers(self) -> None:
         """Test that bag numbers reject 0 and numbers > 99."""
         page_bbox = BBox(0, 0, 552.76, 496.06)
+        config = ClassifierConfig()
+        bag_number_classifier = BagNumberClassifier(config)
 
         for invalid_value in ["0", "100", "999"]:
             text_block = Text(
@@ -137,7 +165,10 @@ class TestBagNumberClassification:
                 bbox=page_bbox,
             )
 
-            result = classify_elements(page_data)
+            result = ClassificationResult(page_data=page_data)
+            bag_number_classifier.score(result)
+            result.register_classifier("bag_number", bag_number_classifier)
+
             candidate = result.get_candidate_for_block(text_block, "bag_number")
             assert candidate is None
 
@@ -166,8 +197,11 @@ class TestBagNumberClassification:
             blocks=[small_text, large_text],
             bbox=page_bbox,
         )
-
-        result = classify_elements(page_data)
+        config = ClassifierConfig()
+        bag_number_classifier = BagNumberClassifier(config)
+        result = ClassificationResult(page_data=page_data)
+        bag_number_classifier.score(result)
+        result.register_classifier("bag_number", bag_number_classifier)
 
         small_candidate = result.get_candidate_for_block(small_text, "bag_number")
         large_candidate = result.get_candidate_for_block(large_text, "bag_number")

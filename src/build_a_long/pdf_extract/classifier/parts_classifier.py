@@ -91,13 +91,25 @@ class PartsClassifier(LabelClassifier):
         page_data = result.page_data
 
         # Get part_count candidates (not elements!) using new API
-        part_count_candidates = result.get_scored_candidates("part_count")
+        part_count_candidates = result.get_scored_candidates(
+            "part_count",
+            valid_only=False,
+            exclude_failed=True,
+        )
 
         # Get optional part_number candidates
-        part_number_candidates = result.get_scored_candidates("part_number")
+        part_number_candidates = result.get_scored_candidates(
+            "part_number",
+            valid_only=False,
+            exclude_failed=True,
+        )
 
         # Get optional piece_length candidates
-        piece_length_candidates = result.get_scored_candidates("piece_length")
+        piece_length_candidates = result.get_scored_candidates(
+            "piece_length",
+            valid_only=False,
+            exclude_failed=True,
+        )
 
         images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
 
@@ -202,12 +214,12 @@ class PartsClassifier(LabelClassifier):
         candidates = result.get_candidates("part")
         for candidate in candidates:
             try:
-                elem = self._construct_single(candidate, result)
+                elem = self.construct_candidate(candidate, result)
                 candidate.constructed = elem
             except Exception as e:
                 candidate.failure_reason = str(e)
 
-    def _construct_single(
+    def construct_candidate(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a Part from a single candidate's score details.
@@ -217,36 +229,43 @@ class PartsClassifier(LabelClassifier):
         assert isinstance(candidate.score_details, _PartPairScore)
         ps = candidate.score_details
 
-        # Validate and extract part_count from candidate
-        if not ps.part_count_candidate.is_valid:
-            raise ValueError(
-                f"Part count candidate invalid: "
-                f"{ps.part_count_candidate.failure_reason or 'not constructed'}"
-            )
-        assert isinstance(ps.part_count_candidate.constructed, PartCount)
-        part_count = ps.part_count_candidate.constructed
+        # Validate and construct part_count from candidate
+        try:
+            part_count_elem = result.construct_candidate(ps.part_count_candidate)
+            assert isinstance(part_count_elem, PartCount)
+            part_count = part_count_elem
+        except Exception as e:
+            raise ValueError(f"Failed to construct mandatory part_count: {e}") from e
 
         # Extract optional part_number from candidate
         part_number: PartNumber | None = None
         if ps.part_number_candidate:
-            if not ps.part_number_candidate.is_valid:
-                raise ValueError(
-                    f"Part number candidate invalid: "
-                    f"{ps.part_number_candidate.failure_reason or 'not constructed'}"
+            try:
+                part_number_elem = result.construct_candidate(ps.part_number_candidate)
+                assert isinstance(part_number_elem, PartNumber)
+                part_number = part_number_elem
+            except Exception as e:
+                log.warning(
+                    "Failed to construct optional part_number at %s: %s",
+                    ps.part_number_candidate.bbox,
+                    e,
                 )
-            assert isinstance(ps.part_number_candidate.constructed, PartNumber)
-            part_number = ps.part_number_candidate.constructed
 
         # Extract optional piece_length from candidate
         piece_length: PieceLength | None = None
         if ps.piece_length_candidate:
-            if not ps.piece_length_candidate.is_valid:
-                raise ValueError(
-                    f"Piece length candidate invalid: "
-                    f"{ps.piece_length_candidate.failure_reason or 'not constructed'}"
+            try:
+                piece_length_elem = result.construct_candidate(
+                    ps.piece_length_candidate
                 )
-            assert isinstance(ps.piece_length_candidate.constructed, PieceLength)
-            piece_length = ps.piece_length_candidate.constructed
+                assert isinstance(piece_length_elem, PieceLength)
+                piece_length = piece_length_elem
+            except Exception as e:
+                log.warning(
+                    "Failed to construct optional piece_length at %s: %s",
+                    ps.piece_length_candidate.bbox,
+                    e,
+                )
 
         # Wrap Image in Drawing for the diagram field
         diagram = Drawing(bbox=ps.image.bbox, id=ps.image.id)

@@ -80,13 +80,17 @@ class PartsImageClassifier(LabelClassifier):
         """
         page_data = result.page_data
 
-        # Get candidates that have been successfully constructed
-        part_count_candidates = [
-            c for c in result.get_candidates("part_count") if c.constructed is not None
-        ]
-        parts_list_candidates = [
-            c for c in result.get_candidates("parts_list") if c.constructed is not None
-        ]
+        # Get candidates that have been scored (not necessarily constructed)
+        part_count_candidates = result.get_scored_candidates(
+            "part_count",
+            valid_only=False,
+            exclude_failed=True,
+        )
+        parts_list_candidates = result.get_scored_candidates(
+            "parts_list",
+            valid_only=False,
+            exclude_failed=True,
+        )
 
         if not part_count_candidates or not parts_list_candidates:
             return
@@ -135,8 +139,8 @@ class PartsImageClassifier(LabelClassifier):
         if log.isEnabledFor(logging.DEBUG):
             unmatched_c = [
                 pc
-                for pc in result.get_candidates("part_count")
-                if pc.constructed is not None and id(pc) not in matched_count_candidates
+                for pc in part_count_candidates
+                if id(pc) not in matched_count_candidates
             ]
             unmatched_i = [im for im in images if id(im) not in matched_images]
             if unmatched_c:
@@ -149,12 +153,12 @@ class PartsImageClassifier(LabelClassifier):
         candidates = result.get_candidates("part_image")
         for candidate in candidates:
             try:
-                elem = self._construct_single(candidate, result)
+                elem = self.construct_candidate(candidate, result)
                 candidate.constructed = elem
             except Exception as e:
                 candidate.failure_reason = str(e)
 
-    def _construct_single(
+    def construct_candidate(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a PartImage element from a single part_image candidate.
@@ -177,21 +181,16 @@ class PartsImageClassifier(LabelClassifier):
 
         # Get the part_count element from the part_count candidate
         part_count_candidate = score.part_count_candidate
-        if part_count_candidate.constructed is None:
-            raise ValueError(
-                "Part count candidate has not been constructed yet - "
-                "this indicates a classifier ordering problem"
-            )
 
-        if not isinstance(part_count_candidate.constructed, PartCount):
-            raise ValueError(
-                f"Expected PartCount but got {type(part_count_candidate.constructed)}"
-            )
+        # Ensure part_count is constructed
+        part_count_elem = result.construct_candidate(part_count_candidate)
+        if not isinstance(part_count_elem, PartCount):
+            raise ValueError(f"Expected PartCount but got {type(part_count_elem)}")
 
         return PartImage(
-            bbox=score.image.bbox.union(part_count_candidate.constructed.bbox),
+            bbox=score.image.bbox.union(part_count_elem.bbox),
             image=score.image,
-            part_count=part_count_candidate.constructed,
+            part_count=part_count_elem,
         )
 
     def _build_candidate_edges(

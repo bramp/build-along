@@ -83,12 +83,12 @@ class PageClassifier(LabelClassifier):
         candidates = result.get_candidates("page")
         for candidate in candidates:
             try:
-                elem = self._construct_single(candidate, result)
+                elem = self.construct_candidate(candidate, result)
                 candidate.constructed = elem
             except Exception as e:
                 candidate.failure_reason = str(e)
 
-    def _construct_single(
+    def construct_candidate(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a Page by collecting all page components.
@@ -99,39 +99,76 @@ class PageClassifier(LabelClassifier):
         page_data = result.page_data
 
         # Get best candidates using score-based selection
-        # get_scored_candidates returns only valid candidates by default
+        # get_scored_candidates returns only valid candidates by default, so
+        # we must set valid_only=False, exclude_failed=True to get candidates that haven't been
+        # constructed yet.
         page_number = None
-        page_number_candidates = result.get_scored_candidates("page_number")
+        page_number_candidates = result.get_scored_candidates(
+            "page_number", valid_only=False, exclude_failed=True
+        )
         if page_number_candidates:
-            page_number = page_number_candidates[0].constructed
+            best_cand = page_number_candidates[0]
+            page_number = result.construct_candidate(best_cand)
             assert isinstance(page_number, PageNumber)
 
         progress_bar = None
-        progress_bar_candidates = result.get_scored_candidates("progress_bar")
+        progress_bar_candidates = result.get_scored_candidates(
+            "progress_bar", valid_only=False, exclude_failed=True
+        )
         if progress_bar_candidates:
-            progress_bar = progress_bar_candidates[0].constructed
+            best_cand = progress_bar_candidates[0]
+            progress_bar = result.construct_candidate(best_cand)
             assert isinstance(progress_bar, ProgressBar)
 
         # Get new bags from candidates
         new_bags: list[NewBag] = []
-        for nb_candidate in result.get_scored_candidates("new_bag"):
-            assert nb_candidate.constructed is not None
-            assert isinstance(nb_candidate.constructed, NewBag)
-            new_bags.append(nb_candidate.constructed)
+        # Construct ALL new_bag candidates? Or just the ones that pass a threshold?
+        # For now, construct all scored candidates.
+        for nb_candidate in result.get_scored_candidates(
+            "new_bag", valid_only=False, exclude_failed=True
+        ):
+            try:
+                elem = result.construct_candidate(nb_candidate)
+                assert isinstance(elem, NewBag)
+                new_bags.append(elem)
+            except Exception as e:
+                log.warning(
+                    "Failed to construct new_bag candidate at %s: %s",
+                    nb_candidate.bbox,
+                    e,
+                )
 
-        # Get steps from candidates
-        steps: list[Step] = []
-        for step_candidate in result.get_scored_candidates("step"):
-            assert step_candidate.constructed is not None
-            assert isinstance(step_candidate.constructed, Step)
-            steps.append(step_candidate.constructed)
-
-        # Get all parts from candidates
+        # Get all parts from candidates FIRST (to prioritize PieceLength over StepNumber)
         all_parts: list[Part] = []
-        for part_candidate in result.get_scored_candidates("part"):
-            assert part_candidate.constructed is not None
-            assert isinstance(part_candidate.constructed, Part)
-            all_parts.append(part_candidate.constructed)
+        for part_candidate in result.get_scored_candidates(
+            "part", valid_only=False, exclude_failed=True
+        ):
+            try:
+                elem = result.construct_candidate(part_candidate)
+                assert isinstance(elem, Part)
+                all_parts.append(elem)
+            except Exception as e:
+                log.warning(
+                    "Failed to construct part candidate at %s: %s",
+                    part_candidate.bbox,
+                    e,
+                )
+
+        # Get steps from candidates (now PieceLength should have claimed its blocks)
+        steps: list[Step] = []
+        for step_candidate in result.get_scored_candidates(
+            "step", valid_only=False, exclude_failed=True
+        ):
+            try:
+                elem = result.construct_candidate(step_candidate)
+                assert isinstance(elem, Step)
+                steps.append(elem)
+            except Exception as e:
+                log.warning(
+                    "Failed to construct step candidate at %s: %s",
+                    step_candidate.bbox,
+                    e,
+                )
 
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)

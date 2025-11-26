@@ -87,7 +87,9 @@ class NewBagClassifier(LabelClassifier):
         page_data = result.page_data
 
         # Get bag number candidates (not constructed elements)
-        bag_number_candidates = result.get_scored_candidates("bag_number")
+        bag_number_candidates = result.get_scored_candidates(
+            "bag_number", valid_only=False, exclude_failed=True
+        )
         if not bag_number_candidates:
             return
 
@@ -108,12 +110,7 @@ class NewBagClassifier(LabelClassifier):
 
         # For each bag number candidate, try to find a surrounding cluster of images
         for bag_number_candidate in bag_number_candidates:
-            # Validate parent candidate
-            if not bag_number_candidate.is_valid:
-                continue
-
-            bag_number = bag_number_candidate.constructed
-            assert isinstance(bag_number, BagNumber)
+            # Bag number not constructed yet, so we use the candidate info
             bag_bbox = bag_number_candidate.bbox
 
             # Find nearby images (within a reasonable distance)
@@ -122,8 +119,7 @@ class NewBagClassifier(LabelClassifier):
             if not nearby_images:
                 # No images nearby, skip this bag number
                 log.debug(
-                    "[new_bag] No images near bag_number value=%d at %s",
-                    bag_number.value,
+                    "[new_bag] No images near bag_number candidate at %s",
                     bag_bbox,
                 )
                 continue
@@ -164,9 +160,8 @@ class NewBagClassifier(LabelClassifier):
             )
 
             log.debug(
-                "[new_bag] candidate bag=%d images=%d cluster_score=%.2f "
+                "[new_bag] candidate images=%d cluster_score=%.2f "
                 "compactness_score=%.2f combined=%.2f bbox=%s",
-                bag_number.value,
                 len(nearby_images),
                 cluster_score,
                 compactness_score,
@@ -179,12 +174,12 @@ class NewBagClassifier(LabelClassifier):
         candidates = result.get_candidates("new_bag")
         for candidate in candidates:
             try:
-                elem = self._construct_single(candidate, result)
+                elem = self.construct_candidate(candidate, result)
                 candidate.constructed = elem
             except Exception as e:
                 candidate.failure_reason = str(e)
 
-    def _construct_single(
+    def construct_candidate(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a NewBag element from a single candidate."""
@@ -194,15 +189,11 @@ class NewBagClassifier(LabelClassifier):
 
         # Validate and extract the bag number from parent candidate
         bag_number_candidate = detail_score.bag_number_candidate
-        if not bag_number_candidate.is_valid:
-            raise ValueError(
-                f"Bag number candidate invalid: {
-                    bag_number_candidate.failure_reason or 'not constructed'
-                }"
-            )
 
-        bag_number = bag_number_candidate.constructed
-        assert isinstance(bag_number, BagNumber)
+        # Construct bag number
+        bag_number_elem = result.construct_candidate(bag_number_candidate)
+        assert isinstance(bag_number_elem, BagNumber)
+        bag_number = bag_number_elem
 
         # Construct the NewBag element
         return NewBag(bbox=detail_score.cluster_bbox, number=bag_number)

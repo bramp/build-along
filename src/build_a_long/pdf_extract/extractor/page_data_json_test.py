@@ -98,7 +98,6 @@ class TestPageDataJsonSerialization:
                     {
                         "__tag__": "Drawing",
                         "bbox": {"x0": 10, "y0": 10, "x1": 90, "y1": 190},
-                        "image_id": "drawing_raster",
                         "id": 99,
                     },
                 ],
@@ -111,9 +110,7 @@ class TestPageDataJsonSerialization:
         assert len(page.blocks) == 2
         assert all(isinstance(e, Drawing) for e in page.blocks)
         assert isinstance(page.blocks[0], Drawing)
-        assert page.blocks[0].image_id is None
         assert isinstance(page.blocks[1], Drawing)
-        assert page.blocks[1].image_id == "drawing_raster"  # type: ignore
         assert page.blocks[1].id == 99
 
     def test_from_json_with_mixed_element_types(self) -> None:

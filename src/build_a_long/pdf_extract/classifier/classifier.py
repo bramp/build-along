@@ -3,31 +3,22 @@ Rule-based classifier for labeling page elements.
 
 Pipeline order and dependencies
 --------------------------------
-Classifiers run in dependency order, automatically determined at runtime.
-Each classifier declares its `requires` (input labels) and `outputs` (produced labels).
+The classification pipeline operates in two main phases:
 
-The Classifier batches classifiers into groups where:
-- All classifiers in a batch have their dependencies satisfied by previous batches
-- Classifiers within a batch can theoretically run in parallel (same dependencies)
+1. **Bottom-up Scoring**: All classifiers run independently to identify potential
+   candidates (e.g. page numbers, part counts, step numbers) and score them based
+   on heuristics. No construction of final elements happens here.
 
-Example dependency chain:
-1) PageNumberClassifier  → outputs: "page_number" (no dependencies)
-2) ProgressBarClassifier → outputs: "progress_bar" (requires: page_number)
-3) PartCountClassifier   → outputs: "part_count" (no dependencies)
-4) StepNumberClassifier  → outputs: "step_number" (requires: page_number)
-5) PartsClassifier       → outputs: "part"
-                            (requires: part_count, part_number?, piece_length?)
-6) PartsListClassifier   → outputs: "parts_list" (requires: part)
-7) DiagramClassifier     → outputs: "diagram"
-                            (requires: parts_list, progress_bar)
-8) StepClassifier        → outputs: "step"
-                            (requires: step_number, parts_list)
-9) PageClassifier        → outputs: "page"
-                            (requires: page_number, progress_bar, new_bag,
-                             step, parts_list)
+2. **Conflict Resolution**: Global conflict resolution logic runs to identify
+   cases where a single element is claimed by multiple candidates (e.g. a number
+   could be a step number or a piece length). Candidates are prioritized and
+   filtered.
 
-The actual execution order is determined by the dependency graph and may differ
-from the order classifiers are registered in __init__.
+3. **Top-down Construction**: The root `PageClassifier` is invoked to construct
+   the final `Page` object. It recursively requests the construction of its
+   dependencies (e.g. "Give me the best PageNumber"), which in turn construct
+   their own dependencies. This ensures a consistent and validated object tree.
+
 """
 
 from __future__ import annotations
@@ -43,9 +34,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
     RemovalReason,
-)
-from build_a_long.pdf_extract.classifier.conflict_resolution import (
-    resolve_label_conflicts,
 )
 from build_a_long.pdf_extract.classifier.diagram_classifier import (
     DiagramClassifier,
@@ -256,102 +244,38 @@ class Classifier:
             PageClassifier(config),
         ]
 
-        # Order classifiers by dependencies and cache the batches
-        # This will raise ValueError if there are circular or missing dependencies
-        self.batches = self._order_classifiers_by_dependencies()
-
-    def _order_classifiers_by_dependencies(
-        self,
-    ) -> list[list[LabelClassifier]]:
-        """Order classifiers into batches based on their dependencies.
-
-        Returns a list of batches, where each batch contains classifiers that can
-        run in parallel (all their dependencies are satisfied by previous batches).
-
-        Returns:
-            List of batches, where each batch is a list of classifiers.
-
-        Raises:
-            ValueError: If circular dependencies are detected.
-        """
-        batches: list[list[LabelClassifier]] = []
-        remaining = list(self.classifiers)
-        produced: set[str] = set()
-        max_iterations = len(self.classifiers) + 1  # Safety limit
-
-        for _ in range(max_iterations):
-            if not remaining:
-                break
-
-            # Find all classifiers whose dependencies are satisfied
-            current_batch: list[LabelClassifier] = []
-            for classifier in remaining:
-                if classifier.requires.issubset(produced):
-                    current_batch.append(classifier)
-
-            # If no classifiers can run, we have circular dependencies or missing deps
-            if not current_batch:
-                unsatisfied = []
-                for classifier in remaining:
-                    missing = classifier.requires - produced
-                    if missing:
-                        cls_name = classifier.__class__.__name__
-                        unsatisfied.append(f"{cls_name} (needs: {sorted(missing)})")
-
-                raise ValueError(
-                    f"Circular dependency or missing dependencies detected. "
-                    f"Cannot satisfy: {'; '.join(unsatisfied)}"
-                )
-
-            # Add this batch and update state
-            batches.append(current_batch)
-            for classifier in current_batch:
-                produced |= classifier.outputs
-
-            # Remove processed classifiers
-            remaining = [c for c in remaining if c not in current_batch]
-
-        if remaining:
-            # This shouldn't happen if max_iterations is sufficient
-            raise ValueError(
-                f"Failed to schedule all classifiers after {max_iterations} iterations"
-            )
-
-        return batches
-
     def classify(self, page_data: PageData) -> ClassificationResult:
         """
         Runs the classification logic and returns a result.
         It does NOT modify page_data directly.
 
-        The classification process runs in batches based on dependencies:
-        - For each batch: score → resolve conflicts → construct
-        - This ensures candidates are available for dependent batches
+        The classification process runs in three phases:
+        1. Score all classifiers (bottom-up)
+        2. Resolve conflicts (global)
+        3. Construct final elements (top-down starting from Page)
         """
         result = ClassificationResult(page_data=page_data)
 
-        logger.debug(
-            f"Running classifiers in {len(self.batches)} batches "
-            f"for page {page_data.page_number}"
+        logger.debug(f"Starting classification for page {page_data.page_number}")
+
+        # 0. Register classifiers
+        for classifier in self.classifiers:
+            for label in classifier.outputs:
+                result.register_classifier(label, classifier)
+
+        # 1. Score all classifiers (Bottom-Up)
+        for classifier in self.classifiers:
+            classifier.score(result)
+
+        # 2. Resolve conflicts
+        # resolve_label_conflicts(result)
+
+        # 3. Construct (Top-Down)
+        # Find the PageClassifier to start the construction process
+        page_classifier = next(
+            c for c in self.classifiers if isinstance(c, PageClassifier)
         )
-
-        # Process each batch: score, resolve conflicts, construct
-        for batch_idx, batch in enumerate(self.batches):
-            logger.debug(
-                f"  Batch {batch_idx + 1}: "
-                f"{', '.join(c.__class__.__name__ for c in batch)}"
-            )
-
-            # Phase 1: Score all classifiers in this batch
-            for classifier in batch:
-                classifier.score(result)
-
-            # Phase 2: Resolve conflicts for this batch
-            resolve_label_conflicts(result)
-
-            # Phase 3: Construct all classifiers in this batch
-            for classifier in batch:
-                classifier.construct(result)
+        page_classifier.construct(result)
 
         warnings = self._log_post_classification_warnings(page_data, result)
         for warning in warnings:

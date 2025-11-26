@@ -65,10 +65,6 @@ def resolve_label_conflicts(result: ClassificationResult) -> None:
     all_candidates = result.get_all_candidates()
     for label, candidates in all_candidates.items():
         for candidate in candidates:
-            # Only consider successfully constructed candidates
-            if candidate.constructed is None:
-                continue
-
             # Track each source block
             for block in candidate.source_blocks:
                 block_id = id(block)

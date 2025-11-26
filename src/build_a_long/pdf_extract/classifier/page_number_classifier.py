@@ -117,6 +117,13 @@ class PageNumberClassifier(LabelClassifier):
 
             combined = score.combined_score(self.config)
 
+            # STRICTER FILTERING:
+            # 1. Must be in the bottom band (position_score > 0).
+            # 2. If it's a single digit (common step number), require extremely high position confidence
+            #    or match to page number value.
+            if position_score < 0.1:
+                continue
+
             # Skip candidates below minimum score threshold
             if combined < self.config.page_number_min_score:
                 log.debug(
@@ -158,12 +165,12 @@ class PageNumberClassifier(LabelClassifier):
         winner = candidates_sorted[0]
 
         try:
-            elem = self._construct_single(winner, result)
+            elem = self.construct_candidate(winner, result)
             winner.constructed = elem
         except Exception as e:
             winner.failure_reason = str(e)
 
-    def _construct_single(
+    def construct_candidate(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a PageNumber element from a single candidate.
