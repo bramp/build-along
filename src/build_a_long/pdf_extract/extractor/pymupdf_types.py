@@ -5,12 +5,18 @@ See https://pymupdf.readthedocs.io/en/latest/textpage.html#page-dictionary
 
 from typing import NotRequired, Protocol, TypedDict
 
+# Type alias for single coordinates (x, y)
+PointLikeTuple = tuple[float, float]
+
 # Type alias for bounding box coordinates (x0, y0, x1, y1)
 RectLikeTuple = tuple[float, float, float, float]
 
 
 class RectLike(Protocol):
-    """Protocol for PyMuPDF Rect-like objects with coordinate attributes."""
+    """Protocol for PyMuPDF Rect-like objects with coordinate attributes.
+
+    See https://pymupdf.readthedocs.io/en/latest/rect.html
+    """
 
     x0: float
     y0: float
@@ -19,27 +25,51 @@ class RectLike(Protocol):
 
 
 class CharDict(TypedDict):
-    """Type definition for a char in PyMuPDF rawdict."""
+    """Type definition for a char in PyMuPDF rawdict.
+
+    See https://pymupdf.readthedocs.io/en/latest/textpage.html#dictionary-structure-of-extractdict-and-extractrawdict
+    """
 
     c: str
+    origin: NotRequired[PointLikeTuple]  # character origin (x, y)
+    bbox: NotRequired[RectLikeTuple]  # character bounding box
 
 
 class SpanDict(TypedDict):
-    """Type definition for a text span in PyMuPDF rawdict."""
+    """Type definition for a text span in PyMuPDF rawdict.
+
+    See https://pymupdf.readthedocs.io/en/latest/textpage.html#dictionary-structure-of-extractdict-and-extractrawdict
+    """
 
     bbox: RectLikeTuple
     text: str
     chars: list[CharDict]
+    font: NotRequired[str]  # font name
+    size: NotRequired[float]  # font size in points
+    flags: NotRequired[int]  # font flags (bitmap: superscript, italic, serif, etc.)
+    color: NotRequired[int]  # text color as RGB integer
+    ascender: NotRequired[float]  # font ascender
+    descender: NotRequired[float]  # font descender
+    origin: NotRequired[PointLikeTuple]  # span origin (x, y)
 
 
 class LineDict(TypedDict):
-    """Type definition for a text line in PyMuPDF rawdict."""
+    """Type definition for a text line in PyMuPDF rawdict.
+
+    See https://pymupdf.readthedocs.io/en/latest/textpage.html#dictionary-structure-of-extractdict-and-extractrawdict
+    """
 
     spans: list[SpanDict]
+    bbox: NotRequired[RectLikeTuple]  # line bounding box
+    wmode: NotRequired[int]  # writing mode (0=horizontal, 1=vertical)
+    dir: NotRequired[RectLikeTuple]  # writing direction vector
 
 
 class BlockDict(TypedDict):
-    """Type definition for a block in PyMuPDF rawdict."""
+    """Type definition for a block in PyMuPDF rawdict.
+
+    See https://pymupdf.readthedocs.io/en/latest/textpage.html#dictionary-structure-of-extractdict-and-extractrawdict
+    """
 
     number: int
     type: int
@@ -47,16 +77,19 @@ class BlockDict(TypedDict):
 
 
 class TextBlockDict(BlockDict):
-    """Type definition for a text block in PyMuPDF rawdict."""
+    """Type definition for a text block in PyMuPDF rawdict.
+
+    See https://pymupdf.readthedocs.io/en/latest/textpage.html#dictionary-structure-of-extractdict-and-extractrawdict
+    """
 
     lines: NotRequired[list[LineDict]]
 
 
 class ImageBlockDict(BlockDict):
-    """Type definition for a image block in PyMuPDF rawdict."""
+    """Type definition for a image block in PyMuPDF rawdict.
 
-    # TODO Should this be
-    # https://pymupdf.readthedocs.io/en/latest/document.html#Document.get_page_images ?
+    See https://pymupdf.readthedocs.io/en/latest/textpage.html#block-dictionaries
+    """
 
     ext: str  # image type (e.g., "bmp", "gif", "jpeg", "jpx", "png", "tiff")
     width: int  # original image width
@@ -69,10 +102,14 @@ class ImageBlockDict(BlockDict):
     size: int  # size of the image in bytes
     image: bytes  # image content
     mask: NotRequired[bytes]  # image mask for transparent images
+    name: NotRequired[str]  # image reference name
 
 
 class DrawingDict(TypedDict):
-    """Type definition for a drawing block from PyMuPDF page.get_drawings()."""
+    """Type definition for a drawing block from PyMuPDF page.get_drawings().
+
+    See https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_drawings
+    """
 
     rect: RectLike  # PyMuPDF Rect object with .x0, .y0, .x1, .y1 attributes
 
@@ -81,7 +118,10 @@ class DrawingDict(TypedDict):
     dashes: NotRequired[str | None]  # dashed line specification
     even_odd: NotRequired[bool]  # fill behavior for overlaps
     fill: NotRequired[tuple[float, ...] | None]  # fill color
-    items: NotRequired[list[tuple]]  # list of draw commands
+    # list of draw commands: ("l", p1, p2) for lines,
+    # ("c", p1, p2, p3, p4) for curves, ("re", rect, orientation) for rects,
+    # ("qu", quad) for quads
+    items: NotRequired[list[tuple]]
     lineCap: NotRequired[tuple[int, int, int]]  # line cap styles
     lineJoin: NotRequired[int]  # line join style
     fill_opacity: NotRequired[float]  # fill transparency
@@ -94,6 +134,9 @@ class DrawingDict(TypedDict):
 
 
 class RawDict(TypedDict):
-    """Type definition for PyMuPDF page.get_text('rawdict') return value."""
+    """Type definition for PyMuPDF page.get_text('rawdict') return value.
+
+    See https://pymupdf.readthedocs.io/en/latest/textpage.html#dictionary-structure-of-extractdict-and-extractrawdict
+    """
 
     blocks: list[TextBlockDict | ImageBlockDict]

@@ -17,6 +17,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
     DrawingDict,
     ImageBlockDict,
+    PointLikeTuple,
     RawDict,
     RectLikeTuple,
     TextBlockDict,
@@ -52,9 +53,15 @@ class Extractor:
     IDs are sequential and reset for each page.
     """
 
-    def __init__(self) -> None:
-        """Initialize the extractor with a fresh ID counter."""
+    def __init__(self, *, include_metadata: bool = False) -> None:
+        """Initialize the extractor with a fresh ID counter.
+
+        Args:
+            include_metadata: If True, extract additional metadata (colors, fonts,
+                dimensions, etc.). If False, only extract core fields.
+        """
         self._next_id = 0
+        self._include_metadata = include_metadata
 
     def _get_next_id(self) -> int:
         """Get the next sequential ID and increment the counter."""
@@ -100,6 +107,20 @@ class Extractor:
                     font_size: float = span.get("size", 0.0)
                     font_name: str = span.get("font", "unknown")
 
+                    # Extract additional metadata if requested
+                    font_flags: int | None = None
+                    color: int | None = None
+                    ascender: float | None = None
+                    descender: float | None = None
+                    origin: PointLikeTuple | None = None
+
+                    if self._include_metadata:
+                        font_flags = span.get("flags")
+                        color = span.get("color")
+                        ascender = span.get("ascender")
+                        descender = span.get("descender")
+                        origin = span.get("origin")
+
                     logger.debug(
                         "Found text %s %r with bbox %s, font %s, size %s",
                         bi,
@@ -115,6 +136,11 @@ class Extractor:
                             text=text,
                             font_name=font_name,
                             font_size=font_size,
+                            font_flags=font_flags,
+                            color=color,
+                            ascender=ascender,
+                            descender=descender,
+                            origin=origin,
                             id=self._get_next_id(),
                         )
                     )
@@ -149,16 +175,99 @@ class Extractor:
             bbox: RectLikeTuple = image_block.get("bbox", (0.0, 0.0, 0.0, 0.0))
             nbbox = BBox.from_tuple(bbox)
 
+            # Extract additional metadata if requested
+            width: int | None = None
+            height: int | None = None
+            ext: str | None = None
+            colorspace: int | None = None
+            xres: int | None = None
+            yres: int | None = None
+            bpc: int | None = None
+            size: int | None = None
+            transform: tuple[float, float, float, float, float, float] | None = None
+
+            if self._include_metadata:
+                width = image_block.get("width")
+                height = image_block.get("height")
+                ext = image_block.get("ext")
+                colorspace = image_block.get("colorspace")
+                xres = image_block.get("xres")
+                yres = image_block.get("yres")
+                bpc = image_block.get("bpc")
+                size = image_block.get("size")
+                transform = image_block.get("transform")
+
             image_blocks.append(
                 Image(
                     bbox=nbbox,
                     image_id=f"image_{bi}",
+                    width=width,
+                    height=height,
+                    ext=ext,
+                    colorspace=colorspace,
+                    xres=xres,
+                    yres=yres,
+                    bpc=bpc,
+                    size=size,
+                    transform=transform,
                     id=self._get_next_id(),
                 )
             )
             logger.debug("Found image %s with %s", bi, nbbox)
 
         return image_blocks
+
+    def _convert_drawing_items(
+        self, items: list[tuple] | None
+    ) -> tuple[tuple, ...] | None:
+        """Convert PyMuPDF objects in drawing items to JSON-serializable tuples.
+
+        Drawing items can contain Rect, Point, and Quad objects which need
+        to be converted to tuples for JSON serialization.
+
+        Args:
+            items: List of drawing command tuples from PyMuPDF
+
+        Returns:
+            Tuple of tuples with PyMuPDF objects converted to tuples, or None
+        """
+        if items is None:
+            return None
+
+        converted_items: list[tuple] = []
+        for item in items:
+            if not isinstance(item, tuple) or len(item) == 0:
+                converted_items.append(item)
+                continue
+
+            # Convert tuple elements that are PyMuPDF objects
+            converted_elements: list = [item[0]]  # Keep the command string
+            for element in item[1:]:
+                # Check if element has x0, y0, x1, y1 (Rect-like)
+                if hasattr(element, "x0"):
+                    converted_elements.append(
+                        (element.x0, element.y0, element.x1, element.y1)
+                    )
+                # Check if element has x, y (Point-like)
+                elif hasattr(element, "x") and hasattr(element, "y"):
+                    converted_elements.append((element.x, element.y))
+                # Check if it's a Quad (has ul, ur, ll, lr)
+                elif hasattr(element, "ul"):
+                    converted_elements.append(
+                        (
+                            (element.ul.x, element.ul.y),
+                            (element.ur.x, element.ur.y),
+                            (element.ll.x, element.ll.y),
+                            (element.lr.x, element.lr.y),
+                        )
+                    )
+                else:
+                    # Keep as-is if not a recognized PyMuPDF object
+                    converted_elements.append(element)
+
+            converted_items.append(tuple(converted_elements))
+
+        return tuple(converted_items)
 
     def _extract_drawing_blocks(self, drawings: list[DrawingDict]) -> list[Drawing]:
         """Extract drawing (vector path) blocks from a page.
@@ -177,7 +286,44 @@ class Extractor:
             drect = d["rect"]
             nbbox = BBox.from_tuple((drect.x0, drect.y0, drect.x1, drect.y1))
 
-            drawing_blocks.append(Drawing(bbox=nbbox, id=self._get_next_id()))
+            # Extract additional metadata if requested
+            fill_color: tuple[float, ...] | None = None
+            stroke_color: tuple[float, ...] | None = None
+            line_width: float | None = None
+            fill_opacity: float | None = None
+            stroke_opacity: float | None = None
+            path_type: str | None = None
+            dashes: str | None = None
+            even_odd: bool | None = None
+            items: tuple[tuple, ...] | None = None
+
+            if self._include_metadata:
+                fill_color = d.get("fill")
+                stroke_color = d.get("color")
+                line_width = d.get("width")
+                fill_opacity = d.get("fill_opacity")
+                stroke_opacity = d.get("stroke_opacity")
+                path_type = d.get("type")
+                dashes = d.get("dashes")
+                even_odd = d.get("even_odd")
+                # Convert PyMuPDF objects to tuples for JSON serialization
+                items = self._convert_drawing_items(d.get("items"))
+
+            drawing_blocks.append(
+                Drawing(
+                    bbox=nbbox,
+                    fill_color=fill_color,
+                    stroke_color=stroke_color,
+                    line_width=line_width,
+                    fill_opacity=fill_opacity,
+                    stroke_opacity=stroke_opacity,
+                    path_type=path_type,
+                    dashes=dashes,
+                    even_odd=even_odd,
+                    items=items,
+                    id=self._get_next_id(),
+                )
+            )
             logger.debug("Found drawing with %s", nbbox)
 
         return drawing_blocks
@@ -247,10 +393,13 @@ class Extractor:
         )
 
 
+# TODO Perhaps rename to more appropriate name
 def extract_bounding_boxes(
     doc: pymupdf.Document,
     page_numbers: Sequence[int] | None = None,
     include_types: set[str] | None = None,
+    *,
+    include_metadata: bool = False,
 ) -> list[PageData]:
     """
     Extract bounding boxes for the selected pages of a PDF document.
@@ -261,6 +410,8 @@ def extract_bounding_boxes(
             empty, all pages are processed.
         include_types: Set of element types to include ("text", "image", "drawing").
             If None, defaults to all types.
+        include_metadata: If True, extract additional metadata (colors, fonts,
+            dimensions, etc.). If False, only extract core fields.
 
     Returns:
         List of PageData containing all pages with their blocks
@@ -284,7 +435,7 @@ def extract_bounding_boxes(
         page = doc[page_index]
 
         # Create a new Extractor for each page to reset IDs
-        extractor = Extractor()
+        extractor = Extractor(include_metadata=include_metadata)
         page_data = extractor.extract_page_blocks(page, page_num, include_types)
         pages.append(page_data)
 
