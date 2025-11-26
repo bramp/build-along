@@ -19,7 +19,7 @@ class ProcessingConfig:
     # Output flags
     save_summary: bool = True
     summary_detailed: bool = False
-    save_raw_json: bool = False
+    save_debug_json: bool = False
     compress_json: bool = False
     draw_blocks: bool = False
     draw_elements: bool = False
@@ -52,7 +52,7 @@ class ProcessingConfig:
             page_ranges=args.pages,
             save_summary=args.summary,
             summary_detailed=args.summary_detailed,
-            save_raw_json=args.debug_json,
+            save_debug_json=args.debug_json,
             compress_json=args.compress_json,
             draw_blocks=args.draw_blocks,
             draw_elements=args.draw_elements,
@@ -140,13 +140,18 @@ def parse_arguments() -> argparse.Namespace:
         "--draw-elements",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Draw bounding boxes for classified LEGO page elements in annotated images.",
+        help=(
+            "Draw bounding boxes for classified LEGO page elements in annotated images."
+        ),
     )
     output_group.add_argument(
         "--draw-deleted",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Draw bounding boxes for elements marked as deleted (requires --draw-blocks or --draw-elements).",
+        help=(
+            "Draw bounding boxes for elements marked as deleted "
+            "(requires --draw-blocks or --draw-elements)."
+        ),
     )
 
     # Debug options group
@@ -154,7 +159,7 @@ def parse_arguments() -> argparse.Namespace:
     debug_group.add_argument(
         "--debug-json",
         action="store_true",
-        help="Export raw page elements as a JSON document for debugging.",
+        help="Export debug JSON files: raw page data and classification details (candidates, scores, removal reasons).",
     )
     debug_group.add_argument(
         "--compress-json",

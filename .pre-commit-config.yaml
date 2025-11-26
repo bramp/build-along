@@ -14,9 +14,9 @@ repos:
         stages: [pre-commit]
       - id: pants-test
         name: Pants Test
-        # Test changed files and all their dependents to catch downstream effects
+        # Test changed files and all their dependents to catch downstream effects.
         # This ensures changes to core files (e.g., classifiers) trigger tests
-        # in dependent files (e.g., golden tests)
+        # in dependent files (e.g., golden tests).
         entry: pants test --changed-dependents=transitive
         language: system
         stages: [pre-commit]

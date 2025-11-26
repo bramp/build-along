@@ -154,28 +154,6 @@ def save_pages_json(
     logger.info("Saved pages JSON to %s", output_json_path)
 
 
-# TODO: Deprecated - remove after updating callers to use save_pages_json
-def save_classified_json(
-    pages: list[PageData],
-    results: list[ClassificationResult],
-    output_dir: Path,
-    pdf_path: Path,
-) -> None:
-    """Save extracted data as JSON file.
-
-    DEPRECATED: This function saves raw PageData instead of classified Page elements.
-    Use save_pages_json() for final results or save_debug_json() for debug output.
-
-    Args:
-        pages: List of PageData to serialize
-        results: List of ClassificationResult (one per page) - not currently serialized
-        output_dir: Directory where JSON should be saved
-        pdf_path: Original PDF path (used for naming the JSON file)
-    """
-    # Delegate to new function
-    save_pages_json(results, output_dir, pdf_path)
-
-
 def save_raw_json(
     pages: list[PageData],
     output_dir: Path,

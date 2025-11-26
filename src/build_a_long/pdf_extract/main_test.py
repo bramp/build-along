@@ -29,7 +29,7 @@ def _make_config(**overrides) -> ProcessingConfig:
         "output_dir": None,
         "include_types": {"text", "image", "drawing"},
         "page_ranges": None,
-        "save_raw_json": False,
+        "save_debug_json": False,
         "compress_json": False,
         "save_summary": False,
         "summary_detailed": False,
@@ -198,13 +198,14 @@ class TestProcessPdf:
         config = _make_config(
             pdf_paths=[pdf_path],
             output_dir=tmp_path,
+            save_debug_json=True,
         )
 
         result = _process_pdf(config, pdf_path, tmp_path)
 
         assert result == 0
         # Verify JSON file was created
-        json_file = tmp_path / "test.json"
+        json_file = tmp_path / "test_raw.json"
         assert json_file.exists()
 
         # Verify content
@@ -238,6 +239,7 @@ class TestProcessPdf:
             pdf_paths=[pdf_path],
             output_dir=tmp_path,
             page_ranges="10-12,15",  # Filter to specific pages
+            save_debug_json=True,
         )
 
         result = _process_pdf(config, pdf_path, tmp_path)
@@ -249,10 +251,14 @@ class TestProcessPdf:
         pages_arg = mock_extract_bounding_boxes.call_args[0][1]
         assert pages_arg == list(range(1, 201))
 
-        # Verify only filtered pages in output
-        json_file = tmp_path / "test.json"
-        saved_data = json.loads(json_file.read_text())
-        saved_page_numbers = [page["page_number"] for page in saved_data["pages"]]
+        # Verify only filtered pages in output (per-page files when filtered)
+        # When specific pages are selected, raw JSON is saved per-page
+        page_files = sorted(tmp_path.glob("test_page_*_raw.json"))
+        assert len(page_files) == 4
+        saved_page_numbers = []
+        for page_file in page_files:
+            page_data = json.loads(page_file.read_text())
+            saved_page_numbers.append(page_data["pages"][0]["page_number"])
         assert saved_page_numbers == [10, 11, 12, 15]
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")

@@ -14,7 +14,8 @@ from build_a_long.pdf_extract.cli import (
     print_font_hints,
     print_histogram,
     render_annotated_images,
-    save_classified_json,
+    save_debug_json,
+    save_pages_json,
     save_raw_json,
 )
 from build_a_long.pdf_extract.cli.reporting import (
@@ -132,7 +133,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             pages = all_pages
 
         # Save raw JSON if requested
-        if config.save_raw_json:
+        if config.save_debug_json:
             # Save per-page files if specific pages were selected
             per_page = bool(page_ranges.ranges)  # True if specific ranges, False if all
             save_raw_json(
@@ -154,6 +155,14 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         # Extract page_data from results for compatibility
         classified_pages = [result.page_data for result in batch_result.results]
 
+        # Save debug classification JSON if requested
+        if config.save_debug_json:
+            save_debug_json(
+                batch_result.results,
+                output_dir,
+                pdf_path,
+            )
+
         _print_debug_output(
             config,
             classified_pages,
@@ -170,9 +179,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             )
 
         # Save results
-        save_classified_json(
-            classified_pages, batch_result.results, output_dir, pdf_path
-        )
+        save_pages_json(batch_result.results, output_dir, pdf_path)
 
         if config.draw_blocks or config.draw_elements:
             render_annotated_images(
