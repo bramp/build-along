@@ -35,7 +35,8 @@ jobs:
                   python-version: ${{ matrix.python-version }}
             - uses: pantsbuild/actions/init-pants@v10
               with:
-                  gha-cache-key: v0-py${{ matrix.python-version }}
+                  gha-cache-key: >-
+                      v0-py${{ matrix.python-version }}
                   named-caches-hash: ${{ hashFiles('python-default.lock') }}
                   cache-lmdb-store: true
 

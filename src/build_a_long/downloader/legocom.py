@@ -15,7 +15,6 @@ from bs4 import BeautifulSoup
 from pydantic import AnyUrl
 
 from build_a_long.downloader.models import DownloadUrl
-from build_a_long.downloader.util import extract_filename_from_url
 from build_a_long.schemas import (
     InstructionMetadata,
     PdfEntry,

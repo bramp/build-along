@@ -165,7 +165,8 @@ class StepClassifier(LabelClassifier):
         step_num_candidate = score.step_number_candidate
         if not step_num_candidate.is_valid:
             raise ValueError(
-                f"Step number candidate invalid: {step_num_candidate.failure_reason or 'not constructed'}"
+                f"Step number candidate invalid: "
+                f"{step_num_candidate.failure_reason or 'not constructed'}"
             )
 
         step_num = step_num_candidate.constructed
@@ -177,7 +178,8 @@ class StepClassifier(LabelClassifier):
             parts_list_candidate = score.parts_list_candidate
             if not parts_list_candidate.is_valid:
                 raise ValueError(
-                    f"Parts list candidate invalid: {parts_list_candidate.failure_reason or 'not constructed'}"
+                    f"Parts list candidate invalid: "
+                    f"{parts_list_candidate.failure_reason or 'not constructed'}"
                 )
 
             parts_list = parts_list_candidate.constructed

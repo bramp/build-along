@@ -196,7 +196,9 @@ class NewBagClassifier(LabelClassifier):
         bag_number_candidate = detail_score.bag_number_candidate
         if not bag_number_candidate.is_valid:
             raise ValueError(
-                f"Bag number candidate invalid: {bag_number_candidate.failure_reason or 'not constructed'}"
+                f"Bag number candidate invalid: {
+                    bag_number_candidate.failure_reason or 'not constructed'
+                }"
             )
 
         bag_number = bag_number_candidate.constructed

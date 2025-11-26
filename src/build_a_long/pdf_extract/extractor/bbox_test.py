@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import pytest
+
 from build_a_long.pdf_extract.extractor.bbox import BBox, build_connected_cluster
 
 
@@ -93,8 +95,6 @@ def test_union_all():
 
 
 def test_union_all_empty():
-    import pytest
-
     # Test empty list raises ValueError
     with pytest.raises(ValueError, match="Cannot compute union of empty list"):
         BBox.union_all([])

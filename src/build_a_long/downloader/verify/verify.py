@@ -50,7 +50,8 @@ def _verify_single_metadata(metadata_path: Path) -> list[VerificationError]:
             errors.append(
                 VerificationError(
                     "missing_filename",
-                    f"Error: Missing filename in metadata for set {metadata.set}, URL: {pdf_entry.url}",
+                    f"Error: Missing filename in metadata for set {metadata.set}, "
+                    f"URL: {pdf_entry.url}",
                 )
             )
             continue  # Can't proceed without a filename

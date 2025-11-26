@@ -25,7 +25,9 @@ class DownloadUrl(BaseModel):
     )
     is_additional_info_booklet: bool | None = Field(
         default=None,
-        description="Indicates if the instruction is a supplemental or additional info booklet.",
+        description=(
+            "Indicates if the instruction is a supplemental or additional info booklet."
+        ),
     )
 
 

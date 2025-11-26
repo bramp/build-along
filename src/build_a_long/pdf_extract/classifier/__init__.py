@@ -20,6 +20,9 @@ The classifier pipeline runs in a fixed order, enforced at initialization:
 Changing the order such that dependencies are not met will raise a ValueError.
 """
 
+import logging
+import os
+
 from ..extractor.lego_page_elements import Page
 from .bag_number_classifier import BagNumberClassifier
 from .classification_result import (
@@ -32,8 +35,6 @@ from .diagram_classifier import DiagramClassifier
 from .label_classifier import LabelClassifier
 from .new_bag_classifier import NewBagClassifier
 from .page_hints import PageHint, PageHints
-
-PageType = Page.PageType
 from .page_number_classifier import PageNumberClassifier
 from .part_count_classifier import PartCountClassifier
 from .part_number_classifier import PartNumberClassifier
@@ -43,6 +44,8 @@ from .piece_length_classifier import PieceLengthClassifier
 from .progress_bar_classifier import ProgressBarClassifier
 from .step_classifier import StepClassifier
 from .step_number_classifier import StepNumberClassifier
+
+PageType = Page.PageType
 
 __all__ = [
     "classify_elements",
@@ -68,9 +71,6 @@ __all__ = [
     "PartsImageClassifier",
     "ProgressBarClassifier",
 ]
-
-import logging
-import os
 
 _level = os.getenv("LOG_LEVEL")
 if _level:

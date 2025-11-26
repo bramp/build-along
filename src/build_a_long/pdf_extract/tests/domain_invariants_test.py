@@ -93,7 +93,8 @@ def test_parts_lists_do_not_overlap(fixture_file: str) -> None:
                 overlap = pl1.bbox.overlaps(pl2.bbox)
                 assert overlap == 0.0, (
                     f"PartsList at {pl1.bbox} and {pl2.bbox} in {fixture_file} "
-                    f"page {page_data.page_number} overlap with IOU {pl1.bbox.iou(pl2.bbox)}"
+                    f"page {page_data.page_number} overlap with IOU "
+                    f"{pl1.bbox.iou(pl2.bbox)}"
                 )
 
 

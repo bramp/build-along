@@ -22,7 +22,6 @@ Set environment variables to aid investigation without code changes:
 """
 
 import logging
-from collections.abc import Sequence
 from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.classification_result import (

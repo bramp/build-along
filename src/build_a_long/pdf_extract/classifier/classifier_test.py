@@ -40,7 +40,7 @@ class TestClassifyElements:
 
         # Verify all pages have their page numbers identified
         assert len(batch_result.results) == 3
-        for i, (page_data, result) in enumerate(
+        for i, (_page_data, result) in enumerate(
             zip(pages, batch_result.results, strict=True), start=1
         ):
             # Check the final Page structure
@@ -169,7 +169,8 @@ class TestPipelineEnforcement:
             for cls in batch:
                 requires = getattr(cls, "requires", frozenset())
                 assert requires.issubset(produced), (
-                    f"Batch {batch_idx}: {cls.__class__.__name__} requires {requires - produced} which haven't been produced yet"
+                    f"Batch {batch_idx}: {cls.__class__.__name__} requires "
+                    f"{requires - produced} which haven't been produced yet"
                 )
 
             # After this batch, add all outputs to produced
@@ -188,7 +189,8 @@ class TestPipelineEnforcement:
         for cls in batches[0]:
             requires = getattr(cls, "requires", frozenset())
             assert len(requires) == 0, (
-                f"{cls.__class__.__name__} in first batch should have no dependencies, but requires {requires}"
+                f"{cls.__class__.__name__} in first batch should have no "
+                f"dependencies, but requires {requires}"
             )
 
     def test_page_classifier_in_last_batch(self) -> None:

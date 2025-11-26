@@ -220,7 +220,8 @@ class PartsClassifier(LabelClassifier):
         # Validate and extract part_count from candidate
         if not ps.part_count_candidate.is_valid:
             raise ValueError(
-                f"Part count candidate invalid: {ps.part_count_candidate.failure_reason or 'not constructed'}"
+                f"Part count candidate invalid: "
+                f"{ps.part_count_candidate.failure_reason or 'not constructed'}"
             )
         assert isinstance(ps.part_count_candidate.constructed, PartCount)
         part_count = ps.part_count_candidate.constructed

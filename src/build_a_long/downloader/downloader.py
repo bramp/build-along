@@ -56,7 +56,8 @@ class LegoInstructionDownloader:
         Args:
             locale: LEGO locale to use (e.g., "en-us", "en-gb").
             out_dir: Base output directory for downloads.
-            overwrite_metadata_if_older_than: Overwrite metadata if older than this timedelta.
+            overwrite_metadata_if_older_than: Overwrite metadata if older than this
+                timedelta.
             overwrite_download: If True, re-download existing files.
             show_progress: If True, show download progress.
             client: Optional httpx.Client to use (if None, creates one internally).
@@ -137,7 +138,8 @@ class LegoInstructionDownloader:
 
         Args:
             url: The file URL.
-            dest_path: Destination path for the downloaded file (parent dir created if missing).
+            dest_path: Destination path for the downloaded file (parent dir created if
+                missing).
             progress_prefix: Optional prefix for progress line (e.g., " - url").
             stream_fn: Injectable streaming function (for testing).
             chunk_iter: Optional injector to iterate raw chunks (for testing).
@@ -234,7 +236,8 @@ class LegoInstructionDownloader:
                 now = datetime.datetime.now()
                 if (now - file_mtime) > self.overwrite_metadata_if_older_than:
                     print(
-                        f"Metadata for set {set_number} is older than specified duration. Overwriting."
+                        f"Metadata for set {set_number} is older than specified "
+                        "duration. Overwriting."
                     )
                     should_overwrite = True
 
@@ -420,8 +423,8 @@ class LegoInstructionDownloader:
             return 0
 
         # Process the PDFs for the set.
-        # We always call this to ensure stats are updated and missing files are downloaded,
-        # even if metadata was cached.
+        # We always call this to ensure stats are updated and missing files are
+        # downloaded, even if metadata was cached.
         pdfs_processed = self._process_set_pdfs(metadata, out_dir)
 
         if pdfs_processed and not use_cached:
@@ -470,11 +473,6 @@ class LegoInstructionDownloader:
         Returns:
             A DownloaderStats object containing statistics of the operation.
         """
-        overall_exit_code = 0
         for set_number in set_numbers:
-            exit_code = self.process_set(set_number)
-            if exit_code != 0:
-                overall_exit_code = (
-                    exit_code  # We keep track but stats are more important now
-                )
+            self.process_set(set_number)
         return self.stats

@@ -148,7 +148,8 @@ class TestPieceLengthClassifier:
         classifier.config.font_size_hints.part_count_size = 6.0
         classifier.config.font_size_hints.step_number_size = 16.0
 
-        # font_size=20.0 vs expected=6.0: diff_ratio=14/6=2.33, score=max(0, 1-2.33*2)=0.0
+        # font_size=20.0 vs expected=6.0: diff_ratio=14/6=2.33,
+        # score=max(0, 1-2.33*2)=0.0
         text = Text(id=1, bbox=BBox(0, 0, 10, 10), text="4", font_size=20.0)
 
         score = classifier._score_piece_length_font_size(text)

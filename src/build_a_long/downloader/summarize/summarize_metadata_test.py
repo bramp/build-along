@@ -110,7 +110,9 @@ def test_summarize_metadata_empty_dir(tmp_path):
 
 
 def test_summarize_metadata_with_urls(tmp_path):
-    """Test that summarize_metadata correctly serializes URLs and other Pydantic types."""
+    """Test that summarize_metadata correctly serializes URLs and other Pydantic
+    types.
+    """
     data_dir = tmp_path / "data"
     data_dir.mkdir()
     output_dir = tmp_path / "indices"

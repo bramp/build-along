@@ -165,7 +165,9 @@ class TestPageNumberClassification:
         assert result.count_successful_candidates("page_number") == 0
 
     def test_two_page_numbers_only_one_constructed(self) -> None:
-        """Test that when two valid page numbers exist, only the highest-scoring one is constructed."""
+        """Test that when two valid page numbers exist, only the highest-scoring
+        one is constructed.
+        """
         page_bbox = BBox(0, 0, 100, 200)
 
         # Two page numbers in bottom corners (both valid positions)

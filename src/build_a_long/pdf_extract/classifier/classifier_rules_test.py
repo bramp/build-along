@@ -62,7 +62,8 @@ class TestClassifierRules:
             result = classify_elements(page)
 
             # Find all elements that are both labeled and deleted
-            # Build a map of source_block -> label for successfully constructed candidates
+            # Build a map of source_block -> label for successfully constructed
+            # candidates
             block_to_label: dict[int, str] = {}
             for label, candidates in result.get_all_candidates().items():
                 for candidate in candidates:
@@ -127,7 +128,8 @@ class TestClassifierRules:
                     if candidate.constructed is not None:
                         elem_id = id(candidate.constructed)
                         assert elem_id not in element_id_to_candidate, (
-                            f"Source block id:{id(candidate.source_blocks[0]) if candidate.source_blocks else 'None'} "
+                            f"Source block id:"
+                            f"{id(candidate.source_blocks[0]) if candidate.source_blocks else 'None'} "
                             f"produced multiple elements of type "
                             f"{candidate.constructed.__class__.__name__} "
                             f"in {fixture_file} page {page_idx}"
@@ -153,7 +155,8 @@ class TestClassifierRules:
                         assert source_block.id not in blocks_to_element, (
                             f"Source block id:{source_block.id} "
                             f"({source_block.tag}) mapped to multiple "
-                            f"elements in {fixture_file} page {page_data.page_number}:\n"
+                            f"elements in {fixture_file} page "
+                            f"{page_data.page_number}:\n"
                             f"  First:  {existing_element}\n"
                             f"  Second: {element}\n"
                             f"  Source: {source_block}"

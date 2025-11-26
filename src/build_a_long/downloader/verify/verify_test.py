@@ -4,8 +4,9 @@ from pathlib import Path
 import pytest
 from pydantic import AnyUrl
 
-from .verify import verify_data_integrity
 from build_a_long.schemas import InstructionMetadata, PdfEntry
+
+from .verify import verify_data_integrity
 
 
 def create_dummy_file(path: Path, content: bytes):

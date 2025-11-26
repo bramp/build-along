@@ -113,7 +113,8 @@ class PieceLengthClassifier(LabelClassifier):
                 continue
 
             log.debug(
-                "[piece_length] Candidate: text='%s' id=%d font_size=%s in drawing id=%d",
+                "[piece_length] Candidate: text='%s' id=%d font_size=%s "
+                "in drawing id=%d",
                 text.text,
                 text.id,
                 text.font_size,
@@ -125,8 +126,9 @@ class PieceLengthClassifier(LabelClassifier):
             context_score = self._score_drawing_fit(text, containing_drawing)
             font_size_score = self._score_piece_length_font_size(text)
 
-            # Piece lengths MUST be in a circle - if context_score is low, heavily penalize
-            # This prevents misclassifying step numbers as piece lengths
+            # Piece lengths MUST be in a circle - if context_score is low,
+            # heavily penalize. This prevents misclassifying step numbers
+            # as piece lengths.
             if context_score < 0.5:
                 # Not in a tight circle - unlikely to be a piece length
                 context_score *= 0.1  # Reduce to near-zero

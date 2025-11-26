@@ -2,6 +2,8 @@
 
 import datetime
 import json
+import os
+import time
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -491,9 +493,6 @@ def test_process_set_preserves_filesize_and_hash_on_overwrite(tmp_path: Path, ca
     (out_dir / "metadata.json").write_text(json.dumps(existing_meta), encoding="utf-8")
 
     # Set modification time to the past to trigger overwrite
-    import os
-    import time
-
     past_time = time.time() - (10 * 24 * 3600)
     os.utime(out_dir / "metadata.json", (past_time, past_time))
 
