@@ -269,22 +269,31 @@ class Extractor:
 
         return tuple(converted_items)
 
-    def _extract_drawing_blocks(self, drawings: list[DrawingDict]) -> list[Drawing]:
+    def _extract_drawing_blocks(
+        self, drawings: list[DrawingDict], page: pymupdf.Page
+    ) -> list[Drawing]:
         """Extract drawing (vector path) blocks from a page.
 
         Args:
             drawings: List of drawing dictionaries from page.get_drawings()
+            page: The PyMuPDF page object (needed for coordinate transformation)
 
         Returns:
             List of Drawing blocks with assigned IDs
         """
         drawing_blocks: list[Drawing] = []
-
         for d in drawings:
             assert isinstance(d, dict)
 
             drect = d["rect"]
-            nbbox = BBox.from_tuple((drect.x0, drect.y0, drect.x1, drect.y1))
+            nbbox = BBox.from_tuple(
+                (
+                    drect.x0,
+                    drect.y0,
+                    drect.x1,
+                    drect.y1,
+                )
+            )
 
             # Extract additional metadata if requested
             fill_color: tuple[float, ...] | None = None
@@ -379,7 +388,7 @@ class Extractor:
             typed_blocks.extend(self._extract_image_blocks(blocks))
         if "drawing" in include_types:
             drawings = page.get_drawings()
-            typed_blocks.extend(self._extract_drawing_blocks(drawings))
+            typed_blocks.extend(self._extract_drawing_blocks(drawings, page))
 
         page_rect = page.rect
         page_bbox = BBox.from_tuple(

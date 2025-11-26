@@ -16,6 +16,9 @@ class ProcessingConfig:
     include_types: set[str]
     page_ranges: str | None = None
 
+    # Extraction flags
+    debug_extra_json: bool = False
+
     # Output flags
     save_summary: bool = True
     summary_detailed: bool = False
@@ -24,6 +27,7 @@ class ProcessingConfig:
     draw_blocks: bool = False
     draw_elements: bool = False
     draw_deleted: bool = False
+    draw_drawings: bool = False
 
     # Debug flags
     debug_classification: bool = False
@@ -50,6 +54,7 @@ class ProcessingConfig:
             output_dir=args.output_dir,
             include_types=include_types,
             page_ranges=args.pages,
+            debug_extra_json=args.debug_extra_json,
             save_summary=args.summary,
             summary_detailed=args.summary_detailed,
             save_debug_json=args.debug_json,
@@ -57,6 +62,7 @@ class ProcessingConfig:
             draw_blocks=args.draw_blocks,
             draw_elements=args.draw_elements,
             draw_deleted=args.draw_deleted,
+            draw_drawings=args.draw_drawings,
             debug_classification=args.debug_classification,
             debug_candidates=args.debug_candidates,
             debug_candidates_label=args.debug_candidates_label,
@@ -113,6 +119,15 @@ def parse_arguments() -> argparse.Namespace:
         ),
         default="text,image,drawing",
     )
+    parser.add_argument(
+        "--debug-extra-json",
+        action="store_true",
+        help=(
+            "Include additional metadata in raw JSON output (colors, fonts, "
+            "dimensions, line widths, etc.). Useful for debugging but increases "
+            "file size."
+        ),
+    )
 
     # Output options group
     output_group = parser.add_argument_group("output options")
@@ -151,6 +166,14 @@ def parse_arguments() -> argparse.Namespace:
         help=(
             "Draw bounding boxes for elements marked as deleted "
             "(requires --draw-blocks or --draw-elements)."
+        ),
+    )
+    output_group.add_argument(
+        "--draw-drawings",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Draw the actual drawing paths (not just bounding boxes) on annotated images."
         ),
     )
 

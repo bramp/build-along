@@ -122,8 +122,26 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         page_numbers = list(page_ranges.page_numbers(len(doc)))
 
         # Extract all pages for font hint generation (hints need global context)
+        # Include metadata if debug-extra-json is set OR if we need to draw paths
+        include_metadata = config.debug_extra_json or config.draw_drawings
+
+        # Warn if extra metadata will be captured due to draw_drawings
+        if (
+            config.draw_drawings
+            and not config.debug_extra_json
+            and config.save_debug_json
+        ):
+            logger.warning(
+                "Drawing paths require extra metadata. Raw JSON output will "
+                "include additional metadata (colors, fonts, dimensions, etc.). "
+                "Use --debug-extra-json to explicitly enable this."
+            )
+
         all_pages = extract_bounding_boxes(
-            doc, list(range(1, len(doc) + 1)), include_types=config.include_types
+            doc,
+            list(range(1, len(doc) + 1)),
+            include_types=config.include_types,
+            include_metadata=include_metadata,
         )
 
         # Filter to requested pages for actual processing
@@ -181,15 +199,15 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         # Save results
         save_pages_json(batch_result.results, output_dir, pdf_path)
 
-        if config.draw_blocks or config.draw_elements:
+        if config.draw_blocks or config.draw_elements or config.draw_drawings:
             render_annotated_images(
                 doc,
-                pages,
                 batch_result.results,
                 output_dir,
                 draw_blocks=config.draw_blocks,
                 draw_elements=config.draw_elements,
                 draw_deleted=config.draw_deleted,
+                draw_drawings=config.draw_drawings,
                 debug_candidates_label=config.debug_candidates_label,
             )
 

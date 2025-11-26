@@ -8,8 +8,15 @@ from PIL import Image, ImageDraw
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.drawing.path_renderer import (
+    draw_dashed_rectangle,
+    draw_path_items,
+)
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
+from build_a_long.pdf_extract.extractor.page_blocks import (
+    Drawing as DrawingBlock,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,28 +42,6 @@ class DrawableItem:
 
     depth: int = 0
     """Nesting depth for color selection (computed later)."""
-
-
-def _draw_dashed_rectangle(
-    draw: ImageDraw.ImageDraw,
-    bbox: tuple[float, float, float, float],
-    outline: str | None = None,
-    width: int = 0,
-    dash_length: int = 5,
-) -> None:
-    x0, y0, x1, y1 = bbox
-    # Top edge
-    for i in range(int(x0), int(x1), dash_length * 2):
-        draw.line([(i, y0), (min(i + dash_length, x1), y0)], fill=outline, width=width)
-    # Bottom edge
-    for i in range(int(x0), int(x1), dash_length * 2):
-        draw.line([(i, y1), (min(i + dash_length, x1), y1)], fill=outline, width=width)
-    # Left edge
-    for i in range(int(y0), int(y1), dash_length * 2):
-        draw.line([(x0, i), (x0, min(i + dash_length, y1))], fill=outline, width=width)
-    # Right edge
-    for i in range(int(y0), int(y1), dash_length * 2):
-        draw.line([(x1, i), (x1, min(i + dash_length, y1))], fill=outline, width=width)
 
 
 def _create_drawable_items(
@@ -191,11 +176,11 @@ def _draw_item(
             draw.rectangle(scaled_bbox, outline=color, width=2)
         else:
             # Non-winners get dashed thick lines
-            _draw_dashed_rectangle(draw, scaled_bbox, outline=color, width=2)
+            draw_dashed_rectangle(draw, scaled_bbox, outline=color, width=2)
     else:
         # Regular blocks
         if item.is_removed:
-            _draw_dashed_rectangle(draw, scaled_bbox, outline=color, width=2)
+            draw_dashed_rectangle(draw, scaled_bbox, outline=color, width=2)
         else:
             draw.rectangle(scaled_bbox, outline=color, width=1)
 
@@ -218,6 +203,7 @@ def draw_and_save_bboxes(
     draw_blocks: bool = False,
     draw_elements: bool = False,
     draw_deleted: bool = False,
+    draw_drawings: bool = False,
     debug_candidates_label: str | None = None,
 ) -> None:
     """
@@ -231,6 +217,7 @@ def draw_and_save_bboxes(
         draw_blocks: If True, render classified PDF blocks.
         draw_elements: If True, render classified LEGO page elements.
         draw_deleted: If True, also render blocks marked as deleted.
+        draw_drawings: If True, render the actual drawing paths.
         debug_candidates_label: If provided, only render candidates with this label.
     """
     image_dpi = 150
@@ -267,6 +254,20 @@ def draw_and_save_bboxes(
     # Draw all items
     for item in items:
         _draw_item(draw, item, depth_colors, scale_x, scale_y)
+
+    # Draw actual drawing paths if requested
+    if draw_drawings:
+        drawings_rendered = 0
+        for block in result.page_data.blocks:
+            if isinstance(block, DrawingBlock) and block.items:
+                draw_path_items(draw, block.items, scale_x, scale_y)
+                drawings_rendered += 1
+
+        logger.info(
+            "Rendered %d drawing paths on page %d",
+            drawings_rendered,
+            result.page_data.page_number,
+        )
 
     img.save(output_path)
     logger.info("Saved image with bboxes to %s", output_path)

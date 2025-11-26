@@ -213,29 +213,29 @@ def save_raw_json(
 
 def render_annotated_images(
     doc: pymupdf.Document,
-    pages: list[PageData],
     results: list[ClassificationResult],
     output_dir: Path,
     *,
     draw_blocks: bool = False,
     draw_elements: bool = False,
     draw_deleted: bool = False,
+    draw_drawings: bool = False,
     debug_candidates_label: str | None = None,
 ) -> None:
     """Render PDF pages with annotated bounding boxes as PNG images.
 
     Args:
         doc: The open PyMuPDF Document
-        pages: List of PageData containing extracted elements
         results: List of ClassificationResult with labels and elements
         output_dir: Directory where PNG images should be saved
         draw_blocks: If True, render classified PDF blocks.
         draw_elements: If True, render classified LEGO page elements.
         draw_deleted: If True, also render elements marked as deleted.
+        draw_drawings: If True, render the actual drawing paths.
         debug_candidates_label: If provided, only render candidates with this label.
     """
-    for page_data, result in zip(pages, results, strict=True):
-        page_num = page_data.page_number  # 1-indexed
+    for result in results:
+        page_num = result.page_data.page_number  # 1-indexed
         page = doc[page_num - 1]  # 0-indexed
         output_path = output_dir / f"page_{page_num:03d}.png"
         draw_and_save_bboxes(
@@ -245,5 +245,6 @@ def render_annotated_images(
             draw_blocks=draw_blocks,
             draw_elements=draw_elements,
             draw_deleted=draw_deleted,
+            draw_drawings=draw_drawings,
             debug_candidates_label=debug_candidates_label,
         )
