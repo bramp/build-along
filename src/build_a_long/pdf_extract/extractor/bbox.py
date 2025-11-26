@@ -155,6 +155,42 @@ class BBox(BaseModel):
             return 0.0
         return inter / ua
 
+    def min_distance(self, other: BBox) -> float:
+        """Calculate minimum distance between this bbox and another.
+
+        Returns 0.0 if the bboxes overlap or touch.
+        Otherwise returns the minimum Euclidean distance between any two points
+        on the bbox edges.
+
+        Args:
+            other: The other BBox to measure distance to.
+
+        Returns:
+            Minimum distance between the bboxes (0.0 if overlapping).
+        """
+        # If they overlap, distance is 0
+        if self.overlaps(other):
+            return 0.0
+
+        # Calculate horizontal distance
+        if self.x1 < other.x0:
+            dx = other.x0 - self.x1
+        elif other.x1 < self.x0:
+            dx = self.x0 - other.x1
+        else:
+            dx = 0.0
+
+        # Calculate vertical distance
+        if self.y1 < other.y0:
+            dy = other.y0 - self.y1
+        elif other.y1 < self.y0:
+            dy = self.y0 - other.y1
+        else:
+            dy = 0.0
+
+        # Return Euclidean distance
+        return (dx**2 + dy**2) ** 0.5
+
     @property
     def center(self) -> tuple[float, float]:
         """Return the (x, y) center point of the bbox."""

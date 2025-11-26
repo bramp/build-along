@@ -7,7 +7,7 @@
   },
   "__tag__": "Page",
   "categories": [
-    "catalog"
+    "instruction"
   ],
   "page_number": {
     "bbox": {
@@ -31,240 +31,396 @@
     "full_width": 1035.48
   },
   "new_bags": [],
-  "steps": [],
-  "catalog": [
+  "steps": [
     {
       "bbox": {
-        "x0": 76.1,
-        "y0": 25.3,
-        "x1": 106.09,
-        "y1": 52.25
+        "x0": 34.02,
+        "y0": 14.67,
+        "x1": 552.76,
+        "y1": 496.06
       },
-      "__tag__": "Part",
-      "count": {
+      "__tag__": "Step",
+      "step_number": {
         "bbox": {
-          "x0": 76.58,
-          "y0": 42.28,
-          "x1": 85.46,
-          "y1": 52.25
+          "x0": 34.02,
+          "y0": 64.51,
+          "x1": 47.85,
+          "y1": 96.9
         },
-        "__tag__": "PartCount",
-        "count": 2,
-        "matched_hint": "catalog_part_count"
+        "__tag__": "StepNumber",
+        "value": 3
+      },
+      "parts_list": {
+        "bbox": {
+          "x0": 34.52,
+          "y0": 14.67,
+          "x1": 186.59,
+          "y1": 61.91
+        },
+        "__tag__": "PartsList",
+        "parts": [
+          {
+            "bbox": {
+              "x0": 76.1,
+              "y0": 25.3,
+              "x1": 106.09,
+              "y1": 52.25
+            },
+            "__tag__": "Part",
+            "count": {
+              "bbox": {
+                "x0": 76.58,
+                "y0": 42.28,
+                "x1": 85.46,
+                "y1": 52.25
+              },
+              "__tag__": "PartCount",
+              "count": 2,
+              "matched_hint": "catalog_part_count"
+            },
+            "diagram": {
+              "bbox": {
+                "x0": 76.1,
+                "y0": 25.3,
+                "x1": 106.09,
+                "y1": 43.29
+              },
+              "id": 14,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
+            "number": null,
+            "length": null
+          },
+          {
+            "bbox": {
+              "x0": 133.51,
+              "y0": 32.5,
+              "x1": 144.98,
+              "y1": 52.25
+            },
+            "__tag__": "Part",
+            "count": {
+              "bbox": {
+                "x0": 133.96,
+                "y0": 42.28,
+                "x1": 141.17,
+                "y1": 52.25
+              },
+              "__tag__": "PartCount",
+              "count": 1,
+              "matched_hint": "catalog_part_count"
+            },
+            "diagram": {
+              "bbox": {
+                "x0": 133.51,
+                "y0": 32.5,
+                "x1": 144.98,
+                "y1": 43.28
+              },
+              "id": 15,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
+            "number": null,
+            "length": null
+          }
+        ]
       },
       "diagram": {
         "bbox": {
-          "x0": 76.1,
-          "y0": 25.3,
-          "x1": 106.09,
-          "y1": 43.29
+          "x0": 34.02,
+          "y0": 96.9,
+          "x1": 552.76,
+          "y1": 496.06
         },
-        "id": 14,
-        "__tag__": "Drawing",
-        "image_id": null
-      },
-      "number": null,
-      "length": null
+        "__tag__": "Diagram"
+      }
     },
     {
       "bbox": {
-        "x0": 133.51,
-        "y0": 32.5,
-        "x1": 144.98,
-        "y1": 52.25
+        "x0": 34.02,
+        "y0": 234.09,
+        "x1": 552.76,
+        "y1": 496.06
       },
-      "__tag__": "Part",
-      "count": {
+      "__tag__": "Step",
+      "step_number": {
         "bbox": {
-          "x0": 133.96,
-          "y0": 42.28,
-          "x1": 141.17,
-          "y1": 52.25
+          "x0": 34.02,
+          "y0": 283.92,
+          "x1": 47.9,
+          "y1": 316.32
         },
-        "__tag__": "PartCount",
-        "count": 1,
-        "matched_hint": "catalog_part_count"
+        "__tag__": "StepNumber",
+        "value": 4
+      },
+      "parts_list": {
+        "bbox": {
+          "x0": 34.52,
+          "y0": 234.09,
+          "x1": 186.59,
+          "y1": 281.33
+        },
+        "__tag__": "PartsList",
+        "parts": [
+          {
+            "bbox": {
+              "x0": 71.66,
+              "y0": 246.64,
+              "x1": 92.05,
+              "y1": 270.46
+            },
+            "__tag__": "Part",
+            "count": {
+              "bbox": {
+                "x0": 72.14,
+                "y0": 260.49,
+                "x1": 80.61,
+                "y1": 270.46
+              },
+              "__tag__": "PartCount",
+              "count": 3,
+              "matched_hint": "catalog_part_count"
+            },
+            "diagram": {
+              "bbox": {
+                "x0": 71.66,
+                "y0": 246.64,
+                "x1": 92.05,
+                "y1": 261.49
+              },
+              "id": 16,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
+            "number": null,
+            "length": null
+          },
+          {
+            "bbox": {
+              "x0": 119.45,
+              "y0": 245.91,
+              "x1": 149.44,
+              "y1": 270.46
+            },
+            "__tag__": "Part",
+            "count": {
+              "bbox": {
+                "x0": 119.92,
+                "y0": 260.49,
+                "x1": 128.5,
+                "y1": 270.46
+              },
+              "__tag__": "PartCount",
+              "count": 4,
+              "matched_hint": "catalog_part_count"
+            },
+            "diagram": {
+              "bbox": {
+                "x0": 119.45,
+                "y0": 245.91,
+                "x1": 149.44,
+                "y1": 261.5
+              },
+              "id": 17,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
+            "number": null,
+            "length": null
+          }
+        ]
       },
       "diagram": {
         "bbox": {
-          "x0": 133.51,
-          "y0": 32.5,
-          "x1": 144.98,
-          "y1": 43.28
+          "x0": 34.02,
+          "y0": 316.32,
+          "x1": 552.76,
+          "y1": 496.06
         },
-        "id": 15,
-        "__tag__": "Drawing",
-        "image_id": null
-      },
-      "number": null,
-      "length": null
+        "__tag__": "Diagram"
+      }
     },
     {
       "bbox": {
-        "x0": 71.66,
-        "y0": 246.64,
-        "x1": 92.05,
-        "y1": 270.46
+        "x0": 262.04,
+        "y0": 14.67,
+        "x1": 552.76,
+        "y1": 496.06
       },
-      "__tag__": "Part",
-      "count": {
+      "__tag__": "Step",
+      "step_number": {
         "bbox": {
-          "x0": 72.14,
-          "y0": 260.49,
-          "x1": 80.61,
-          "y1": 270.46
+          "x0": 262.04,
+          "y0": 64.51,
+          "x1": 276.34,
+          "y1": 96.9
         },
-        "__tag__": "PartCount",
-        "count": 3,
-        "matched_hint": "catalog_part_count"
+        "__tag__": "StepNumber",
+        "value": 5
+      },
+      "parts_list": {
+        "bbox": {
+          "x0": 262.54,
+          "y0": 14.67,
+          "x1": 414.61,
+          "y1": 61.91
+        },
+        "__tag__": "PartsList",
+        "parts": [
+          {
+            "bbox": {
+              "x0": 318.06,
+              "y0": 22.66,
+              "x1": 359.09,
+              "y1": 54.89
+            },
+            "__tag__": "Part",
+            "count": {
+              "bbox": {
+                "x0": 318.53,
+                "y0": 44.92,
+                "x1": 327.0,
+                "y1": 54.89
+              },
+              "__tag__": "PartCount",
+              "count": 3,
+              "matched_hint": "catalog_part_count"
+            },
+            "diagram": {
+              "bbox": {
+                "x0": 318.06,
+                "y0": 22.66,
+                "x1": 359.09,
+                "y1": 45.93
+              },
+              "id": 20,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
+            "number": null,
+            "length": null
+          }
+        ]
       },
       "diagram": {
         "bbox": {
-          "x0": 71.66,
-          "y0": 246.64,
-          "x1": 92.05,
-          "y1": 261.49
+          "x0": 262.04,
+          "y0": 96.9,
+          "x1": 552.76,
+          "y1": 496.06
         },
-        "id": 16,
-        "__tag__": "Drawing",
-        "image_id": null
-      },
-      "number": null,
-      "length": null
+        "__tag__": "Diagram"
+      }
     },
     {
       "bbox": {
-        "x0": 119.45,
-        "y0": 245.91,
-        "x1": 149.44,
-        "y1": 270.46
+        "x0": 262.04,
+        "y0": 234.09,
+        "x1": 552.76,
+        "y1": 496.06
       },
-      "__tag__": "Part",
-      "count": {
+      "__tag__": "Step",
+      "step_number": {
         "bbox": {
-          "x0": 119.92,
-          "y0": 260.49,
-          "x1": 128.5,
-          "y1": 270.46
+          "x0": 262.04,
+          "y0": 283.92,
+          "x1": 276.23,
+          "y1": 316.32
         },
-        "__tag__": "PartCount",
-        "count": 4,
-        "matched_hint": "catalog_part_count"
+        "__tag__": "StepNumber",
+        "value": 6
+      },
+      "parts_list": {
+        "bbox": {
+          "x0": 262.54,
+          "y0": 234.09,
+          "x1": 414.61,
+          "y1": 281.33
+        },
+        "__tag__": "PartsList",
+        "parts": [
+          {
+            "bbox": {
+              "x0": 294.16,
+              "y0": 242.07,
+              "x1": 335.2,
+              "y1": 274.3
+            },
+            "__tag__": "Part",
+            "count": {
+              "bbox": {
+                "x0": 294.64,
+                "y0": 264.33,
+                "x1": 301.85,
+                "y1": 274.3
+              },
+              "__tag__": "PartCount",
+              "count": 1,
+              "matched_hint": "catalog_part_count"
+            },
+            "diagram": {
+              "bbox": {
+                "x0": 294.16,
+                "y0": 242.07,
+                "x1": 335.2,
+                "y1": 265.34
+              },
+              "id": 21,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
+            "number": null,
+            "length": null
+          },
+          {
+            "bbox": {
+              "x0": 362.59,
+              "y0": 250.48,
+              "x1": 382.98,
+              "y1": 274.3
+            },
+            "__tag__": "Part",
+            "count": {
+              "bbox": {
+                "x0": 363.07,
+                "y0": 264.33,
+                "x1": 370.27,
+                "y1": 274.3
+              },
+              "__tag__": "PartCount",
+              "count": 1,
+              "matched_hint": "catalog_part_count"
+            },
+            "diagram": {
+              "bbox": {
+                "x0": 362.59,
+                "y0": 250.48,
+                "x1": 382.98,
+                "y1": 265.33
+              },
+              "id": 22,
+              "__tag__": "Drawing",
+              "image_id": null
+            },
+            "number": null,
+            "length": null
+          }
+        ]
       },
       "diagram": {
         "bbox": {
-          "x0": 119.45,
-          "y0": 245.91,
-          "x1": 149.44,
-          "y1": 261.5
+          "x0": 262.04,
+          "y0": 316.32,
+          "x1": 552.76,
+          "y1": 496.06
         },
-        "id": 17,
-        "__tag__": "Drawing",
-        "image_id": null
-      },
-      "number": null,
-      "length": null
-    },
-    {
-      "bbox": {
-        "x0": 318.06,
-        "y0": 22.66,
-        "x1": 359.09,
-        "y1": 54.89
-      },
-      "__tag__": "Part",
-      "count": {
-        "bbox": {
-          "x0": 318.53,
-          "y0": 44.92,
-          "x1": 327.0,
-          "y1": 54.89
-        },
-        "__tag__": "PartCount",
-        "count": 3,
-        "matched_hint": "catalog_part_count"
-      },
-      "diagram": {
-        "bbox": {
-          "x0": 318.06,
-          "y0": 22.66,
-          "x1": 359.09,
-          "y1": 45.93
-        },
-        "id": 20,
-        "__tag__": "Drawing",
-        "image_id": null
-      },
-      "number": null,
-      "length": null
-    },
-    {
-      "bbox": {
-        "x0": 294.16,
-        "y0": 242.07,
-        "x1": 335.2,
-        "y1": 274.3
-      },
-      "__tag__": "Part",
-      "count": {
-        "bbox": {
-          "x0": 294.64,
-          "y0": 264.33,
-          "x1": 301.85,
-          "y1": 274.3
-        },
-        "__tag__": "PartCount",
-        "count": 1,
-        "matched_hint": "catalog_part_count"
-      },
-      "diagram": {
-        "bbox": {
-          "x0": 294.16,
-          "y0": 242.07,
-          "x1": 335.2,
-          "y1": 265.34
-        },
-        "id": 21,
-        "__tag__": "Drawing",
-        "image_id": null
-      },
-      "number": null,
-      "length": null
-    },
-    {
-      "bbox": {
-        "x0": 362.59,
-        "y0": 250.48,
-        "x1": 382.98,
-        "y1": 274.3
-      },
-      "__tag__": "Part",
-      "count": {
-        "bbox": {
-          "x0": 363.07,
-          "y0": 264.33,
-          "x1": 370.27,
-          "y1": 274.3
-        },
-        "__tag__": "PartCount",
-        "count": 1,
-        "matched_hint": "catalog_part_count"
-      },
-      "diagram": {
-        "bbox": {
-          "x0": 362.59,
-          "y0": 250.48,
-          "x1": 382.98,
-          "y1": 265.33
-        },
-        "id": 22,
-        "__tag__": "Drawing",
-        "image_id": null
-      },
-      "number": null,
-      "length": null
+        "__tag__": "Diagram"
+      }
     }
   ],
+  "catalog": [],
   "warnings": [],
   "unprocessed_elements": []
 }

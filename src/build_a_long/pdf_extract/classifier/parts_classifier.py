@@ -330,7 +330,7 @@ class PartsClassifier(LabelClassifier):
         """Find the piece_length candidate that belongs to this part image.
 
         The piece_length should be in the top-right area of the image,
-        spatially contained within or very close to the image bbox.
+        within a small distance of the image bbox.
 
         Args:
             image: The Image to find a length for
@@ -339,34 +339,34 @@ class PartsClassifier(LabelClassifier):
         Returns:
             The matching piece_length candidate, or None if not found
         """
-        # Piece length should be near top-right of image
-        # Allow some tolerance for being slightly outside image bounds
-        TOLERANCE = 5.0
+        # Piece length should be very close to the image (within 10 units)
+        # Use minimum distance between bboxes instead of containment check
+        MAX_DISTANCE = 10.0
 
         best_candidate = None
         best_score = float("inf")
 
         for pl_cand in piece_length_candidates:
-            # Check if piece length is in the vicinity of the image
-            if (
-                pl_cand.bbox.x0 >= image.bbox.x0 - TOLERANCE
-                and pl_cand.bbox.x1 <= image.bbox.x1 + TOLERANCE
-                and pl_cand.bbox.y0 >= image.bbox.y0 - TOLERANCE
-                and pl_cand.bbox.y1 <= image.bbox.y1 + TOLERANCE
-            ):
-                # Prefer piece lengths closer to top-right
-                pl_center_x = (pl_cand.bbox.x0 + pl_cand.bbox.x1) / 2
-                pl_center_y = (pl_cand.bbox.y0 + pl_cand.bbox.y1) / 2
+            # Calculate minimum distance between piece length and image
+            distance = image.bbox.min_distance(pl_cand.bbox)
 
-                # Distance to top-right corner
-                dx = image.bbox.x1 - pl_center_x
-                dy = pl_center_y - image.bbox.y0
+            # Skip if too far away
+            if distance > MAX_DISTANCE:
+                continue
 
-                # Combined score (prefer top-right position)
-                score = dx * dx + dy * dy
+            # Prefer piece lengths closer to top-right
+            pl_center_x = (pl_cand.bbox.x0 + pl_cand.bbox.x1) / 2
+            pl_center_y = (pl_cand.bbox.y0 + pl_cand.bbox.y1) / 2
 
-                if score < best_score:
-                    best_score = score
-                    best_candidate = pl_cand
+            # Distance to top-right corner
+            dx = image.bbox.x1 - pl_center_x
+            dy = pl_center_y - image.bbox.y0
+
+            # Combined score (prefer top-right position)
+            score = dx * dx + dy * dy
+
+            if score < best_score:
+                best_score = score
+                best_candidate = pl_cand
 
         return best_candidate

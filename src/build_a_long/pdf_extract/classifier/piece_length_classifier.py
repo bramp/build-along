@@ -33,6 +33,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     LegoPageElements,
     PieceLength,
@@ -157,15 +158,19 @@ class PieceLengthClassifier(LabelClassifier):
             if combined < 0.3:
                 continue
 
+            # Include both text and containing drawing in source blocks
+            # Bbox should be the union of both
+            bbox = BBox.union(text.bbox, containing_drawing.bbox)
+
             result.add_candidate(
                 "piece_length",
                 Candidate(
-                    bbox=text.bbox,
+                    bbox=bbox,
                     label="piece_length",
                     score=combined,
                     score_details=detail_score,
                     constructed=None,
-                    source_blocks=[text],
+                    source_blocks=[text, containing_drawing],
                     failure_reason=None,
                 ),
             )
@@ -190,18 +195,13 @@ class PieceLengthClassifier(LabelClassifier):
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a PieceLength element from a single candidate."""
-        # Get the source text block
-        assert len(candidate.source_blocks) == 1
-        text = candidate.source_blocks[0]
-        assert isinstance(text, Text)
-
         # Get score details
         detail_score = candidate.score_details
         assert isinstance(detail_score, _PieceLengthScore)
         assert detail_score.value is not None
 
-        # Successfully constructed
-        return PieceLength(value=detail_score.value, bbox=text.bbox)
+        # Use the candidate's bbox (already the union of text and drawing)
+        return PieceLength(value=detail_score.value, bbox=candidate.bbox)
 
     def _create_piece_length_candidate(
         self, text: Text, drawings: list[Drawing]
@@ -281,7 +281,8 @@ class PieceLengthClassifier(LabelClassifier):
         """Find the smallest drawing that contains the text.
 
         This avoids matching page-sized background drawings by preferring
-        the tightest-fitting container.
+        the tightest-fitting container and filtering out drawings that are
+        too large relative to the text.
 
         Args:
             text: Text block to find container for
@@ -292,6 +293,13 @@ class PieceLengthClassifier(LabelClassifier):
         """
         containing_drawing = None
         smallest_area = float("inf")
+
+        text_area = text.bbox.area
+        # Maximum ratio of drawing area to text area
+        # A circle around text should be roughly 2-4x the text area,
+        # but we want to filter out page-sized backgrounds early.
+        # Allow slightly more than the ideal 4x to handle edge cases.
+        MAX_AREA_RATIO = 6.0
 
         for drawing in drawings:
             # Check if text bbox is fully contained in drawing bbox
@@ -305,6 +313,10 @@ class PieceLengthClassifier(LabelClassifier):
                 drawing_area = (drawing.bbox.x1 - drawing.bbox.x0) * (
                     drawing.bbox.y1 - drawing.bbox.y0
                 )
+
+                # Skip drawings that are way too large (page backgrounds)
+                if text_area > 0 and drawing_area / text_area > MAX_AREA_RATIO:
+                    continue
 
                 # Keep the smallest containing drawing
                 if drawing_area < smallest_area:

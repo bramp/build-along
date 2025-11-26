@@ -176,6 +176,7 @@ class Extractor:
 
             drect = d["rect"]
             nbbox = BBox.from_tuple((drect.x0, drect.y0, drect.x1, drect.y1))
+
             drawing_blocks.append(Drawing(bbox=nbbox, id=self._get_next_id()))
             logger.debug("Found drawing with %s", nbbox)
 
