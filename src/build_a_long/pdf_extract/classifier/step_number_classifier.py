@@ -16,7 +16,6 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_step_number_value,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    LegoPageElements,
     StepNumber,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Text
@@ -61,15 +60,12 @@ class StepNumberClassifier(LabelClassifier):
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score text blocks and create candidates WITHOUT construction.
+        """Score text blocks and create candidates.
 
         This method:
         1. Iterates through all text blocks on the page
         2. Skips blocks in the bottom 10% (where page numbers appear)
-        3. Calculates component scores (text pattern, font size)
-        4. Computes combined score
-        5. Creates Candidates with constructed=None for viable candidates
-        6. Stores score_details for debugging and later construction
+        3. Calculates component scores based on text pattern, font size.
         """
         page_data = result.page_data
         if not page_data.blocks:
@@ -107,8 +103,7 @@ class StepNumberClassifier(LabelClassifier):
                 font_size_score=font_size_score,
             )
 
-            # Create candidate WITHOUT construction (constructed=None)
-            # Construction happens later in construct() method
+            # Create candidate
             result.add_candidate(
                 Candidate(
                     bbox=block.bbox,
@@ -119,15 +114,8 @@ class StepNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> StepNumber:
         """Construct a StepNumber element from a single candidate.
-
-        This method:
-        1. Extracts the text from the candidate's source block
-        2. Parses the step number value
-        3. Returns a constructed StepNumber or raises ValueError
 
         Args:
             candidate: The winning candidate to construct
@@ -145,6 +133,7 @@ class StepNumberClassifier(LabelClassifier):
         assert isinstance(block, Text)
 
         # Parse the step number value
+        # TODO use the value as determined in the score.
         value = extract_step_number_value(block.text)
         if value is None:
             raise ValueError(f"Could not parse step number from text: '{block.text}'")

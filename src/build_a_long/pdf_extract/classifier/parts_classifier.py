@@ -35,7 +35,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    LegoPageElements,
     Part,
     PartCount,
     PartNumber,
@@ -90,12 +89,29 @@ class PartsClassifier(LabelClassifier):
         """
         page_data = result.page_data
 
-        # Get part_count candidates (not elements!) using new API
+        # Get part_count candidates
         part_count_candidates = result.get_scored_candidates(
             "part_count",
             valid_only=False,
             exclude_failed=True,
         )
+
+        if not part_count_candidates:
+            log.debug(
+                "[parts] No part_count candidates found on page %s",
+                page_data.page_number,
+            )
+            return
+
+        # TODO Should we be allowing Drawings as well?
+        images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
+
+        if not images:
+            log.debug(
+                "[parts] No images found on page %s",
+                page_data.page_number,
+            )
+            return
 
         # Get optional part_number candidates
         part_number_candidates = result.get_scored_candidates(
@@ -111,22 +127,6 @@ class PartsClassifier(LabelClassifier):
             exclude_failed=True,
         )
 
-        images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
-
-        if not part_count_candidates:
-            log.debug(
-                "[parts] No part_count candidates found on page %s",
-                page_data.page_number,
-            )
-            return
-
-        if not images:
-            log.debug(
-                "[parts] No images found on page %s",
-                page_data.page_number,
-            )
-            return
-
         log.debug(
             "[parts] page=%s part_counts=%d images=%d",
             page_data.page_number,
@@ -138,7 +138,7 @@ class PartsClassifier(LabelClassifier):
         candidate_edges = self._build_candidate_edges(
             part_count_candidates,
             images,
-            page_data.bbox.width if page_data.bbox else 100.0,
+            page_data.bbox.width,
         )
 
         log.debug(
@@ -158,6 +158,7 @@ class PartsClassifier(LabelClassifier):
         candidate_edges.sort(key=lambda ps: ps.sort_key())
 
         # Greedy matching to enforce one-to-one pairing
+        # TODO We could create many possible Parts using N-best matching instead
         used_count_candidates: set[int] = set()
         used_images: set[int] = set()
 
@@ -196,32 +197,29 @@ class PartsClassifier(LabelClassifier):
             if piece_length_cand:
                 bbox = bbox.union(piece_length_cand.bbox)
 
-            # Create candidate WITHOUT construction
-            candidate = Candidate(
-                bbox=bbox,
-                label="part",
-                score=1.0,
-                score_details=enhanced_score,
-                source_blocks=[ps.image],
+            # Create candidate
+            result.add_candidate(
+                Candidate(
+                    bbox=bbox,
+                    label="part",
+                    score=1.0,
+                    score_details=enhanced_score,
+                    source_blocks=[ps.image],
+                )
             )
 
-            result.add_candidate(candidate)
-
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> Part:
         """Construct a Part from a single candidate's score details.
 
-        Validates parent candidates and extracts their constructed elements.
+        Validates child candidates and extracts their constructed elements.
         """
         assert isinstance(candidate.score_details, _PartPairScore)
         ps = candidate.score_details
 
         # Validate and construct part_count from candidate
         try:
-            part_count_elem = result.build(ps.part_count_candidate)
-            assert isinstance(part_count_elem, PartCount)
-            part_count = part_count_elem
+            part_count = result.build(ps.part_count_candidate)
+            assert isinstance(part_count, PartCount)
         except Exception as e:
             raise ValueError(f"Failed to construct mandatory part_count: {e}") from e
 
@@ -254,6 +252,7 @@ class PartsClassifier(LabelClassifier):
                 )
 
         # Wrap Image in Drawing for the diagram field
+        # TODO Don't do this, let's find a candidate
         diagram = Drawing(bbox=ps.image.bbox, id=ps.image.id)
 
         return Part(

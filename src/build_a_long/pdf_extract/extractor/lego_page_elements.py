@@ -256,7 +256,7 @@ class Part(LegoPageElement):
     tag: Literal["Part"] = Field(default="Part", alias="__tag__", frozen=True)
     count: PartCount
 
-    # TODO Diagram should be a LegoPageElement
+    # TODO Diagram should be a PartImage
     diagram: Drawing | None = None
 
     number: PartNumber | None = None
@@ -455,14 +455,6 @@ class Page(LegoPageElement):
     catalog: list[Part] = Field(default_factory=list)
     """List of parts for catalog pages. Empty list for non-catalog pages."""
 
-    # Metadata about the conversion process
-    warnings: list[str] = Field(default_factory=list)
-
-    # Keep reference to raw elements that weren't converted (for debugging/analysis)
-    unprocessed_elements: list = Field(
-        default_factory=list
-    )  # List[Element] but avoiding import
-
     @property
     def is_instruction(self) -> bool:
         """Check if this page is an instruction page."""
@@ -490,8 +482,7 @@ class Page(LegoPageElement):
         catalog_str = f", catalog={len(self.catalog)} parts" if self.catalog else ""
         steps_str = f", steps={len(self.steps)}" if self.steps else ""
         return (
-            f"Page(number={page_num}{categories_str}{bags_str}{catalog_str}"
-            f"{steps_str}, warnings={len(self.warnings)})"
+            f"Page(number={page_num}{categories_str}{bags_str}{catalog_str}{steps_str})"
         )
 
     def iter_elements(self) -> Iterator[LegoPageElement]:

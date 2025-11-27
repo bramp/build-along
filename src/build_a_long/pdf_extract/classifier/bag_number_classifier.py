@@ -39,7 +39,6 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     BagNumber,
-    LegoPageElements,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
@@ -127,9 +126,7 @@ class BagNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> BagNumber:
         """Construct a BagNumber element from a single candidate.
 
         Args:

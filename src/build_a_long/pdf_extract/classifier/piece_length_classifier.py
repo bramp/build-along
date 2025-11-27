@@ -35,7 +35,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    LegoPageElements,
     PieceLength,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
@@ -78,7 +77,7 @@ class PieceLengthClassifier(LabelClassifier):
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score text blocks and create candidates WITHOUT construction.
+        """Score text blocks and create candidates.
 
         Looks for small numbers (1-32) spatially contained within Drawing
         elements (circles/ovals) with small font sizes.
@@ -98,8 +97,6 @@ class PieceLengthClassifier(LabelClassifier):
             len(drawings),
             len(text_blocks),
         )
-
-        candidates_created = 0
 
         # Process each text block to find piece length candidates
         for text in text_blocks:
@@ -171,16 +168,8 @@ class PieceLengthClassifier(LabelClassifier):
                     source_blocks=[text, containing_drawing],
                 ),
             )
-            candidates_created += 1
 
-        log.debug(
-            "[piece_length] Created %d piece_length candidates",
-            candidates_created,
-        )
-
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> PieceLength:
         """Construct a PieceLength element from a single candidate."""
         # Get score details
         detail_score = candidate.score_details

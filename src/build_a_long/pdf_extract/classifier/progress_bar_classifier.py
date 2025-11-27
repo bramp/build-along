@@ -35,7 +35,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    LegoPageElements,
     ProgressBar,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
@@ -80,7 +79,7 @@ class ProgressBarClassifier(LabelClassifier):
     requires = frozenset({"page_number"})
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score Drawing/Image elements and create candidates WITHOUT construction."""
+        """Score Drawing/Image elements and create candidates."""
         page_data = result.page_data
         page_bbox = page_data.bbox
         assert page_bbox is not None
@@ -127,7 +126,7 @@ class ProgressBarClassifier(LabelClassifier):
 
             combined = score_details.combined_score(self.config)
 
-            # Store candidate WITHOUT construction
+            # Store candidate
             result.add_candidate(
                 Candidate(
                     bbox=clipped_bbox,
@@ -138,9 +137,7 @@ class ProgressBarClassifier(LabelClassifier):
                 ),
             )
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> ProgressBar:
         """Construct a ProgressBar element from a single candidate."""
         # Get score details
         detail_score = candidate.score_details

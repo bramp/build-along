@@ -38,7 +38,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
-    LegoPageElements,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
@@ -121,9 +120,7 @@ class DiagramClassifier(LabelClassifier):
                 ),
             )
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> Diagram:
         """Construct a Diagram element from a single candidate."""
         # Diagram construction is trivial - just wrap the bbox
         return Diagram(bbox=candidate.bbox)

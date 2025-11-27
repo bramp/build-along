@@ -26,7 +26,6 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_element_id,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    LegoPageElements,
     PartNumber,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Text
@@ -88,7 +87,7 @@ class PartNumberClassifier(LabelClassifier):
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score text blocks and create candidates WITHOUT construction."""
+        """Score text blocks and create candidates."""
         page_data = result.page_data
         if not page_data.blocks:
             return
@@ -132,7 +131,7 @@ class PartNumberClassifier(LabelClassifier):
                 )
                 continue
 
-            # Create candidate WITHOUT construction
+            # Create candidate
             result.add_candidate(
                 Candidate(
                     bbox=block.bbox,
@@ -143,9 +142,7 @@ class PartNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> PartNumber:
         """Construct a PartNumber element from a single candidate."""
         # Get the source text block
         assert len(candidate.source_blocks) == 1

@@ -27,7 +27,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    LegoPageElements,
     NewBag,
     Page,
     PageNumber,
@@ -75,9 +74,7 @@ class PageClassifier(LabelClassifier):
             ),
         )
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> Page:
         """Construct a Page by collecting all page components.
 
         Gathers page_number, progress_bar, new_bags, steps, and catalog parts
@@ -87,8 +84,8 @@ class PageClassifier(LabelClassifier):
 
         # Get best candidates using score-based selection
         # get_scored_candidates returns only valid candidates by default, so
-        # we must set valid_only=False, exclude_failed=True to get candidates that haven't been
-        # constructed yet.
+        # we must set valid_only=False, exclude_failed=True to get
+        # candidates that haven't been constructed yet.
         page_number = None
         page_number_candidates = result.get_scored_candidates(
             "page_number", valid_only=False, exclude_failed=True
@@ -109,8 +106,10 @@ class PageClassifier(LabelClassifier):
 
         # Get new bags from candidates
         new_bags: list[NewBag] = []
+
         # Construct ALL new_bag candidates? Or just the ones that pass a threshold?
         # For now, construct all scored candidates.
+        # TODO Consider pre-filtering based on runs of bag numbers
         for nb_candidate in result.get_scored_candidates(
             "new_bag", valid_only=False, exclude_failed=True
         ):
@@ -125,7 +124,8 @@ class PageClassifier(LabelClassifier):
                     e,
                 )
 
-        # Get all parts from candidates FIRST (to prioritize PieceLength over StepNumber)
+        # Get all parts from candidates first, as they typically have more
+        # useful context.
         all_parts: list[Part] = []
         for part_candidate in result.get_scored_candidates(
             "part", valid_only=False, exclude_failed=True
@@ -141,7 +141,8 @@ class PageClassifier(LabelClassifier):
                     e,
                 )
 
-        # Get steps from candidates (now PieceLength should have claimed its blocks)
+        # Get steps from candidates
+        # TODO Consider pre-filtering based on runs of step numbers
         steps: list[Step] = []
         for step_candidate in result.get_scored_candidates(
             "step", valid_only=False, exclude_failed=True
@@ -178,7 +179,7 @@ class PageClassifier(LabelClassifier):
 
         # Determine page categories and catalog field
         categories: set[Page.PageType] = set()
-        catalog_parts: list[Part] = []
+        catalog_parts: list[Part] = standalone_parts
 
         # Check for instruction content
         if steps:
@@ -187,23 +188,6 @@ class PageClassifier(LabelClassifier):
         # Check for catalog content (standalone parts not in steps)
         if standalone_parts:
             categories.add(Page.PageType.CATALOG)
-            # Collect standalone parts into catalog
-            # Use dict to deduplicate parts by id to avoid having the same
-            # Part object appear multiple times
-            parts_by_id: dict[int, Part] = {}
-            for part in standalone_parts:
-                part_id = id(part)
-                if part_id in parts_by_id:
-                    log.debug(
-                        "Skipping duplicate part id:%d in catalog",
-                        part_id,
-                    )
-                parts_by_id[part_id] = part
-            catalog_parts = list(parts_by_id.values())
-            log.debug(
-                "Collected %d unique parts for catalog",
-                len(catalog_parts),
-            )
 
         # If no structured content, mark as INFO page
         if not categories:
@@ -229,6 +213,4 @@ class PageClassifier(LabelClassifier):
             new_bags=new_bags,
             steps=steps,
             catalog=catalog_parts,
-            warnings=[],
-            unprocessed_elements=[],
         )

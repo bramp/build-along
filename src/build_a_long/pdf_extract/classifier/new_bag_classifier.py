@@ -36,7 +36,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.extractor.bbox import BBox, build_connected_cluster
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     BagNumber,
-    LegoPageElements,
     NewBag,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
@@ -88,9 +87,18 @@ class NewBagClassifier(LabelClassifier):
         if not bag_number_candidates:
             return
 
-        # Get all image/drawing blocks on the page
+        # Get all image/drawing blocks on the page, filtering out large
+        # images likely to be backgrounds
+        max_image_width = page_data.bbox.width * 0.5
+        max_image_height = page_data.bbox.height * 0.5
         image_blocks = [
-            block for block in page_data.blocks if isinstance(block, Drawing | Image)
+            block
+            for block in page_data.blocks
+            if isinstance(block, Drawing | Image)
+            and (
+                block.bbox.width < max_image_width
+                and block.bbox.height < max_image_height
+            )
         ]
 
         if not image_blocks:
@@ -135,7 +143,7 @@ class NewBagClassifier(LabelClassifier):
 
             combined = score_details.combined_score(self.config)
 
-            # Store candidate WITHOUT construction
+            # Store candidate
             result.add_candidate(
                 Candidate(
                     bbox=cluster_bbox,
@@ -156,9 +164,7 @@ class NewBagClassifier(LabelClassifier):
                 cluster_bbox,
             )
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> NewBag:
         """Construct a NewBag element from a single candidate."""
         # Get score details
         detail_score = candidate.score_details
@@ -176,7 +182,7 @@ class NewBagClassifier(LabelClassifier):
         return NewBag(bbox=detail_score.cluster_bbox, number=bag_number)
 
     def _find_nearby_images(
-        self, bag_bbox: BBox, image_blocks: list[Drawing | Image]
+        self, bag_bbox: BBox, candidate_images: list[Drawing | Image]
     ) -> list[Drawing | Image]:
         """Find image/drawing blocks that form a connected cluster with the bag number.
 
@@ -188,28 +194,11 @@ class NewBagClassifier(LabelClassifier):
 
         Args:
             bag_bbox: Bounding box of the bag number
-            image_blocks: All image/drawing blocks on the page
+            candidate_images: All eligible image/drawing blocks on the page
 
         Returns:
             List of images in the connected cluster
         """
-        # Filter out very large images that are likely backgrounds
-        # A background image typically takes up > 50% of page width or height
-        # TODO Get actual page dimensions
-        page_width = max(img.bbox.x1 for img in image_blocks) if image_blocks else 0
-        page_height = max(img.bbox.y1 for img in image_blocks) if image_blocks else 0
-
-        max_image_width = page_width * 0.5
-        max_image_height = page_height * 0.5
-
-        # Also filter out large Drawing elements (circles/paths) that might
-        # be decorative and images with invalid coordinates
-        candidate_images = [
-            img
-            for img in image_blocks
-            if (img.bbox.width < max_image_width and img.bbox.height < max_image_height)
-        ]
-
         if not candidate_images:
             return []
 

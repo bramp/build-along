@@ -20,7 +20,6 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
 )
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    LegoPageElements,
     PageNumber,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Text
@@ -79,14 +78,10 @@ class PageNumberClassifier(LabelClassifier):
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score text blocks and create candidates WITHOUT construction.
+        """Score text blocks and create candidates.
 
-        This method:
-        1. Iterates through all text blocks on the page
-        2. Calculates component scores (text pattern, position, page value, font size)
-        3. Computes combined score
-        4. Creates Candidates with constructed=None for viable candidates
-        5. Stores score_details for debugging and later construction
+        This method iterates through all text blocks on the page and creates scores based
+        on text pattern, position, page value, font size.
         """
         page_data = result.page_data
         page_bbox = page_data.bbox
@@ -107,6 +102,17 @@ class PageNumberClassifier(LabelClassifier):
                 block, self.config.font_size_hints.page_number_size
             )
 
+            # Must be in the bottom band.
+            if position_score < 0.1:
+                log.debug(
+                    "[page_number] Skipping low-position-score candidate: text='%s' "
+                    "score=%.3f (below threshold %.3f)",
+                    block.text,
+                    position_score,
+                    0.1,
+                )
+                continue
+
             # Create detailed score object
             score = _PageNumberScore(
                 text_score=text_score,
@@ -116,13 +122,6 @@ class PageNumberClassifier(LabelClassifier):
             )
 
             combined = score.combined_score(self.config)
-
-            # STRICTER FILTERING:
-            # 1. Must be in the bottom band (position_score > 0).
-            # 2. If it's a single digit (common step number), require extremely high position confidence
-            #    or match to page number value.
-            if position_score < 0.1:
-                continue
 
             # Skip candidates below minimum score threshold
             if combined < self.config.page_number_min_score:
@@ -135,8 +134,7 @@ class PageNumberClassifier(LabelClassifier):
                 )
                 continue
 
-            # Create candidate WITHOUT construction (constructed=None)
-            # Construction happens later in construct() method
+            # Create candidate
             result.add_candidate(
                 Candidate(
                     bbox=block.bbox,
@@ -147,9 +145,7 @@ class PageNumberClassifier(LabelClassifier):
                 ),
             )
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> PageNumber:
         """Construct a PageNumber element from a single candidate.
 
         This method:

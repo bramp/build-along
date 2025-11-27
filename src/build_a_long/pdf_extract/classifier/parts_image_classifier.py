@@ -35,7 +35,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    LegoPageElements,
     PartCount,
     PartImage,
 )
@@ -65,6 +64,7 @@ class _PartImageScore:
 
 
 # TODO Should this be called PartImageClassifier instead?
+# TODO I don't think this is even used!
 @dataclass(frozen=True)
 class PartsImageClassifier(LabelClassifier):
     """Classifier for part images paired with part count texts."""
@@ -103,7 +103,7 @@ class PartsImageClassifier(LabelClassifier):
         candidate_edges = self._build_candidate_edges(
             part_count_candidates,
             images,
-            page_data.bbox.width if page_data.bbox else 100.0,
+            page_data.bbox.width,
         )
 
         # Sort and match
@@ -122,7 +122,7 @@ class PartsImageClassifier(LabelClassifier):
             matched_count_candidates.add(id(pc_candidate))
             matched_images.add(id(img))
 
-            # Create candidate WITHOUT construction (part_image is metadata only)
+            # Create candidate
             result.add_candidate(
                 Candidate(
                     bbox=img.bbox,
@@ -145,9 +145,7 @@ class PartsImageClassifier(LabelClassifier):
             if unmatched_i:
                 log.debug("[part_image] unmatched images: %d", len(unmatched_i))
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> PartImage:
         """Construct a PartImage element from a single part_image candidate.
 
         Extracts the part count and image from the score details and creates

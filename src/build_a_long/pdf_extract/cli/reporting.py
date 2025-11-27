@@ -587,14 +587,6 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
 
             print(f"      Diagram: {step.diagram.bbox}")
 
-    if page.warnings:
-        print(f"  ⚠ Warnings: {len(page.warnings)}")
-        for warning in page.warnings:
-            print(f"    - {warning}")
-
-    if page.unprocessed_elements:
-        print(f"  ℹ Unprocessed elements: {len(page.unprocessed_elements)}")
-
 
 def build_and_print_page_hierarchy(
     pages: list[PageData], results: list[ClassificationResult]

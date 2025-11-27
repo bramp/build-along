@@ -36,7 +36,6 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
-    LegoPageElements,
     PartsList,
     Step,
     StepNumber,
@@ -106,7 +105,7 @@ class StepClassifier(LabelClassifier):
     requires = frozenset({"step_number", "parts_list"})
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score step pairings and create candidates WITHOUT construction."""
+        """Score step pairings and create candidates."""
         page_data = result.page_data
 
         # Get step number and parts list candidates (not constructed elements)
@@ -160,9 +159,7 @@ class StepClassifier(LabelClassifier):
             len(all_candidates),
         )
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> Step:
         """Construct a Step element from a single candidate."""
         score = candidate.score_details
         assert isinstance(score, _StepScore)
@@ -202,7 +199,7 @@ class StepClassifier(LabelClassifier):
         parts_list_candidate: Candidate | None,
         result: ClassificationResult,
     ) -> Candidate | None:
-        """Create a Step candidate WITHOUT construction.
+        """Create a Step candidate.
 
         Args:
             step_candidate: The StepNumber candidate for this step
@@ -260,7 +257,7 @@ class StepClassifier(LabelClassifier):
             bboxes.append(parts_list_bbox)
         combined_bbox = BBox.union_all(bboxes)
 
-        # Create candidate WITHOUT construction
+        # Create candidate
         return Candidate(
             bbox=combined_bbox,
             label="step",

@@ -32,7 +32,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    LegoPageElements,
     Part,
     PartsList,
 )
@@ -55,6 +54,7 @@ class _PartsListScore:
         return 1.0 if len(self.part_candidates) > 0 else 0.0
 
 
+# TODO The Parts List should also be slightly taller than the contained parts
 @dataclass(frozen=True)
 class PartsListClassifier(LabelClassifier):
     """Classifier for parts lists."""
@@ -91,6 +91,7 @@ class PartsListClassifier(LabelClassifier):
         )
 
         # Pre-score all drawings to sort them by quality
+        # The drawing is the rectangle around the parts list
         drawing_scores: list[tuple[Drawing, _PartsListScore]] = []
         for drawing in drawings:
             # Find all part candidates contained in this drawing
@@ -159,7 +160,7 @@ class PartsListClassifier(LabelClassifier):
                         )
                         break
 
-            # Create candidate WITHOUT construction
+            # Create candidate
             candidate = Candidate(
                 bbox=drawing.bbox,
                 label="parts_list",
@@ -176,9 +177,7 @@ class PartsListClassifier(LabelClassifier):
             # Add candidate to result
             result.add_candidate(candidate)
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> PartsList:
         """Construct a PartsList from a single candidate's score details.
 
         Validates and extracts Part elements from the parent candidates.
@@ -190,7 +189,6 @@ class PartsListClassifier(LabelClassifier):
         parts: list[Part] = []
         for part_candidate in score.part_candidates:
             try:
-                # Construct the part via the result orchestrator
                 part_elem = result.build(part_candidate)
                 assert isinstance(part_elem, Part)
                 parts.append(part_elem)

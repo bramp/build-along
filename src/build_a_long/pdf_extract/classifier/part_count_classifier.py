@@ -26,7 +26,6 @@ from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_part_count_value,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    LegoPageElements,
     PartCount,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Text
@@ -78,7 +77,7 @@ class PartCountClassifier(LabelClassifier):
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score text blocks and create candidates WITHOUT construction."""
+        """Score text blocks and create candidates"""
         page_data = result.page_data
         if not page_data.blocks:
             return
@@ -131,7 +130,7 @@ class PartCountClassifier(LabelClassifier):
                 )
                 continue
 
-            # Create candidate WITHOUT construction
+            # Create candidate
             result.add_candidate(
                 Candidate(
                     bbox=block.bbox,
@@ -142,9 +141,7 @@ class PartCountClassifier(LabelClassifier):
                 ),
             )
 
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> LegoPageElements:
+    def build(self, candidate: Candidate, result: ClassificationResult) -> PartCount:
         """Construct a PartCount element from a single candidate."""
         # Get the source text block
         assert len(candidate.source_blocks) == 1
@@ -178,4 +175,5 @@ class PartCountClassifier(LabelClassifier):
         # Use the extraction function to validate format
         if extract_part_count_value(text) is not None:
             return 1.0
+
         return 0.0
