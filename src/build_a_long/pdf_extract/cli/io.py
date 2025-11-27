@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class _RoundingEncoder(json.JSONEncoder):
-    """JSON encoder that rounds floats to 4 decimal places."""
+    """JSON encoder that rounds floats to 2 decimal places."""
 
     DEFAULT_DECIMALS = 2
 
@@ -36,6 +36,8 @@ class _RoundingEncoder(json.JSONEncoder):
                 return round(obj, self.DEFAULT_DECIMALS)
             elif isinstance(obj, dict):
                 return {k: round_floats(v) for k, v in obj.items()}
+            elif isinstance(obj, tuple):
+                return tuple(round_floats(item) for item in obj)
             elif isinstance(obj, list):
                 return [round_floats(item) for item in obj]
             return obj
@@ -168,7 +170,7 @@ def save_raw_json(
 ) -> None:
     """Save extracted raw data as JSON file(s).
 
-    Floats are automatically rounded to 4 decimal places to reduce file size.
+    Floats are automatically rounded to 2 decimal places to reduce file size.
     JSON is indented with tabs for better compression and readability.
 
     Args:
