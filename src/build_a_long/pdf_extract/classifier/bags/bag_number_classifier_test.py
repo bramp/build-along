@@ -2,7 +2,7 @@
 
 import pytest
 
-from build_a_long.pdf_extract.classifier.bag_number_classifier import (
+from build_a_long.pdf_extract.classifier.bags.bag_number_classifier import (
     BagNumberClassifier,
 )
 from build_a_long.pdf_extract.classifier.classification_result import (

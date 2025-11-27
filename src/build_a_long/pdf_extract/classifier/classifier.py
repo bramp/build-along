@@ -20,8 +20,9 @@ from __future__ import annotations
 
 import logging
 
-from build_a_long.pdf_extract.classifier.bag_number_classifier import (
+from build_a_long.pdf_extract.classifier.bags import (
     BagNumberClassifier,
+    NewBagClassifier,
 )
 from build_a_long.pdf_extract.classifier.block_filter import filter_duplicate_blocks
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -35,9 +36,6 @@ from build_a_long.pdf_extract.classifier.diagram_classifier import (
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
-from build_a_long.pdf_extract.classifier.new_bag_classifier import (
-    NewBagClassifier,
-)
 from build_a_long.pdf_extract.classifier.page_classifier import PageClassifier
 from build_a_long.pdf_extract.classifier.page_hints import PageHints
 from build_a_long.pdf_extract.classifier.page_number_classifier import (

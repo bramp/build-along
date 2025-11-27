@@ -23,8 +23,12 @@ Changing the order such that dependencies are not met will raise a ValueError.
 import logging
 import os
 
+from build_a_long.pdf_extract.classifier.bags import (
+    BagNumberClassifier,
+    NewBagClassifier,
+)
+
 from ..extractor.lego_page_elements import Page
-from .bag_number_classifier import BagNumberClassifier
 from .classification_result import (
     Candidate,
     ClassificationResult,
@@ -33,7 +37,6 @@ from .classification_result import (
 from .classifier import Classifier, classify_elements, classify_pages
 from .diagram_classifier import DiagramClassifier
 from .label_classifier import LabelClassifier
-from .new_bag_classifier import NewBagClassifier
 from .page_hints import PageHint, PageHints
 from .page_number_classifier import PageNumberClassifier
 from .part_count_classifier import PartCountClassifier
