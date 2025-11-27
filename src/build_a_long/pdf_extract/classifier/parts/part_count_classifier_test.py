@@ -7,7 +7,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
-from build_a_long.pdf_extract.classifier.part_count_classifier import (
+from build_a_long.pdf_extract.classifier.parts.part_count_classifier import (
     PartCountClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData

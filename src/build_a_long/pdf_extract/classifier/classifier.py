@@ -41,22 +41,12 @@ from build_a_long.pdf_extract.classifier.page_hints import PageHints
 from build_a_long.pdf_extract.classifier.page_number_classifier import (
     PageNumberClassifier,
 )
-from build_a_long.pdf_extract.classifier.part_count_classifier import (
+from build_a_long.pdf_extract.classifier.parts import (
     PartCountClassifier,
-)
-from build_a_long.pdf_extract.classifier.part_number_classifier import (
     PartNumberClassifier,
-)
-from build_a_long.pdf_extract.classifier.parts_classifier import (
     PartsClassifier,
-)
-from build_a_long.pdf_extract.classifier.parts_image_classifier import (
     PartsImageClassifier,
-)
-from build_a_long.pdf_extract.classifier.parts_list_classifier import (
     PartsListClassifier,
-)
-from build_a_long.pdf_extract.classifier.piece_length_classifier import (
     PieceLengthClassifier,
 )
 from build_a_long.pdf_extract.classifier.progress_bar_classifier import (

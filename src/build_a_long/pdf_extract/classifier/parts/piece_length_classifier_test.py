@@ -6,7 +6,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
 )
-from build_a_long.pdf_extract.classifier.piece_length_classifier import (
+from build_a_long.pdf_extract.classifier.parts.piece_length_classifier import (
     PieceLengthClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData

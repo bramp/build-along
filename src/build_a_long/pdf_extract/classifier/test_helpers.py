@@ -1,7 +1,9 @@
 """Common test helpers for classifier tests."""
 
 from build_a_long.pdf_extract.classifier.classification_result import Candidate
-from build_a_long.pdf_extract.classifier.parts_image_classifier import _PartImageScore
+from build_a_long.pdf_extract.classifier.parts.parts_image_classifier import (
+    _PartImageScore,
+)
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 
 

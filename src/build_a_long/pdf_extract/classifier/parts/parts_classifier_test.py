@@ -8,11 +8,12 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
 )
-from build_a_long.pdf_extract.classifier.part_number_classifier import (
+from build_a_long.pdf_extract.classifier.conftest import CandidateFactory
+from build_a_long.pdf_extract.classifier.parts.part_number_classifier import (
     PartNumberClassifier,
 )
-from build_a_long.pdf_extract.classifier.parts_classifier import PartsClassifier
-from build_a_long.pdf_extract.classifier.piece_length_classifier import (
+from build_a_long.pdf_extract.classifier.parts.parts_classifier import PartsClassifier
+from build_a_long.pdf_extract.classifier.parts.piece_length_classifier import (
     PieceLengthClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData
@@ -21,8 +22,6 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Image, Text
-
-from .conftest import CandidateFactory
 
 
 @pytest.fixture

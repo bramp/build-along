@@ -5,22 +5,22 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
 )
-from build_a_long.pdf_extract.classifier.part_count_classifier import (
+from build_a_long.pdf_extract.classifier.parts.part_count_classifier import (
     PartCountClassifier,
     _PartCountScore,
 )
-from build_a_long.pdf_extract.classifier.part_number_classifier import (
+from build_a_long.pdf_extract.classifier.parts.part_number_classifier import (
     PartNumberClassifier,
 )
-from build_a_long.pdf_extract.classifier.parts_classifier import (
+from build_a_long.pdf_extract.classifier.parts.parts_classifier import (
     PartsClassifier,
     _PartPairScore,
 )
-from build_a_long.pdf_extract.classifier.parts_list_classifier import (
+from build_a_long.pdf_extract.classifier.parts.parts_list_classifier import (
     PartsListClassifier,
     _PartsListScore,
 )
-from build_a_long.pdf_extract.classifier.piece_length_classifier import (
+from build_a_long.pdf_extract.classifier.parts.piece_length_classifier import (
     PieceLengthClassifier,
     _PieceLengthScore,
 )

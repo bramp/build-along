@@ -27,6 +27,14 @@ from build_a_long.pdf_extract.classifier.bags import (
     BagNumberClassifier,
     NewBagClassifier,
 )
+from build_a_long.pdf_extract.classifier.parts import (
+    PartCountClassifier,
+    PartNumberClassifier,
+    PartsClassifier,
+    PartsImageClassifier,
+    PartsListClassifier,
+    PieceLengthClassifier,
+)
 
 from ..extractor.lego_page_elements import Page
 from .classification_result import (
@@ -39,11 +47,6 @@ from .diagram_classifier import DiagramClassifier
 from .label_classifier import LabelClassifier
 from .page_hints import PageHint, PageHints
 from .page_number_classifier import PageNumberClassifier
-from .part_count_classifier import PartCountClassifier
-from .part_number_classifier import PartNumberClassifier
-from .parts_image_classifier import PartsImageClassifier
-from .parts_list_classifier import PartsListClassifier
-from .piece_length_classifier import PieceLengthClassifier
 from .progress_bar_classifier import ProgressBarClassifier
 from .step_classifier import StepClassifier
 from .step_number_classifier import StepNumberClassifier
