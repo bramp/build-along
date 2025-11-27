@@ -69,17 +69,15 @@ class DiagramClassifier(LabelClassifier):
     """Classifier for diagram regions on instruction pages."""
 
     outputs = frozenset({"diagram"})
-    requires = frozenset({"parts_list", "progress_bar"})
+    requires = frozenset({"progress_bar"})
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score Drawing/Image elements and create candidates WITHOUT construction."""
+        """Score Drawing/Image elements and create candidates."""
         page_data = result.page_data
         page_bbox = page_data.bbox
         assert page_bbox is not None
 
-        # Get already classified elements to avoid double-classification
-        parts_list_blocks = self._get_parts_list_blocks(result)
-
+        # TODO Maybe this should be a page hint, to represent the true content area
         # Get progress bar bbox to filter out overlapping elements
         progress_bar_bbox = self._get_progress_bar_bbox(result)
 
@@ -88,12 +86,8 @@ class DiagramClassifier(LabelClassifier):
             if not isinstance(block, Drawing | Image):
                 continue
 
-            # Skip if already classified as part of a parts list
-            if id(block) in parts_list_blocks:
-                continue
-
             # Skip if overlaps significantly with progress bar
-            if progress_bar_bbox and block.bbox.iou(progress_bar_bbox) > 0.1:
+            if progress_bar_bbox and block.bbox.overlaps(progress_bar_bbox):
                 continue
 
             # Skip very large elements that span most of the page
@@ -106,24 +100,20 @@ class DiagramClassifier(LabelClassifier):
             area_score = self._score_area(block.bbox, page_bbox)
             position_score = self._score_position(block.bbox, page_bbox)
 
-            # Must be reasonably large (at least 5% of page area)
             if area_score == 0.0:
                 continue
 
             score_details = _DiagramScore(
                 area_score=area_score,
                 position_score=position_score,
+                config=result.config,
             )
 
-            combined = score_details.combined_score(self.config)
-
-            # Store candidate WITHOUT construction
             result.add_candidate(
                 "diagram",
                 Candidate(
                     bbox=block.bbox,
                     label="diagram",
-                    score=combined,
                     score_details=score_details,
                     source_blocks=[block],
                 ),
@@ -135,63 +125,6 @@ class DiagramClassifier(LabelClassifier):
         """Construct a Diagram element from a single candidate."""
         # Diagram construction is trivial - just wrap the bbox
         return Diagram(bbox=candidate.bbox)
-
-    def _get_parts_list_blocks(self, result: ClassificationResult) -> set[int]:
-        """Get the set of block IDs that are part of classified parts lists.
-
-        This prevents double-classification of parts list diagrams as step diagrams.
-        We exclude:
-        - Individual part diagram source blocks
-        - Any Drawing/Image blocks that overlap significantly with parts lists
-
-        Returns empty set if parts_list hasn't been classified yet.
-        """
-        blocks = set()
-        parts_list_bboxes = []
-
-        # Only attempt to get parts lists if they've been classified
-        try:
-            parts_list_candidates = result.get_scored_candidates(
-                "parts_list", valid_only=False, exclude_failed=True
-            )
-        except (KeyError, AttributeError):
-            # Parts lists haven't been classified yet, that's fine
-            return blocks
-
-        # Collect parts list bboxes and check for part diagrams with source blocks
-        for pl_candidate in parts_list_candidates:
-            parts_list_bboxes.append(pl_candidate.bbox)
-
-            # To exclude part diagrams, we need to look at part candidates
-            # that are contained in this parts list candidate.
-            # We can look at the score details of the parts list candidate
-            # if available.
-            if hasattr(pl_candidate.score_details, "part_candidates"):
-                part_candidates = pl_candidate.score_details.part_candidates
-                for part_candidate in part_candidates:
-                    for source_block in part_candidate.source_blocks:
-                        blocks.add(id(source_block))
-
-        # Also exclude any blocks that overlap significantly with parts lists
-        # This catches parts list container images/drawings
-        page_data = result.page_data
-        for block in page_data.blocks:
-            if not isinstance(block, Drawing | Image):
-                continue
-
-            # Skip if already excluded
-            if id(block) in blocks:
-                continue
-
-            # Check overlap with any parts list
-            for pl_bbox in parts_list_bboxes:
-                iou = block.bbox.iou(pl_bbox)
-                # If block overlaps >50% with parts list, exclude it
-                if iou > 0.5:
-                    blocks.add(id(block))
-                    break
-
-        return blocks
 
     def _get_progress_bar_bbox(self, result: ClassificationResult) -> BBox | None:
         """Get the bounding box of the progress bar if present.

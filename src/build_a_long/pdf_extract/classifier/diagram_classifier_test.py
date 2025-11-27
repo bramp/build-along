@@ -1,26 +1,19 @@
 """Tests for DiagramClassifier."""
 
+import pytest
+
 from build_a_long.pdf_extract.classifier.classification_result import ClassifierConfig
 from build_a_long.pdf_extract.classifier.diagram_classifier import DiagramClassifier
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
 
-def test_diagram_classifier_basic():
-    """Test basic diagram classification."""
-    config = ClassifierConfig()
-    classifier = DiagramClassifier(config=config)
-
-    # Check that the classifier has correct metadata
-    assert "diagram" in classifier.outputs
-    # Requires parts_list and progress_bar to filter overlaps
-    assert "parts_list" in classifier.requires
-    assert "progress_bar" in classifier.requires
+@pytest.fixture
+def classifier() -> DiagramClassifier:
+    return DiagramClassifier(config=ClassifierConfig())
 
 
-def test_score_area():
+def test_score_area(classifier: DiagramClassifier):
     """Test area scoring logic."""
-    config = ClassifierConfig()
-    classifier = DiagramClassifier(config=config)
     page_bbox = BBox(0, 0, 100, 100)  # 10,000 area
 
     # Too small (< 3% of page)
@@ -41,10 +34,8 @@ def test_score_area():
     assert 0.0 <= score < 0.5  # Should have reduced score
 
 
-def test_score_position():
+def test_score_position(classifier: DiagramClassifier):
     """Test position scoring logic."""
-    config = ClassifierConfig()
-    classifier = DiagramClassifier(config=config)
     page_bbox = BBox(0, 0, 100, 100)
 
     # Center position (should score 1.0)

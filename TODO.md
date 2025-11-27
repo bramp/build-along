@@ -65,6 +65,19 @@ This file outlines the tasks required to build the Lego instructions project.
 - [ ] Write unit and integration tests.
 - [ ] Document the code and usage.
 
+## Data Storage Optimization
+
+- [ ] Compress all PDF files in the `data` directory and its subdirectories using `zstd -19`. This will create `.pdf.zst` files, and the original `.pdf` files should be deleted after successful compression. Decompression will be required to view the PDFs.
+
+**Compression Results Summary (for reference):**
+
+*   **`qpdf` (Lossless PDF Optimization):** Reorganizes PDF structure for smaller, usable PDFs. Achieved ~1.2% size reduction for a sample file.
+*   **General-Purpose Lossless Compressors:** Create archive files (.bz2, .zst, .xz) requiring decompression.
+    *   **Original Sample File:** 1,655,192 bytes
+    *   **`bzip2 -9`:** 1,634,964 bytes (~1.2% reduction)
+    *   **`xz -9`:** 1,625,800 bytes (~1.8% reduction)
+    *   **`zstd -19` (Winner):** 1,623,925 bytes (~1.9% reduction) - Provided the best lossless compression for the sample.
+
 ## Misc
 
 - [x] pytest is in requirements.txt but should it instead be in requirements-dev.txt?
