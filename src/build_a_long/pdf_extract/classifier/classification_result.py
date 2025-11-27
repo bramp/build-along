@@ -663,11 +663,12 @@ class ClassificationResult(BaseModel):
         best_candidate = self.get_best_candidate(block)
         return best_candidate.label if best_candidate else None
 
-    def add_candidate(self, label: str, candidate: Candidate) -> None:
-        """Add a single candidate for a specific label.
+    def add_candidate(self, candidate: Candidate) -> None:
+        """Add a single candidate.
+
+        The label is extracted from candidate.label.
 
         Args:
-            label: The label this candidate is for
             candidate: The candidate to add
 
         Raises:
@@ -676,6 +677,7 @@ class ClassificationResult(BaseModel):
         for source_block in candidate.source_blocks:
             self._validate_block_in_page_data(source_block, "candidate.source_blocks")
 
+        label = candidate.label
         if label not in self.candidates:
             self.candidates[label] = []
         self.candidates[label].append(candidate)

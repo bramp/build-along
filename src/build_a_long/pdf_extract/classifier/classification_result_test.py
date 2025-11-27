@@ -89,7 +89,7 @@ class TestClassificationResult:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.add_candidate("page_number", candidate)
+        result.add_candidate(candidate)
 
         candidates = result.get_candidates("page_number")
         assert len(candidates) == 1
@@ -158,7 +158,7 @@ class TestClassificationResultValidation:
 
         result = ClassificationResult(page_data=page_data)
         with pytest.raises(ValueError, match="must be in PageData.blocks"):
-            result.add_candidate("page_number", candidate)
+            result.add_candidate(candidate)
 
     def test_add_candidate_allows_source_block_in_page_data(self) -> None:
         """Test that add_candidate succeeds when source_blocks are in PageData."""
@@ -179,7 +179,7 @@ class TestClassificationResultValidation:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.add_candidate("page_number", candidate)
+        result.add_candidate(candidate)
         assert len(result.get_candidates("page_number")) == 1
 
     def test_add_candidate_allows_none_source_block(self) -> None:
@@ -199,7 +199,7 @@ class TestClassificationResultValidation:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.add_candidate("step", candidate)
+        result.add_candidate(candidate)
         assert len(result.get_candidates("step")) == 1
 
     def test_mark_removed_validates_block_in_page_data(self) -> None:
@@ -260,7 +260,6 @@ class TestGetScoredCandidates:
 
         # Add some candidates with different scores (all valid)
         result.add_candidate(
-            "test_label",
             Candidate(
                 bbox=text.bbox,
                 label="test_label",
@@ -271,7 +270,6 @@ class TestGetScoredCandidates:
             ),
         )
         result.add_candidate(
-            "test_label",
             Candidate(
                 bbox=text.bbox,
                 label="test_label",
@@ -282,7 +280,6 @@ class TestGetScoredCandidates:
             ),
         )
         result.add_candidate(
-            "test_label",
             Candidate(
                 bbox=text.bbox,
                 label="test_label",
@@ -317,7 +314,6 @@ class TestGetScoredCandidates:
 
         # Add candidates with different scores (all valid)
         result.add_candidate(
-            "test_label",
             Candidate(
                 bbox=text.bbox,
                 label="test_label",
@@ -328,7 +324,6 @@ class TestGetScoredCandidates:
             ),
         )
         result.add_candidate(
-            "test_label",
             Candidate(
                 bbox=text.bbox,
                 label="test_label",
@@ -361,7 +356,6 @@ class TestGetScoredCandidates:
 
         # Add a candidate with score_details
         result.add_candidate(
-            "test_label",
             Candidate(
                 bbox=text.bbox,
                 label="test_label",
@@ -374,7 +368,6 @@ class TestGetScoredCandidates:
 
         # Add a candidate without score_details (shouldn't happen, but test it)
         result.add_candidate(
-            "test_label",
             Candidate(
                 bbox=text.bbox,
                 label="test_label",
@@ -410,7 +403,6 @@ class TestGetScoredCandidates:
 
         # Add a candidate that hasn't been constructed yet
         result.add_candidate(
-            "test_label",
             Candidate(
                 bbox=text.bbox,
                 label="test_label",

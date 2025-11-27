@@ -110,7 +110,6 @@ class StepNumberClassifier(LabelClassifier):
             # Create candidate WITHOUT construction (constructed=None)
             # Construction happens later in construct() method
             result.add_candidate(
-                "step_number",
                 Candidate(
                     bbox=block.bbox,
                     label="step_number",

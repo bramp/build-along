@@ -163,7 +163,6 @@ class PieceLengthClassifier(LabelClassifier):
             bbox = BBox.union(text.bbox, containing_drawing.bbox)
 
             result.add_candidate(
-                "piece_length",
                 Candidate(
                     bbox=bbox,
                     label="piece_length",

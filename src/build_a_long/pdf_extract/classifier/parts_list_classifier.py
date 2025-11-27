@@ -174,7 +174,7 @@ class PartsListClassifier(LabelClassifier):
                 accepted_candidates.append(candidate)
 
             # Add candidate to result
-            result.add_candidate("parts_list", candidate)
+            result.add_candidate(candidate)
 
     def build(
         self, candidate: Candidate, result: ClassificationResult

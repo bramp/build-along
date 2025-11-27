@@ -138,7 +138,6 @@ class PageNumberClassifier(LabelClassifier):
             # Create candidate WITHOUT construction (constructed=None)
             # Construction happens later in construct() method
             result.add_candidate(
-                "page_number",
                 Candidate(
                     bbox=block.bbox,
                     label="page_number",

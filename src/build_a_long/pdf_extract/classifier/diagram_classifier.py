@@ -106,14 +106,15 @@ class DiagramClassifier(LabelClassifier):
             score_details = _DiagramScore(
                 area_score=area_score,
                 position_score=position_score,
-                config=result.config,
             )
 
+            combined = score_details.combined_score(self.config)
+
             result.add_candidate(
-                "diagram",
                 Candidate(
                     bbox=block.bbox,
                     label="diagram",
+                    score=combined,
                     score_details=score_details,
                     source_blocks=[block],
                 ),

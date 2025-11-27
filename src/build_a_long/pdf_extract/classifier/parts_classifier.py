@@ -205,7 +205,7 @@ class PartsClassifier(LabelClassifier):
                 source_blocks=[ps.image],
             )
 
-            result.add_candidate("part", candidate)
+            result.add_candidate(candidate)
 
     def build(
         self, candidate: Candidate, result: ClassificationResult

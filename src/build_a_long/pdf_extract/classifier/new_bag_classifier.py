@@ -142,7 +142,6 @@ class NewBagClassifier(LabelClassifier):
 
             # Store candidate WITHOUT construction
             result.add_candidate(
-                "new_bag",
                 Candidate(
                     bbox=cluster_bbox,
                     label="new_bag",

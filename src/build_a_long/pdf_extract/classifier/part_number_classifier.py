@@ -134,7 +134,6 @@ class PartNumberClassifier(LabelClassifier):
 
             # Create candidate WITHOUT construction
             result.add_candidate(
-                "part_number",
                 Candidate(
                     bbox=block.bbox,
                     label="part_number",

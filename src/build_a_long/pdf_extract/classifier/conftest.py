@@ -79,7 +79,7 @@ class CandidateFactory:
             score_details=score_details,
             source_blocks=[block],
         )
-        self.result.add_candidate("part_count", candidate)
+        self.result.add_candidate(candidate)
         return candidate
 
     def add_step_number(self, block: Text, score: float = 1.0) -> Candidate:
@@ -92,7 +92,7 @@ class CandidateFactory:
             score_details=score_details,
             source_blocks=[block],
         )
-        self.result.add_candidate("step_number", candidate)
+        self.result.add_candidate(candidate)
         return candidate
 
     def add_part(
@@ -118,7 +118,7 @@ class CandidateFactory:
             score_details=score_details,
             source_blocks=[image_block],
         )
-        self.result.add_candidate("part", candidate)
+        self.result.add_candidate(candidate)
         return candidate
 
     def add_parts_list(
@@ -136,7 +136,7 @@ class CandidateFactory:
             score_details=score_details,
             source_blocks=[drawing_block],
         )
-        self.result.add_candidate("parts_list", candidate)
+        self.result.add_candidate(candidate)
         return candidate
 
     def add_piece_length(
@@ -161,7 +161,7 @@ class CandidateFactory:
             score_details=score_details,
             source_blocks=[text_block, drawing_block],
         )
-        self.result.add_candidate("piece_length", candidate)
+        self.result.add_candidate(candidate)
         return candidate
 
 

@@ -66,7 +66,6 @@ class PageClassifier(LabelClassifier):
         """
         # Create a candidate with score_details for consistency
         result.add_candidate(
-            "page",
             Candidate(
                 bbox=result.page_data.bbox,
                 label="page",

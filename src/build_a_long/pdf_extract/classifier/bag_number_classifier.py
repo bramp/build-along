@@ -118,7 +118,6 @@ class BagNumberClassifier(LabelClassifier):
             )
 
             result.add_candidate(
-                "bag_number",
                 Candidate(
                     bbox=block.bbox,
                     label="bag_number",

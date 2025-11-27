@@ -124,7 +124,6 @@ class PartsImageClassifier(LabelClassifier):
 
             # Create candidate WITHOUT construction (part_image is metadata only)
             result.add_candidate(
-                "part_image",
                 Candidate(
                     bbox=img.bbox,
                     label="part_image",

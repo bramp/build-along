@@ -133,7 +133,6 @@ class PartCountClassifier(LabelClassifier):
 
             # Create candidate WITHOUT construction
             result.add_candidate(
-                "part_count",
                 Candidate(
                     bbox=block.bbox,
                     label="part_count",

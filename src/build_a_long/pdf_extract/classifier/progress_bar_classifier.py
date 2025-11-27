@@ -129,7 +129,6 @@ class ProgressBarClassifier(LabelClassifier):
 
             # Store candidate WITHOUT construction
             result.add_candidate(
-                "progress_bar",
                 Candidate(
                     bbox=clipped_bbox,
                     label="progress_bar",

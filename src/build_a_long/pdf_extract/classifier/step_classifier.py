@@ -152,7 +152,7 @@ class StepClassifier(LabelClassifier):
 
         # Add the deduplicated candidates to the result
         for candidate in deduplicated_candidates:
-            result.add_candidate("step", candidate)
+            result.add_candidate(candidate)
 
         log.debug(
             "[step] Created %d deduplicated step candidates (from %d possibilities)",
