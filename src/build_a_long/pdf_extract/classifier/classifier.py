@@ -32,10 +32,15 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     RemovalReason,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
-from build_a_long.pdf_extract.classifier.page_classifier import PageClassifier
-from build_a_long.pdf_extract.classifier.page_hints import PageHints
-from build_a_long.pdf_extract.classifier.page_number_classifier import (
+from build_a_long.pdf_extract.classifier.pages import (
+    PageHintCollection,
+)
+from build_a_long.pdf_extract.classifier.pages.page_classifier import PageClassifier
+from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
     PageNumberClassifier,
+)
+from build_a_long.pdf_extract.classifier.pages.progress_bar_classifier import (
+    ProgressBarClassifier,
 )
 from build_a_long.pdf_extract.classifier.parts import (
     PartCountClassifier,
@@ -44,9 +49,6 @@ from build_a_long.pdf_extract.classifier.parts import (
     PartsImageClassifier,
     PartsListClassifier,
     PieceLengthClassifier,
-)
-from build_a_long.pdf_extract.classifier.progress_bar_classifier import (
-    ProgressBarClassifier,
 )
 from build_a_long.pdf_extract.classifier.steps import (
     DiagramClassifier,
@@ -151,7 +153,7 @@ def classify_pages(
 
     # Generate hints from hint pages, histogram from pages to classify
     font_size_hints = FontSizeHints.from_pages(hint_pages_without_duplicates)
-    page_hints = PageHints.from_pages(hint_pages_without_duplicates)
+    page_hints = PageHintCollection.from_pages(hint_pages_without_duplicates)
     histogram = TextHistogram.from_pages(pages_without_duplicates)
 
     # Phase 3: Classify using the hints (on pages without duplicates)

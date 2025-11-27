@@ -27,6 +27,17 @@ from build_a_long.pdf_extract.classifier.bags import (
     BagNumberClassifier,
     NewBagClassifier,
 )
+from build_a_long.pdf_extract.classifier.pages import (
+    PageHint,
+    PageHintCollection,
+)
+from build_a_long.pdf_extract.classifier.pages.page_classifier import PageClassifier
+from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
+    PageNumberClassifier,
+)
+from build_a_long.pdf_extract.classifier.pages.progress_bar_classifier import (
+    ProgressBarClassifier,
+)
 from build_a_long.pdf_extract.classifier.parts import (
     PartCountClassifier,
     PartNumberClassifier,
@@ -49,9 +60,6 @@ from .classification_result import (
 )
 from .classifier import Classifier, classify_elements, classify_pages
 from .label_classifier import LabelClassifier
-from .page_hints import PageHint, PageHints
-from .page_number_classifier import PageNumberClassifier
-from .progress_bar_classifier import ProgressBarClassifier
 
 PageType = Page.PageType
 
@@ -67,7 +75,7 @@ __all__ = [
     "LabelClassifier",
     "NewBagClassifier",
     "PageHint",
-    "PageHints",
+    "PageHintCollection",
     "PageType",
     "StepClassifier",
     "PageNumberClassifier",

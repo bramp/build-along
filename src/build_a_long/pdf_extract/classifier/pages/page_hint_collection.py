@@ -1,8 +1,4 @@
-"""Extract page type hints from preliminary classification analysis.
-
-This module provides PageHints to help determine page types (INSTRUCTION, CATALOG, INFO)
-during a pre-pass before full classification.
-"""
+"""PageHintCollection analyzes and stores page type hints for multiple pages."""
 
 from __future__ import annotations
 
@@ -11,81 +7,17 @@ from typing import ClassVar
 
 from pydantic import BaseModel
 
+from build_a_long.pdf_extract.classifier.pages.page_hint import PageHint, PageType
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 
 logger = logging.getLogger(__name__)
 
-PageType = Page.PageType
 
-
-class PageHint(BaseModel):
-    """Hint about a single page's type based on preliminary analysis.
-
-    Attributes:
-        page_number: The page number being analyzed
-        confidences: Confidence scores (0.0-1.0) for each PageType
-        part_number_count: Number of part numbers detected (catalog indicator)
-        part_count_count: Number of part counts detected
-        step_number_count: Number of step numbers detected (instruction indicator)
-    """
-
-    page_number: int
-    confidences: dict[PageType, float]
-    part_number_count: int
-    part_count_count: int
-    step_number_count: int
-
-    @property
-    def page_type(self) -> PageType:
-        """Get the most likely page type based on highest confidence.
-
-        Returns:
-            PageType with the highest confidence score
-        """
-        return max(self.confidences.items(), key=lambda x: x[1])[0]
-
-    @property
-    def confidence(self) -> float:
-        """Get the confidence for the most likely page type.
-
-        Returns:
-            Highest confidence score
-        """
-        return max(self.confidences.values())
-
-    @property
-    def is_instruction(self) -> bool:
-        """Check if this is likely an instruction page.
-
-        Returns:
-            True if INSTRUCTION confidence > 0.8
-        """
-        return self.confidences.get(PageType.INSTRUCTION, 0.0) > 0.8
-
-    @property
-    def is_catalog(self) -> bool:
-        """Check if this is likely a catalog page.
-
-        Returns:
-            True if CATALOG confidence > 0.8
-        """
-        return self.confidences.get(PageType.CATALOG, 0.0) > 0.8
-
-    @property
-    def is_info(self) -> bool:
-        """Check if this is likely an info page.
-
-        Returns:
-            True if INFO confidence > 0.8
-        """
-        return self.confidences.get(PageType.INFO, 0.0) > 0.8
-
-
-# TODO We should expand PageHints to find step numbers on each page, and try and
-# make appropriate runs of steps. This can help the StepClassifier later.
-class PageHints(BaseModel):
+# TODO We should expand PageHintCollection to find step numbers on each page,
+# and try and make appropriate runs of steps. This can help the StepClassifier
+# later.
+class PageHintCollection(BaseModel):
     """Page type hints derived from preliminary analysis of all pages.
 
     This class analyzes pages in a pre-pass to determine their types:
@@ -106,16 +38,16 @@ class PageHints(BaseModel):
     CATALOG_ELEMENT_ID_THRESHOLD: ClassVar[int] = 3
 
     @classmethod
-    def empty(cls) -> PageHints:
-        """Create empty PageHints with no hints.
+    def empty(cls) -> PageHintCollection:
+        """Create empty PageHintCollection with no hints.
 
         Returns:
-            PageHints with empty hints dict
+            PageHintCollection with empty hints dict
         """
-        return PageHints(hints={})
+        return PageHintCollection(hints={})
 
     @classmethod
-    def from_pages(cls, pages: list[PageData]) -> PageHints:
+    def from_pages(cls, pages: list[PageData]) -> PageHintCollection:
         """Extract page type hints from multiple pages.
 
         This method performs a lightweight analysis to classify pages:
@@ -134,7 +66,7 @@ class PageHints(BaseModel):
             pages: List of PageData objects to analyze
 
         Returns:
-            PageHints with type hints for each page
+            PageHintCollection with type hints for each page
         """
         if not pages:
             return cls.empty()
@@ -234,7 +166,7 @@ class PageHints(BaseModel):
             )
         )
 
-        return PageHints(hints=hints)
+        return PageHintCollection(hints=hints)
 
     def get_hint(self, page_number: int) -> PageHint | None:
         """Get hint for a specific page.
