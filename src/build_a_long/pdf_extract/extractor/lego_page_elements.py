@@ -15,7 +15,6 @@ from pydantic import (
 )
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image
 
 
 class LegoPageElement(BaseModel, ABC):
@@ -184,29 +183,22 @@ class PieceLength(LegoPageElement):
 
 
 class PartImage(LegoPageElement):
-    """A part image paired with its corresponding part count.
+    """A candidate image that could represent a LEGO part.
 
-    Positional context: The image appears above its corresponding PartCount text,
-    both left-aligned within a parts list. This pairing is determined by vertical
-    distance and alignment heuristics.
+    Positional context: These images typically appear in parts lists, positioned
+    above their corresponding PartCount text and left-aligned.
 
-    This element represents the validated pairing between an image and its count,
-    and is used by PartsClassifier to construct Part elements.
+    This element represents a validated image candidate that will be paired with
+    a PartCount by PartsClassifier to construct Part elements.
+
+    The bbox field (inherited from LegoPageElement) defines the image region.
     """
 
     tag: Literal["PartImage"] = Field(default="PartImage", alias="__tag__", frozen=True)
 
-    image: Image
-    """The image block showing the LEGO part."""
-
-    part_count: PartCount
-    """The part count text associated with this image."""
-
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        return (
-            f"PartImage(count={self.part_count.count}x, image_bbox={self.image.bbox})"
-        )
+        return f"PartImage(bbox={self.bbox})"
 
 
 class ProgressBar(LegoPageElement):
@@ -256,8 +248,7 @@ class Part(LegoPageElement):
     tag: Literal["Part"] = Field(default="Part", alias="__tag__", frozen=True)
     count: PartCount
 
-    # TODO Diagram should be a PartImage
-    diagram: Drawing | None = None
+    diagram: PartImage | None = None
 
     number: PartNumber | None = None
     """Optional part number used only on catalog pages."""
@@ -282,9 +273,8 @@ class Part(LegoPageElement):
         """Iterate over this Part and all child elements."""
         yield self
         yield self.count
-        # TODO Diagram should be a LegoPageElement
-        # if self.diagram:
-        #    yield from self.diagram.iter_elements()
+        if self.diagram:
+            yield from self.diagram.iter_elements()
         if self.number:
             yield from self.number.iter_elements()
         if self.length:

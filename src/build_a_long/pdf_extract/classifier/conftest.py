@@ -16,6 +16,9 @@ from build_a_long.pdf_extract.classifier.parts.parts_classifier import (
     PartsClassifier,
     _PartPairScore,
 )
+from build_a_long.pdf_extract.classifier.parts.parts_image_classifier import (
+    PartsImageClassifier,
+)
 from build_a_long.pdf_extract.classifier.parts.parts_list_classifier import (
     PartsListClassifier,
     _PartsListScore,
@@ -56,6 +59,7 @@ class CandidateFactory:
             "part_count": PartCountClassifier,
             "step_number": StepNumberClassifier,
             "part": PartsClassifier,
+            "part_image": PartsImageClassifier,
             "parts_list": PartsListClassifier,
             "piece_length": PieceLengthClassifier,
             "part_number": PartNumberClassifier,
@@ -105,10 +109,22 @@ class CandidateFactory:
         piece_length_candidate: Candidate | None = None,
     ) -> Candidate:
         self._ensure_classifier_registered("part")
+        self._ensure_classifier_registered("part_image")
+
+        # Create a part_image candidate for the image
+        part_image_candidate = Candidate(
+            bbox=image_block.bbox,
+            label="part_image",
+            score=1.0,
+            score_details=None,
+            source_blocks=[image_block],
+        )
+        self.result.add_candidate(part_image_candidate)
+
         score_details = _PartPairScore(
             distance=10.0,
             part_count_candidate=part_count_candidate,
-            image=image_block,
+            part_image_candidate=part_image_candidate,
             part_number_candidate=part_number_candidate,
             piece_length_candidate=piece_length_candidate,
         )
@@ -117,7 +133,7 @@ class CandidateFactory:
             label="part",
             score=score,
             score_details=score_details,
-            source_blocks=[image_block],
+            source_blocks=[],  # Part is composite, no direct source blocks
         )
         self.result.add_candidate(candidate)
         return candidate

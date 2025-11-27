@@ -500,7 +500,7 @@ def print_classification_debug(
                 if candidate.constructed:
                     constructed_str = str(candidate.constructed)
                 else:
-                    constructed_str = "<failed to construct>"
+                    constructed_str = "<never constructed>"
 
                 source_str = str(block) if block else "no source"
                 print(

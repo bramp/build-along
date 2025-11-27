@@ -21,13 +21,13 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PageNumber,
     Part,
     PartCount,
+    PartImage,
     PartNumber,
     PartsList,
     ProgressBar,
     Step,
     StepNumber,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 # Color scheme for different element types
 COLORS = {
@@ -328,8 +328,7 @@ def create_sample_page() -> Page:
                                 count=2,
                                 bbox=BBox(85, 165, 110, 180),
                             ),
-                            diagram=Drawing(
-                                id=1,
+                            diagram=PartImage(
                                 bbox=BBox(85, 125, 135, 160),
                             ),
                         ),
@@ -340,8 +339,7 @@ def create_sample_page() -> Page:
                                 count=1,
                                 bbox=BBox(155, 165, 185, 180),
                             ),
-                            diagram=Drawing(
-                                id=2,
+                            diagram=PartImage(
                                 bbox=BBox(155, 125, 225, 160),
                             ),
                             number=PartNumber(
@@ -372,8 +370,7 @@ def create_sample_page() -> Page:
                                 count=2,
                                 bbox=BBox(85, 455, 115, 470),
                             ),
-                            diagram=Drawing(
-                                id=4,
+                            diagram=PartImage(
                                 bbox=BBox(85, 405, 175, 450),
                             ),
                         ),

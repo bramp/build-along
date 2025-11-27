@@ -48,8 +48,7 @@
           "x1": 22.56,
           "y1": 22.01
         },
-        "id": 181,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -88,8 +87,7 @@
           "x1": 25.8,
           "y1": 57.28
         },
-        "id": 182,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -128,8 +126,7 @@
           "x1": 32.11,
           "y1": 90.01
         },
-        "id": 183,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -168,8 +165,7 @@
           "x1": 36.97,
           "y1": 126.35
         },
-        "id": 184,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -208,8 +204,7 @@
           "x1": 81.79,
           "y1": 179.24
         },
-        "id": 185,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -248,8 +243,7 @@
           "x1": 32.11,
           "y1": 211.61
         },
-        "id": 186,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -288,8 +282,7 @@
           "x1": 32.11,
           "y1": 246.87
         },
-        "id": 187,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -328,8 +321,7 @@
           "x1": 38.41,
           "y1": 282.12
         },
-        "id": 188,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -368,8 +360,7 @@
           "x1": 42.91,
           "y1": 317.92
         },
-        "id": 189,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -408,8 +399,7 @@
           "x1": 44.71,
           "y1": 358.2
         },
-        "id": 190,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -448,8 +438,7 @@
           "x1": 49.03,
           "y1": 399.58
         },
-        "id": 191,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -488,8 +477,7 @@
           "x1": 61.45,
           "y1": 451.04
         },
-        "id": 192,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -528,8 +516,7 @@
           "x1": 179.15,
           "y1": 467.96
         },
-        "id": 193,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -568,8 +555,7 @@
           "x1": 181.7,
           "y1": 25.09
         },
-        "id": 194,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -608,8 +594,7 @@
           "x1": 182.79,
           "y1": 55.62
         },
-        "id": 195,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -648,8 +633,7 @@
           "x1": 182.79,
           "y1": 82.92
         },
-        "id": 196,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -688,8 +672,7 @@
           "x1": 184.58,
           "y1": 112.01
         },
-        "id": 197,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -728,8 +711,7 @@
           "x1": 184.58,
           "y1": 146.16
         },
-        "id": 198,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -768,8 +750,7 @@
           "x1": 184.58,
           "y1": 174.16
         },
-        "id": 199,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -808,8 +789,7 @@
           "x1": 184.58,
           "y1": 207.23
         },
-        "id": 200,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -848,8 +828,7 @@
           "x1": 184.58,
           "y1": 248.74
         },
-        "id": 201,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -888,8 +867,7 @@
           "x1": 184.58,
           "y1": 298.0
         },
-        "id": 202,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -928,8 +906,7 @@
           "x1": 184.58,
           "y1": 327.63
         },
-        "id": 203,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -968,8 +945,7 @@
           "x1": 185.48,
           "y1": 363.58
         },
-        "id": 204,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1008,8 +984,7 @@
           "x1": 185.48,
           "y1": 396.8
         },
-        "id": 205,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1048,8 +1023,7 @@
           "x1": 185.48,
           "y1": 436.34
         },
-        "id": 206,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1088,8 +1062,7 @@
           "x1": 242.51,
           "y1": 24.9
         },
-        "id": 207,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1128,8 +1101,7 @@
           "x1": 250.62,
           "y1": 61.41
         },
-        "id": 208,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1168,8 +1140,7 @@
           "x1": 253.69,
           "y1": 93.96
         },
-        "id": 209,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1208,8 +1179,7 @@
           "x1": 253.69,
           "y1": 123.98
         },
-        "id": 210,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1248,8 +1218,7 @@
           "x1": 253.69,
           "y1": 154.72
         },
-        "id": 211,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1288,8 +1257,7 @@
           "x1": 253.69,
           "y1": 187.27
         },
-        "id": 212,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1328,8 +1296,7 @@
           "x1": 253.87,
           "y1": 222.33
         },
-        "id": 213,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1368,8 +1335,7 @@
           "x1": 254.04,
           "y1": 252.17
         },
-        "id": 214,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1408,8 +1374,7 @@
           "x1": 255.67,
           "y1": 283.64
         },
-        "id": 215,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1448,8 +1413,7 @@
           "x1": 255.67,
           "y1": 320.14
         },
-        "id": 216,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1488,8 +1452,7 @@
           "x1": 255.67,
           "y1": 364.22
         },
-        "id": 217,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1528,8 +1491,7 @@
           "x1": 258.55,
           "y1": 399.81
         },
-        "id": 218,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1568,8 +1530,7 @@
           "x1": 258.91,
           "y1": 432.89
         },
-        "id": 219,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1608,8 +1569,7 @@
           "x1": 259.99,
           "y1": 467.96
         },
-        "id": 220,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1648,8 +1608,7 @@
           "x1": 303.73,
           "y1": 21.47
         },
-        "id": 221,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1688,8 +1647,7 @@
           "x1": 323.9,
           "y1": 55.97
         },
-        "id": 222,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1728,8 +1686,7 @@
           "x1": 325.88,
           "y1": 89.92
         },
-        "id": 223,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1768,8 +1725,7 @@
           "x1": 325.88,
           "y1": 128.9
         },
-        "id": 224,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1808,8 +1764,7 @@
           "x1": 325.88,
           "y1": 162.48
         },
-        "id": 225,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1848,8 +1803,7 @@
           "x1": 326.05,
           "y1": 216.6
         },
-        "id": 226,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1888,8 +1842,7 @@
           "x1": 328.4,
           "y1": 250.17
         },
-        "id": 227,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1928,8 +1881,7 @@
           "x1": 330.2,
           "y1": 292.77
         },
-        "id": 228,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -1968,8 +1920,7 @@
           "x1": 330.2,
           "y1": 329.77
         },
-        "id": 229,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2008,8 +1959,7 @@
           "x1": 330.2,
           "y1": 367.31
         },
-        "id": 230,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2048,8 +1998,7 @@
           "x1": 332.0,
           "y1": 403.77
         },
-        "id": 231,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2088,8 +2037,7 @@
           "x1": 332.18,
           "y1": 467.97
         },
-        "id": 232,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2128,8 +2076,7 @@
           "x1": 402.21,
           "y1": 36.24
         },
-        "id": 233,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2168,8 +2115,7 @@
           "x1": 402.21,
           "y1": 87.63
         },
-        "id": 234,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2208,8 +2154,7 @@
           "x1": 402.21,
           "y1": 139.01
         },
-        "id": 235,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2248,8 +2193,7 @@
           "x1": 402.93,
           "y1": 191.1
         },
-        "id": 236,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2288,8 +2232,7 @@
           "x1": 406.53,
           "y1": 241.04
         },
-        "id": 237,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2328,8 +2271,7 @@
           "x1": 413.91,
           "y1": 291.69
         },
-        "id": 238,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2368,8 +2310,7 @@
           "x1": 418.95,
           "y1": 346.67
         },
-        "id": 239,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2408,8 +2349,7 @@
           "x1": 418.95,
           "y1": 406.69
         },
-        "id": 240,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2448,8 +2388,7 @@
           "x1": 439.29,
           "y1": 467.97
         },
-        "id": 241,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2488,8 +2427,7 @@
           "x1": 519.22,
           "y1": 64.87
         },
-        "id": 242,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2528,8 +2466,7 @@
           "x1": 476.55,
           "y1": 99.69
         },
-        "id": 243,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2568,8 +2505,7 @@
           "x1": 495.1,
           "y1": 141.7
         },
-        "id": 244,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2608,8 +2544,7 @@
           "x1": 507.52,
           "y1": 183.72
         },
-        "id": 245,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2648,8 +2583,7 @@
           "x1": 470.79,
           "y1": 304.5
         },
-        "id": 246,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2688,8 +2622,7 @@
           "x1": 492.94,
           "y1": 337.16
         },
-        "id": 247,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2728,8 +2661,7 @@
           "x1": 468.63,
           "y1": 207.71
         },
-        "id": 248,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2768,8 +2700,7 @@
           "x1": 468.63,
           "y1": 231.73
         },
-        "id": 249,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2808,8 +2739,7 @@
           "x1": 471.87,
           "y1": 255.2
         },
-        "id": 250,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2848,8 +2778,7 @@
           "x1": 471.87,
           "y1": 280.47
         },
-        "id": 251,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2888,8 +2817,7 @@
           "x1": 475.48,
           "y1": 376.83
         },
-        "id": 252,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2928,8 +2856,7 @@
           "x1": 478.17,
           "y1": 404.08
         },
-        "id": 253,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -2968,8 +2895,7 @@
           "x1": 478.17,
           "y1": 436.03
         },
-        "id": 254,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3008,8 +2934,7 @@
           "x1": 482.49,
           "y1": 467.97
         },
-        "id": 255,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3048,8 +2973,7 @@
           "x1": 121.57,
           "y1": 30.48
         },
-        "id": 256,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3088,8 +3012,7 @@
           "x1": 121.57,
           "y1": 68.83
         },
-        "id": 257,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3128,8 +3051,7 @@
           "x1": 125.0,
           "y1": 101.22
         },
-        "id": 258,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3168,8 +3090,7 @@
           "x1": 114.01,
           "y1": 128.94
         },
-        "id": 259,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3208,8 +3129,7 @@
           "x1": 117.25,
           "y1": 158.11
         },
-        "id": 260,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3248,8 +3168,7 @@
           "x1": 118.88,
           "y1": 187.81
         },
-        "id": 261,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3288,8 +3207,7 @@
           "x1": 120.67,
           "y1": 224.36
         },
-        "id": 262,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3328,8 +3246,7 @@
           "x1": 131.3,
           "y1": 266.84
         },
-        "id": 263,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3368,8 +3285,7 @@
           "x1": 111.13,
           "y1": 334.9
         },
-        "id": 264,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3408,8 +3324,7 @@
           "x1": 118.88,
           "y1": 364.77
         },
-        "id": 265,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3448,8 +3363,7 @@
           "x1": 125.18,
           "y1": 402.41
         },
-        "id": 266,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3488,8 +3402,7 @@
           "x1": 111.13,
           "y1": 429.58
         },
-        "id": 267,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3528,8 +3441,7 @@
           "x1": 131.48,
           "y1": 307.73
         },
-        "id": 268,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {
@@ -3578,8 +3490,7 @@
           "x1": 125.18,
           "y1": 467.96
         },
-        "id": 269,
-        "__tag__": "Drawing"
+        "__tag__": "PartImage"
       },
       "number": {
         "bbox": {

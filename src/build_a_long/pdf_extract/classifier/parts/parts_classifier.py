@@ -37,12 +37,9 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartCount,
+    PartImage,
     PartNumber,
     PieceLength,
-)
-from build_a_long.pdf_extract.extractor.page_blocks import (
-    Drawing,
-    Image,
 )
 
 log = logging.getLogger(__name__)
@@ -53,13 +50,13 @@ class _PartPairScore:
     """Internal score representation for part pairing."""
 
     distance: float
-    """Vertical distance from part count text to image (lower is better)."""
+    """Vertical distance from part count text to part image (lower is better)."""
 
     part_count_candidate: Candidate
     """The part_count candidate (not the constructed element)."""
 
-    image: Image
-    """The image element (will become diagram in Part)."""
+    part_image_candidate: Candidate
+    """The part_image candidate (will become diagram in Part)."""
 
     part_number_candidate: Candidate | None
     """The associated part_number candidate (if any)."""
@@ -75,10 +72,10 @@ class _PartPairScore:
 # TODO Should this be called PartClassifier instead?
 @dataclass(frozen=True)
 class PartsClassifier(LabelClassifier):
-    """Classifier for Part elements (pairs of part_count + image)."""
+    """Classifier for Part elements (pairs of part_count + part_image)."""
 
     output = "part"
-    requires = frozenset({"part_count", "part_number", "piece_length"})
+    requires = frozenset({"part_count", "part_number", "piece_length", "part_image"})
 
     def _score(self, result: ClassificationResult) -> None:
         """Score part pairings and create candidates.
@@ -103,12 +100,16 @@ class PartsClassifier(LabelClassifier):
             )
             return
 
-        # TODO Should we be allowing Drawings as well?
-        images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
+        # Get part_image candidates (now required)
+        part_image_candidates = result.get_scored_candidates(
+            "part_image",
+            valid_only=False,
+            exclude_failed=True,
+        )
 
-        if not images:
+        if not part_image_candidates:
             log.debug(
-                "[parts] No images found on page %s",
+                "[parts] No part_image candidates found on page %s",
                 page_data.page_number,
             )
             return
@@ -128,16 +129,16 @@ class PartsClassifier(LabelClassifier):
         )
 
         log.debug(
-            "[parts] page=%s part_counts=%d images=%d",
+            "[parts] page=%s part_counts=%d part_images=%d",
             page_data.page_number,
             len(part_count_candidates),
-            len(images),
+            len(part_image_candidates),
         )
 
         # Build candidate pairings using existing helper
-        candidate_edges = self._build_candidate_edges(
+        candidate_edges = self._build_candidate_edges_from_part_images(
             part_count_candidates,
-            images,
+            part_image_candidates,
             page_data.bbox.width,
         )
 
@@ -160,38 +161,41 @@ class PartsClassifier(LabelClassifier):
         # Greedy matching to enforce one-to-one pairing
         # TODO We could create many possible Parts using N-best matching instead
         used_count_candidates: set[int] = set()
-        used_images: set[int] = set()
+        used_image_candidates: set[int] = set()
 
         for ps in candidate_edges:
             count_cand_id = id(ps.part_count_candidate)
-            image_id = id(ps.image)
+            image_cand_id = id(ps.part_image_candidate)
 
-            if count_cand_id in used_count_candidates or image_id in used_images:
+            if (
+                count_cand_id in used_count_candidates
+                or image_cand_id in used_image_candidates
+            ):
                 continue
 
             # Mark as used
             used_count_candidates.add(count_cand_id)
-            used_images.add(image_id)
+            used_image_candidates.add(image_cand_id)
 
             # Find associated candidates (not elements!)
             part_number_cand = self._find_part_number_candidate(
                 ps.part_count_candidate, part_number_candidates
             )
-            piece_length_cand = self._find_piece_length_candidate(
-                ps.image, piece_length_candidates
+            piece_length_cand = self._find_piece_length_candidate_from_part_image(
+                ps.part_image_candidate, piece_length_candidates
             )
 
             # Create enhanced score with candidate references
             enhanced_score = _PartPairScore(
                 distance=ps.distance,
                 part_count_candidate=ps.part_count_candidate,
-                image=ps.image,
+                part_image_candidate=ps.part_image_candidate,
                 part_number_candidate=part_number_cand,
                 piece_length_candidate=piece_length_cand,
             )
 
             # Create bounding box for the Part
-            bbox = ps.part_count_candidate.bbox.union(ps.image.bbox)
+            bbox = ps.part_count_candidate.bbox.union(ps.part_image_candidate.bbox)
             if part_number_cand:
                 bbox = bbox.union(part_number_cand.bbox)
             if piece_length_cand:
@@ -204,7 +208,7 @@ class PartsClassifier(LabelClassifier):
                     label="part",
                     score=1.0,
                     score_details=enhanced_score,
-                    source_blocks=[ps.image],
+                    source_blocks=[],  # Part is composite, no direct source blocks
                 )
             )
 
@@ -222,6 +226,13 @@ class PartsClassifier(LabelClassifier):
             assert isinstance(part_count, PartCount)
         except Exception as e:
             raise ValueError(f"Failed to construct mandatory part_count: {e}") from e
+
+        # Validate and construct part_image from candidate
+        try:
+            part_image = result.build(ps.part_image_candidate)
+            assert isinstance(part_image, PartImage)
+        except Exception as e:
+            raise ValueError(f"Failed to construct mandatory part_image: {e}") from e
 
         # Extract optional part_number from candidate
         part_number: PartNumber | None = None
@@ -251,25 +262,21 @@ class PartsClassifier(LabelClassifier):
                     e,
                 )
 
-        # Wrap Image in Drawing for the diagram field
-        # TODO Don't do this, let's find a candidate
-        diagram = Drawing(bbox=ps.image.bbox, id=ps.image.id)
-
         return Part(
             bbox=candidate.bbox,
             count=part_count,
             number=part_number,
             length=piece_length,
-            diagram=diagram,
+            diagram=part_image,
         )
 
-    def _build_candidate_edges(
+    def _build_candidate_edges_from_part_images(
         self,
         part_count_candidates: list[Candidate],
-        images: list[Image],
+        part_image_candidates: list[Candidate],
         page_width: float,
     ) -> list[_PartPairScore]:
-        """Build candidate pairings between part count candidates and images.
+        """Build candidate pairings between part count and part_image candidates.
 
         Returns a list of score objects representing valid pairings.
         """
@@ -279,15 +286,15 @@ class PartsClassifier(LabelClassifier):
         edges: list[_PartPairScore] = []
         for pc_cand in part_count_candidates:
             cb = pc_cand.bbox
-            for img in images:
-                ib = img.bbox
+            for img_cand in part_image_candidates:
+                ib = img_cand.bbox
                 # Image should be above the count and left-aligned
                 if ib.y1 <= cb.y0 + VERT_EPS and abs(ib.x0 - cb.x0) <= ALIGN_EPS:
                     distance = max(0.0, cb.y0 - ib.y1)
                     score = _PartPairScore(
                         distance=distance,
                         part_count_candidate=pc_cand,
-                        image=img,
+                        part_image_candidate=img_cand,
                         part_number_candidate=None,  # Will be filled during matching
                         piece_length_candidate=None,  # Will be filled during matching
                     )
@@ -328,8 +335,8 @@ class PartsClassifier(LabelClassifier):
 
         return best_candidate
 
-    def _find_piece_length_candidate(
-        self, image: Image, piece_length_candidates: list[Candidate]
+    def _find_piece_length_candidate_from_part_image(
+        self, part_image_candidate: Candidate, piece_length_candidates: list[Candidate]
     ) -> Candidate | None:
         """Find the piece_length candidate that belongs to this part image.
 
@@ -337,7 +344,7 @@ class PartsClassifier(LabelClassifier):
         within a small distance of the image bbox.
 
         Args:
-            image: The Image to find a length for
+            part_image_candidate: The part_image candidate to find a length for
             piece_length_candidates: List of available piece_length candidates
 
         Returns:
@@ -350,9 +357,11 @@ class PartsClassifier(LabelClassifier):
         best_candidate = None
         best_score = float("inf")
 
+        image_bbox = part_image_candidate.bbox
+
         for pl_cand in piece_length_candidates:
             # Calculate minimum distance between piece length and image
-            distance = image.bbox.min_distance(pl_cand.bbox)
+            distance = image_bbox.min_distance(pl_cand.bbox)
 
             # Skip if too far away
             if distance > MAX_DISTANCE:
@@ -363,8 +372,8 @@ class PartsClassifier(LabelClassifier):
             pl_center_y = (pl_cand.bbox.y0 + pl_cand.bbox.y1) / 2
 
             # Distance to top-right corner
-            dx = image.bbox.x1 - pl_center_x
-            dy = pl_center_y - image.bbox.y0
+            dx = image_bbox.x1 - pl_center_x
+            dy = pl_center_y - image_bbox.y0
 
             # Combined score (prefer top-right position)
             score = dx * dx + dy * dy

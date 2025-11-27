@@ -7,10 +7,10 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PageNumber,
     Part,
     PartCount,
+    PartImage,
     PartsList,
     StepNumber,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 
 def test_page_number_serialization_with_tag():
@@ -51,9 +51,9 @@ def test_part_count_serialization_with_tag():
 
 
 def test_part_serialization_with_nested_elements():
-    """Test that Part serializes correctly with nested PartCount and Drawing."""
+    """Test that Part serializes correctly with nested PartCount and PartImage."""
     count = PartCount(bbox=BBox(0, 0, 5, 5), count=3)
-    diagram = Drawing(bbox=BBox(10, 10, 20, 20), id=1)
+    diagram = PartImage(bbox=BBox(10, 10, 20, 20))
     part = Part(
         bbox=BBox(0, 0, 25, 25),
         count=count,
@@ -66,7 +66,7 @@ def test_part_serialization_with_nested_elements():
     assert "number" not in json_data  # None values excluded
     assert json_data["count"]["__tag__"] == "PartCount"
     assert json_data["count"]["count"] == 3
-    assert json_data["diagram"]["__tag__"] == "Drawing"
+    assert json_data["diagram"]["__tag__"] == "PartImage"
 
 
 def test_parts_list_serialization():
@@ -130,9 +130,8 @@ def test_part_deserialization_with_nested_elements():
             "count": 3
         },
         "diagram": {
-            "__tag__": "Drawing",
-            "bbox": {"x0": 10, "y0": 10, "x1": 20, "y1": 20},
-            "id": 1
+            "__tag__": "PartImage",
+            "bbox": {"x0": 10, "y0": 10, "x1": 20, "y1": 20}
         },
         "number": null
     }
@@ -143,7 +142,7 @@ def test_part_deserialization_with_nested_elements():
     assert isinstance(part, Part)
     assert part.number is None
     assert part.count.count == 3
-    assert isinstance(part.diagram, Drawing)
+    assert isinstance(part.diagram, PartImage)
 
 
 def test_lego_element_round_trip_serialization():

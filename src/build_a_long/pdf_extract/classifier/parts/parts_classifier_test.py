@@ -13,6 +13,9 @@ from build_a_long.pdf_extract.classifier.parts.part_number_classifier import (
     PartNumberClassifier,
 )
 from build_a_long.pdf_extract.classifier.parts.parts_classifier import PartsClassifier
+from build_a_long.pdf_extract.classifier.parts.parts_image_classifier import (
+    PartsImageClassifier,
+)
 from build_a_long.pdf_extract.classifier.parts.piece_length_classifier import (
     PieceLengthClassifier,
 )
@@ -60,6 +63,7 @@ class TestPartsClassification:
 
         result = ClassificationResult(page_data=page)
         # Register classifiers so result.construct_candidate works
+        PartsImageClassifier(classifier.config).score(result)
         PartNumberClassifier(classifier.config).score(result)
         PieceLengthClassifier(classifier.config).score(result)
 
@@ -107,6 +111,7 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
+        PartsImageClassifier(classifier.config).score(result)
 
         factory = candidate_factory(result)
 
@@ -115,7 +120,7 @@ class TestPartsClassification:
 
         classifier.score(result)
 
-        # No Part should be created (image is below, not above)
+        # Parts should be created even though image isn't exactly left-aligned
         assert result.count_successful_candidates("part") == 0
 
         # The PartCount should exist but not be consumed
@@ -142,6 +147,7 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
+        PartsImageClassifier(classifier.config).score(result)
 
         factory = candidate_factory(result)
 
@@ -187,6 +193,7 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
+        PartsImageClassifier(classifier.config).score(result)
 
         factory = candidate_factory(result)
         factory.add_part_count(t1, score=1.0)
@@ -220,6 +227,7 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
+        PartsImageClassifier(classifier.config).score(result)
 
         factory = candidate_factory(result)
         factory.add_part_count(t1, score=1.0)
