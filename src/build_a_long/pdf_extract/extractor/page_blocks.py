@@ -80,9 +80,26 @@ class Drawing(Block):
     dashes: str | None = None  # dashed line specification
     even_odd: bool | None = None  # fill behavior for overlaps
     items: tuple[tuple, ...] | None = None  # list of draw commands
-    visible_bbox: BBox | None = None  # actual visible bbox after clipping
+    original_bbox: BBox | None = None  # original bbox before clipping (only if clipped)
 
     model_config = ConfigDict(frozen=True, populate_by_name=True)
+
+    @property
+    def unclipped_bbox(self) -> BBox:
+        """Return the original unclipped bounding box.
+
+        If the drawing was clipped, returns original_bbox.
+        Otherwise, returns bbox (which is the original since no clipping occurred).
+        """
+        return self.original_bbox if self.original_bbox is not None else self.bbox
+
+    @property
+    def is_clipped(self) -> bool:
+        """Return True if this drawing was clipped.
+
+        Compares the visible bbox to the original bbox.
+        """
+        return self.original_bbox is not None and self.bbox != self.original_bbox
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""

@@ -23,6 +23,7 @@ def test_step_number():
 def test_drawing_optional_id():
     d = Drawing(bbox=BBox(1, 1, 100, 100), id=0)
     assert d.bbox == BBox(1, 1, 100, 100)
+    assert not d.is_clipped
 
 
 def test_part_and_count():
@@ -106,7 +107,8 @@ def test_text_deserialization_from_tagged_json():
 def test_drawing_deserialization_from_tagged_json():
     """Test that Drawing blocks can be deserialized from JSON with __tag__."""
     json_str = (
-        '{"__tag__": "Drawing", "bbox": {"x0": 0, "y0": 0, "x1": 10, "y1": 10}, '
+        '{"__tag__": "Drawing", '
+        '"bbox": {"x0": 0, "y0": 0, "x1": 10, "y1": 10}, '
         '"id": 1}'
     )
 
@@ -114,6 +116,7 @@ def test_drawing_deserialization_from_tagged_json():
 
     assert isinstance(drawing, Drawing)
     assert drawing.id == 1
+    assert not drawing.is_clipped
 
 
 def test_image_deserialization_from_tagged_json():
@@ -191,4 +194,18 @@ def test_to_json_excludes_none_and_uses_tag():
     assert "fill_color" not in data
     assert "stroke_color" not in data
     assert "line_width" not in data
-    assert "visible_bbox" not in data
+
+
+def test_drawing_is_clipped_property():
+    """Test the is_clipped property on Drawing instances."""
+    # Unclipped drawing - bbox same as original_bbox
+    unclipped = Drawing(bbox=BBox(0, 0, 10, 10), original_bbox=BBox(0, 0, 10, 10), id=1)
+    assert not unclipped.is_clipped
+
+    # Clipped drawing - bbox differs from original_bbox
+    clipped = Drawing(bbox=BBox(2, 2, 8, 8), original_bbox=BBox(0, 0, 10, 10), id=2)
+    assert clipped.is_clipped
+
+    # Verify the bboxes are indeed different
+    assert clipped.bbox != clipped.original_bbox
+    assert unclipped.bbox == unclipped.original_bbox

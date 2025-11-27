@@ -104,17 +104,63 @@ pants test src/build_a_long/pdf_extract/classifier/font_size_hints_test.py -- -k
 
 #### For Individual Page Fixtures
 
-1. **Add raw input file**: Place a new `*_raw.json` file in this directory
+1. **Generate raw input file**: Extract pages from PDF using the main CLI:
+
+   ```bash
+   # Extract specific pages with extended drawing metadata
+   pants run src/build_a_long/pdf_extract:main -- \
+     path/to/instruction_manual.pdf \
+     --pages 10-17,180 \
+     --output-dir src/build_a_long/pdf_extract/fixtures \
+     --debug-json \
+     --debug-extra-json
+   ```
+
+   This creates `*_page_NNN_raw.json` files directly in the fixtures directory.
+
+   Optionally add `--compress-json` to create compressed `.json.bz2` files.
+
 2. **Generate golden file**: Run the generation script (see below)
 3. **Verify output**: Review the generated `*_expected.json` file
 4. **Commit both files**: Include both raw and expected files in version control
 
-#### For Full Document Fixtures
+**Important**: Use `--debug-extra-json` to include full metadata (drawing paths, colors, dimensions, etc.) in raw fixtures. This ensures Drawing objects have all fields including `original_bbox` for proper clipping detection.
 
-1. **Add raw input file**: Place a new `*_raw.json.bz2` file in this directory
-2. **Generate golden file**: Run the font hints generation script (see below)
-3. **Verify output**: Review the generated `*_font_hints_expected.json` file
-4. **Commit both files**: Include both raw and expected files in version control
+#### Regenerating All Current Fixtures
+
+To regenerate all existing raw fixture files from the source PDFs:
+
+```bash
+# Individual page fixtures from 6509377 (pages 10-17, 180)
+pants run src/build_a_long/pdf_extract:main -- \
+  data/75375/6509377.pdf \
+  --pages 10-17,180 \
+  --output-dir src/build_a_long/pdf_extract/fixtures \
+  --debug-json \
+  --debug-extra-json
+
+# Full document fixtures
+pants run src/build_a_long/pdf_extract:main -- \
+  data/10237/6055741.pdf \
+  --output-dir src/build_a_long/pdf_extract/fixtures \
+  --debug-json \
+  --debug-extra-json \
+  --compress-json
+
+pants run src/build_a_long/pdf_extract:main -- \
+  data/75375/6509377.pdf \
+  --output-dir src/build_a_long/pdf_extract/fixtures \
+  --debug-json \
+  --debug-extra-json \
+  --compress-json
+
+pants run src/build_a_long/pdf_extract:main -- \
+  data/75406/6580053.pdf \
+  --output-dir src/build_a_long/pdf_extract/fixtures \
+  --debug-json \
+  --debug-extra-json \
+  --compress-json
+```
 
 ### Regenerating Golden Files
 

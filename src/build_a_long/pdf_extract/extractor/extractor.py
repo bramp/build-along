@@ -403,7 +403,7 @@ class Extractor:
 
             drawing_blocks.append(
                 Drawing(
-                    bbox=nbbox,
+                    bbox=visible_bbox if visible_bbox else nbbox,
                     fill_color=fill_color,
                     stroke_color=stroke_color,
                     line_width=line_width,
@@ -413,7 +413,9 @@ class Extractor:
                     dashes=dashes,
                     even_odd=even_odd,
                     items=items,
-                    visible_bbox=visible_bbox,
+                    original_bbox=nbbox
+                    if visible_bbox and visible_bbox != nbbox
+                    else None,
                     id=self._get_next_id(),
                 )
             )

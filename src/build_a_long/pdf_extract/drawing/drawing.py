@@ -262,21 +262,18 @@ def draw_and_save_bboxes(
         for block in result.page_data.blocks:
             if isinstance(block, DrawingBlock) and block.items:
                 # Use different colors for clipped vs non-clipped drawings
-                is_clipped = (
-                    block.visible_bbox is not None and block.bbox != block.visible_bbox
-                )
+                is_clipped = block.is_clipped
                 color = "magenta" if is_clipped else "cyan"
                 draw_path_items(draw, block.items, scale_x, scale_y, color=color)
 
-                # Draw visible_bbox if it differs from bbox (clipped)
-                if block.visible_bbox:
-                    vbox = [
-                        block.visible_bbox.x0 * scale_x,
-                        block.visible_bbox.y0 * scale_y,
-                        block.visible_bbox.x1 * scale_x,
-                        block.visible_bbox.y1 * scale_y,
-                    ]
-                    draw.rectangle(vbox, outline="yellow", width=1)
+                # Draw visible bbox (which is now just bbox) in yellow
+                vbox = [
+                    block.bbox.x0 * scale_x,
+                    block.bbox.y0 * scale_y,
+                    block.bbox.x1 * scale_x,
+                    block.bbox.y1 * scale_y,
+                ]
+                draw.rectangle(vbox, outline="yellow", width=1)
 
                 drawings_rendered += 1
                 if is_clipped:

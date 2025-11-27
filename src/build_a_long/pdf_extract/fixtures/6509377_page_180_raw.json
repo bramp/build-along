@@ -17,10 +17,18 @@
 						"y1": 28.85
 					},
 					"id": 0,
+					"__tag__": "Text",
 					"text": "5x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						27.40118408203125
+					]
 				},
 				{
 					"bbox": {
@@ -30,10 +38,18 @@
 						"y1": 36.08
 					},
 					"id": 1,
+					"__tag__": "Text",
 					"text": "614101",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						34.6011962890625
+					]
 				},
 				{
 					"bbox": {
@@ -43,10 +59,18 @@
 						"y1": 64.11
 					},
 					"id": 2,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						62.65460205078125
+					]
 				},
 				{
 					"bbox": {
@@ -56,10 +80,18 @@
 						"y1": 71.33
 					},
 					"id": 3,
+					"__tag__": "Text",
 					"text": "300501",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						69.85458374023438
+					]
 				},
 				{
 					"bbox": {
@@ -69,10 +101,18 @@
 						"y1": 96.84
 					},
 					"id": 4,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						95.38800048828125
+					]
 				},
 				{
 					"bbox": {
@@ -82,10 +122,18 @@
 						"y1": 104.06
 					},
 					"id": 5,
+					"__tag__": "Text",
 					"text": "302301",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						102.5880126953125
+					]
 				},
 				{
 					"bbox": {
@@ -95,10 +143,18 @@
 						"y1": 133.17
 					},
 					"id": 6,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						131.72137451171875
+					]
 				},
 				{
 					"bbox": {
@@ -108,10 +164,18 @@
 						"y1": 140.4
 					},
 					"id": 7,
+					"__tag__": "Text",
 					"text": "6469441",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						138.92138671875
+					]
 				},
 				{
 					"bbox": {
@@ -121,10 +185,18 @@
 						"y1": 186.07
 					},
 					"id": 8,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						184.61468505859375
+					]
 				},
 				{
 					"bbox": {
@@ -134,10 +206,18 @@
 						"y1": 193.29
 					},
 					"id": 9,
+					"__tag__": "Text",
 					"text": "447701",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						191.814697265625
+					]
 				},
 				{
 					"bbox": {
@@ -147,10 +227,18 @@
 						"y1": 218.44
 					},
 					"id": 10,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						216.98797607421875
+					]
 				},
 				{
 					"bbox": {
@@ -160,10 +248,18 @@
 						"y1": 225.66
 					},
 					"id": 11,
+					"__tag__": "Text",
 					"text": "6092587",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						224.18798828125
+					]
 				},
 				{
 					"bbox": {
@@ -173,10 +269,18 @@
 						"y1": 253.69
 					},
 					"id": 12,
+					"__tag__": "Text",
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						252.24139404296875
+					]
 				},
 				{
 					"bbox": {
@@ -186,10 +290,18 @@
 						"y1": 260.92
 					},
 					"id": 13,
+					"__tag__": "Text",
 					"text": "6251252",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						259.44140625
+					]
 				},
 				{
 					"bbox": {
@@ -199,10 +311,18 @@
 						"y1": 288.95
 					},
 					"id": 14,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						287.4947814941406
+					]
 				},
 				{
 					"bbox": {
@@ -212,10 +332,18 @@
 						"y1": 296.17
 					},
 					"id": 15,
+					"__tag__": "Text",
 					"text": "4121921",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						294.69476318359375
+					]
 				},
 				{
 					"bbox": {
@@ -225,10 +353,18 @@
 						"y1": 324.74
 					},
 					"id": 16,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						323.2880859375
+					]
 				},
 				{
 					"bbox": {
@@ -238,10 +374,18 @@
 						"y1": 331.96
 					},
 					"id": 17,
+					"__tag__": "Text",
 					"text": "4666999",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						330.48809814453125
+					]
 				},
 				{
 					"bbox": {
@@ -251,10 +395,18 @@
 						"y1": 365.03
 					},
 					"id": 18,
+					"__tag__": "Text",
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						363.58148193359375
+					]
 				},
 				{
 					"bbox": {
@@ -264,10 +416,18 @@
 						"y1": 372.26
 					},
 					"id": 19,
+					"__tag__": "Text",
 					"text": "6273851",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						370.781494140625
+					]
 				},
 				{
 					"bbox": {
@@ -277,10 +437,18 @@
 						"y1": 406.41
 					},
 					"id": 20,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						404.95489501953125
+					]
 				},
 				{
 					"bbox": {
@@ -290,10 +458,18 @@
 						"y1": 413.63
 					},
 					"id": 21,
+					"__tag__": "Text",
 					"text": "4114309",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						412.1549072265625
+					]
 				},
 				{
 					"bbox": {
@@ -303,10 +479,18 @@
 						"y1": 457.86
 					},
 					"id": 22,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						14.173199653625488,
+						456.408203125
+					]
 				},
 				{
 					"bbox": {
@@ -316,10 +500,18 @@
 						"y1": 465.08
 					},
 					"id": 23,
+					"__tag__": "Text",
 					"text": "4181134",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						463.6081848144531
+					]
 				},
 				{
 					"bbox": {
@@ -329,10 +521,18 @@
 						"y1": 474.79
 					},
 					"id": 24,
+					"__tag__": "Text",
 					"text": "8x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						167.5222930908203,
+						473.3377990722656
+					]
 				},
 				{
 					"bbox": {
@@ -342,10 +542,18 @@
 						"y1": 482.01
 					},
 					"id": 25,
+					"__tag__": "Text",
 					"text": "6344819",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						167.5222930908203,
+						480.53778076171875
+					]
 				},
 				{
 					"bbox": {
@@ -355,10 +563,18 @@
 						"y1": 31.91
 					},
 					"id": 26,
+					"__tag__": "Text",
 					"text": "23x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						30.461181640625
+					]
 				},
 				{
 					"bbox": {
@@ -368,10 +584,18 @@
 						"y1": 39.14
 					},
 					"id": 27,
+					"__tag__": "Text",
 					"text": "6210270",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						37.661163330078125
+					]
 				},
 				{
 					"bbox": {
@@ -381,10 +605,18 @@
 						"y1": 62.45
 					},
 					"id": 28,
+					"__tag__": "Text",
 					"text": "8x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						60.997894287109375
+					]
 				},
 				{
 					"bbox": {
@@ -394,10 +626,18 @@
 						"y1": 69.67
 					},
 					"id": 29,
+					"__tag__": "Text",
 					"text": "403226",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						68.19790649414062
+					]
 				},
 				{
 					"bbox": {
@@ -407,10 +647,18 @@
 						"y1": 89.75
 					},
 					"id": 30,
+					"__tag__": "Text",
 					"text": "12x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						88.29458618164062
+					]
 				},
 				{
 					"bbox": {
@@ -420,10 +668,18 @@
 						"y1": 96.97
 					},
 					"id": 31,
+					"__tag__": "Text",
 					"text": "6279875",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						95.49459838867188
+					]
 				},
 				{
 					"bbox": {
@@ -433,10 +689,18 @@
 						"y1": 118.84
 					},
 					"id": 32,
+					"__tag__": "Text",
 					"text": "7x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						117.39117431640625
+					]
 				},
 				{
 					"bbox": {
@@ -446,10 +710,18 @@
 						"y1": 126.07
 					},
 					"id": 33,
+					"__tag__": "Text",
 					"text": "302326",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						124.5911865234375
+					]
 				},
 				{
 					"bbox": {
@@ -459,10 +731,18 @@
 						"y1": 152.98
 					},
 					"id": 34,
+					"__tag__": "Text",
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						151.52789306640625
+					]
 				},
 				{
 					"bbox": {
@@ -472,10 +752,18 @@
 						"y1": 160.2
 					},
 					"id": 35,
+					"__tag__": "Text",
 					"text": "300426",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						158.72787475585938
+					]
 				},
 				{
 					"bbox": {
@@ -485,10 +773,18 @@
 						"y1": 181.0
 					},
 					"id": 36,
+					"__tag__": "Text",
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						179.54449462890625
+					]
 				},
 				{
 					"bbox": {
@@ -498,10 +794,18 @@
 						"y1": 188.22
 					},
 					"id": 37,
+					"__tag__": "Text",
 					"text": "6156991",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						186.7445068359375
+					]
 				},
 				{
 					"bbox": {
@@ -511,10 +815,18 @@
 						"y1": 214.05
 					},
 					"id": 38,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						212.6011962890625
+					]
 				},
 				{
 					"bbox": {
@@ -524,10 +836,18 @@
 						"y1": 221.28
 					},
 					"id": 39,
+					"__tag__": "Text",
 					"text": "6114987",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						219.80120849609375
+					]
 				},
 				{
 					"bbox": {
@@ -537,10 +857,18 @@
 						"y1": 255.57
 					},
 					"id": 40,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						254.11778259277344
+					]
 				},
 				{
 					"bbox": {
@@ -550,10 +878,18 @@
 						"y1": 262.79
 					},
 					"id": 41,
+					"__tag__": "Text",
 					"text": "4593678",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						261.3177795410156
+					]
 				},
 				{
 					"bbox": {
@@ -563,10 +899,18 @@
 						"y1": 304.83
 					},
 					"id": 42,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						303.3744812011719
+					]
 				},
 				{
 					"bbox": {
@@ -576,10 +920,18 @@
 						"y1": 312.05
 					},
 					"id": 43,
+					"__tag__": "Text",
 					"text": "6228588",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						310.574462890625
+					]
 				},
 				{
 					"bbox": {
@@ -589,10 +941,18 @@
 						"y1": 334.46
 					},
 					"id": 44,
+					"__tag__": "Text",
 					"text": "11x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						333.01116943359375
+					]
 				},
 				{
 					"bbox": {
@@ -602,10 +962,18 @@
 						"y1": 341.69
 					},
 					"id": 45,
+					"__tag__": "Text",
 					"text": "6313116",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						340.211181640625
+					]
 				},
 				{
 					"bbox": {
@@ -615,10 +983,18 @@
 						"y1": 370.4
 					},
 					"id": 46,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						368.9477844238281
+					]
 				},
 				{
 					"bbox": {
@@ -628,10 +1004,18 @@
 						"y1": 377.62
 					},
 					"id": 47,
+					"__tag__": "Text",
 					"text": "6000650",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						376.1477966308594
+					]
 				},
 				{
 					"bbox": {
@@ -641,10 +1025,18 @@
 						"y1": 403.64
 					},
 					"id": 48,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						402.1844787597656
+					]
 				},
 				{
 					"bbox": {
@@ -654,10 +1046,18 @@
 						"y1": 410.86
 					},
 					"id": 49,
+					"__tag__": "Text",
 					"text": "6016172",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						409.3844909667969
+					]
 				},
 				{
 					"bbox": {
@@ -667,10 +1067,18 @@
 						"y1": 443.17
 					},
 					"id": 50,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						166.652099609375,
+						441.7210998535156
+					]
 				},
 				{
 					"bbox": {
@@ -680,10 +1088,18 @@
 						"y1": 450.4
 					},
 					"id": 51,
+					"__tag__": "Text",
 					"text": "6117973",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						166.652099609375,
+						448.92108154296875
+					]
 				},
 				{
 					"bbox": {
@@ -693,10 +1109,18 @@
 						"y1": 31.73
 					},
 					"id": 52,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43179321289062,
+						30.28118896484375
+					]
 				},
 				{
 					"bbox": {
@@ -706,10 +1130,18 @@
 						"y1": 38.96
 					},
 					"id": 53,
+					"__tag__": "Text",
 					"text": "6121485",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43179321289062,
+						37.481201171875
+					]
 				},
 				{
 					"bbox": {
@@ -719,10 +1151,18 @@
 						"y1": 68.24
 					},
 					"id": 54,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						66.78558349609375
+					]
 				},
 				{
 					"bbox": {
@@ -732,10 +1172,18 @@
 						"y1": 75.46
 					},
 					"id": 55,
+					"__tag__": "Text",
 					"text": "6271346",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						73.985595703125
+					]
 				},
 				{
 					"bbox": {
@@ -745,10 +1193,18 @@
 						"y1": 100.78
 					},
 					"id": 56,
+					"__tag__": "Text",
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						99.32989501953125
+					]
 				},
 				{
 					"bbox": {
@@ -758,10 +1214,18 @@
 						"y1": 108.01
 					},
 					"id": 57,
+					"__tag__": "Text",
 					"text": "302226",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						106.5299072265625
+					]
 				},
 				{
 					"bbox": {
@@ -771,10 +1235,18 @@
 						"y1": 130.81
 					},
 					"id": 58,
+					"__tag__": "Text",
 					"text": "8x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						129.35427856445312
+					]
 				},
 				{
 					"bbox": {
@@ -784,10 +1256,18 @@
 						"y1": 138.03
 					},
 					"id": 59,
+					"__tag__": "Text",
 					"text": "242026",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						136.55429077148438
+					]
 				},
 				{
 					"bbox": {
@@ -797,10 +1277,18 @@
 						"y1": 161.55
 					},
 					"id": 60,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						160.09860229492188
+					]
 				},
 				{
 					"bbox": {
@@ -810,10 +1298,18 @@
 						"y1": 168.77
 					},
 					"id": 61,
+					"__tag__": "Text",
 					"text": "4124096",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						167.298583984375
+					]
 				},
 				{
 					"bbox": {
@@ -823,10 +1319,18 @@
 						"y1": 194.09
 					},
 					"id": 62,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						192.64297485351562
+					]
 				},
 				{
 					"bbox": {
@@ -836,10 +1340,18 @@
 						"y1": 201.32
 					},
 					"id": 63,
+					"__tag__": "Text",
 					"text": "368026",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						199.84298706054688
+					]
 				},
 				{
 					"bbox": {
@@ -849,10 +1361,18 @@
 						"y1": 229.16
 					},
 					"id": 64,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						227.707275390625
+					]
 				},
 				{
 					"bbox": {
@@ -862,10 +1382,18 @@
 						"y1": 236.38
 					},
 					"id": 65,
+					"__tag__": "Text",
 					"text": "6211476",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						234.90728759765625
+					]
 				},
 				{
 					"bbox": {
@@ -875,10 +1403,18 @@
 						"y1": 259.0
 					},
 					"id": 66,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						257.55169677734375
+					]
 				},
 				{
 					"bbox": {
@@ -888,10 +1424,18 @@
 						"y1": 266.23
 					},
 					"id": 67,
+					"__tag__": "Text",
 					"text": "6089119",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						264.7516784667969
+					]
 				},
 				{
 					"bbox": {
@@ -901,10 +1445,18 @@
 						"y1": 290.47
 					},
 					"id": 68,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						289.0159912109375
+					]
 				},
 				{
 					"bbox": {
@@ -914,10 +1466,18 @@
 						"y1": 297.69
 					},
 					"id": 69,
+					"__tag__": "Text",
 					"text": "362326",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						296.21600341796875
+					]
 				},
 				{
 					"bbox": {
@@ -927,10 +1487,18 @@
 						"y1": 326.97
 					},
 					"id": 70,
+					"__tag__": "Text",
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						325.5203857421875
+					]
 				},
 				{
 					"bbox": {
@@ -940,10 +1508,18 @@
 						"y1": 334.2
 					},
 					"id": 71,
+					"__tag__": "Text",
 					"text": "362226",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						332.72039794921875
+					]
 				},
 				{
 					"bbox": {
@@ -953,10 +1529,18 @@
 						"y1": 371.04
 					},
 					"id": 72,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						369.5846862792969
+					]
 				},
 				{
 					"bbox": {
@@ -966,10 +1550,18 @@
 						"y1": 378.26
 					},
 					"id": 73,
+					"__tag__": "Text",
 					"text": "6154860",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						376.7846984863281
+					]
 				},
 				{
 					"bbox": {
@@ -979,10 +1571,18 @@
 						"y1": 406.64
 					},
 					"id": 74,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						405.1890869140625
+					]
 				},
 				{
 					"bbox": {
@@ -992,10 +1592,18 @@
 						"y1": 413.87
 					},
 					"id": 75,
+					"__tag__": "Text",
 					"text": "6168620",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						412.38909912109375
+					]
 				},
 				{
 					"bbox": {
@@ -1005,10 +1613,18 @@
 						"y1": 439.73
 					},
 					"id": 76,
+					"__tag__": "Text",
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						438.27337646484375
+					]
 				},
 				{
 					"bbox": {
@@ -1018,10 +1634,18 @@
 						"y1": 446.95
 					},
 					"id": 77,
+					"__tag__": "Text",
 					"text": "6327548",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						445.473388671875
+					]
 				},
 				{
 					"bbox": {
@@ -1031,10 +1655,18 @@
 						"y1": 474.79
 					},
 					"id": 78,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						231.43170166015625,
+						473.3377990722656
+					]
 				},
 				{
 					"bbox": {
@@ -1044,10 +1676,18 @@
 						"y1": 482.01
 					},
 					"id": 79,
+					"__tag__": "Text",
 					"text": "302126",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						231.43170166015625,
+						480.53778076171875
+					]
 				},
 				{
 					"bbox": {
@@ -1057,10 +1697,18 @@
 						"y1": 28.31
 					},
 					"id": 80,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						26.861175537109375
+					]
 				},
 				{
 					"bbox": {
@@ -1070,10 +1718,18 @@
 						"y1": 35.54
 					},
 					"id": 81,
+					"__tag__": "Text",
 					"text": "6426359",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						34.061187744140625
+					]
 				},
 				{
 					"bbox": {
@@ -1083,10 +1739,18 @@
 						"y1": 62.8
 					},
 					"id": 82,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						61.34637451171875
+					]
 				},
 				{
 					"bbox": {
@@ -1096,10 +1760,18 @@
 						"y1": 70.02
 					},
 					"id": 83,
+					"__tag__": "Text",
 					"text": "6162892",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						68.54638671875
+					]
 				},
 				{
 					"bbox": {
@@ -1109,10 +1781,18 @@
 						"y1": 96.74
 					},
 					"id": 84,
+					"__tag__": "Text",
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						95.29147338867188
+					]
 				},
 				{
 					"bbox": {
@@ -1122,10 +1802,18 @@
 						"y1": 103.97
 					},
 					"id": 85,
+					"__tag__": "Text",
 					"text": "371026",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						102.49148559570312
+					]
 				},
 				{
 					"bbox": {
@@ -1135,10 +1823,18 @@
 						"y1": 135.73
 					},
 					"id": 86,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						134.27670288085938
+					]
 				},
 				{
 					"bbox": {
@@ -1148,10 +1844,18 @@
 						"y1": 142.95
 					},
 					"id": 87,
+					"__tag__": "Text",
 					"text": "301026",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						141.4766845703125
+					]
 				},
 				{
 					"bbox": {
@@ -1161,10 +1865,18 @@
 						"y1": 169.31
 					},
 					"id": 88,
+					"__tag__": "Text",
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						167.86178588867188
+					]
 				},
 				{
 					"bbox": {
@@ -1174,10 +1886,18 @@
 						"y1": 176.54
 					},
 					"id": 89,
+					"__tag__": "Text",
 					"text": "243126",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						175.06179809570312
+					]
 				},
 				{
 					"bbox": {
@@ -1187,10 +1907,18 @@
 						"y1": 223.42
 					},
 					"id": 90,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						221.96697998046875
+					]
 				},
 				{
 					"bbox": {
@@ -1200,10 +1928,18 @@
 						"y1": 230.64
 					},
 					"id": 91,
+					"__tag__": "Text",
 					"text": "6483080",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						229.1669921875
+					]
 				},
 				{
 					"bbox": {
@@ -1213,10 +1949,18 @@
 						"y1": 257.0
 					},
 					"id": 92,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						255.55209350585938
+					]
 				},
 				{
 					"bbox": {
@@ -1226,10 +1970,18 @@
 						"y1": 264.23
 					},
 					"id": 93,
+					"__tag__": "Text",
 					"text": "6439175",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						262.7521057128906
+					]
 				},
 				{
 					"bbox": {
@@ -1239,10 +1991,18 @@
 						"y1": 299.59
 					},
 					"id": 94,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						298.13720703125
+					]
 				},
 				{
 					"bbox": {
@@ -1252,10 +2012,18 @@
 						"y1": 306.81
 					},
 					"id": 95,
+					"__tag__": "Text",
 					"text": "300126",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						305.3371887207031
+					]
 				},
 				{
 					"bbox": {
@@ -1265,10 +2033,18 @@
 						"y1": 336.59
 					},
 					"id": 96,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						335.14239501953125
+					]
 				},
 				{
 					"bbox": {
@@ -1278,10 +2054,18 @@
 						"y1": 343.82
 					},
 					"id": 97,
+					"__tag__": "Text",
 					"text": "4560182",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						342.3424072265625
+					]
 				},
 				{
 					"bbox": {
@@ -1291,10 +2075,18 @@
 						"y1": 374.14
 					},
 					"id": 98,
+					"__tag__": "Text",
 					"text": "6x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						372.6875
+					]
 				},
 				{
 					"bbox": {
@@ -1304,10 +2096,18 @@
 						"y1": 381.36
 					},
 					"id": 99,
+					"__tag__": "Text",
 					"text": "302026",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						379.8874816894531
+					]
 				},
 				{
 					"bbox": {
@@ -1317,10 +2117,18 @@
 						"y1": 410.6
 					},
 					"id": 100,
+					"__tag__": "Text",
 					"text": "7x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						409.152587890625
+					]
 				},
 				{
 					"bbox": {
@@ -1330,10 +2138,18 @@
 						"y1": 417.83
 					},
 					"id": 101,
+					"__tag__": "Text",
 					"text": "6350415",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						416.35260009765625
+					]
 				},
 				{
 					"bbox": {
@@ -1343,10 +2159,18 @@
 						"y1": 474.79
 					},
 					"id": 102,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						295.3411865234375,
+						473.3377990722656
+					]
 				},
 				{
 					"bbox": {
@@ -1356,10 +2180,18 @@
 						"y1": 482.01
 					},
 					"id": 103,
+					"__tag__": "Text",
 					"text": "4116854",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						295.3411865234375,
+						480.53778076171875
+					]
 				},
 				{
 					"bbox": {
@@ -1369,10 +2201,18 @@
 						"y1": 43.07
 					},
 					"id": 104,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						359.2506103515625,
+						41.62127685546875
+					]
 				},
 				{
 					"bbox": {
@@ -1382,10 +2222,18 @@
 						"y1": 50.3
 					},
 					"id": 105,
+					"__tag__": "Text",
 					"text": "366626",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						359.2506103515625,
+						48.8212890625
+					]
 				},
 				{
 					"bbox": {
@@ -1395,10 +2243,18 @@
 						"y1": 94.45
 					},
 					"id": 106,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						359.2506103515625,
+						92.998291015625
+					]
 				},
 				{
 					"bbox": {
@@ -1408,10 +2264,18 @@
 						"y1": 101.67
 					},
 					"id": 107,
+					"__tag__": "Text",
 					"text": "389426",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						359.2506103515625,
+						100.19830322265625
+					]
 				},
 				{
 					"bbox": {
@@ -1421,10 +2285,18 @@
 						"y1": 145.83
 					},
 					"id": 108,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						359.2506103515625,
+						144.37539672851562
+					]
 				},
 				{
 					"bbox": {
@@ -1434,10 +2306,18 @@
 						"y1": 153.05
 					},
 					"id": 109,
+					"__tag__": "Text",
 					"text": "300926",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						359.2506103515625,
+						151.57540893554688
+					]
 				},
 				{
 					"bbox": {
@@ -1447,10 +2327,18 @@
 						"y1": 197.92
 					},
 					"id": 110,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						359.2506103515625,
+						196.47247314453125
+					]
 				},
 				{
 					"bbox": {
@@ -1460,10 +2348,18 @@
 						"y1": 205.15
 					},
 					"id": 111,
+					"__tag__": "Text",
 					"text": "6484084",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						359.2506103515625,
+						203.67245483398438
+					]
 				},
 				{
 					"bbox": {
@@ -1473,10 +2369,18 @@
 						"y1": 247.86
 					},
 					"id": 112,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						359.2506103515625,
+						246.40948486328125
+					]
 				},
 				{
 					"bbox": {
@@ -1486,10 +2390,18 @@
 						"y1": 255.09
 					},
 					"id": 113,
+					"__tag__": "Text",
 					"text": "379526",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						359.2506103515625,
+						253.60948181152344
+					]
 				},
 				{
 					"bbox": {
@@ -1499,10 +2411,18 @@
 						"y1": 298.52
 					},
 					"id": 114,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						359.2506103515625,
+						297.06658935546875
+					]
 				},
 				{
 					"bbox": {
@@ -1512,10 +2432,18 @@
 						"y1": 305.74
 					},
 					"id": 115,
+					"__tag__": "Text",
 					"text": "6170702",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						359.2506103515625,
+						304.2666015625
+					]
 				},
 				{
 					"bbox": {
@@ -1525,10 +2453,18 @@
 						"y1": 353.5
 					},
 					"id": 116,
+					"__tag__": "Text",
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						359.2506103515625,
+						352.043701171875
+					]
 				},
 				{
 					"bbox": {
@@ -1538,10 +2474,18 @@
 						"y1": 360.72
 					},
 					"id": 117,
+					"__tag__": "Text",
 					"text": "303426",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						359.2506103515625,
+						359.2436828613281
+					]
 				},
 				{
 					"bbox": {
@@ -1551,10 +2495,18 @@
 						"y1": 413.51
 					},
 					"id": 118,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						359.2506103515625,
+						412.0606994628906
+					]
 				},
 				{
 					"bbox": {
@@ -1564,10 +2516,18 @@
 						"y1": 420.74
 					},
 					"id": 119,
+					"__tag__": "Text",
 					"text": "6037390",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						359.2506103515625,
+						419.26068115234375
+					]
 				},
 				{
 					"bbox": {
@@ -1577,10 +2537,18 @@
 						"y1": 474.79
 					},
 					"id": 120,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						359.2506103515625,
+						473.3377990722656
+					]
 				},
 				{
 					"bbox": {
@@ -1590,10 +2558,18 @@
 						"y1": 482.01
 					},
 					"id": 121,
+					"__tag__": "Text",
 					"text": "4514845",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						359.2506103515625,
+						480.53778076171875
+					]
 				},
 				{
 					"bbox": {
@@ -1603,10 +2579,18 @@
 						"y1": 71.69
 					},
 					"id": 122,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						70.24130249023438
+					]
 				},
 				{
 					"bbox": {
@@ -1616,10 +2600,18 @@
 						"y1": 78.92
 					},
 					"id": 123,
+					"__tag__": "Text",
 					"text": "6240515",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						77.4412841796875
+					]
 				},
 				{
 					"bbox": {
@@ -1629,10 +2621,18 @@
 						"y1": 106.51
 					},
 					"id": 124,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						105.056396484375
+					]
 				},
 				{
 					"bbox": {
@@ -1642,10 +2642,18 @@
 						"y1": 113.73
 					},
 					"id": 125,
+					"__tag__": "Text",
 					"text": "4527943",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						112.25640869140625
+					]
 				},
 				{
 					"bbox": {
@@ -1655,10 +2663,18 @@
 						"y1": 148.52
 					},
 					"id": 126,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						147.07150268554688
+					]
 				},
 				{
 					"bbox": {
@@ -1668,10 +2684,18 @@
 						"y1": 155.75
 					},
 					"id": 127,
+					"__tag__": "Text",
 					"text": "4165967",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						154.271484375
+					]
 				},
 				{
 					"bbox": {
@@ -1681,10 +2705,18 @@
 						"y1": 190.54
 					},
 					"id": 128,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						189.08657836914062
+					]
 				},
 				{
 					"bbox": {
@@ -1694,10 +2726,18 @@
 						"y1": 197.76
 					},
 					"id": 129,
+					"__tag__": "Text",
 					"text": "4621548",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						196.28659057617188
+					]
 				},
 				{
 					"bbox": {
@@ -1707,10 +2747,18 @@
 						"y1": 311.33
 					},
 					"id": 130,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						462.40008544921875,
+						309.8822021484375
+					]
 				},
 				{
 					"bbox": {
@@ -1720,10 +2768,18 @@
 						"y1": 318.56
 					},
 					"id": 131,
+					"__tag__": "Text",
 					"text": "6315781",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						462.40008544921875,
+						317.0821838378906
+					]
 				},
 				{
 					"bbox": {
@@ -1733,10 +2789,18 @@
 						"y1": 343.99
 					},
 					"id": 132,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						462.40008544921875,
+						342.53729248046875
+					]
 				},
 				{
 					"bbox": {
@@ -1746,10 +2810,18 @@
 						"y1": 351.21
 					},
 					"id": 133,
+					"__tag__": "Text",
 					"text": "6167936",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						462.40008544921875,
+						349.7373046875
+					]
 				},
 				{
 					"bbox": {
@@ -1759,10 +2831,18 @@
 						"y1": 214.55
 					},
 					"id": 134,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						213.1016845703125
+					]
 				},
 				{
 					"bbox": {
@@ -1772,10 +2852,18 @@
 						"y1": 221.78
 					},
 					"id": 135,
+					"__tag__": "Text",
 					"text": "6021623",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						220.30169677734375
+					]
 				},
 				{
 					"bbox": {
@@ -1785,10 +2873,18 @@
 						"y1": 238.57
 					},
 					"id": 136,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						237.11688232421875
+					]
 				},
 				{
 					"bbox": {
@@ -1798,10 +2894,18 @@
 						"y1": 245.79
 					},
 					"id": 137,
+					"__tag__": "Text",
 					"text": "6314247",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						244.31687927246094
+					]
 				},
 				{
 					"bbox": {
@@ -1811,10 +2915,18 @@
 						"y1": 262.04
 					},
 					"id": 138,
+					"__tag__": "Text",
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						260.5918884277344
+					]
 				},
 				{
 					"bbox": {
@@ -1824,10 +2936,18 @@
 						"y1": 269.27
 					},
 					"id": 139,
+					"__tag__": "Text",
 					"text": "6311890",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						267.7918701171875
+					]
 				},
 				{
 					"bbox": {
@@ -1837,10 +2957,18 @@
 						"y1": 287.32
 					},
 					"id": 140,
+					"__tag__": "Text",
 					"text": "5x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						285.8670654296875
+					]
 				},
 				{
 					"bbox": {
@@ -1850,10 +2978,18 @@
 						"y1": 294.54
 					},
 					"id": 141,
+					"__tag__": "Text",
 					"text": "4550169",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						293.06707763671875
+					]
 				},
 				{
 					"bbox": {
@@ -1863,10 +2999,18 @@
 						"y1": 383.66
 					},
 					"id": 142,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						382.21240234375
+					]
 				},
 				{
 					"bbox": {
@@ -1876,10 +3020,18 @@
 						"y1": 390.89
 					},
 					"id": 143,
+					"__tag__": "Text",
 					"text": "6267492",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						389.4123840332031
+					]
 				},
 				{
 					"bbox": {
@@ -1889,10 +3041,18 @@
 						"y1": 410.92
 					},
 					"id": 144,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						409.46759033203125
+					]
 				},
 				{
 					"bbox": {
@@ -1902,10 +3062,18 @@
 						"y1": 418.14
 					},
 					"id": 145,
+					"__tag__": "Text",
 					"text": "6448315",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						416.6676025390625
+					]
 				},
 				{
 					"bbox": {
@@ -1915,10 +3083,18 @@
 						"y1": 442.85
 					},
 					"id": 146,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						441.4026794433594
+					]
 				},
 				{
 					"bbox": {
@@ -1928,10 +3104,18 @@
 						"y1": 450.08
 					},
 					"id": 147,
+					"__tag__": "Text",
 					"text": "6210310",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						448.6026916503906
+					]
 				},
 				{
 					"bbox": {
@@ -1941,10 +3125,18 @@
 						"y1": 474.79
 					},
 					"id": 148,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						460.2401123046875,
+						473.3377990722656
+					]
 				},
 				{
 					"bbox": {
@@ -1954,10 +3146,18 @@
 						"y1": 482.01
 					},
 					"id": 149,
+					"__tag__": "Text",
 					"text": "4585479",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						460.2401123046875,
+						480.53778076171875
+					]
 				},
 				{
 					"bbox": {
@@ -1967,10 +3167,18 @@
 						"y1": 37.31
 					},
 					"id": 150,
+					"__tag__": "Text",
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.74259948730469,
+						35.861175537109375
+					]
 				},
 				{
 					"bbox": {
@@ -1980,10 +3188,18 @@
 						"y1": 44.54
 					},
 					"id": 151,
+					"__tag__": "Text",
 					"text": "6249809",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.74259948730469,
+						43.061187744140625
+					]
 				},
 				{
 					"bbox": {
@@ -1993,10 +3209,18 @@
 						"y1": 75.65
 					},
 					"id": 152,
+					"__tag__": "Text",
 					"text": "6x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.74259948730469,
+						74.20257568359375
+					]
 				},
 				{
 					"bbox": {
@@ -2006,10 +3230,18 @@
 						"y1": 82.88
 					},
 					"id": 153,
+					"__tag__": "Text",
 					"text": "6174925",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.74259948730469,
+						81.402587890625
+					]
 				},
 				{
 					"bbox": {
@@ -2019,10 +3251,18 @@
 						"y1": 108.06
 					},
 					"id": 154,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.74259948730469,
+						106.60397338867188
+					]
 				},
 				{
 					"bbox": {
@@ -2032,10 +3272,18 @@
 						"y1": 115.28
 					},
 					"id": 155,
+					"__tag__": "Text",
 					"text": "6321305",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.74259948730469,
+						113.80398559570312
+					]
 				},
 				{
 					"bbox": {
@@ -2045,10 +3293,18 @@
 						"y1": 135.78
 					},
 					"id": 156,
+					"__tag__": "Text",
 					"text": "8x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						134.32537841796875
+					]
 				},
 				{
 					"bbox": {
@@ -2058,10 +3314,18 @@
 						"y1": 143.0
 					},
 					"id": 157,
+					"__tag__": "Text",
 					"text": "6378120",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						141.525390625
+					]
 				},
 				{
 					"bbox": {
@@ -2071,10 +3335,18 @@
 						"y1": 164.94
 					},
 					"id": 158,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						163.48678588867188
+					]
 				},
 				{
 					"bbox": {
@@ -2084,10 +3356,18 @@
 						"y1": 172.16
 					},
 					"id": 159,
+					"__tag__": "Text",
 					"text": "6360104",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						170.68679809570312
+					]
 				},
 				{
 					"bbox": {
@@ -2097,10 +3377,18 @@
 						"y1": 194.64
 					},
 					"id": 160,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						193.18820190429688
+					]
 				},
 				{
 					"bbox": {
@@ -2110,10 +3398,18 @@
 						"y1": 201.86
 					},
 					"id": 161,
+					"__tag__": "Text",
 					"text": "4142865",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						200.38818359375
+					]
 				},
 				{
 					"bbox": {
@@ -2123,10 +3419,18 @@
 						"y1": 231.18
 					},
 					"id": 162,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						229.7294921875
+					]
 				},
 				{
 					"bbox": {
@@ -2136,10 +3440,18 @@
 						"y1": 238.41
 					},
 					"id": 163,
+					"__tag__": "Text",
 					"text": "6019155",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						236.92947387695312
+					]
 				},
 				{
 					"bbox": {
@@ -2149,10 +3461,18 @@
 						"y1": 273.66
 					},
 					"id": 164,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						272.21087646484375
+					]
 				},
 				{
 					"bbox": {
@@ -2162,10 +3482,18 @@
 						"y1": 280.89
 					},
 					"id": 165,
+					"__tag__": "Text",
 					"text": "300221",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						279.410888671875
+					]
 				},
 				{
 					"bbox": {
@@ -2175,10 +3503,18 @@
 						"y1": 341.73
 					},
 					"id": 166,
+					"__tag__": "Text",
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						340.2829895019531
+					]
 				},
 				{
 					"bbox": {
@@ -2188,10 +3524,18 @@
 						"y1": 348.96
 					},
 					"id": 167,
+					"__tag__": "Text",
 					"text": "614123",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						347.48297119140625
+					]
 				},
 				{
 					"bbox": {
@@ -2201,10 +3545,18 @@
 						"y1": 371.62
 					},
 					"id": 168,
+					"__tag__": "Text",
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						370.164306640625
+					]
 				},
 				{
 					"bbox": {
@@ -2214,10 +3566,18 @@
 						"y1": 378.84
 					},
 					"id": 169,
+					"__tag__": "Text",
 					"text": "4206482",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						377.3642883300781
+					]
 				},
 				{
 					"bbox": {
@@ -2227,10 +3587,18 @@
 						"y1": 409.24
 					},
 					"id": 170,
+					"__tag__": "Text",
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						407.78570556640625
+					]
 				},
 				{
 					"bbox": {
@@ -2240,10 +3608,18 @@
 						"y1": 416.46
 					},
 					"id": 171,
+					"__tag__": "Text",
 					"text": "6307924",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						414.9856872558594
+					]
 				},
 				{
 					"bbox": {
@@ -2253,10 +3629,18 @@
 						"y1": 436.42
 					},
 					"id": 172,
+					"__tag__": "Text",
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						434.96710205078125
+					]
 				},
 				{
 					"bbox": {
@@ -2266,10 +3650,18 @@
 						"y1": 443.64
 					},
 					"id": 173,
+					"__tag__": "Text",
 					"text": "614124",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						442.1670837402344
+					]
 				},
 				{
 					"bbox": {
@@ -2279,10 +3671,18 @@
 						"y1": 314.55
 					},
 					"id": 174,
+					"__tag__": "Text",
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						313.1015930175781
+					]
 				},
 				{
 					"bbox": {
@@ -2292,10 +3692,18 @@
 						"y1": 321.78
 					},
 					"id": 175,
+					"__tag__": "Text",
 					"text": "6129995",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						320.30157470703125
+					]
 				},
 				{
 					"bbox": {
@@ -2305,10 +3713,18 @@
 						"y1": 297.66
 					},
 					"id": 176,
+					"__tag__": "Text",
 					"text": "4",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 1578774,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						136.3784942626953,
+						295.6907958984375
+					]
 				},
 				{
 					"bbox": {
@@ -2318,10 +3734,18 @@
 						"y1": 474.79
 					},
 					"id": 177,
+					"__tag__": "Text",
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						102.7426986694336,
+						473.3377990722656
+					]
 				},
 				{
 					"bbox": {
@@ -2331,10 +3755,18 @@
 						"y1": 482.01
 					},
 					"id": 178,
+					"__tag__": "Text",
 					"text": "6130007",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						102.7426986694336,
+						480.53778076171875
+					]
 				},
 				{
 					"bbox": {
@@ -2344,10 +3776,18 @@
 						"y1": 460.41
 					},
 					"id": 179,
+					"__tag__": "Text",
 					"text": "3",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 1578774,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						130.0865020751953,
+						458.4469909667969
+					]
 				},
 				{
 					"bbox": {
@@ -2357,10 +3797,18 @@
 						"y1": 484.35
 					},
 					"id": 180,
+					"__tag__": "Text",
 					"text": "180",
 					"font_name": "CeraPro-Light",
 					"font_size": 10.0,
-					"__tag__": "Text"
+					"font_flags": 4,
+					"color": 16777215,
+					"ascender": 1.0,
+					"descender": -0.25,
+					"origin": [
+						14.173199653625488,
+						481.8898010253906
+					]
 				},
 				{
 					"bbox": {
@@ -2370,8 +3818,24 @@
 						"y1": 22.01
 					},
 					"id": 181,
+					"__tag__": "Image",
 					"image_id": "image_0",
-					"__tag__": "Image"
+					"width": 19,
+					"height": 18,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 830,
+					"transform": [
+						8.851790428161621,
+						0.0,
+						-0.0,
+						8.302510261535645,
+						13.707280158996582,
+						13.71198558807373
+					]
 				},
 				{
 					"bbox": {
@@ -2381,8 +3845,24 @@
 						"y1": 57.28
 					},
 					"id": 182,
+					"__tag__": "Image",
 					"image_id": "image_2",
-					"__tag__": "Image"
+					"width": 26,
+					"height": 32,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1405,
+					"transform": [
+						12.090020179748535,
+						0.0,
+						-0.0,
+						15.16802978515625,
+						13.708160400390625,
+						42.11260986328125
+					]
 				},
 				{
 					"bbox": {
@@ -2392,8 +3872,24 @@
 						"y1": 90.01
 					},
 					"id": 183,
+					"__tag__": "Image",
 					"image_id": "image_4",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 27,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1733,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						12.636019706726074,
+						13.70127010345459,
+						77.37197875976562
+					]
 				},
 				{
 					"bbox": {
@@ -2403,8 +3899,24 @@
 						"y1": 126.35
 					},
 					"id": 184,
+					"__tag__": "Image",
 					"image_id": "image_6",
-					"__tag__": "Image"
+					"width": 49,
+					"height": 34,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2230,
+					"transform": [
+						23.269840240478516,
+						0.0,
+						-0.0,
+						16.25628089904785,
+						13.698269844055176,
+						110.09525299072266
+					]
 				},
 				{
 					"bbox": {
@@ -2414,8 +3926,24 @@
 						"y1": 179.24
 					},
 					"id": 185,
+					"__tag__": "Image",
 					"image_id": "image_8",
-					"__tag__": "Image"
+					"width": 142,
+					"height": 69,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 4568,
+					"transform": [
+						68.09928131103516,
+						0.0,
+						-0.0,
+						32.811119079589844,
+						13.69359016418457,
+						146.43115234375
+					]
 				},
 				{
 					"bbox": {
@@ -2425,8 +3953,24 @@
 						"y1": 211.61
 					},
 					"id": 186,
+					"__tag__": "Image",
 					"image_id": "image_10",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 26,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1853,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						12.285019874572754,
+						13.70127010345459,
+						199.3275604248047
+					]
 				},
 				{
 					"bbox": {
@@ -2436,8 +3980,24 @@
 						"y1": 246.87
 					},
 					"id": 187,
+					"__tag__": "Image",
 					"image_id": "image_12",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 32,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2063,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						15.16802978515625,
+						13.70127010345459,
+						231.69940185546875
+					]
 				},
 				{
 					"bbox": {
@@ -2447,8 +4007,24 @@
 						"y1": 282.12
 					},
 					"id": 188,
+					"__tag__": "Image",
 					"image_id": "image_14",
-					"__tag__": "Image"
+					"width": 52,
+					"height": 32,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2478,
+					"transform": [
+						24.71044921875,
+						0.0,
+						-0.0,
+						15.16802978515625,
+						13.697959899902344,
+						266.9527893066406
+					]
 				},
 				{
 					"bbox": {
@@ -2458,8 +4034,24 @@
 						"y1": 317.92
 					},
 					"id": 189,
+					"__tag__": "Image",
 					"image_id": "image_16",
-					"__tag__": "Image"
+					"width": 61,
+					"height": 33,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2367,
+					"transform": [
+						29.21803092956543,
+						0.0,
+						-0.0,
+						15.712289810180664,
+						13.69417953491211,
+						302.2040100097656
+					]
 				},
 				{
 					"bbox": {
@@ -2469,8 +4061,24 @@
 						"y1": 358.2
 					},
 					"id": 190,
+					"__tag__": "Image",
 					"image_id": "image_18",
-					"__tag__": "Image"
+					"width": 65,
+					"height": 43,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 3377,
+					"transform": [
+						31.01435089111328,
+						0.0,
+						-0.0,
+						20.19955062866211,
+						13.696020126342773,
+						338.0037536621094
+					]
 				},
 				{
 					"bbox": {
@@ -2480,8 +4088,24 @@
 						"y1": 399.58
 					},
 					"id": 191,
+					"__tag__": "Image",
 					"image_id": "image_20",
-					"__tag__": "Image"
+					"width": 74,
+					"height": 45,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 3990,
+					"transform": [
+						35.3350715637207,
+						0.0,
+						-0.0,
+						21.286090850830078,
+						13.695659637451172,
+						378.2937927246094
+					]
 				},
 				{
 					"bbox": {
@@ -2491,8 +4115,24 @@
 						"y1": 451.04
 					},
 					"id": 192,
+					"__tag__": "Image",
 					"image_id": "image_22",
-					"__tag__": "Image"
+					"width": 100,
+					"height": 66,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 5789,
+					"transform": [
+						47.755191802978516,
+						0.0,
+						-0.0,
+						31.370689392089844,
+						13.695639610290527,
+						419.6648864746094
+					]
 				},
 				{
 					"bbox": {
@@ -2502,8 +4142,24 @@
 						"y1": 467.96
 					},
 					"id": 193,
+					"__tag__": "Image",
 					"image_id": "image_24",
-					"__tag__": "Image"
+					"width": 26,
+					"height": 32,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1418,
+					"transform": [
+						12.090020179748535,
+						0.0,
+						-0.0,
+						15.16802978515625,
+						167.05728149414062,
+						452.7957763671875
+					]
 				},
 				{
 					"bbox": {
@@ -2513,8 +4169,24 @@
 						"y1": 25.09
 					},
 					"id": 194,
+					"__tag__": "Image",
 					"image_id": "image_26",
-					"__tag__": "Image"
+					"width": 33,
+					"height": 24,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1431,
+					"transform": [
+						15.52068042755127,
+						0.0,
+						-0.0,
+						11.38910961151123,
+						166.18174743652344,
+						13.69871997833252
+					]
 				},
 				{
 					"bbox": {
@@ -2524,8 +4196,24 @@
 						"y1": 55.62
 					},
 					"id": 195,
+					"__tag__": "Image",
 					"image_id": "image_28",
-					"__tag__": "Image"
+					"width": 35,
+					"height": 30,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1718,
+					"transform": [
+						16.609130859375,
+						0.0,
+						-0.0,
+						14.07859992980957,
+						166.17752075195312,
+						41.54060363769531
+					]
 				},
 				{
 					"bbox": {
@@ -2535,8 +4223,24 @@
 						"y1": 82.92
 					},
 					"id": 196,
+					"__tag__": "Image",
 					"image_id": "image_30",
-					"__tag__": "Image"
+					"width": 35,
+					"height": 23,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1444,
+					"transform": [
+						16.609130859375,
+						0.0,
+						-0.0,
+						10.842880249023438,
+						166.17752075195312,
+						72.07514953613281
+					]
 				},
 				{
 					"bbox": {
@@ -2546,8 +4250,24 @@
 						"y1": 112.01
 					},
 					"id": 197,
+					"__tag__": "Image",
 					"image_id": "image_32",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 27,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1639,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						12.636019706726074,
+						166.18017578125,
+						99.375244140625
+					]
 				},
 				{
 					"bbox": {
@@ -2557,8 +4277,24 @@
 						"y1": 146.16
 					},
 					"id": 198,
+					"__tag__": "Image",
 					"image_id": "image_34",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 37,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1747,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						17.69659996032715,
+						166.18017578125,
+						128.46163940429688
+					]
 				},
 				{
 					"bbox": {
@@ -2568,8 +4304,24 @@
 						"y1": 174.16
 					},
 					"id": 199,
+					"__tag__": "Image",
 					"image_id": "image_36",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 25,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1586,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						11.543499946594238,
+						166.18017578125,
+						162.6147918701172
+					]
 				},
 				{
 					"bbox": {
@@ -2579,8 +4331,24 @@
 						"y1": 207.23
 					},
 					"id": 200,
+					"__tag__": "Image",
 					"image_id": "image_38",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 35,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1776,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						16.609130859375,
+						166.18017578125,
+						190.61865234375
+					]
 				},
 				{
 					"bbox": {
@@ -2590,8 +4358,24 @@
 						"y1": 248.74
 					},
 					"id": 201,
+					"__tag__": "Image",
 					"image_id": "image_40",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 53,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1920,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						25.065940856933594,
+						166.18017578125,
+						223.67691040039062
+					]
 				},
 				{
 					"bbox": {
@@ -2601,8 +4385,24 @@
 						"y1": 298.0
 					},
 					"id": 202,
+					"__tag__": "Image",
 					"image_id": "image_42",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 69,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1961,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						32.811119079589844,
+						166.18017578125,
+						265.19097900390625
+					]
 				},
 				{
 					"bbox": {
@@ -2612,8 +4412,24 @@
 						"y1": 327.63
 					},
 					"id": 203,
+					"__tag__": "Image",
 					"image_id": "image_44",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 28,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1799,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						13.181570053100586,
+						166.18017578125,
+						314.4523620605469
+					]
 				},
 				{
 					"bbox": {
@@ -2623,8 +4439,24 @@
 						"y1": 363.58
 					},
 					"id": 204,
+					"__tag__": "Image",
 					"image_id": "image_46",
-					"__tag__": "Image"
+					"width": 41,
+					"height": 41,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2083,
+					"transform": [
+						19.30158042907715,
+						0.0,
+						-0.0,
+						19.49081039428711,
+						166.18130493164062,
+						344.0844421386719
+					]
 				},
 				{
 					"bbox": {
@@ -2634,8 +4466,24 @@
 						"y1": 396.8
 					},
 					"id": 205,
+					"__tag__": "Image",
 					"image_id": "image_48",
-					"__tag__": "Image"
+					"width": 41,
+					"height": 36,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1988,
+					"transform": [
+						19.30158042907715,
+						0.0,
+						-0.0,
+						16.771799087524414,
+						166.18130493164062,
+						380.0306091308594
+					]
 				},
 				{
 					"bbox": {
@@ -2645,8 +4493,24 @@
 						"y1": 436.34
 					},
 					"id": 206,
+					"__tag__": "Image",
 					"image_id": "image_50",
-					"__tag__": "Image"
+					"width": 41,
+					"height": 49,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2401,
+					"transform": [
+						19.30158042907715,
+						0.0,
+						-0.0,
+						23.08218002319336,
+						166.18130493164062,
+						413.2620544433594
+					]
 				},
 				{
 					"bbox": {
@@ -2656,8 +4520,24 @@
 						"y1": 24.9
 					},
 					"id": 207,
+					"__tag__": "Image",
 					"image_id": "image_52",
-					"__tag__": "Image"
+					"width": 25,
+					"height": 24,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1032,
+					"transform": [
+						11.543499946594238,
+						0.0,
+						-0.0,
+						11.192749977111816,
+						230.9700164794922,
+						13.706847190856934
+					]
 				},
 				{
 					"bbox": {
@@ -2667,8 +4547,24 @@
 						"y1": 61.41
 					},
 					"id": 208,
+					"__tag__": "Image",
 					"image_id": "image_54",
-					"__tag__": "Image"
+					"width": 42,
+					"height": 43,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2011,
+					"transform": [
+						19.65604019165039,
+						0.0,
+						-0.0,
+						20.19955062866211,
+						230.96372985839844,
+						41.20785903930664
+					]
 				},
 				{
 					"bbox": {
@@ -2678,8 +4574,24 @@
 						"y1": 93.96
 					},
 					"id": 209,
+					"__tag__": "Image",
 					"image_id": "image_56",
-					"__tag__": "Image"
+					"width": 48,
+					"height": 34,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2032,
+					"transform": [
+						22.726999282836914,
+						0.0,
+						-0.0,
+						16.25628089904785,
+						230.958251953125,
+						77.7038345336914
+					]
 				},
 				{
 					"bbox": {
@@ -2689,8 +4601,24 @@
 						"y1": 123.98
 					},
 					"id": 210,
+					"__tag__": "Image",
 					"image_id": "image_58",
-					"__tag__": "Image"
+					"width": 48,
+					"height": 29,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1935,
+					"transform": [
+						22.726999282836914,
+						0.0,
+						-0.0,
+						13.726699829101562,
+						230.958251953125,
+						110.25294494628906
+					]
 				},
 				{
 					"bbox": {
@@ -2700,8 +4628,24 @@
 						"y1": 154.72
 					},
 					"id": 211,
+					"__tag__": "Image",
 					"image_id": "image_60",
-					"__tag__": "Image"
+					"width": 48,
+					"height": 31,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1970,
+					"transform": [
+						22.726999282836914,
+						0.0,
+						-0.0,
+						14.431070327758789,
+						230.958251953125,
+						140.2850799560547
+					]
 				},
 				{
 					"bbox": {
@@ -2711,8 +4655,24 @@
 						"y1": 187.27
 					},
 					"id": 212,
+					"__tag__": "Image",
 					"image_id": "image_62",
-					"__tag__": "Image"
+					"width": 48,
+					"height": 34,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2063,
+					"transform": [
+						22.726999282836914,
+						0.0,
+						-0.0,
+						16.25628089904785,
+						230.958251953125,
+						171.01687622070312
+					]
 				},
 				{
 					"bbox": {
@@ -2722,8 +4682,24 @@
 						"y1": 222.33
 					},
 					"id": 213,
+					"__tag__": "Image",
 					"image_id": "image_64",
-					"__tag__": "Image"
+					"width": 48,
+					"height": 40,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2253,
+					"transform": [
+						22.914840698242188,
+						0.0,
+						-0.0,
+						18.7579402923584,
+						230.954345703125,
+						203.57040405273438
+					]
 				},
 				{
 					"bbox": {
@@ -2733,8 +4709,24 @@
 						"y1": 252.17
 					},
 					"id": 214,
+					"__tag__": "Image",
 					"image_id": "image_66",
-					"__tag__": "Image"
+					"width": 49,
+					"height": 29,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1687,
+					"transform": [
+						23.08218002319336,
+						0.0,
+						-0.0,
+						13.533370018005371,
+						230.96066284179688,
+						238.63702392578125
+					]
 				},
 				{
 					"bbox": {
@@ -2744,8 +4736,24 @@
 						"y1": 283.64
 					},
 					"id": 215,
+					"__tag__": "Image",
 					"image_id": "image_68",
-					"__tag__": "Image"
+					"width": 52,
+					"height": 32,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1909,
+					"transform": [
+						24.71044921875,
+						0.0,
+						-0.0,
+						15.16802978515625,
+						230.95652770996094,
+						268.4740295410156
+					]
 				},
 				{
 					"bbox": {
@@ -2755,8 +4763,24 @@
 						"y1": 320.14
 					},
 					"id": 216,
+					"__tag__": "Image",
 					"image_id": "image_70",
-					"__tag__": "Image"
+					"width": 52,
+					"height": 43,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2194,
+					"transform": [
+						24.71044921875,
+						0.0,
+						-0.0,
+						20.19955062866211,
+						230.95652770996094,
+						299.942626953125
+					]
 				},
 				{
 					"bbox": {
@@ -2766,8 +4790,24 @@
 						"y1": 364.22
 					},
 					"id": 217,
+					"__tag__": "Image",
 					"image_id": "image_72",
-					"__tag__": "Image"
+					"width": 52,
+					"height": 58,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2419,
+					"transform": [
+						24.71044921875,
+						0.0,
+						-0.0,
+						27.77791976928711,
+						230.95652770996094,
+						336.4377746582031
+					]
 				},
 				{
 					"bbox": {
@@ -2777,8 +4817,24 @@
 						"y1": 399.81
 					},
 					"id": 218,
+					"__tag__": "Image",
 					"image_id": "image_74",
-					"__tag__": "Image"
+					"width": 58,
+					"height": 41,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2435,
+					"transform": [
+						27.591480255126953,
+						0.0,
+						-0.0,
+						19.30158042907715,
+						230.95602416992188,
+						380.51031494140625
+					]
 				},
 				{
 					"bbox": {
@@ -2788,8 +4844,24 @@
 						"y1": 432.89
 					},
 					"id": 219,
+					"__tag__": "Image",
 					"image_id": "image_76",
-					"__tag__": "Image"
+					"width": 59,
+					"height": 36,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2236,
+					"transform": [
+						27.947429656982422,
+						0.0,
+						-0.0,
+						16.771799087524414,
+						230.9580535888672,
+						416.11956787109375
+					]
 				},
 				{
 					"bbox": {
@@ -2799,8 +4871,24 @@
 						"y1": 467.96
 					},
 					"id": 220,
+					"__tag__": "Image",
 					"image_id": "image_78",
-					"__tag__": "Image"
+					"width": 61,
+					"height": 40,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2574,
+					"transform": [
+						29.031919479370117,
+						0.0,
+						-0.0,
+						18.7579402923584,
+						230.95579528808594,
+						449.2008361816406
+					]
 				},
 				{
 					"bbox": {
@@ -2810,8 +4898,24 @@
 						"y1": 21.47
 					},
 					"id": 221,
+					"__tag__": "Image",
 					"image_id": "image_80",
-					"__tag__": "Image"
+					"width": 19,
+					"height": 17,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 759,
+					"transform": [
+						8.851790428161621,
+						0.0,
+						-0.0,
+						7.752009868621826,
+						294.8753662109375,
+						13.717227935791016
+					]
 				},
 				{
 					"bbox": {
@@ -2821,8 +4925,24 @@
 						"y1": 55.97
 					},
 					"id": 222,
+					"__tag__": "Image",
 					"image_id": "image_82",
-					"__tag__": "Image"
+					"width": 61,
+					"height": 39,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2163,
+					"transform": [
+						29.031919479370117,
+						0.0,
+						-0.0,
+						18.214099884033203,
+						294.8652648925781,
+						37.7513542175293
+					]
 				},
 				{
 					"bbox": {
@@ -2832,8 +4952,24 @@
 						"y1": 89.92
 					},
 					"id": 223,
+					"__tag__": "Image",
 					"image_id": "image_84",
-					"__tag__": "Image"
+					"width": 65,
+					"height": 37,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2288,
+					"transform": [
+						31.01435089111328,
+						0.0,
+						-0.0,
+						17.69659996032715,
+						294.86407470703125,
+						72.22527313232422
+					]
 				},
 				{
 					"bbox": {
@@ -2843,8 +4979,24 @@
 						"y1": 128.9
 					},
 					"id": 224,
+					"__tag__": "Image",
 					"image_id": "image_86",
-					"__tag__": "Image"
+					"width": 65,
+					"height": 48,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2518,
+					"transform": [
+						31.01435089111328,
+						0.0,
+						-0.0,
+						22.726999282836914,
+						294.86407470703125,
+						106.1751937866211
+					]
 				},
 				{
 					"bbox": {
@@ -2854,8 +5006,24 @@
 						"y1": 162.48
 					},
 					"id": 225,
+					"__tag__": "Image",
 					"image_id": "image_88",
-					"__tag__": "Image"
+					"width": 65,
+					"height": 37,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2129,
+					"transform": [
+						31.01435089111328,
+						0.0,
+						-0.0,
+						17.316030502319336,
+						294.86407470703125,
+						145.16578674316406
+					]
 				},
 				{
 					"bbox": {
@@ -2865,8 +5033,24 @@
 						"y1": 216.6
 					},
 					"id": 226,
+					"__tag__": "Image",
 					"image_id": "image_90",
-					"__tag__": "Image"
+					"width": 66,
+					"height": 79,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 4863,
+					"transform": [
+						31.185060501098633,
+						0.0,
+						-0.0,
+						37.85852813720703,
+						294.86871337890625,
+						178.73971557617188
+					]
 				},
 				{
 					"bbox": {
@@ -2876,8 +5060,24 @@
 						"y1": 250.17
 					},
 					"id": 227,
+					"__tag__": "Image",
 					"image_id": "image_92",
-					"__tag__": "Image"
+					"width": 70,
+					"height": 37,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2627,
+					"transform": [
+						33.53831100463867,
+						0.0,
+						-0.0,
+						17.316030502319336,
+						294.8620910644531,
+						232.8560791015625
+					]
 				},
 				{
 					"bbox": {
@@ -2887,8 +5087,24 @@
 						"y1": 292.77
 					},
 					"id": 228,
+					"__tag__": "Image",
 					"image_id": "image_94",
-					"__tag__": "Image"
+					"width": 74,
+					"height": 55,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 3229,
+					"transform": [
+						35.3350715637207,
+						0.0,
+						-0.0,
+						26.33778953552246,
+						294.86370849609375,
+						266.4303283691406
+					]
 				},
 				{
 					"bbox": {
@@ -2898,8 +5114,24 @@
 						"y1": 329.77
 					},
 					"id": 229,
+					"__tag__": "Image",
 					"image_id": "image_96",
-					"__tag__": "Image"
+					"width": 74,
+					"height": 44,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2461,
+					"transform": [
+						35.3350715637207,
+						0.0,
+						-0.0,
+						20.742900848388672,
+						294.86370849609375,
+						309.02294921875
+					]
 				},
 				{
 					"bbox": {
@@ -2909,8 +5141,24 @@
 						"y1": 367.31
 					},
 					"id": 230,
+					"__tag__": "Image",
 					"image_id": "image_98",
-					"__tag__": "Image"
+					"width": 74,
+					"height": 45,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 3009,
+					"transform": [
+						35.3350715637207,
+						0.0,
+						-0.0,
+						21.286090850830078,
+						294.86370849609375,
+						346.0264587402344
+					]
 				},
 				{
 					"bbox": {
@@ -2920,8 +5168,24 @@
 						"y1": 403.77
 					},
 					"id": 231,
+					"__tag__": "Image",
 					"image_id": "image_100",
-					"__tag__": "Image"
+					"width": 78,
+					"height": 43,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2715,
+					"transform": [
+						37.132179260253906,
+						0.0,
+						-0.0,
+						20.19955062866211,
+						294.86517333984375,
+						383.5748596191406
+					]
 				},
 				{
 					"bbox": {
@@ -2931,8 +5195,24 @@
 						"y1": 467.97
 					},
 					"id": 232,
+					"__tag__": "Image",
 					"image_id": "image_102",
-					"__tag__": "Image"
+					"width": 78,
+					"height": 100,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 3898,
+					"transform": [
+						37.31692123413086,
+						0.0,
+						-0.0,
+						47.93886947631836,
+						294.86279296875,
+						420.0303955078125
+					]
 				},
 				{
 					"bbox": {
@@ -2942,8 +5222,24 @@
 						"y1": 36.24
 					},
 					"id": 233,
+					"__tag__": "Image",
 					"image_id": "image_104",
-					"__tag__": "Image"
+					"width": 91,
+					"height": 48,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2795,
+					"transform": [
+						43.43470001220703,
+						0.0,
+						-0.0,
+						22.539169311523438,
+						358.7733154296875,
+						13.703689575195312
+					]
 				},
 				{
 					"bbox": {
@@ -2953,8 +5249,24 @@
 						"y1": 87.63
 					},
 					"id": 234,
+					"__tag__": "Image",
 					"image_id": "image_106",
-					"__tag__": "Image"
+					"width": 91,
+					"height": 58,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 3519,
+					"transform": [
+						43.43470001220703,
+						0.0,
+						-0.0,
+						27.77791976928711,
+						358.7733154296875,
+						59.851383209228516
+					]
 				},
 				{
 					"bbox": {
@@ -2964,8 +5276,24 @@
 						"y1": 139.01
 					},
 					"id": 235,
+					"__tag__": "Image",
 					"image_id": "image_108",
-					"__tag__": "Image"
+					"width": 91,
+					"height": 58,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 3184,
+					"transform": [
+						43.43470001220703,
+						0.0,
+						-0.0,
+						27.77791976928711,
+						358.7733154296875,
+						111.22842407226562
+					]
 				},
 				{
 					"bbox": {
@@ -2975,8 +5303,24 @@
 						"y1": 191.1
 					},
 					"id": 236,
+					"__tag__": "Image",
 					"image_id": "image_110",
-					"__tag__": "Image"
+					"width": 93,
+					"height": 60,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 4666,
+					"transform": [
+						44.149539947509766,
+						0.0,
+						-0.0,
+						28.48971939086914,
+						358.77587890625,
+						162.609619140625
+					]
 				},
 				{
 					"bbox": {
@@ -2986,8 +5330,24 @@
 						"y1": 241.04
 					},
 					"id": 237,
+					"__tag__": "Image",
 					"image_id": "image_112",
-					"__tag__": "Image"
+					"width": 100,
+					"height": 55,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 3721,
+					"transform": [
+						47.755191802978516,
+						0.0,
+						-0.0,
+						26.33778953552246,
+						358.7730712890625,
+						214.70265197753906
+					]
 				},
 				{
 					"bbox": {
@@ -2997,8 +5357,24 @@
 						"y1": 291.69
 					},
 					"id": 238,
+					"__tag__": "Image",
 					"image_id": "image_114",
-					"__tag__": "Image"
+					"width": 115,
+					"height": 57,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 4315,
+					"transform": [
+						55.1390495300293,
+						0.0,
+						-0.0,
+						27.04914093017578,
+						358.7711486816406,
+						264.64404296875
+					]
 				},
 				{
 					"bbox": {
@@ -3008,8 +5384,24 @@
 						"y1": 346.67
 					},
 					"id": 239,
+					"__tag__": "Image",
 					"image_id": "image_116",
-					"__tag__": "Image"
+					"width": 126,
+					"height": 66,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 4591,
+					"transform": [
+						60.1752815246582,
+						0.0,
+						-0.0,
+						31.370689392089844,
+						358.7730407714844,
+						315.3003234863281
+					]
 				},
 				{
 					"bbox": {
@@ -3019,8 +5411,24 @@
 						"y1": 406.69
 					},
 					"id": 240,
+					"__tag__": "Image",
 					"image_id": "image_118",
-					"__tag__": "Image"
+					"width": 126,
+					"height": 76,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 5123,
+					"transform": [
+						60.1752815246582,
+						0.0,
+						-0.0,
+						36.41844940185547,
+						358.7730407714844,
+						370.27349853515625
+					]
 				},
 				{
 					"bbox": {
@@ -3030,8 +5438,24 @@
 						"y1": 467.97
 					},
 					"id": 241,
+					"__tag__": "Image",
 					"image_id": "image_120",
-					"__tag__": "Image"
+					"width": 168,
+					"height": 79,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 4807,
+					"transform": [
+						80.51873016357422,
+						0.0,
+						-0.0,
+						37.673851013183594,
+						358.7713317871094,
+						430.2928771972656
+					]
 				},
 				{
 					"bbox": {
@@ -3041,8 +5465,24 @@
 						"y1": 64.87
 					},
 					"id": 242,
+					"__tag__": "Image",
 					"image_id": "image_122",
-					"__tag__": "Image"
+					"width": 124,
+					"height": 107,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 9460,
+					"transform": [
+						59.459129333496094,
+						0.0,
+						-0.0,
+						51.17667007446289,
+						459.7605895996094,
+						13.694942474365234
+					]
 				},
 				{
 					"bbox": {
@@ -3052,8 +5492,24 @@
 						"y1": 99.69
 					},
 					"id": 243,
+					"__tag__": "Image",
 					"image_id": "image_124",
-					"__tag__": "Image"
+					"width": 36,
+					"height": 40,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2521,
+					"transform": [
+						16.771799087524414,
+						0.0,
+						-0.0,
+						19.13688087463379,
+						459.77423095703125,
+						80.54991912841797
+					]
 				},
 				{
 					"bbox": {
@@ -3063,8 +5519,24 @@
 						"y1": 141.7
 					},
 					"id": 244,
+					"__tag__": "Image",
 					"image_id": "image_126",
-					"__tag__": "Image"
+					"width": 74,
+					"height": 55,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 4643,
+					"transform": [
+						35.3350715637207,
+						0.0,
+						-0.0,
+						26.33778953552246,
+						459.7626037597656,
+						115.36463165283203
+					]
 				},
 				{
 					"bbox": {
@@ -3074,8 +5546,24 @@
 						"y1": 183.72
 					},
 					"id": 245,
+					"__tag__": "Image",
 					"image_id": "image_128",
-					"__tag__": "Image"
+					"width": 100,
+					"height": 55,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 5272,
+					"transform": [
+						47.755191802978516,
+						0.0,
+						-0.0,
+						26.33778953552246,
+						459.7625732421875,
+						157.3797149658203
+					]
 				},
 				{
 					"bbox": {
@@ -3085,8 +5573,24 @@
 						"y1": 304.5
 					},
 					"id": 246,
+					"__tag__": "Image",
 					"image_id": "image_130",
-					"__tag__": "Image"
+					"width": 19,
+					"height": 18,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 779,
+					"transform": [
+						8.851790428161621,
+						0.0,
+						-0.0,
+						8.302510261535645,
+						461.93426513671875,
+						296.1929626464844
+					]
 				},
 				{
 					"bbox": {
@@ -3096,8 +5600,24 @@
 						"y1": 337.16
 					},
 					"id": 247,
+					"__tag__": "Image",
 					"image_id": "image_132",
-					"__tag__": "Image"
+					"width": 65,
+					"height": 36,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2443,
+					"transform": [
+						31.01435089111328,
+						0.0,
+						-0.0,
+						16.962379455566406,
+						461.9230041503906,
+						320.1981201171875
+					]
 				},
 				{
 					"bbox": {
@@ -3107,8 +5627,24 @@
 						"y1": 207.71
 					},
 					"id": 248,
+					"__tag__": "Image",
 					"image_id": "image_134",
-					"__tag__": "Image"
+					"width": 19,
+					"height": 18,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 766,
+					"transform": [
+						8.851790428161621,
+						0.0,
+						-0.0,
+						8.302510261535645,
+						459.77423095703125,
+						199.4124298095703
+					]
 				},
 				{
 					"bbox": {
@@ -3118,8 +5654,24 @@
 						"y1": 231.73
 					},
 					"id": 249,
+					"__tag__": "Image",
 					"image_id": "image_136",
-					"__tag__": "Image"
+					"width": 19,
+					"height": 18,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 776,
+					"transform": [
+						8.851790428161621,
+						0.0,
+						-0.0,
+						8.302510261535645,
+						459.77423095703125,
+						223.42762756347656
+					]
 				},
 				{
 					"bbox": {
@@ -3129,8 +5681,24 @@
 						"y1": 255.2
 					},
 					"id": 250,
+					"__tag__": "Image",
 					"image_id": "image_138",
-					"__tag__": "Image"
+					"width": 26,
+					"height": 17,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 817,
+					"transform": [
+						12.090020179748535,
+						0.0,
+						-0.0,
+						7.752009868621826,
+						459.7751159667969,
+						247.44793701171875
+					]
 				},
 				{
 					"bbox": {
@@ -3140,8 +5708,24 @@
 						"y1": 280.47
 					},
 					"id": 251,
+					"__tag__": "Image",
 					"image_id": "image_140",
-					"__tag__": "Image"
+					"width": 26,
+					"height": 21,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 915,
+					"transform": [
+						12.090020179748535,
+						0.0,
+						-0.0,
+						9.549500465393066,
+						459.7751159667969,
+						270.92431640625
+					]
 				},
 				{
 					"bbox": {
@@ -3151,8 +5735,24 @@
 						"y1": 376.83
 					},
 					"id": 252,
+					"__tag__": "Image",
 					"image_id": "image_142",
-					"__tag__": "Image"
+					"width": 33,
+					"height": 51,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2328,
+					"transform": [
+						15.712289810180664,
+						0.0,
+						-0.0,
+						23.980459213256836,
+						459.76397705078125,
+						352.8542175292969
+					]
 				},
 				{
 					"bbox": {
@@ -3162,8 +5762,24 @@
 						"y1": 404.08
 					},
 					"id": 253,
+					"__tag__": "Image",
 					"image_id": "image_144",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 25,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1835,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						11.543499946594238,
+						459.7682189941406,
+						392.5378112792969
+					]
 				},
 				{
 					"bbox": {
@@ -3173,8 +5789,24 @@
 						"y1": 436.03
 					},
 					"id": 254,
+					"__tag__": "Image",
 					"image_id": "image_146",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 34,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2110,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						16.25628089904785,
+						459.7682189941406,
+						419.77655029296875
+					]
 				},
 				{
 					"bbox": {
@@ -3184,8 +5816,24 @@
 						"y1": 467.97
 					},
 					"id": 255,
+					"__tag__": "Image",
 					"image_id": "image_148",
-					"__tag__": "Image"
+					"width": 48,
+					"height": 34,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2331,
+					"transform": [
+						22.726999282836914,
+						0.0,
+						-0.0,
+						16.25628089904785,
+						459.7666320800781,
+						451.7116394042969
+					]
 				},
 				{
 					"bbox": {
@@ -3195,8 +5843,24 @@
 						"y1": 30.48
 					},
 					"id": 256,
+					"__tag__": "Image",
 					"image_id": "image_150",
-					"__tag__": "Image"
+					"width": 41,
+					"height": 36,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2521,
+					"transform": [
+						19.30158042907715,
+						0.0,
+						-0.0,
+						16.771799087524414,
+						102.27184295654297,
+						13.707357406616211
+					]
 				},
 				{
 					"bbox": {
@@ -3206,8 +5870,24 @@
 						"y1": 68.83
 					},
 					"id": 257,
+					"__tag__": "Image",
 					"image_id": "image_152",
-					"__tag__": "Image"
+					"width": 41,
+					"height": 41,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2654,
+					"transform": [
+						19.30158042907715,
+						0.0,
+						-0.0,
+						19.49081039428711,
+						102.27184295654297,
+						49.339237213134766
+					]
 				},
 				{
 					"bbox": {
@@ -3217,8 +5897,24 @@
 						"y1": 101.22
 					},
 					"id": 258,
+					"__tag__": "Image",
 					"image_id": "image_154",
-					"__tag__": "Image"
+					"width": 48,
+					"height": 29,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1993,
+					"transform": [
+						22.726999282836914,
+						0.0,
+						-0.0,
+						13.533370018005371,
+						102.26912689208984,
+						87.68934631347656
+					]
 				},
 				{
 					"bbox": {
@@ -3228,8 +5924,24 @@
 						"y1": 128.94
 					},
 					"id": 259,
+					"__tag__": "Image",
 					"image_id": "image_156",
-					"__tag__": "Image"
+					"width": 25,
+					"height": 19,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 940,
+					"transform": [
+						11.739150047302246,
+						0.0,
+						-0.0,
+						8.851790428161621,
+						102.27311706542969,
+						120.09147644042969
+					]
 				},
 				{
 					"bbox": {
@@ -3239,8 +5951,24 @@
 						"y1": 158.11
 					},
 					"id": 260,
+					"__tag__": "Image",
 					"image_id": "image_158",
-					"__tag__": "Image"
+					"width": 32,
+					"height": 22,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1800,
+					"transform": [
+						14.976030349731445,
+						0.0,
+						-0.0,
+						10.296019554138184,
+						102.2746810913086,
+						147.810791015625
+					]
 				},
 				{
 					"bbox": {
@@ -3250,8 +5978,24 @@
 						"y1": 187.81
 					},
 					"id": 261,
+					"__tag__": "Image",
 					"image_id": "image_160",
-					"__tag__": "Image"
+					"width": 35,
+					"height": 23,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1948,
+					"transform": [
+						16.609130859375,
+						0.0,
+						-0.0,
+						10.842880249023438,
+						102.26814270019531,
+						176.9687042236328
+					]
 				},
 				{
 					"bbox": {
@@ -3261,8 +6005,24 @@
 						"y1": 224.36
 					},
 					"id": 262,
+					"__tag__": "Image",
 					"image_id": "image_162",
-					"__tag__": "Image"
+					"width": 39,
+					"height": 37,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2648,
+					"transform": [
+						18.403820037841797,
+						0.0,
+						-0.0,
+						17.69659996032715,
+						102.27079010009766,
+						206.66329956054688
+					]
 				},
 				{
 					"bbox": {
@@ -3272,8 +6032,24 @@
 						"y1": 266.84
 					},
 					"id": 263,
+					"__tag__": "Image",
 					"image_id": "image_164",
-					"__tag__": "Image"
+					"width": 61,
+					"height": 50,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 4102,
+					"transform": [
+						29.031919479370117,
+						0.0,
+						-0.0,
+						23.625049591064453,
+						102.2667465209961,
+						243.2104034423828
+					]
 				},
 				{
 					"bbox": {
@@ -3283,8 +6059,24 @@
 						"y1": 334.9
 					},
 					"id": 264,
+					"__tag__": "Image",
 					"image_id": "image_166",
-					"__tag__": "Image"
+					"width": 19,
+					"height": 18,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 795,
+					"transform": [
+						8.851790428161621,
+						0.0,
+						-0.0,
+						8.302510261535645,
+						102.27680206298828,
+						326.5937194824219
+					]
 				},
 				{
 					"bbox": {
@@ -3294,8 +6086,24 @@
 						"y1": 364.77
 					},
 					"id": 265,
+					"__tag__": "Image",
 					"image_id": "image_168",
-					"__tag__": "Image"
+					"width": 35,
+					"height": 24,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1767,
+					"transform": [
+						16.609130859375,
+						0.0,
+						-0.0,
+						10.996390342712402,
+						102.26814270019531,
+						353.77813720703125
+					]
 				},
 				{
 					"bbox": {
@@ -3305,8 +6113,24 @@
 						"y1": 402.41
 					},
 					"id": 266,
+					"__tag__": "Image",
 					"image_id": "image_170",
-					"__tag__": "Image"
+					"width": 48,
+					"height": 40,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2923,
+					"transform": [
+						22.914840698242188,
+						0.0,
+						-0.0,
+						18.7579402923584,
+						102.26528930664062,
+						383.6487731933594
+					]
 				},
 				{
 					"bbox": {
@@ -3316,8 +6140,24 @@
 						"y1": 429.58
 					},
 					"id": 267,
+					"__tag__": "Image",
 					"image_id": "image_172",
-					"__tag__": "Image"
+					"width": 19,
+					"height": 18,
+					"ext": "png",
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 819,
+					"transform": [
+						8.851790428161621,
+						0.0,
+						-0.0,
+						8.302510261535645,
+						102.27680206298828,
+						421.2778625488281
+					]
 				},
 				{
 					"bbox": {
@@ -3327,8 +6167,24 @@
 						"y1": 307.73
 					},
 					"id": 268,
+					"__tag__": "Image",
 					"image_id": "image_174",
-					"__tag__": "Image"
+					"width": 61,
+					"height": 34,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2734,
+					"transform": [
+						29.21803092956543,
+						0.0,
+						-0.0,
+						16.06502914428711,
+						102.26370239257812,
+						291.66107177734375
+					]
 				},
 				{
 					"bbox": {
@@ -3338,8 +6194,24 @@
 						"y1": 467.96
 					},
 					"id": 269,
+					"__tag__": "Image",
 					"image_id": "image_177",
-					"__tag__": "Image"
+					"width": 48,
+					"height": 29,
+					"ext": "jpeg",
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2385,
+					"transform": [
+						22.914840698242188,
+						0.0,
+						-0.0,
+						13.533370018005371,
+						102.26528930664062,
+						454.4231262207031
+					]
 				},
 				{
 					"bbox": {
@@ -3349,8 +6221,27 @@
 						"y1": 496.06
 					},
 					"id": 270,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.5369954705238342,
+						0.5629968643188477,
+						0.5779964923858643
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"re",
+							[
+								0.0,
+								9.1552734375e-05,
+								552.7556762695312,
+								496.06298828125
+							],
+							1
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3360,8 +6251,93 @@
 						"y1": 298.65
 					},
 					"id": 271,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						1.0,
+						1.0,
+						1.0
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"c",
+							[
+								138.51451110839844,
+								298.65325927734375
+							],
+							[
+								141.8805389404297,
+								298.65325927734375
+							],
+							[
+								144.60848999023438,
+								295.9243469238281
+							],
+							[
+								144.60848999023438,
+								292.5592956542969
+							]
+						],
+						[
+							"c",
+							[
+								144.60848999023438,
+								292.5592956542969
+							],
+							[
+								144.60848999023438,
+								289.19329833984375
+							],
+							[
+								141.8805389404297,
+								286.46435546875
+							],
+							[
+								138.51451110839844,
+								286.46435546875
+							]
+						],
+						[
+							"c",
+							[
+								138.51451110839844,
+								286.46435546875
+							],
+							[
+								135.14849853515625,
+								286.46435546875
+							],
+							[
+								132.42054748535156,
+								289.19329833984375
+							],
+							[
+								132.42054748535156,
+								292.5592956542969
+							]
+						],
+						[
+							"c",
+							[
+								132.42054748535156,
+								292.5592956542969
+							],
+							[
+								132.42054748535156,
+								295.9243469238281
+							],
+							[
+								135.14849853515625,
+								298.65325927734375
+							],
+							[
+								138.51451110839844,
+								298.65325927734375
+							]
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3371,8 +6347,191 @@
 						"y1": 298.95
 					},
 					"id": 272,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.0941176488995552,
+						0.09018082171678543,
+						0.08625925332307816
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"c",
+							[
+								138.51451110839844,
+								286.16436767578125
+							],
+							[
+								134.9825897216797,
+								286.16448974609375
+							],
+							[
+								132.1206817626953,
+								289.02752685546875
+							],
+							[
+								132.12054443359375,
+								292.5592956542969
+							]
+						],
+						[
+							"c",
+							[
+								132.12054443359375,
+								292.5592956542969
+							],
+							[
+								132.1206817626953,
+								296.0901184082031
+							],
+							[
+								134.9825897216797,
+								298.953125
+							],
+							[
+								138.51451110839844,
+								298.9532775878906
+							]
+						],
+						[
+							"l",
+							[
+								138.51451110839844,
+								298.9532775878906
+							],
+							[
+								138.51451110839844,
+								298.65325927734375
+							]
+						],
+						[
+							"c",
+							[
+								138.51451110839844,
+								298.65325927734375
+							],
+							[
+								135.14849853515625,
+								298.65325927734375
+							],
+							[
+								132.42054748535156,
+								295.9243469238281
+							],
+							[
+								132.42054748535156,
+								292.5592956542969
+							]
+						],
+						[
+							"c",
+							[
+								132.42054748535156,
+								292.5592956542969
+							],
+							[
+								132.42054748535156,
+								289.19329833984375
+							],
+							[
+								135.14849853515625,
+								286.46435546875
+							],
+							[
+								138.51451110839844,
+								286.46435546875
+							]
+						],
+						[
+							"c",
+							[
+								138.51451110839844,
+								286.46435546875
+							],
+							[
+								141.8805389404297,
+								286.46435546875
+							],
+							[
+								144.60848999023438,
+								289.19329833984375
+							],
+							[
+								144.60848999023438,
+								292.5592956542969
+							]
+						],
+						[
+							"c",
+							[
+								144.60848999023438,
+								292.5592956542969
+							],
+							[
+								144.60848999023438,
+								295.9243469238281
+							],
+							[
+								141.8805389404297,
+								298.65325927734375
+							],
+							[
+								138.51451110839844,
+								298.65325927734375
+							]
+						],
+						[
+							"l",
+							[
+								138.51451110839844,
+								298.65325927734375
+							],
+							[
+								138.51451110839844,
+								298.9532775878906
+							]
+						],
+						[
+							"c",
+							[
+								138.51451110839844,
+								298.9532775878906
+							],
+							[
+								142.0463104248047,
+								298.953125
+							],
+							[
+								144.90821838378906,
+								296.0901184082031
+							],
+							[
+								144.9084930419922,
+								292.5592956542969
+							]
+						],
+						[
+							"c",
+							[
+								144.9084930419922,
+								292.5592956542969
+							],
+							[
+								144.90835571289062,
+								289.02752685546875
+							],
+							[
+								142.0463104248047,
+								286.16448974609375
+							],
+							[
+								138.51451110839844,
+								286.16436767578125
+							]
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3382,8 +6541,267 @@
 						"y1": 298.65
 					},
 					"id": 273,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.0941176488995552,
+						0.09018082171678543,
+						0.08625925332307816
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"c",
+							[
+								138.51451110839844,
+								286.46435546875
+							],
+							[
+								135.14849853515625,
+								286.46435546875
+							],
+							[
+								132.42054748535156,
+								289.19329833984375
+							],
+							[
+								132.42054748535156,
+								292.5592956542969
+							]
+						],
+						[
+							"c",
+							[
+								132.42054748535156,
+								292.5592956542969
+							],
+							[
+								132.42054748535156,
+								295.9243469238281
+							],
+							[
+								135.14849853515625,
+								298.65325927734375
+							],
+							[
+								138.51451110839844,
+								298.65325927734375
+							]
+						],
+						[
+							"l",
+							[
+								138.51451110839844,
+								298.65325927734375
+							],
+							[
+								138.51451110839844,
+								298.353271484375
+							]
+						],
+						[
+							"c",
+							[
+								138.51451110839844,
+								298.353271484375
+							],
+							[
+								136.91336059570312,
+								298.3531494140625
+							],
+							[
+								135.46676635742188,
+								297.7051086425781
+							],
+							[
+								134.41732788085938,
+								296.65606689453125
+							]
+						],
+						[
+							"c",
+							[
+								134.41732788085938,
+								296.65606689453125
+							],
+							[
+								133.36842346191406,
+								295.60650634765625
+							],
+							[
+								132.72068786621094,
+								294.159912109375
+							],
+							[
+								132.7204132080078,
+								292.5592956542969
+							]
+						],
+						[
+							"c",
+							[
+								132.7204132080078,
+								292.5592956542969
+							],
+							[
+								132.72068786621094,
+								290.9581298828125
+							],
+							[
+								133.36842346191406,
+								289.51129150390625
+							],
+							[
+								134.41732788085938,
+								288.461669921875
+							]
+						],
+						[
+							"c",
+							[
+								134.41732788085938,
+								288.461669921875
+							],
+							[
+								135.46676635742188,
+								287.41253662109375
+							],
+							[
+								136.91336059570312,
+								286.7644958496094
+							],
+							[
+								138.51451110839844,
+								286.76434326171875
+							]
+						],
+						[
+							"c",
+							[
+								138.51451110839844,
+								286.76434326171875
+							],
+							[
+								140.11553955078125,
+								286.7644958496094
+							],
+							[
+								141.5621337890625,
+								287.41253662109375
+							],
+							[
+								142.611572265625,
+								288.461669921875
+							]
+						],
+						[
+							"c",
+							[
+								142.611572265625,
+								288.461669921875
+							],
+							[
+								143.6604766845703,
+								289.51129150390625
+							],
+							[
+								144.308349609375,
+								290.9581298828125
+							],
+							[
+								144.30848693847656,
+								292.5592956542969
+							]
+						],
+						[
+							"c",
+							[
+								144.30848693847656,
+								292.5592956542969
+							],
+							[
+								144.308349609375,
+								294.159912109375
+							],
+							[
+								143.6604766845703,
+								295.60650634765625
+							],
+							[
+								142.611572265625,
+								296.65606689453125
+							]
+						],
+						[
+							"c",
+							[
+								142.611572265625,
+								296.65606689453125
+							],
+							[
+								141.5621337890625,
+								297.7051086425781
+							],
+							[
+								140.11553955078125,
+								298.3531494140625
+							],
+							[
+								138.51451110839844,
+								298.353271484375
+							]
+						],
+						[
+							"l",
+							[
+								138.51451110839844,
+								298.353271484375
+							],
+							[
+								138.51451110839844,
+								298.65325927734375
+							]
+						],
+						[
+							"c",
+							[
+								138.51451110839844,
+								298.65325927734375
+							],
+							[
+								141.8805389404297,
+								298.65325927734375
+							],
+							[
+								144.60848999023438,
+								295.9243469238281
+							],
+							[
+								144.60848999023438,
+								292.5592956542969
+							]
+						],
+						[
+							"c",
+							[
+								144.60848999023438,
+								292.5592956542969
+							],
+							[
+								144.60848999023438,
+								289.19329833984375
+							],
+							[
+								141.8805389404297,
+								286.46435546875
+							],
+							[
+								138.51451110839844,
+								286.46435546875
+							]
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3393,8 +6811,248 @@
 						"y1": 295.79
 					},
 					"id": 274,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.0941176488995552,
+						0.09018082171678543,
+						0.08625925332307816
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"l",
+							[
+								138.92120361328125,
+								290.313720703125
+							],
+							[
+								138.76913452148438,
+								290.313720703125
+							]
+						],
+						[
+							"l",
+							[
+								138.76913452148438,
+								290.313720703125
+							],
+							[
+								138.2715301513672,
+								290.313720703125
+							]
+						],
+						[
+							"l",
+							[
+								138.2715301513672,
+								290.313720703125
+							],
+							[
+								138.22976684570312,
+								290.4108581542969
+							]
+						],
+						[
+							"l",
+							[
+								138.22976684570312,
+								290.4108581542969
+							],
+							[
+								138.8793487548828,
+								290.4108581542969
+							]
+						],
+						[
+							"l",
+							[
+								138.8793487548828,
+								290.4108581542969
+							],
+							[
+								138.92120361328125,
+								290.313720703125
+							]
+						],
+						[
+							"l",
+							[
+								140.54824829101562,
+								294.19158935546875
+							],
+							[
+								140.45040893554688,
+								294.19158935546875
+							]
+						],
+						[
+							"l",
+							[
+								140.45040893554688,
+								294.19158935546875
+							],
+							[
+								140.45040893554688,
+								294.75933837890625
+							]
+						],
+						[
+							"l",
+							[
+								140.45040893554688,
+								294.75933837890625
+							],
+							[
+								140.54824829101562,
+								294.75933837890625
+							]
+						],
+						[
+							"l",
+							[
+								140.54824829101562,
+								294.75933837890625
+							],
+							[
+								140.54824829101562,
+								294.6593017578125
+							]
+						],
+						[
+							"l",
+							[
+								140.54824829101562,
+								294.6593017578125
+							],
+							[
+								140.54824829101562,
+								294.29150390625
+							]
+						],
+						[
+							"l",
+							[
+								140.54824829101562,
+								294.29150390625
+							],
+							[
+								140.54824829101562,
+								294.19158935546875
+							]
+						],
+						[
+							"l",
+							[
+								136.57032775878906,
+								294.27056884765625
+							],
+							[
+								136.4704132080078,
+								294.5029296875
+							]
+						],
+						[
+							"l",
+							[
+								136.4704132080078,
+								294.5029296875
+							],
+							[
+								136.4704132080078,
+								294.5234375
+							]
+						],
+						[
+							"l",
+							[
+								136.4704132080078,
+								294.5234375
+							],
+							[
+								136.4704132080078,
+								294.75933837890625
+							]
+						],
+						[
+							"l",
+							[
+								136.4704132080078,
+								294.75933837890625
+							],
+							[
+								136.57032775878906,
+								294.75933837890625
+							]
+						],
+						[
+							"l",
+							[
+								136.57032775878906,
+								294.75933837890625
+							],
+							[
+								136.57032775878906,
+								294.27056884765625
+							]
+						],
+						[
+							"l",
+							[
+								139.7406768798828,
+								295.6907653808594
+							],
+							[
+								139.12489318847656,
+								295.6907653808594
+							]
+						],
+						[
+							"l",
+							[
+								139.12489318847656,
+								295.6907653808594
+							],
+							[
+								139.12489318847656,
+								295.79083251953125
+							]
+						],
+						[
+							"l",
+							[
+								139.12489318847656,
+								295.79083251953125
+							],
+							[
+								139.22494506835938,
+								295.79083251953125
+							]
+						],
+						[
+							"l",
+							[
+								139.22494506835938,
+								295.79083251953125
+							],
+							[
+								139.7406768798828,
+								295.79083251953125
+							]
+						],
+						[
+							"l",
+							[
+								139.7406768798828,
+								295.79083251953125
+							],
+							[
+								139.7406768798828,
+								295.6907653808594
+							]
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3404,8 +7062,33 @@
 						"y1": 295.69
 					},
 					"id": 275,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						1.0,
+						1.0,
+						1.0
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"re",
+							[
+								136.57032775878906,
+								290.4108581542969,
+								140.45040893554688,
+								295.6907653808594
+							],
+							1
+						]
+					],
+					"original_bbox": {
+						"x0": 136.57,
+						"y0": 290.41,
+						"x1": 140.45,
+						"y1": 295.69
+					}
 				},
 				{
 					"bbox": {
@@ -3415,8 +7098,33 @@
 						"y1": 295.69
 					},
 					"id": 276,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.0941176488995552,
+						0.09018082171678543,
+						0.08625925332307816
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"re",
+							[
+								136.57032775878906,
+								290.4108581542969,
+								140.45040893554688,
+								295.6907653808594
+							],
+							1
+						]
+					],
+					"original_bbox": {
+						"x0": 136.57,
+						"y0": 290.41,
+						"x1": 140.45,
+						"y1": 295.69
+					}
 				},
 				{
 					"bbox": {
@@ -3426,8 +7134,93 @@
 						"y1": 461.41
 					},
 					"id": 277,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						1.0,
+						1.0,
+						1.0
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"c",
+							[
+								132.21450805664062,
+								461.4094543457031
+							],
+							[
+								135.5805206298828,
+								461.4094543457031
+							],
+							[
+								138.3084716796875,
+								458.6805419921875
+							],
+							[
+								138.3084716796875,
+								455.31549072265625
+							]
+						],
+						[
+							"c",
+							[
+								138.3084716796875,
+								455.31549072265625
+							],
+							[
+								138.3084716796875,
+								451.949462890625
+							],
+							[
+								135.5805206298828,
+								449.2205505371094
+							],
+							[
+								132.21450805664062,
+								449.2205505371094
+							]
+						],
+						[
+							"c",
+							[
+								132.21450805664062,
+								449.2205505371094
+							],
+							[
+								128.84849548339844,
+								449.2205505371094
+							],
+							[
+								126.12053680419922,
+								451.949462890625
+							],
+							[
+								126.12053680419922,
+								455.31549072265625
+							]
+						],
+						[
+							"c",
+							[
+								126.12053680419922,
+								455.31549072265625
+							],
+							[
+								126.12053680419922,
+								458.6805419921875
+							],
+							[
+								128.84849548339844,
+								461.4094543457031
+							],
+							[
+								132.21450805664062,
+								461.4094543457031
+							]
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3437,8 +7230,191 @@
 						"y1": 461.71
 					},
 					"id": 278,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.0941176488995552,
+						0.09018082171678543,
+						0.08625925332307816
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"c",
+							[
+								132.21450805664062,
+								448.9205322265625
+							],
+							[
+								128.6825714111328,
+								448.920654296875
+							],
+							[
+								125.8206787109375,
+								451.78369140625
+							],
+							[
+								125.82054138183594,
+								455.31549072265625
+							]
+						],
+						[
+							"c",
+							[
+								125.82054138183594,
+								455.31549072265625
+							],
+							[
+								125.8206787109375,
+								458.8463134765625
+							],
+							[
+								128.6825714111328,
+								461.7093200683594
+							],
+							[
+								132.21450805664062,
+								461.7094421386719
+							]
+						],
+						[
+							"l",
+							[
+								132.21450805664062,
+								461.7094421386719
+							],
+							[
+								132.21450805664062,
+								461.4094543457031
+							]
+						],
+						[
+							"c",
+							[
+								132.21450805664062,
+								461.4094543457031
+							],
+							[
+								128.84849548339844,
+								461.4094543457031
+							],
+							[
+								126.12053680419922,
+								458.6805419921875
+							],
+							[
+								126.12053680419922,
+								455.31549072265625
+							]
+						],
+						[
+							"c",
+							[
+								126.12053680419922,
+								455.31549072265625
+							],
+							[
+								126.12053680419922,
+								451.949462890625
+							],
+							[
+								128.84849548339844,
+								449.2205505371094
+							],
+							[
+								132.21450805664062,
+								449.2205505371094
+							]
+						],
+						[
+							"c",
+							[
+								132.21450805664062,
+								449.2205505371094
+							],
+							[
+								135.5805206298828,
+								449.2205505371094
+							],
+							[
+								138.3084716796875,
+								451.949462890625
+							],
+							[
+								138.3084716796875,
+								455.31549072265625
+							]
+						],
+						[
+							"c",
+							[
+								138.3084716796875,
+								455.31549072265625
+							],
+							[
+								138.3084716796875,
+								458.6805419921875
+							],
+							[
+								135.5805206298828,
+								461.4094543457031
+							],
+							[
+								132.21450805664062,
+								461.4094543457031
+							]
+						],
+						[
+							"l",
+							[
+								132.21450805664062,
+								461.4094543457031
+							],
+							[
+								132.21450805664062,
+								461.7094421386719
+							]
+						],
+						[
+							"c",
+							[
+								132.21450805664062,
+								461.7094421386719
+							],
+							[
+								135.7462921142578,
+								461.7093200683594
+							],
+							[
+								138.60833740234375,
+								458.8463134765625
+							],
+							[
+								138.6084747314453,
+								455.31549072265625
+							]
+						],
+						[
+							"c",
+							[
+								138.6084747314453,
+								455.31549072265625
+							],
+							[
+								138.60833740234375,
+								451.78369140625
+							],
+							[
+								135.7462921142578,
+								448.920654296875
+							],
+							[
+								132.21450805664062,
+								448.9205322265625
+							]
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3448,8 +7424,267 @@
 						"y1": 461.41
 					},
 					"id": 279,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.0941176488995552,
+						0.09018082171678543,
+						0.08625925332307816
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"c",
+							[
+								132.21450805664062,
+								449.2205505371094
+							],
+							[
+								128.84849548339844,
+								449.2205505371094
+							],
+							[
+								126.12053680419922,
+								451.949462890625
+							],
+							[
+								126.12053680419922,
+								455.31549072265625
+							]
+						],
+						[
+							"c",
+							[
+								126.12053680419922,
+								455.31549072265625
+							],
+							[
+								126.12053680419922,
+								458.6805419921875
+							],
+							[
+								128.84849548339844,
+								461.4094543457031
+							],
+							[
+								132.21450805664062,
+								461.4094543457031
+							]
+						],
+						[
+							"l",
+							[
+								132.21450805664062,
+								461.4094543457031
+							],
+							[
+								132.21450805664062,
+								461.10943603515625
+							]
+						],
+						[
+							"c",
+							[
+								132.21450805664062,
+								461.10943603515625
+							],
+							[
+								130.61334228515625,
+								461.10931396484375
+							],
+							[
+								129.16676330566406,
+								460.4613037109375
+							],
+							[
+								128.1173095703125,
+								459.4122619628906
+							]
+						],
+						[
+							"c",
+							[
+								128.1173095703125,
+								459.4122619628906
+							],
+							[
+								127.06842041015625,
+								458.3626708984375
+							],
+							[
+								126.42066955566406,
+								456.91607666015625
+							],
+							[
+								126.4205322265625,
+								455.31549072265625
+							]
+						],
+						[
+							"c",
+							[
+								126.4205322265625,
+								455.31549072265625
+							],
+							[
+								126.42066955566406,
+								453.7143249511719
+							],
+							[
+								127.06842041015625,
+								452.2674560546875
+							],
+							[
+								128.11744689941406,
+								451.2178649902344
+							]
+						],
+						[
+							"c",
+							[
+								128.11744689941406,
+								451.2178649902344
+							],
+							[
+								129.16676330566406,
+								450.168701171875
+							],
+							[
+								130.61334228515625,
+								449.52069091796875
+							],
+							[
+								132.21450805664062,
+								449.5205383300781
+							]
+						],
+						[
+							"c",
+							[
+								132.21450805664062,
+								449.5205383300781
+							],
+							[
+								133.81552124023438,
+								449.52069091796875
+							],
+							[
+								135.26211547851562,
+								450.168701171875
+							],
+							[
+								136.3115692138672,
+								451.2178649902344
+							]
+						],
+						[
+							"c",
+							[
+								136.3115692138672,
+								451.2178649902344
+							],
+							[
+								137.36045837402344,
+								452.2674560546875
+							],
+							[
+								138.00833129882812,
+								453.7143249511719
+							],
+							[
+								138.0084686279297,
+								455.31549072265625
+							]
+						],
+						[
+							"c",
+							[
+								138.0084686279297,
+								455.31549072265625
+							],
+							[
+								138.00833129882812,
+								456.91607666015625
+							],
+							[
+								137.36045837402344,
+								458.3626708984375
+							],
+							[
+								136.3115692138672,
+								459.4122619628906
+							]
+						],
+						[
+							"c",
+							[
+								136.3115692138672,
+								459.4122619628906
+							],
+							[
+								135.26211547851562,
+								460.4613037109375
+							],
+							[
+								133.81552124023438,
+								461.10931396484375
+							],
+							[
+								132.21450805664062,
+								461.10943603515625
+							]
+						],
+						[
+							"l",
+							[
+								132.21450805664062,
+								461.10943603515625
+							],
+							[
+								132.21450805664062,
+								461.4094543457031
+							]
+						],
+						[
+							"c",
+							[
+								132.21450805664062,
+								461.4094543457031
+							],
+							[
+								135.5805206298828,
+								461.4094543457031
+							],
+							[
+								138.3084716796875,
+								458.6805419921875
+							],
+							[
+								138.3084716796875,
+								455.31549072265625
+							]
+						],
+						[
+							"c",
+							[
+								138.3084716796875,
+								455.31549072265625
+							],
+							[
+								138.3084716796875,
+								451.949462890625
+							],
+							[
+								135.5805206298828,
+								449.2205505371094
+							],
+							[
+								132.21450805664062,
+								449.2205505371094
+							]
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3459,8 +7694,188 @@
 						"y1": 458.63
 					},
 					"id": 280,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.0941176488995552,
+						0.09018082171678543,
+						0.08625925332307816
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"re",
+							[
+								130.57017517089844,
+								453.06988525390625,
+								133.83255004882812,
+								453.16705322265625
+							],
+							-1
+						],
+						[
+							"l",
+							[
+								133.88636779785156,
+								456.204345703125
+							],
+							[
+								133.88636779785156,
+								457.417724609375
+							]
+						],
+						[
+							"c",
+							[
+								133.88636779785156,
+								457.417724609375
+							],
+							[
+								133.94923400878906,
+								457.23345947265625
+							],
+							[
+								133.98399353027344,
+								457.02978515625
+							],
+							[
+								133.98434448242188,
+								456.807861328125
+							]
+						],
+						[
+							"c",
+							[
+								133.98434448242188,
+								456.807861328125
+							],
+							[
+								133.98402404785156,
+								456.58343505859375
+							],
+							[
+								133.9488525390625,
+								456.3825378417969
+							],
+							[
+								133.88636779785156,
+								456.204345703125
+							]
+						],
+						[
+							"l",
+							[
+								130.33438110351562,
+								457.3647766113281
+							],
+							[
+								130.2001495361328,
+								457.4601745605469
+							]
+						],
+						[
+							"l",
+							[
+								130.2001495361328,
+								457.4601745605469
+							],
+							[
+								130.2491455078125,
+								457.5398864746094
+							]
+						],
+						[
+							"c",
+							[
+								130.2491455078125,
+								457.5398864746094
+							],
+							[
+								130.27581787109375,
+								457.58343505859375
+							],
+							[
+								130.30421447753906,
+								457.6271057128906
+							],
+							[
+								130.33438110351562,
+								457.6705322265625
+							]
+						],
+						[
+							"l",
+							[
+								130.33438110351562,
+								457.6705322265625
+							],
+							[
+								130.33438110351562,
+								457.3647766113281
+							]
+						],
+						[
+							"l",
+							[
+								132.71421813964844,
+								458.52691650390625
+							],
+							[
+								131.4336700439453,
+								458.52691650390625
+							]
+						],
+						[
+							"c",
+							[
+								131.4336700439453,
+								458.52691650390625
+							],
+							[
+								131.6253662109375,
+								458.59039306640625
+							],
+							[
+								131.83680725097656,
+								458.626953125
+							],
+							[
+								132.06866455078125,
+								458.626953125
+							]
+						],
+						[
+							"l",
+							[
+								132.06866455078125,
+								458.626953125
+							],
+							[
+								132.06935119628906,
+								458.626953125
+							]
+						],
+						[
+							"c",
+							[
+								132.06935119628906,
+								458.626953125
+							],
+							[
+								132.28982543945312,
+								458.6265563964844
+							],
+							[
+								132.50814819335938,
+								458.5926208496094
+							],
+							[
+								132.71421813964844,
+								458.52691650390625
+							]
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3470,8 +7885,33 @@
 						"y1": 458.53
 					},
 					"id": 281,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						1.0,
+						1.0,
+						1.0
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"re",
+							[
+								130.33438110351562,
+								453.16705322265625,
+								133.88636779785156,
+								458.52691650390625
+							],
+							1
+						]
+					],
+					"original_bbox": {
+						"x0": 130.33,
+						"y0": 453.17,
+						"x1": 133.89,
+						"y1": 458.53
+					}
 				},
 				{
 					"bbox": {
@@ -3481,8 +7921,33 @@
 						"y1": 458.53
 					},
 					"id": 282,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.0941176488995552,
+						0.09018082171678543,
+						0.08625925332307816
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"re",
+							[
+								130.33438110351562,
+								453.16705322265625,
+								133.88636779785156,
+								458.52691650390625
+							],
+							1
+						]
+					],
+					"original_bbox": {
+						"x0": 130.33,
+						"y0": 453.17,
+						"x1": 133.89,
+						"y1": 458.53
+					}
 				},
 				{
 					"bbox": {
@@ -3492,8 +7957,95 @@
 						"y1": 481.89
 					},
 					"id": 283,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"stroke_color": [
+						1.0,
+						1.0,
+						1.0
+					],
+					"line_width": 0.2,
+					"stroke_opacity": 1.0,
+					"path_type": "s",
+					"dashes": "[] 0",
+					"items": [
+						[
+							"l",
+							[
+								16.48965072631836,
+								475.2897644042969
+							],
+							[
+								14.52966022491455,
+								475.9298095703125
+							]
+						],
+						[
+							"l",
+							[
+								14.52966022491455,
+								475.9298095703125
+							],
+							[
+								14.649660110473633,
+								476.3797912597656
+							]
+						],
+						[
+							"l",
+							[
+								14.649660110473633,
+								476.3797912597656
+							],
+							[
+								16.17966079711914,
+								475.8797912597656
+							]
+						],
+						[
+							"l",
+							[
+								16.17966079711914,
+								475.8797912597656
+							],
+							[
+								16.17966079711914,
+								481.8898010253906
+							]
+						],
+						[
+							"l",
+							[
+								16.17966079711914,
+								481.8898010253906
+							],
+							[
+								16.69965934753418,
+								481.8898010253906
+							]
+						],
+						[
+							"l",
+							[
+								16.69965934753418,
+								481.8898010253906
+							],
+							[
+								16.69965934753418,
+								475.2897644042969
+							]
+						],
+						[
+							"l",
+							[
+								16.69965934753418,
+								475.2897644042969
+							],
+							[
+								16.48965072631836,
+								475.2897644042969
+							]
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3503,8 +8055,322 @@
 						"y1": 481.99
 					},
 					"id": 284,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"stroke_color": [
+						1.0,
+						1.0,
+						1.0
+					],
+					"line_width": 0.2,
+					"stroke_opacity": 1.0,
+					"path_type": "s",
+					"dashes": "[] 0",
+					"items": [
+						[
+							"c",
+							[
+								21.20461082458496,
+								478.4197998046875
+							],
+							[
+								22.094619750976562,
+								478.0697937011719
+							],
+							[
+								22.584609985351562,
+								477.5497741699219
+							],
+							[
+								22.584609985351562,
+								476.77978515625
+							]
+						],
+						[
+							"c",
+							[
+								22.584609985351562,
+								476.77978515625
+							],
+							[
+								22.584609985351562,
+								475.7397766113281
+							],
+							[
+								21.70461082458496,
+								475.1897888183594
+							],
+							[
+								20.654619216918945,
+								475.1897888183594
+							]
+						],
+						[
+							"c",
+							[
+								20.654619216918945,
+								475.1897888183594
+							],
+							[
+								19.594600677490234,
+								475.1897888183594
+							],
+							[
+								18.724609375,
+								475.7497863769531
+							],
+							[
+								18.724609375,
+								476.769775390625
+							]
+						],
+						[
+							"c",
+							[
+								18.724609375,
+								476.769775390625
+							],
+							[
+								18.724609375,
+								477.57977294921875
+							],
+							[
+								19.284610748291016,
+								478.07977294921875
+							],
+							[
+								20.104610443115234,
+								478.4197998046875
+							]
+						],
+						[
+							"c",
+							[
+								20.104610443115234,
+								478.4197998046875
+							],
+							[
+								19.194610595703125,
+								478.7297668457031
+							],
+							[
+								18.404619216918945,
+								479.269775390625
+							],
+							[
+								18.404619216918945,
+								480.2297668457031
+							]
+						],
+						[
+							"c",
+							[
+								18.404619216918945,
+								480.2297668457031
+							],
+							[
+								18.404619216918945,
+								481.259765625
+							],
+							[
+								19.27461051940918,
+								481.9897766113281
+							],
+							[
+								20.654619216918945,
+								481.9897766113281
+							]
+						],
+						[
+							"c",
+							[
+								20.654619216918945,
+								481.9897766113281
+							],
+							[
+								22.034610748291016,
+								481.9897766113281
+							],
+							[
+								22.904619216918945,
+								481.259765625
+							],
+							[
+								22.904619216918945,
+								480.2397766113281
+							]
+						],
+						[
+							"c",
+							[
+								22.904619216918945,
+								480.2397766113281
+							],
+							[
+								22.904619216918945,
+								479.2297668457031
+							],
+							[
+								22.034610748291016,
+								478.70977783203125
+							],
+							[
+								21.20461082458496,
+								478.4197998046875
+							]
+						],
+						[
+							"c",
+							[
+								19.234619140625,
+								476.7897644042969
+							],
+							[
+								19.234619140625,
+								476.0597839355469
+							],
+							[
+								19.86461067199707,
+								475.6398010253906
+							],
+							[
+								20.654619216918945,
+								475.6398010253906
+							]
+						],
+						[
+							"c",
+							[
+								20.654619216918945,
+								475.6398010253906
+							],
+							[
+								21.444610595703125,
+								475.6398010253906
+							],
+							[
+								22.06460952758789,
+								476.0597839355469
+							],
+							[
+								22.06460952758789,
+								476.7897644042969
+							]
+						],
+						[
+							"c",
+							[
+								22.06460952758789,
+								476.7897644042969
+							],
+							[
+								22.06460952758789,
+								477.509765625
+							],
+							[
+								21.474609375,
+								477.84979248046875
+							],
+							[
+								20.654619216918945,
+								478.1697998046875
+							]
+						],
+						[
+							"c",
+							[
+								20.654619216918945,
+								478.1697998046875
+							],
+							[
+								19.82461929321289,
+								477.84979248046875
+							],
+							[
+								19.234619140625,
+								477.4997863769531
+							],
+							[
+								19.234619140625,
+								476.7897644042969
+							]
+						],
+						[
+							"c",
+							[
+								20.654619216918945,
+								481.539794921875
+							],
+							[
+								19.554609298706055,
+								481.539794921875
+							],
+							[
+								18.934619903564453,
+								480.9997863769531
+							],
+							[
+								18.934619903564453,
+								480.2297668457031
+							]
+						],
+						[
+							"c",
+							[
+								18.934619903564453,
+								480.2297668457031
+							],
+							[
+								18.934619903564453,
+								479.33978271484375
+							],
+							[
+								19.734619140625,
+								478.9897766113281
+							],
+							[
+								20.654619216918945,
+								478.6697998046875
+							]
+						],
+						[
+							"c",
+							[
+								20.654619216918945,
+								478.6697998046875
+							],
+							[
+								21.57461929321289,
+								478.9897766113281
+							],
+							[
+								22.37462043762207,
+								479.33978271484375
+							],
+							[
+								22.37462043762207,
+								480.2297668457031
+							]
+						],
+						[
+							"c",
+							[
+								22.37462043762207,
+								480.2297668457031
+							],
+							[
+								22.37462043762207,
+								480.9997863769531
+							],
+							[
+								21.754610061645508,
+								481.539794921875
+							],
+							[
+								20.654619216918945,
+								481.539794921875
+							]
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -3514,8 +8380,170 @@
 						"y1": 481.99
 					},
 					"id": 285,
-					"image_id": null,
-					"__tag__": "Drawing"
+					"__tag__": "Drawing",
+					"stroke_color": [
+						1.0,
+						1.0,
+						1.0
+					],
+					"line_width": 0.2,
+					"stroke_opacity": 1.0,
+					"path_type": "s",
+					"dashes": "[] 0",
+					"items": [
+						[
+							"c",
+							[
+								26.54966926574707,
+								481.9897766113281
+							],
+							[
+								28.219680786132812,
+								481.9897766113281
+							],
+							[
+								28.869670867919922,
+								480.3998107910156
+							],
+							[
+								28.869670867919922,
+								478.52978515625
+							]
+						],
+						[
+							"c",
+							[
+								28.869670867919922,
+								478.52978515625
+							],
+							[
+								28.869670867919922,
+								476.59979248046875
+							],
+							[
+								28.179670333862305,
+								475.1897888183594
+							],
+							[
+								26.54966926574707,
+								475.1897888183594
+							]
+						],
+						[
+							"c",
+							[
+								26.54966926574707,
+								475.1897888183594
+							],
+							[
+								24.929670333862305,
+								475.1897888183594
+							],
+							[
+								24.229679107666016,
+								476.59979248046875
+							],
+							[
+								24.229679107666016,
+								478.52978515625
+							]
+						],
+						[
+							"c",
+							[
+								24.229679107666016,
+								478.52978515625
+							],
+							[
+								24.229679107666016,
+								480.3998107910156
+							],
+							[
+								24.879669189453125,
+								481.9897766113281
+							],
+							[
+								26.54966926574707,
+								481.9897766113281
+							]
+						],
+						[
+							"c",
+							[
+								26.54966926574707,
+								481.4997863769531
+							],
+							[
+								25.249679565429688,
+								481.4997863769531
+							],
+							[
+								24.779680252075195,
+								480.1897888183594
+							],
+							[
+								24.779680252075195,
+								478.52978515625
+							]
+						],
+						[
+							"c",
+							[
+								24.779680252075195,
+								478.52978515625
+							],
+							[
+								24.779680252075195,
+								476.8997802734375
+							],
+							[
+								25.239669799804688,
+								475.6697998046875
+							],
+							[
+								26.54966926574707,
+								475.6697998046875
+							]
+						],
+						[
+							"c",
+							[
+								26.54966926574707,
+								475.6697998046875
+							],
+							[
+								27.869670867919922,
+								475.6697998046875
+							],
+							[
+								28.329679489135742,
+								476.8997802734375
+							],
+							[
+								28.329679489135742,
+								478.52978515625
+							]
+						],
+						[
+							"c",
+							[
+								28.329679489135742,
+								478.52978515625
+							],
+							[
+								28.329679489135742,
+								480.1897888183594
+							],
+							[
+								27.85968017578125,
+								481.4997863769531
+							],
+							[
+								26.54966926574707,
+								481.4997863769531
+							]
+						]
+					]
 				}
 			]
 		}
