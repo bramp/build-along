@@ -131,11 +131,6 @@ class NewBagClassifier(LabelClassifier):
             # Calculate bounding box that includes the bag number and all nearby images
             cluster_bbox = self._calculate_cluster_bbox(bag_bbox, nearby_images)
 
-            # Clip to page bounds to avoid extending beyond the page
-            page_bbox = page_data.bbox
-            assert page_bbox is not None
-            cluster_bbox = cluster_bbox.clip_to(page_bbox)
-
             score_details = _NewBagScore(
                 image_cluster_score=cluster_score,
                 compactness_score=compactness_score,
@@ -230,22 +225,7 @@ class NewBagClassifier(LabelClassifier):
         candidate_images = [
             img
             for img in image_blocks
-            if (
-                img.bbox.width < max_image_width
-                and img.bbox.height < max_image_height
-                and img.bbox.x0 >= 0
-                and img.bbox.y0 >= 0
-                and img.bbox.x1 <= page_width
-                and img.bbox.y1 <= page_height
-                # Exclude very large Drawing elements (> 30% of page)
-                and not (
-                    isinstance(img, Drawing)
-                    and (
-                        img.bbox.width > page_width * 0.3
-                        or img.bbox.height > page_height * 0.3
-                    )
-                )
-            )
+            if (img.bbox.width < max_image_width and img.bbox.height < max_image_height)
         ]
 
         if not candidate_images:
