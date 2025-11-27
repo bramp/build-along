@@ -4,6 +4,7 @@ Data classes for the classifier.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
 from annotated_types import Ge, Le
@@ -28,6 +29,21 @@ ScoreKey = Blocks | tuple[Blocks, ...]
 
 # Weight value constrained to [0.0, 1.0] range
 Weight = Annotated[float, Ge(0), Le(1)]
+
+
+@dataclass(frozen=True)
+class _BuildSnapshot:
+    """Snapshot of candidate and consumed block state for rollback.
+
+    This is used to implement transactional semantics in build():
+    if a classifier build fails, we can restore the state as if
+    the build never started.
+    """
+
+    # Map candidate id -> (constructed value, failure_reason)
+    candidate_states: dict[int, tuple[LegoPageElements | None, str | None]]
+    # Set of consumed block IDs
+    consumed_blocks: set[int]
 
 
 # TODO Make this JSON serializable
@@ -261,7 +277,9 @@ class ClassificationResult(BaseModel):
     def build(self, candidate: Candidate) -> LegoPageElements:
         """Construct a candidate using the registered classifier.
 
-        This is the entry point for top-down construction.
+        This is the entry point for top-down construction. If the build fails,
+        all changes to candidate states and consumed blocks are automatically
+        rolled back, ensuring transactional semantics.
         """
         if candidate.constructed:
             return candidate.constructed
@@ -277,12 +295,12 @@ class ClassificationResult(BaseModel):
                 # Find who consumed it (for better error message)
                 # This is expensive but only happens on failure
                 winner_label = "unknown"
-                for cat_label, cat_candidates in self.candidates.items():
+                for _label, cat_candidates in self.candidates.items():
                     for c in cat_candidates:
                         if c.constructed and any(
                             b.id == block.id for b in c.source_blocks
                         ):
-                            winner_label = cat_label
+                            winner_label = _label
                             break
 
                 failure_msg = f"Block {block.id} already consumed by '{winner_label}'"
@@ -293,23 +311,55 @@ class ClassificationResult(BaseModel):
         if not classifier:
             raise ValueError(f"No classifier registered for label '{candidate.label}'")
 
-        element = classifier.build(candidate, self)
-        candidate.constructed = element
+        # Take snapshot before building for automatic rollback on failure
+        snapshot = self._take_snapshot()
 
-        # Mark blocks as consumed
-        for block in candidate.source_blocks:
-            self._consumed_blocks.add(block.id)
+        try:
+            element = classifier.build(candidate, self)
+            candidate.constructed = element
 
-        # Fail other candidates that use these blocks
-        self._fail_conflicting_candidates(candidate)
+            # Mark blocks as consumed
+            for block in candidate.source_blocks:
+                self._consumed_blocks.add(block.id)
 
-        return element
+            # Fail other candidates that use these blocks
+            self._fail_conflicting_candidates(candidate)
+
+            return element
+        except Exception:
+            # Rollback all changes made during this build
+            self._restore_snapshot(snapshot)
+            raise
+
+    def _take_snapshot(self) -> _BuildSnapshot:
+        """Take a snapshot of all candidate states and consumed blocks."""
+        candidate_states = {}
+        for candidates in self.candidates.values():
+            for c in candidates:
+                candidate_states[id(c)] = (c.constructed, c.failure_reason)
+
+        return _BuildSnapshot(
+            candidate_states=candidate_states,
+            consumed_blocks=self._consumed_blocks.copy(),
+        )
+
+    def _restore_snapshot(self, snapshot: _BuildSnapshot) -> None:
+        """Restore candidate states and consumed blocks from a snapshot."""
+        # Restore candidate states
+        for candidates in self.candidates.values():
+            for c in candidates:
+                cid = id(c)
+                if cid in snapshot.candidate_states:
+                    c.constructed, c.failure_reason = snapshot.candidate_states[cid]
+
+        # Restore consumed blocks
+        self._consumed_blocks = snapshot.consumed_blocks.copy()
 
     def _fail_conflicting_candidates(self, winner: Candidate) -> None:
         """Mark other candidates sharing blocks with winner as failed."""
         winner_block_ids = {b.id for b in winner.source_blocks}
 
-        for label, candidates in self.candidates.items():
+        for _label, candidates in self.candidates.items():
             for candidate in candidates:
                 if candidate is winner:
                     continue

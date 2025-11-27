@@ -235,3 +235,68 @@ class TestClassifierRules:
                 f"candidates in {fixture_file} page {page_idx}. "
                 f"All elements should come from candidates or be known fallbacks."
             )
+
+    @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
+    def test_no_orphaned_constructed_candidates(self, fixture_file: str) -> None:
+        """No candidate marked constructed without being in the final tree.
+
+        This validates the transactional rollback semantics of build():
+        - If a parent classifier's build() fails, all sub-candidates it built
+          should be rolled back (constructed = None)
+        - Only candidates that are actually used in the final Page tree should
+          remain marked as constructed
+
+        This catches bugs where:
+        1. A classifier builds sub-candidates (e.g., step builds step_number)
+        2. The classifier then fails (e.g., parts_list build fails)
+        3. The step_number candidate remains orphaned with constructed set,
+           but not actually used in the final tree
+        """
+        pages = _load_pages_from_fixture(fixture_file)
+
+        for page_idx, page_data in enumerate(pages):
+            # Run the full classification pipeline on the page
+            result = classify_elements(page_data)
+            page = result.page
+
+            if page is None:
+                continue
+
+            # Build set of all element IDs actually used in the final Page tree
+            used_element_ids: set[int] = set()
+            for element in page.iter_elements():
+                used_element_ids.add(id(element))
+
+            # Check all candidates for orphaned constructed elements
+            all_candidates = result.get_all_candidates()
+            orphaned_candidates: list[tuple[str, Candidate]] = []
+
+            for label, candidates in all_candidates.items():
+                for candidate in candidates:
+                    # If candidate is marked as constructed but not in the tree
+                    if (
+                        candidate.constructed is not None
+                        and id(candidate.constructed) not in used_element_ids
+                    ):
+                        orphaned_candidates.append((label, candidate))
+
+            if orphaned_candidates:
+                log.error(
+                    f"Found {len(orphaned_candidates)} orphaned constructed "
+                    f"candidates in {fixture_file} page {page_idx}:"
+                )
+                for label, candidate in orphaned_candidates:
+                    elem_type = candidate.constructed.__class__.__name__
+                    log.error(
+                        f"  - {label}: {elem_type} bbox:{candidate.bbox} "
+                        f"score:{candidate.score:.3f} "
+                        f"failure:{candidate.failure_reason}"
+                    )
+
+            assert len(orphaned_candidates) == 0, (
+                f"Found {len(orphaned_candidates)} orphaned constructed candidates "
+                f"in {fixture_file} page {page_idx}. "
+                f"Candidates marked as constructed should either be in the final "
+                f"Page tree or rolled back to constructed=None. "
+                f"This indicates a transactional rollback failure."
+            )
