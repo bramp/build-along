@@ -165,7 +165,6 @@ class PartsListClassifier(LabelClassifier):
                 label="parts_list",
                 score=score.combined_score(),
                 score_details=score,
-                constructed=None,
                 source_blocks=[drawing],
                 failure_reason=failure_reason,
             )
@@ -177,17 +176,7 @@ class PartsListClassifier(LabelClassifier):
             # Add candidate to result
             result.add_candidate("parts_list", candidate)
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct PartsList elements from candidates."""
-        candidates = result.get_candidates("parts_list")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a PartsList from a single candidate's score details.
@@ -202,7 +191,7 @@ class PartsListClassifier(LabelClassifier):
         for part_candidate in score.part_candidates:
             try:
                 # Construct the part via the result orchestrator
-                part_elem = result.construct_candidate(part_candidate)
+                part_elem = result.build(part_candidate)
                 assert isinstance(part_elem, Part)
                 parts.append(part_elem)
             except Exception as e:

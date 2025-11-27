@@ -51,7 +51,6 @@ def make_candidates(
                 label=label,
                 score=1.0,
                 score_details=score_details,
-                constructed=None,
                 source_blocks=[block],
             )
         )

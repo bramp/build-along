@@ -130,9 +130,7 @@ class PartsImageClassifier(LabelClassifier):
                     label="part_image",
                     score=1.0,
                     score_details=score,
-                    constructed=None,
                     source_blocks=[img],
-                    failure_reason=None,
                 ),
             )
 
@@ -148,17 +146,7 @@ class PartsImageClassifier(LabelClassifier):
             if unmatched_i:
                 log.debug("[part_image] unmatched images: %d", len(unmatched_i))
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct PartImage elements from candidates."""
-        candidates = result.get_candidates("part_image")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a PartImage element from a single part_image candidate.
@@ -183,7 +171,7 @@ class PartsImageClassifier(LabelClassifier):
         part_count_candidate = score.part_count_candidate
 
         # Ensure part_count is constructed
-        part_count_elem = result.construct_candidate(part_count_candidate)
+        part_count_elem = result.build(part_count_candidate)
         if not isinstance(part_count_elem, PartCount):
             raise ValueError(f"Expected PartCount but got {type(part_count_elem)}")
 

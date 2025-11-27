@@ -169,9 +169,7 @@ class PieceLengthClassifier(LabelClassifier):
                     label="piece_length",
                     score=combined,
                     score_details=detail_score,
-                    constructed=None,
                     source_blocks=[text, containing_drawing],
-                    failure_reason=None,
                 ),
             )
             candidates_created += 1
@@ -181,17 +179,7 @@ class PieceLengthClassifier(LabelClassifier):
             candidates_created,
         )
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct PieceLength elements from candidates."""
-        candidates = result.get_candidates("piece_length")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a PieceLength element from a single candidate."""
@@ -272,7 +260,6 @@ class PieceLengthClassifier(LabelClassifier):
             score_details=detail_score,
             constructed=constructed_elem,
             source_blocks=[text],
-            failure_reason=None,
         )
 
     def _find_smallest_containing_drawing(

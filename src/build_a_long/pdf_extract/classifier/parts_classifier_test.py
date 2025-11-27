@@ -76,7 +76,7 @@ class TestPartsClassification:
         # Now construct the Parts
         parts: list[Part] = []
         for part_candidate in result.get_candidates("part"):
-            part = result.construct_candidate(part_candidate)
+            part = result.build(part_candidate)
             assert isinstance(part, Part)
             parts.append(part)
 
@@ -122,9 +122,7 @@ class TestPartsClassification:
         # The PartCount should exist but not be consumed
         pc_candidate = result.get_candidate_for_block(t1, "part_count")
         assert pc_candidate is not None
-        assert (
-            result.construct_candidate(pc_candidate) is not None
-        )  # Should be constructible
+        assert result.build(pc_candidate) is not None  # Should be constructible
 
     def test_multiple_images_above_picks_closest(
         self,
@@ -156,7 +154,7 @@ class TestPartsClassification:
         # Now construct the Parts
         parts: list[Part] = []
         for part_candidate in result.get_candidates("part"):
-            part = result.construct_candidate(part_candidate)
+            part = result.build(part_candidate)
             assert isinstance(part, Part)
             parts.append(part)
 
@@ -202,7 +200,7 @@ class TestPartsClassification:
         # PartCount should still be constructible (not part of Part)
         pc_candidate = result.get_candidate_for_block(t1, "part_count")
         assert pc_candidate is not None
-        assert result.construct_candidate(pc_candidate) is not None
+        assert result.build(pc_candidate) is not None
 
     def test_one_to_one_pairing_enforcement(
         self,
@@ -235,7 +233,7 @@ class TestPartsClassification:
         # Manually construct Parts
         parts: list[Part] = []
         for part_candidate in result.get_candidates("part"):
-            part = result.construct_candidate(part_candidate)
+            part = result.build(part_candidate)
             assert isinstance(part, Part)
             parts.append(part)
 

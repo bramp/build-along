@@ -82,14 +82,10 @@ class BagNumberClassifier(LabelClassifier):
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score text blocks and create candidates WITHOUT construction.
+        """Score text blocks and create candidates.
 
-        This method:
-        1. Iterates through all text blocks on the page
-        2. Calculates component scores (text pattern, position, font size)
-        3. Computes combined score
-        4. Creates Candidates with constructed=None for viable candidates
-        5. Stores score_details for debugging and later construction
+        This method iterates through all text blocks on the page and
+        calculates component scores based on text pattern, position, and font size.
         """
         page_data = result.page_data
         if not page_data.blocks:
@@ -121,8 +117,6 @@ class BagNumberClassifier(LabelClassifier):
                 font_size_score=font_size_score,
             )
 
-            # Create candidate WITHOUT construction (constructed=None)
-            # Construction happens later in construct() method
             result.add_candidate(
                 "bag_number",
                 Candidate(
@@ -130,23 +124,11 @@ class BagNumberClassifier(LabelClassifier):
                     label="bag_number",
                     score=detail_score.combined_score(self.config),
                     score_details=detail_score,
-                    constructed=None,  # Not constructed yet!
                     source_blocks=[block],
-                    failure_reason=None,  # No failure yet, construction happens later
                 ),
             )
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct BagNumber elements from candidates."""
-        candidates = result.get_candidates("bag_number")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a BagNumber element from a single candidate.

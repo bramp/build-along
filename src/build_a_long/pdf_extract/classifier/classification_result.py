@@ -84,7 +84,7 @@ class Candidate(BaseModel):
     score_details: Any
     """The detailed score object (e.g., _PageNumberScore)"""
 
-    constructed: LegoPageElements | None
+    constructed: LegoPageElements | None = None
     """The constructed LegoElement if parsing succeeded, None if failed"""
 
     source_blocks: list[Blocks] = []
@@ -258,7 +258,7 @@ class ClassificationResult(BaseModel):
         """
         self._classifiers[label] = classifier
 
-    def construct_candidate(self, candidate: Candidate) -> LegoPageElements:
+    def build(self, candidate: Candidate) -> LegoPageElements:
         """Construct a candidate using the registered classifier.
 
         This is the entry point for top-down construction.
@@ -291,7 +291,7 @@ class ClassificationResult(BaseModel):
         if not classifier:
             raise ValueError(f"No classifier registered for label '{candidate.label}'")
 
-        element = classifier.construct_candidate(candidate, self)
+        element = classifier.build(candidate, self)
         candidate.constructed = element
 
         # Mark blocks as consumed

@@ -271,7 +271,7 @@ class Classifier:
         page_classifier = next(
             c for c in self.classifiers if isinstance(c, PageClassifier)
         )
-        page_classifier.construct(result)
+        page_classifier.build_all(result)
 
         warnings = self._log_post_classification_warnings(page_data, result)
         for warning in warnings:

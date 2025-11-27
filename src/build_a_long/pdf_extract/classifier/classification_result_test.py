@@ -153,7 +153,6 @@ class TestClassificationResultValidation:
             label="page_number",
             score=0.95,
             score_details={},
-            constructed=None,
             source_blocks=[block2],  # Not in PageData!
         )
 
@@ -176,7 +175,6 @@ class TestClassificationResultValidation:
             label="page_number",
             score=0.95,
             score_details={},
-            constructed=None,
             source_blocks=[block],
         )
 
@@ -197,7 +195,6 @@ class TestClassificationResultValidation:
             label="step",
             score=0.95,
             score_details={},
-            constructed=None,
             source_blocks=[],  # Synthetic candidate
         )
 
@@ -383,7 +380,6 @@ class TestGetScoredCandidates:
                 label="test_label",
                 score=0.9,
                 score_details=None,  # No score details
-                constructed=None,
                 source_blocks=[text],
             ),
         )
@@ -420,7 +416,6 @@ class TestGetScoredCandidates:
                 label="test_label",
                 score=0.8,
                 score_details={"detail": "not constructed"},
-                constructed=None,  # Not constructed yet
                 source_blocks=[text],
             ),
         )

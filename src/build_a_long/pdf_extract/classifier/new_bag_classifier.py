@@ -148,9 +148,7 @@ class NewBagClassifier(LabelClassifier):
                     label="new_bag",
                     score=combined,
                     score_details=score_details,
-                    constructed=None,
                     source_blocks=[],  # Synthetic element
-                    failure_reason=None,
                 ),
             )
 
@@ -164,17 +162,7 @@ class NewBagClassifier(LabelClassifier):
                 cluster_bbox,
             )
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct NewBag elements from candidates."""
-        candidates = result.get_candidates("new_bag")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a NewBag element from a single candidate."""
@@ -186,7 +174,7 @@ class NewBagClassifier(LabelClassifier):
         bag_number_candidate = detail_score.bag_number_candidate
 
         # Construct bag number
-        bag_number_elem = result.construct_candidate(bag_number_candidate)
+        bag_number_elem = result.build(bag_number_candidate)
         assert isinstance(bag_number_elem, BagNumber)
         bag_number = bag_number_elem
 

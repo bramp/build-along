@@ -135,23 +135,11 @@ class ProgressBarClassifier(LabelClassifier):
                     label="progress_bar",
                     score=combined,
                     score_details=score_details,
-                    constructed=None,
                     source_blocks=[block],
-                    failure_reason=None,
                 ),
             )
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct ProgressBar elements from candidates."""
-        candidates = result.get_candidates("progress_bar")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a ProgressBar element from a single candidate."""

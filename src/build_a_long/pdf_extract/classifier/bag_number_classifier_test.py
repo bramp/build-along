@@ -62,7 +62,7 @@ class TestBagNumberClassification:
         # Check the bag_number candidate exists and has a good score
         candidate = result.get_candidate_for_block(bag_number_text, "bag_number")
         assert candidate is not None
-        bag_number = result.construct_candidate(candidate)
+        bag_number = result.build(candidate)
         assert isinstance(bag_number, BagNumber)
         assert bag_number.value == 1
         assert candidate.score > 0.5
@@ -141,7 +141,7 @@ class TestBagNumberClassification:
 
             candidate = result.get_candidate_for_block(bag_number_text, "bag_number")
             assert candidate is not None
-            bag_number = result.construct_candidate(candidate)
+            bag_number = result.build(candidate)
             assert isinstance(bag_number, BagNumber)
             assert bag_number.value == value
 

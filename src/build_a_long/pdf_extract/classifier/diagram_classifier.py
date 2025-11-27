@@ -125,23 +125,11 @@ class DiagramClassifier(LabelClassifier):
                     label="diagram",
                     score=combined,
                     score_details=score_details,
-                    constructed=None,
                     source_blocks=[block],
-                    failure_reason=None,
                 ),
             )
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct Diagram elements from candidates."""
-        candidates = result.get_candidates("diagram")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a Diagram element from a single candidate."""

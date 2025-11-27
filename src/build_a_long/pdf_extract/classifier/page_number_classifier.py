@@ -144,33 +144,11 @@ class PageNumberClassifier(LabelClassifier):
                     label="page_number",
                     score=combined,
                     score_details=score,
-                    constructed=None,  # Not constructed yet!
                     source_blocks=[block],
-                    failure_reason=None,  # No failure yet, construction happens later
                 ),
             )
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct PageNumber elements from candidates.
-
-        Only constructs the highest-scoring candidate (there should only be one
-        page number per page).
-        """
-        candidates = result.get_candidates("page_number")
-        if not candidates:
-            return
-
-        # Sort by score descending and construct only the top one
-        candidates_sorted = sorted(candidates, key=lambda c: c.score, reverse=True)
-        winner = candidates_sorted[0]
-
-        try:
-            elem = self.construct_candidate(winner, result)
-            winner.constructed = elem
-        except Exception as e:
-            winner.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a PageNumber element from a single candidate.

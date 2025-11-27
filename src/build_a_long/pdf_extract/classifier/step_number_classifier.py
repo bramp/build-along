@@ -116,23 +116,11 @@ class StepNumberClassifier(LabelClassifier):
                     label="step_number",
                     score=detail_score.combined_score(self.config),
                     score_details=detail_score,
-                    constructed=None,  # Not constructed yet!
                     source_blocks=[block],
-                    failure_reason=None,  # No failure yet, construction happens later
                 ),
             )
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct StepNumber elements from candidates."""
-        candidates = result.get_candidates("step_number")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a StepNumber element from a single candidate.

@@ -160,17 +160,7 @@ class StepClassifier(LabelClassifier):
             len(all_candidates),
         )
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct Step elements from candidates."""
-        candidates = result.get_candidates("step")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a Step element from a single candidate."""
@@ -180,7 +170,7 @@ class StepClassifier(LabelClassifier):
         # Validate and extract step number from parent candidate
         step_num_candidate = score.step_number_candidate
 
-        step_num_elem = result.construct_candidate(step_num_candidate)
+        step_num_elem = result.build(step_num_candidate)
         assert isinstance(step_num_elem, StepNumber)
         step_num = step_num_elem
 
@@ -188,7 +178,7 @@ class StepClassifier(LabelClassifier):
         parts_list = None
         if score.parts_list_candidate:
             parts_list_candidate = score.parts_list_candidate
-            parts_list_elem = result.construct_candidate(parts_list_candidate)
+            parts_list_elem = result.build(parts_list_candidate)
             assert isinstance(parts_list_elem, PartsList)
             parts_list = parts_list_elem
 
@@ -276,9 +266,7 @@ class StepClassifier(LabelClassifier):
             label="step",
             score=score.pairing_score(),
             score_details=score,
-            constructed=None,
             source_blocks=[],
-            failure_reason=None,
         )
 
     def _identify_diagram_region(

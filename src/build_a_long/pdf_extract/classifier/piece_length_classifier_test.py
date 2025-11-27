@@ -174,13 +174,13 @@ class TestPieceLengthClassifier:
         # Check that text1 and text2 are classified as piece_length
         candidate1 = result.get_candidate_for_block(text1, "piece_length")
         assert candidate1 is not None
-        constructed_pl1 = result.construct_candidate(candidate1)
+        constructed_pl1 = result.build(candidate1)
         assert isinstance(constructed_pl1, PieceLength)
         assert constructed_pl1.value == 4
 
         candidate2 = result.get_candidate_for_block(text2, "piece_length")
         assert candidate2 is not None
-        constructed_pl2 = result.construct_candidate(candidate2)
+        constructed_pl2 = result.build(candidate2)
         assert isinstance(constructed_pl2, PieceLength)
         assert constructed_pl2.value == 12
 
@@ -261,7 +261,7 @@ class TestPieceLengthClassifier:
         candidate = result.get_candidate_for_block(text, "piece_length")
 
         assert candidate is not None
-        constructed_pl = result.construct_candidate(candidate)
+        constructed_pl = result.build(candidate)
         assert isinstance(constructed_pl, PieceLength)
         assert constructed_pl.value == 8
         # Should have high score due to small, well-fitting circle

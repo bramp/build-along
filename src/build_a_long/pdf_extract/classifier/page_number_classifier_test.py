@@ -65,7 +65,7 @@ class TestPageNumberClassification:
         # Check the page_number candidate exists and has a good score
         candidate = result.get_candidate_for_block(page_number_text, "page_number")
         assert candidate is not None
-        page_number = result.construct_candidate(candidate)
+        page_number = result.build(candidate)
         assert isinstance(page_number, PageNumber)
         assert page_number.value == 1
         assert page_number.bbox == page_number_text.bbox
@@ -94,7 +94,7 @@ class TestPageNumberClassification:
         # Check the page_number candidate exists and has a good score
         candidate = result.get_candidate_for_block(page_number_text, "page_number")
         assert candidate is not None
-        page_number = result.construct_candidate(candidate)
+        page_number = result.build(candidate)
         assert isinstance(page_number, PageNumber)
         assert page_number.value == 5
         assert page_number.bbox == page_number_text.bbox
@@ -223,8 +223,8 @@ class TestPageNumberClassification:
         assert right_candidate is not None
 
         # Both should be constructible
-        assert result.construct_candidate(left_candidate) is not None
-        assert result.construct_candidate(right_candidate) is not None
+        assert result.build(left_candidate) is not None
+        assert result.build(right_candidate) is not None
 
     def test_page_number_with_font_hints(self) -> None:
         """Test that PageNumberClassifier uses font size hints."""
@@ -256,7 +256,7 @@ class TestPageNumberClassification:
         candidates = result.get_candidates("page_number")
         for candidate in candidates:
             if candidate.constructed is None:
-                result.construct_candidate(candidate)
+                result.build(candidate)
 
         assert len(candidates) == 2
 

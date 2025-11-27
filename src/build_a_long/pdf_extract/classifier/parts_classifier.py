@@ -202,24 +202,12 @@ class PartsClassifier(LabelClassifier):
                 label="part",
                 score=1.0,
                 score_details=enhanced_score,
-                constructed=None,
                 source_blocks=[ps.image],
-                failure_reason=None,
             )
 
             result.add_candidate("part", candidate)
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct Part elements from candidates."""
-        candidates = result.get_candidates("part")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a Part from a single candidate's score details.
@@ -231,7 +219,7 @@ class PartsClassifier(LabelClassifier):
 
         # Validate and construct part_count from candidate
         try:
-            part_count_elem = result.construct_candidate(ps.part_count_candidate)
+            part_count_elem = result.build(ps.part_count_candidate)
             assert isinstance(part_count_elem, PartCount)
             part_count = part_count_elem
         except Exception as e:
@@ -241,7 +229,7 @@ class PartsClassifier(LabelClassifier):
         part_number: PartNumber | None = None
         if ps.part_number_candidate:
             try:
-                part_number_elem = result.construct_candidate(ps.part_number_candidate)
+                part_number_elem = result.build(ps.part_number_candidate)
                 assert isinstance(part_number_elem, PartNumber)
                 part_number = part_number_elem
             except Exception as e:
@@ -255,9 +243,7 @@ class PartsClassifier(LabelClassifier):
         piece_length: PieceLength | None = None
         if ps.piece_length_candidate:
             try:
-                piece_length_elem = result.construct_candidate(
-                    ps.piece_length_candidate
-                )
+                piece_length_elem = result.build(ps.piece_length_candidate)
                 assert isinstance(piece_length_elem, PieceLength)
                 piece_length = piece_length_elem
             except Exception as e:

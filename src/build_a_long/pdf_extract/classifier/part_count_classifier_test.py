@@ -57,17 +57,17 @@ class TestPartCountClassification:
 
         # The valid counts should be successfully constructed
         assert t1_candidate is not None
-        part_count1 = result.construct_candidate(t1_candidate)
+        part_count1 = result.build(t1_candidate)
         assert isinstance(part_count1, PartCount)
         assert part_count1.count == 2
 
         assert t2_candidate is not None
-        part_count2 = result.construct_candidate(t2_candidate)
+        part_count2 = result.build(t2_candidate)
         assert isinstance(part_count2, PartCount)
         assert part_count2.count == 2
 
         assert t3_candidate is not None
-        part_count3 = result.construct_candidate(t3_candidate)
+        part_count3 = result.build(t3_candidate)
         assert isinstance(part_count3, PartCount)
         assert part_count3.count == 3
 
@@ -81,7 +81,7 @@ class TestPartCountClassification:
             # So result.construct_candidate should raise or return None if we handle it?
             # construct_candidate raises ValueError on failure.
             with pytest.raises(ValueError):
-                result.construct_candidate(t4_candidate)
+                result.build(t4_candidate)
 
     def test_part_count_with_font_hints(self) -> None:
         """Test that PartCountClassifier uses font size hints."""
@@ -114,7 +114,7 @@ class TestPartCountClassification:
         candidates = result.get_candidates("part_count")
         for candidate in candidates:
             if candidate.constructed is None:
-                result.construct_candidate(candidate)
+                result.build(candidate)
 
         assert len(candidates) == 2
 

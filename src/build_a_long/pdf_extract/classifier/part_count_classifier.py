@@ -139,23 +139,11 @@ class PartCountClassifier(LabelClassifier):
                     label="part_count",
                     score=combined,
                     score_details=detail_score,
-                    constructed=None,
                     source_blocks=[block],
-                    failure_reason=None,
                 ),
             )
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct PartCount elements from candidates."""
-        candidates = result.get_candidates("part_count")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a PartCount element from a single candidate."""

@@ -69,7 +69,7 @@ class TestStepClassification:
         # Construct the Step
         step_candidates = result.get_candidates("step")
         assert len(step_candidates) == 1
-        constructed_step = result.construct_candidate(step_candidates[0])
+        constructed_step = result.build(step_candidates[0])
         assert isinstance(constructed_step, Step)
 
         assert constructed_step.step_number.value == 10
@@ -105,7 +105,7 @@ class TestStepClassification:
         # Construct the Step
         step_candidates = result.get_candidates("step")
         assert len(step_candidates) == 1
-        constructed_step = result.construct_candidate(step_candidates[0])
+        constructed_step = result.build(step_candidates[0])
         assert isinstance(constructed_step, Step)
 
         assert constructed_step.step_number.value == 5
@@ -162,7 +162,7 @@ class TestStepClassification:
         # Construct the Steps
         steps: list[Step] = []
         for step_candidate in result.get_candidates("step"):
-            constructed_step = result.construct_candidate(step_candidate)
+            constructed_step = result.build(step_candidate)
             assert isinstance(constructed_step, Step)
             steps.append(constructed_step)
 
@@ -214,8 +214,8 @@ class TestStepClassification:
 
         # Construct both steps
         assert len(sorted_candidates) >= 2
-        constructed_step1 = result.construct_candidate(sorted_candidates[0])
-        constructed_step2 = result.construct_candidate(sorted_candidates[1])
+        constructed_step1 = result.build(sorted_candidates[0])
+        constructed_step2 = result.build(sorted_candidates[1])
 
         assert isinstance(constructed_step1, Step)
         assert isinstance(constructed_step2, Step)
@@ -284,7 +284,7 @@ class TestStepClassification:
         # Construct the Steps
         steps: list[Step] = []
         for step_candidate in result.get_candidates("step"):
-            constructed_step = result.construct_candidate(step_candidate)
+            constructed_step = result.build(step_candidate)
             assert isinstance(constructed_step, Step)
             steps.append(constructed_step)
 

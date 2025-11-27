@@ -77,7 +77,6 @@ class CandidateFactory:
             label="part_count",
             score=score,
             score_details=score_details,
-            constructed=None,
             source_blocks=[block],
         )
         self.result.add_candidate("part_count", candidate)
@@ -91,7 +90,6 @@ class CandidateFactory:
             label="step_number",
             score=score,
             score_details=score_details,
-            constructed=None,
             source_blocks=[block],
         )
         self.result.add_candidate("step_number", candidate)
@@ -118,7 +116,6 @@ class CandidateFactory:
             label="part",
             score=score,
             score_details=score_details,
-            constructed=None,
             source_blocks=[image_block],
         )
         self.result.add_candidate("part", candidate)
@@ -137,7 +134,6 @@ class CandidateFactory:
             label="parts_list",
             score=score,
             score_details=score_details,
-            constructed=None,
             source_blocks=[drawing_block],
         )
         self.result.add_candidate("parts_list", candidate)
@@ -163,7 +159,6 @@ class CandidateFactory:
             label="piece_length",
             score=score,
             score_details=score_details,
-            constructed=None,
             source_blocks=[text_block, drawing_block],
         )
         self.result.add_candidate("piece_length", candidate)

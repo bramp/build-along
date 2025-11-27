@@ -50,7 +50,7 @@ class TestStepNumberClassification:
         # Construct all candidates
         for candidate in result.get_candidates("step_number"):
             if candidate.constructed is None:
-                result.construct_candidate(candidate)
+                result.build(candidate)
 
         # Should have 2 step_numbers successfully constructed
         assert result.count_successful_candidates("step_number") == 2
@@ -98,7 +98,7 @@ class TestStepNumberClassification:
         # Construct all candidates
         for candidate in result.get_candidates("step_number"):
             if candidate.constructed is None:
-                result.construct_candidate(candidate)
+                result.build(candidate)
 
         candidates = result.get_candidates("step_number")
         assert len(candidates) == 2

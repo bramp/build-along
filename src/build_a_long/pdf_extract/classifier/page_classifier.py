@@ -72,23 +72,11 @@ class PageClassifier(LabelClassifier):
                 label="page",
                 score=1.0,
                 score_details=_PageScore(),
-                constructed=None,
                 source_blocks=[],  # Synthetic element
-                failure_reason=None,
             ),
         )
 
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct Page elements from candidates."""
-        candidates = result.get_candidates("page")
-        for candidate in candidates:
-            try:
-                elem = self.construct_candidate(candidate, result)
-                candidate.constructed = elem
-            except Exception as e:
-                candidate.failure_reason = str(e)
-
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a Page by collecting all page components.
@@ -108,7 +96,7 @@ class PageClassifier(LabelClassifier):
         )
         if page_number_candidates:
             best_cand = page_number_candidates[0]
-            page_number = result.construct_candidate(best_cand)
+            page_number = result.build(best_cand)
             assert isinstance(page_number, PageNumber)
 
         progress_bar = None
@@ -117,7 +105,7 @@ class PageClassifier(LabelClassifier):
         )
         if progress_bar_candidates:
             best_cand = progress_bar_candidates[0]
-            progress_bar = result.construct_candidate(best_cand)
+            progress_bar = result.build(best_cand)
             assert isinstance(progress_bar, ProgressBar)
 
         # Get new bags from candidates
@@ -128,7 +116,7 @@ class PageClassifier(LabelClassifier):
             "new_bag", valid_only=False, exclude_failed=True
         ):
             try:
-                elem = result.construct_candidate(nb_candidate)
+                elem = result.build(nb_candidate)
                 assert isinstance(elem, NewBag)
                 new_bags.append(elem)
             except Exception as e:
@@ -144,7 +132,7 @@ class PageClassifier(LabelClassifier):
             "part", valid_only=False, exclude_failed=True
         ):
             try:
-                elem = result.construct_candidate(part_candidate)
+                elem = result.build(part_candidate)
                 assert isinstance(elem, Part)
                 all_parts.append(elem)
             except Exception as e:
@@ -160,7 +148,7 @@ class PageClassifier(LabelClassifier):
             "step", valid_only=False, exclude_failed=True
         ):
             try:
-                elem = result.construct_candidate(step_candidate)
+                elem = result.build(step_candidate)
                 assert isinstance(elem, Step)
                 steps.append(elem)
             except Exception as e:

@@ -113,36 +113,29 @@ class LabelClassifier(ABC):
         """
         pass
 
-    @abstractmethod
-    def construct(self, result: ClassificationResult) -> None:
-        """Construct LegoPageElements from candidates.
+    def build_all(self, result: ClassificationResult) -> None:
+        """Build LegoPageElements from all candidates for this classifier's label.
 
-        This method should:
-        1. Get candidates for each label this classifier outputs
-        2. Select which candidates to construct (all, winners only, etc.)
-        3. Build LegoPageElements from selected candidates
-        4. Update candidate.constructed and candidate.failure_reason
+        Iterates through all candidates for this classifier's output label(s)
+        and calls build() on each, storing the result or failure reason.
 
-        Default pattern for constructing all candidates:
-            for label in self.outputs:
-                candidates = result.get_candidates(label)
-                for candidate in candidates:
-                    try:
-                        elem = self._construct_single(candidate, result)
-                        candidate.constructed = elem
-                    except Exception as e:
-                        candidate.failure_reason = str(e)
-
-        This is the second phase of the two-phase classification process.
-        Scoring happens first in score().
+        This is the entry point called by the classification pipeline to trigger
+        construction for a specific classifier.
 
         Args:
-            result: The classification result containing candidates to construct
+            result: The classification result containing candidates to build
         """
-        pass
+        for label in self.outputs:
+            candidates = result.get_candidates(label)
+            for candidate in candidates:
+                try:
+                    elem = result.build(candidate)
+                    candidate.constructed = elem
+                except Exception as e:
+                    candidate.failure_reason = str(e)
 
     @abstractmethod
-    def construct_candidate(
+    def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> LegoPageElements:
         """Construct a single candidate into a LegoPageElement.
