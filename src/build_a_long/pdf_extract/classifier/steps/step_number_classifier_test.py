@@ -7,7 +7,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
-from build_a_long.pdf_extract.classifier.step_number_classifier import (
+from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
     StepNumberClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData

@@ -6,17 +6,14 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
 )
-from build_a_long.pdf_extract.classifier.step_classifier import (
-    StepClassifier,
-)
+from build_a_long.pdf_extract.classifier.conftest import CandidateFactory
+from build_a_long.pdf_extract.classifier.steps.step_classifier import StepClassifier
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Step,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
-
-from .conftest import CandidateFactory
 
 
 @pytest.fixture

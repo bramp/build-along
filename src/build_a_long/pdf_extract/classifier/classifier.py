@@ -31,11 +31,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassifierConfig,
     RemovalReason,
 )
-from build_a_long.pdf_extract.classifier.diagram_classifier import (
-    DiagramClassifier,
-)
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
-from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.page_classifier import PageClassifier
 from build_a_long.pdf_extract.classifier.page_hints import PageHints
 from build_a_long.pdf_extract.classifier.page_number_classifier import (
@@ -52,13 +48,13 @@ from build_a_long.pdf_extract.classifier.parts import (
 from build_a_long.pdf_extract.classifier.progress_bar_classifier import (
     ProgressBarClassifier,
 )
-from build_a_long.pdf_extract.classifier.step_classifier import (
+from build_a_long.pdf_extract.classifier.steps import (
+    DiagramClassifier,
     StepClassifier,
-)
-from build_a_long.pdf_extract.classifier.step_number_classifier import (
     StepNumberClassifier,
 )
 from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
+from build_a_long.pdf_extract.classifier.topological_sort import topological_sort
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PageNumber,
@@ -210,24 +206,25 @@ class Classifier:
 
     def __init__(self, config: ClassifierConfig):
         self.config = config
-        self.classifiers: list[LabelClassifier] = [
-            PageNumberClassifier(config),
-            ProgressBarClassifier(config),
-            BagNumberClassifier(config),
-            PartCountClassifier(config),
-            PartNumberClassifier(config),
-            StepNumberClassifier(config),
-            PieceLengthClassifier(config),
-            PartsClassifier(config),
-            PartsListClassifier(config),
-            PartsImageClassifier(config),
-            NewBagClassifier(config),
-            DiagramClassifier(config),
-            StepClassifier(config),
-            PageClassifier(config),
-        ]
-
-        # TODO Topological sort classifiers based on dependencies
+        # Sort classifiers topologically based on their dependencies
+        self.classifiers = topological_sort(
+            [
+                PageNumberClassifier(config),
+                ProgressBarClassifier(config),
+                BagNumberClassifier(config),
+                PartCountClassifier(config),
+                PartNumberClassifier(config),
+                StepNumberClassifier(config),
+                PieceLengthClassifier(config),
+                PartsClassifier(config),
+                PartsListClassifier(config),
+                PartsImageClassifier(config),
+                NewBagClassifier(config),
+                DiagramClassifier(config),
+                StepClassifier(config),
+                PageClassifier(config),
+            ]
+        )
 
     def classify(self, page_data: PageData) -> ClassificationResult:
         """

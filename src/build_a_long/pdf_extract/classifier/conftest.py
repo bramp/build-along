@@ -24,7 +24,7 @@ from build_a_long.pdf_extract.classifier.parts.piece_length_classifier import (
     PieceLengthClassifier,
     _PieceLengthScore,
 )
-from build_a_long.pdf_extract.classifier.step_number_classifier import (
+from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
     StepNumberClassifier,
     _StepNumberScore,
 )

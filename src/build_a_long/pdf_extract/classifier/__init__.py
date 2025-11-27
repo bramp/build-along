@@ -35,6 +35,11 @@ from build_a_long.pdf_extract.classifier.parts import (
     PartsListClassifier,
     PieceLengthClassifier,
 )
+from build_a_long.pdf_extract.classifier.steps import (
+    DiagramClassifier,
+    StepClassifier,
+    StepNumberClassifier,
+)
 
 from ..extractor.lego_page_elements import Page
 from .classification_result import (
@@ -43,13 +48,10 @@ from .classification_result import (
     ClassifierConfig,
 )
 from .classifier import Classifier, classify_elements, classify_pages
-from .diagram_classifier import DiagramClassifier
 from .label_classifier import LabelClassifier
 from .page_hints import PageHint, PageHints
 from .page_number_classifier import PageNumberClassifier
 from .progress_bar_classifier import ProgressBarClassifier
-from .step_classifier import StepClassifier
-from .step_number_classifier import StepNumberClassifier
 
 PageType = Page.PageType
 

@@ -3,7 +3,9 @@
 import pytest
 
 from build_a_long.pdf_extract.classifier.classification_result import ClassifierConfig
-from build_a_long.pdf_extract.classifier.diagram_classifier import DiagramClassifier
+from build_a_long.pdf_extract.classifier.steps.diagram_classifier import (
+    DiagramClassifier,
+)
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
 
