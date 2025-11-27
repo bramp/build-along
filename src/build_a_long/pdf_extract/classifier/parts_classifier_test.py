@@ -8,9 +8,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
 )
-from build_a_long.pdf_extract.classifier.part_count_classifier import (
-    PartCountClassifier,
-)
 from build_a_long.pdf_extract.classifier.part_number_classifier import (
     PartNumberClassifier,
 )
@@ -64,14 +61,8 @@ class TestPartsClassification:
 
         result = ClassificationResult(page_data=page)
         # Register classifiers so result.construct_candidate works
-        result.register_classifier("part_count", PartCountClassifier(classifier.config))
-        result.register_classifier(
-            "part_number", PartNumberClassifier(classifier.config)
-        )
-        result.register_classifier(
-            "piece_length", PieceLengthClassifier(classifier.config)
-        )
-        result.register_classifier("part", classifier)
+        PartNumberClassifier(classifier.config).score(result)
+        PieceLengthClassifier(classifier.config).score(result)
 
         factory = candidate_factory(result)
 
@@ -117,9 +108,6 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
-        # Register classifiers
-        result.register_classifier("part_count", PartCountClassifier(classifier.config))
-        result.register_classifier("part", classifier)
 
         factory = candidate_factory(result)
 
@@ -157,9 +145,6 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
-        # Register classifiers
-        result.register_classifier("part_count", PartCountClassifier(classifier.config))
-        result.register_classifier("part", classifier)
 
         factory = candidate_factory(result)
 
@@ -205,9 +190,6 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
-        # Register classifiers
-        result.register_classifier("part_count", PartCountClassifier(classifier.config))
-        result.register_classifier("part", classifier)
 
         factory = candidate_factory(result)
         factory.add_part_count(t1, score=1.0)
@@ -241,9 +223,6 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
-        # Register classifiers
-        result.register_classifier("part_count", PartCountClassifier(classifier.config))
-        result.register_classifier("part", classifier)
 
         factory = candidate_factory(result)
         factory.add_part_count(t1, score=1.0)

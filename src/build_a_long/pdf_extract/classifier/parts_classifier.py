@@ -81,7 +81,7 @@ class PartsClassifier(LabelClassifier):
     outputs = frozenset({"part"})
     requires = frozenset({"part_count", "part_number", "piece_length"})
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Score part pairings and create candidates.
 
         Creates candidates with score details containing references to parent

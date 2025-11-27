@@ -3,24 +3,70 @@ import pytest
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
+    ClassifierConfig,
 )
-from build_a_long.pdf_extract.classifier.part_count_classifier import _PartCountScore
-from build_a_long.pdf_extract.classifier.parts_classifier import _PartPairScore
-from build_a_long.pdf_extract.classifier.parts_list_classifier import _PartsListScore
+from build_a_long.pdf_extract.classifier.part_count_classifier import (
+    PartCountClassifier,
+    _PartCountScore,
+)
+from build_a_long.pdf_extract.classifier.part_number_classifier import (
+    PartNumberClassifier,
+)
+from build_a_long.pdf_extract.classifier.parts_classifier import (
+    PartsClassifier,
+    _PartPairScore,
+)
+from build_a_long.pdf_extract.classifier.parts_list_classifier import (
+    PartsListClassifier,
+    _PartsListScore,
+)
 from build_a_long.pdf_extract.classifier.piece_length_classifier import (
+    PieceLengthClassifier,
     _PieceLengthScore,
 )
-from build_a_long.pdf_extract.classifier.step_number_classifier import _StepNumberScore
+from build_a_long.pdf_extract.classifier.step_number_classifier import (
+    StepNumberClassifier,
+    _StepNumberScore,
+)
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
 
 class CandidateFactory:
-    """Helper to create and register candidates with proper score details."""
+    """Helper to create and register candidates with proper score details.
 
-    def __init__(self, result: ClassificationResult):
+    This factory manually registers the classifiers it creates candidates for,
+    since it bypasses the normal score() flow.
+    """
+
+    def __init__(
+        self, result: ClassificationResult, config: ClassifierConfig | None = None
+    ):
         self.result = result
+        self.config = config or ClassifierConfig()
+        self._registered_classifiers: set[str] = set()
+
+    def _ensure_classifier_registered(self, label: str) -> None:
+        """Ensure the classifier for this label is registered."""
+        if label in self._registered_classifiers:
+            return
+
+        # Map labels to their classifier classes
+        classifier_map = {
+            "part_count": PartCountClassifier,
+            "step_number": StepNumberClassifier,
+            "part": PartsClassifier,
+            "parts_list": PartsListClassifier,
+            "piece_length": PieceLengthClassifier,
+            "part_number": PartNumberClassifier,
+        }
+
+        if label in classifier_map:
+            classifier = classifier_map[label](self.config)
+            self.result._register_classifier(label, classifier)
+            self._registered_classifiers.add(label)
 
     def add_part_count(self, block: Text, score: float = 1.0) -> Candidate:
+        self._ensure_classifier_registered("part_count")
         score_details = _PartCountScore(
             text_score=score,
             font_size_score=0.5,
@@ -38,6 +84,7 @@ class CandidateFactory:
         return candidate
 
     def add_step_number(self, block: Text, score: float = 1.0) -> Candidate:
+        self._ensure_classifier_registered("step_number")
         score_details = _StepNumberScore(text_score=score, font_size_score=0.5)
         candidate = Candidate(
             bbox=block.bbox,
@@ -58,6 +105,7 @@ class CandidateFactory:
         part_number_candidate: Candidate | None = None,
         piece_length_candidate: Candidate | None = None,
     ) -> Candidate:
+        self._ensure_classifier_registered("part")
         score_details = _PartPairScore(
             distance=10.0,
             part_count_candidate=part_count_candidate,
@@ -82,6 +130,7 @@ class CandidateFactory:
         part_candidates: list[Candidate],
         score: float = 1.0,
     ) -> Candidate:
+        self._ensure_classifier_registered("parts_list")
         score_details = _PartsListScore(part_candidates=part_candidates)
         candidate = Candidate(
             bbox=drawing_block.bbox,
@@ -101,6 +150,7 @@ class CandidateFactory:
         score: float = 1.0,
         value: int = 0,
     ) -> Candidate:
+        self._ensure_classifier_registered("piece_length")
         score_details = _PieceLengthScore(
             text_score=score,
             context_score=1.0,

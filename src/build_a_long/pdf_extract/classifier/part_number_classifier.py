@@ -87,7 +87,7 @@ class PartNumberClassifier(LabelClassifier):
     outputs = frozenset({"part_number"})
     requires = frozenset()
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Score text blocks and create candidates WITHOUT construction."""
         page_data = result.page_data
         if not page_data.blocks:

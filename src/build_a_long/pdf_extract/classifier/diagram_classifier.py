@@ -71,7 +71,7 @@ class DiagramClassifier(LabelClassifier):
     outputs = frozenset({"diagram"})
     requires = frozenset({"parts_list", "progress_bar"})
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Score Drawing/Image elements and create candidates WITHOUT construction."""
         page_data = result.page_data
         page_bbox = page_data.bbox

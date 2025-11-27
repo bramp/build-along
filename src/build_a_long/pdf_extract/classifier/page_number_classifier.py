@@ -78,7 +78,7 @@ class PageNumberClassifier(LabelClassifier):
     outputs = frozenset({"page_number"})
     requires = frozenset()
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Score text blocks and create candidates WITHOUT construction.
 
         This method:

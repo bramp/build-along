@@ -170,7 +170,6 @@ class TestPieceLengthClassifier:
 
         result = ClassificationResult(page_data=page)
         classifier.score(result)
-        result.register_classifier("piece_length", classifier)
 
         # Check that text1 and text2 are classified as piece_length
         candidate1 = result.get_candidate_for_block(text1, "piece_length")
@@ -202,7 +201,6 @@ class TestPieceLengthClassifier:
 
         result = ClassificationResult(page_data=page)
         classifier.score(result)
-        result.register_classifier("piece_length", classifier)
         candidate = result.get_candidate_for_block(text, "piece_length")
 
         # Should either have no candidate or a candidate with no constructed element
@@ -229,7 +227,6 @@ class TestPieceLengthClassifier:
 
         result = ClassificationResult(page_data=page)
         classifier.score(result)
-        result.register_classifier("piece_length", classifier)
 
         candidate1 = result.get_candidate_for_block(text_small, "piece_length")
         candidate2 = result.get_candidate_for_block(text_large, "piece_length")
@@ -260,7 +257,6 @@ class TestPieceLengthClassifier:
 
         result = ClassificationResult(page_data=page)
         classifier.score(result)
-        result.register_classifier("piece_length", classifier)
 
         candidate = result.get_candidate_for_block(text, "piece_length")
 

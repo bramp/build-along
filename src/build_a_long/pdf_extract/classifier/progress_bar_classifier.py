@@ -79,7 +79,7 @@ class ProgressBarClassifier(LabelClassifier):
     outputs = frozenset({"progress_bar"})
     requires = frozenset({"page_number"})
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Score Drawing/Image elements and create candidates WITHOUT construction."""
         page_data = result.page_data
         page_bbox = page_data.bbox

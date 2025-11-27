@@ -34,7 +34,6 @@ class TestBagNumberClassification:
         )
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
-        result.register_classifier("bag_number", classifier)
 
         # Should not create any candidates
         candidates = result.get_candidates("bag_number")
@@ -59,7 +58,6 @@ class TestBagNumberClassification:
 
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
-        result.register_classifier("bag_number", classifier)
 
         # Check the bag_number candidate exists and has a good score
         candidate = result.get_candidate_for_block(bag_number_text, "bag_number")
@@ -88,7 +86,6 @@ class TestBagNumberClassification:
         )
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
-        result.register_classifier("bag_number", classifier)
 
         # Should not classify non-numeric text as bag number
         candidate = result.get_candidate_for_block(text_block, "bag_number")
@@ -114,7 +111,6 @@ class TestBagNumberClassification:
         )
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
-        result.register_classifier("bag_number", classifier)
 
         # Should not classify bottom text as bag number
         candidate = result.get_candidate_for_block(bottom_text, "bag_number")
@@ -142,7 +138,6 @@ class TestBagNumberClassification:
 
             result = ClassificationResult(page_data=page_data)
             classifier.score(result)
-            result.register_classifier("bag_number", classifier)
 
             candidate = result.get_candidate_for_block(bag_number_text, "bag_number")
             assert candidate is not None
@@ -172,7 +167,6 @@ class TestBagNumberClassification:
 
             result = ClassificationResult(page_data=page_data)
             classifier.score(result)
-            result.register_classifier("bag_number", classifier)
 
             candidate = result.get_candidate_for_block(text_block, "bag_number")
             assert candidate is None
@@ -206,7 +200,6 @@ class TestBagNumberClassification:
         )
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
-        result.register_classifier("bag_number", classifier)
 
         small_candidate = result.get_candidate_for_block(small_text, "bag_number")
         large_candidate = result.get_candidate_for_block(large_text, "bag_number")

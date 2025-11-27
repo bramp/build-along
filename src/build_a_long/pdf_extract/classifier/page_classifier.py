@@ -58,7 +58,7 @@ class PageClassifier(LabelClassifier):
         {"page_number", "progress_bar", "new_bag", "step", "parts_list"}
     )
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Create a single page candidate.
 
         PageClassifier doesn't do complex scoring - it just creates a candidate

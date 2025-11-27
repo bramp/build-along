@@ -47,7 +47,6 @@ class TestPartCountClassification:
         )
 
         result = ClassificationResult(page_data=page)
-        result.register_classifier("part_count", classifier)
         classifier.score(result)
 
         # Verify that the valid part count texts were classified
@@ -109,7 +108,6 @@ class TestPartCountClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.register_classifier("part_count", classifier)
         classifier.score(result)
 
         # Construct all candidates

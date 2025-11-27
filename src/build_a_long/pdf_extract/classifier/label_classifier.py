@@ -57,9 +57,13 @@ class LabelClassifier(ABC):
         # Linear penalty: score = 1.0 - (diff_ratio * 2.0)
         return max(0.0, 1.0 - (diff_ratio * 2.0))
 
-    @abstractmethod
     def score(self, result: ClassificationResult) -> None:
         """Score blocks and create candidates.
+
+        This method automatically registers the classifier for all labels in
+        self.outputs, then calls _score() to perform the actual scoring.
+
+        Subclasses should implement _score() instead of overriding this method.
 
         This method should:
         1. Score each blocks for this label
@@ -86,6 +90,23 @@ class LabelClassifier(ABC):
 
         This is the first phase of the two-phase classification process.
         Construction happens later in construct().
+
+        Args:
+            result: The classification result to populate with candidates
+        """
+        # Auto-register this classifier for all its output labels
+        for label in self.outputs:
+            result._register_classifier(label, self)
+
+        # Call the subclass implementation
+        self._score(result)
+
+    @abstractmethod
+    def _score(self, result: ClassificationResult) -> None:
+        """Perform the actual scoring logic.
+
+        Subclasses should implement this method instead of score().
+        See score() documentation for details on what to implement.
 
         Args:
             result: The classification result to populate with candidates

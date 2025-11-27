@@ -250,7 +250,7 @@ class Classifier:
         It does NOT modify page_data directly.
 
         The classification process runs in three phases:
-        1. Score all classifiers (bottom-up)
+        1. Score all classifiers (bottom-up) - auto-registers classifiers
         2. Resolve conflicts (global)
         3. Construct final elements (top-down starting from Page)
         """
@@ -258,12 +258,8 @@ class Classifier:
 
         logger.debug(f"Starting classification for page {page_data.page_number}")
 
-        # 0. Register classifiers
-        for classifier in self.classifiers:
-            for label in classifier.outputs:
-                result.register_classifier(label, classifier)
-
         # 1. Score all classifiers (Bottom-Up)
+        # Note: score() automatically registers each classifier for its output labels
         for classifier in self.classifiers:
             classifier.score(result)
 

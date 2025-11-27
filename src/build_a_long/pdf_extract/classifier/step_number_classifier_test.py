@@ -45,7 +45,6 @@ class TestStepNumberClassification:
         )
 
         result = ClassificationResult(page_data=page)
-        result.register_classifier("step_number", classifier)
         classifier.score(result)
 
         # Construct all candidates
@@ -94,7 +93,6 @@ class TestStepNumberClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.register_classifier("step_number", classifier)
         classifier.score(result)
 
         # Construct all candidates

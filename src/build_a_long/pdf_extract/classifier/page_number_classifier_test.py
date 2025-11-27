@@ -36,7 +36,6 @@ class TestPageNumberClassification:
             bbox=BBox(0, 0, 100, 200),
         )
         result = ClassificationResult(page_data=page_data)
-        result.register_classifier("page_number", classifier)
         classifier.score(result)
 
         # Should not create any candidates
@@ -61,7 +60,6 @@ class TestPageNumberClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.register_classifier("page_number", classifier)
         classifier.score(result)
 
         # Check the page_number candidate exists and has a good score
@@ -91,7 +89,6 @@ class TestPageNumberClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.register_classifier("page_number", classifier)
         classifier.score(result)
 
         # Check the page_number candidate exists and has a good score
@@ -130,7 +127,6 @@ class TestPageNumberClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.register_classifier("page_number", classifier)
         classifier.score(result)
 
         # Check scores from ClassificationResult
@@ -156,7 +152,6 @@ class TestPageNumberClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.register_classifier("page_number", classifier)
         classifier.score(result)
 
         # Check that txt7 scored higher than txt6
@@ -184,7 +179,6 @@ class TestPageNumberClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.register_classifier("page_number", classifier)
         classifier.score(result)
 
         # Should not be labeled due to text pattern (position is good but text is bad)
@@ -220,7 +214,6 @@ class TestPageNumberClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.register_classifier("page_number", classifier)
         classifier.score(result)
 
         # Both should have candidates created
@@ -257,7 +250,6 @@ class TestPageNumberClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        result.register_classifier("page_number", classifier)
         classifier.score(result)
 
         # Construct all candidates

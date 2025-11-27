@@ -77,7 +77,7 @@ class PieceLengthClassifier(LabelClassifier):
     outputs = frozenset({"piece_length"})
     requires = frozenset()
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Score text blocks and create candidates WITHOUT construction.
 
         Looks for small numbers (1-32) spatially contained within Drawing

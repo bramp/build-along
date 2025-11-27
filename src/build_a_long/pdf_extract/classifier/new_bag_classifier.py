@@ -79,7 +79,7 @@ class NewBagClassifier(LabelClassifier):
     outputs = frozenset({"new_bag"})
     requires = frozenset({"bag_number"})
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Score bag number + image clusters and create candidates.
 
         Creates candidates WITHOUT construction.

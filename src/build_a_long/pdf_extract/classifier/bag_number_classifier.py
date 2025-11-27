@@ -81,7 +81,7 @@ class BagNumberClassifier(LabelClassifier):
     outputs = frozenset({"bag_number"})
     requires = frozenset()
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Score text blocks and create candidates WITHOUT construction.
 
         This method:

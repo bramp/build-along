@@ -250,8 +250,12 @@ class ClassificationResult(BaseModel):
             )
         return self
 
-    def register_classifier(self, label: str, classifier: LabelClassifier) -> None:
-        """Register a classifier for a specific label."""
+    def _register_classifier(self, label: str, classifier: LabelClassifier) -> None:
+        """Register a classifier for a specific label.
+
+        This is called automatically by LabelClassifier.score() and should not
+        be called directly by external code.
+        """
         self._classifiers[label] = classifier
 
     def construct_candidate(self, candidate: Candidate) -> LegoPageElements:

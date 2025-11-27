@@ -6,26 +6,8 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
 )
-from build_a_long.pdf_extract.classifier.part_count_classifier import (
-    PartCountClassifier,
-)
-from build_a_long.pdf_extract.classifier.part_number_classifier import (
-    PartNumberClassifier,
-)
-from build_a_long.pdf_extract.classifier.parts_classifier import (
-    PartsClassifier,
-)
-from build_a_long.pdf_extract.classifier.parts_list_classifier import (
-    PartsListClassifier,
-)
-from build_a_long.pdf_extract.classifier.piece_length_classifier import (
-    PieceLengthClassifier,
-)
 from build_a_long.pdf_extract.classifier.step_classifier import (
     StepClassifier,
-)
-from build_a_long.pdf_extract.classifier.step_number_classifier import (
-    StepNumberClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
@@ -68,13 +50,6 @@ class TestStepClassification:
         result = ClassificationResult(page_data=page_data)
         config = classifier.config
         # Register all relevant classifiers
-        result.register_classifier("step_number", StepNumberClassifier(config))
-        result.register_classifier("parts_list", PartsListClassifier(config))
-        result.register_classifier("part", PartsClassifier(config))
-        result.register_classifier("part_count", PartCountClassifier(config))
-        result.register_classifier("part_number", PartNumberClassifier(config))
-        result.register_classifier("piece_length", PieceLengthClassifier(config))
-        result.register_classifier("step", classifier)
 
         factory = candidate_factory(result)
 
@@ -119,13 +94,6 @@ class TestStepClassification:
         result = ClassificationResult(page_data=page_data)
         config = classifier.config
         # Register all relevant classifiers
-        result.register_classifier("step_number", StepNumberClassifier(config))
-        result.register_classifier("parts_list", PartsListClassifier(config))
-        result.register_classifier("part", PartsClassifier(config))
-        result.register_classifier("part_count", PartCountClassifier(config))
-        result.register_classifier("part_number", PartNumberClassifier(config))
-        result.register_classifier("piece_length", PieceLengthClassifier(config))
-        result.register_classifier("step", classifier)
 
         factory = candidate_factory(result)
 
@@ -173,13 +141,6 @@ class TestStepClassification:
         result = ClassificationResult(page_data=page_data)
         config = classifier.config
         # Register all relevant classifiers
-        result.register_classifier("step_number", StepNumberClassifier(config))
-        result.register_classifier("parts_list", PartsListClassifier(config))
-        result.register_classifier("part", PartsClassifier(config))
-        result.register_classifier("part_count", PartCountClassifier(config))
-        result.register_classifier("part_number", PartNumberClassifier(config))
-        result.register_classifier("piece_length", PieceLengthClassifier(config))
-        result.register_classifier("step", classifier)
 
         factory = candidate_factory(result)
 
@@ -235,13 +196,6 @@ class TestStepClassification:
         result = ClassificationResult(page_data=page_data)
         config = classifier.config
         # Register all relevant classifiers
-        result.register_classifier("step_number", StepNumberClassifier(config))
-        result.register_classifier("parts_list", PartsListClassifier(config))
-        result.register_classifier("part", PartsClassifier(config))
-        result.register_classifier("part_count", PartCountClassifier(config))
-        result.register_classifier("part_number", PartNumberClassifier(config))
-        result.register_classifier("piece_length", PieceLengthClassifier(config))
-        result.register_classifier("step", classifier)
 
         factory = candidate_factory(result)
 
@@ -309,13 +263,6 @@ class TestStepClassification:
         result = ClassificationResult(page_data=page_data)
         config = classifier.config
         # Register all relevant classifiers
-        result.register_classifier("step_number", StepNumberClassifier(config))
-        result.register_classifier("parts_list", PartsListClassifier(config))
-        result.register_classifier("part", PartsClassifier(config))
-        result.register_classifier("part_count", PartCountClassifier(config))
-        result.register_classifier("part_number", PartNumberClassifier(config))
-        result.register_classifier("piece_length", PieceLengthClassifier(config))
-        result.register_classifier("step", classifier)
 
         factory = candidate_factory(result)
 

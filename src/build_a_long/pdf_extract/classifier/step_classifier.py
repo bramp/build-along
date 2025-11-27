@@ -105,7 +105,7 @@ class StepClassifier(LabelClassifier):
     outputs = frozenset({"step"})
     requires = frozenset({"step_number", "parts_list"})
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Score step pairings and create candidates WITHOUT construction."""
         page_data = result.page_data
 

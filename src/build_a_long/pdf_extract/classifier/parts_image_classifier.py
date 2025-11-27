@@ -72,7 +72,7 @@ class PartsImageClassifier(LabelClassifier):
     outputs = frozenset({"part_image"})
     requires = frozenset({"parts_list", "part_count"})
 
-    def score(self, result: ClassificationResult) -> None:
+    def _score(self, result: ClassificationResult) -> None:
         """Score part image pairings and create candidates.
 
         Creates candidates with score details containing the part count candidate
