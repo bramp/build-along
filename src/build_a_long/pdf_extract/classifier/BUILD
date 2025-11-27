@@ -1,11 +1,6 @@
 python_sources()
 
 python_test_utils(
-    name="test-helpers",
-    sources=["test_helpers.py"],
-)
-
-python_test_utils(
     name="conftest",
     sources=["conftest.py"],
 )
