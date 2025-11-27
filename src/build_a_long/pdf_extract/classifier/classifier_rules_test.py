@@ -102,16 +102,6 @@ class TestClassifierRules:
         elements from the same source block. Each raw extraction block should
         produce at most one classified element in the final Page tree.
         """
-        # TODO: Remove this skip once the "winning" concept is implemented
-        # These fixtures have Parts that appear in multiple PartsLists due to
-        # overlapping Drawing bboxes. The winning concept will prevent duplicate
-        # Part usage across candidates.
-        if fixture_file in ["6509377_page_014_raw.json", "6509377_page_015_raw.json"]:
-            pytest.skip(
-                "Skipping until 'winning' concept prevents duplicate Part usage "
-                "across multiple PartsList candidates"
-            )
-
         pages = _load_pages_from_fixture(fixture_file)
 
         for page_idx, page_data in enumerate(pages):
