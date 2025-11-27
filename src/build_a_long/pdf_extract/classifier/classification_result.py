@@ -270,6 +270,8 @@ class ClassificationResult(BaseModel):
             raise ValueError(f"Candidate failed: {candidate.failure_reason}")
 
         # Check if any source block is already consumed
+        # TODO Do we need the following? As _fail_conflicting_candidates should
+        # be setting failure reasons already.
         for block in candidate.source_blocks:
             if block.id in self._consumed_blocks:
                 # Find who consumed it (for better error message)

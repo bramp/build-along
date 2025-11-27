@@ -74,7 +74,7 @@ class _PartCountScore:
 class PartCountClassifier(LabelClassifier):
     """Classifier for part counts."""
 
-    outputs = frozenset({"part_count"})
+    output = "part_count"
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:

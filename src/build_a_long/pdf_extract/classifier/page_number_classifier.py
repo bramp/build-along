@@ -75,7 +75,7 @@ class _PageNumberScore:
 class PageNumberClassifier(LabelClassifier):
     """Classifier for page numbers."""
 
-    outputs = frozenset({"page_number"})
+    output = "page_number"
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:

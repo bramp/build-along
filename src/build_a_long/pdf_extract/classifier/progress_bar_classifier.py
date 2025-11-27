@@ -76,7 +76,7 @@ class _ProgressBarScore:
 class ProgressBarClassifier(LabelClassifier):
     """Classifier for progress bars on instruction pages."""
 
-    outputs = frozenset({"progress_bar"})
+    output = "progress_bar"
     requires = frozenset({"page_number"})
 
     def _score(self, result: ClassificationResult) -> None:

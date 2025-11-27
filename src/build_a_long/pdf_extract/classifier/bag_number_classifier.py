@@ -78,7 +78,7 @@ class _BagNumberScore:
 class BagNumberClassifier(LabelClassifier):
     """Classifier for bag numbers."""
 
-    outputs = frozenset({"bag_number"})
+    output = "bag_number"
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:

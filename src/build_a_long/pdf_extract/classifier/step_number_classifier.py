@@ -57,7 +57,7 @@ class _StepNumberScore:
 class StepNumberClassifier(LabelClassifier):
     """Classifier for step numbers."""
 
-    outputs = frozenset({"step_number"})
+    output = "step_number"
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:

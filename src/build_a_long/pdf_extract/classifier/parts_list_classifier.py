@@ -59,7 +59,7 @@ class _PartsListScore:
 class PartsListClassifier(LabelClassifier):
     """Classifier for parts lists."""
 
-    outputs = frozenset({"parts_list"})
+    output = "parts_list"
     requires = frozenset({"part"})
 
     def _score(self, result: ClassificationResult) -> None:

@@ -15,8 +15,6 @@ Heuristic
 - The cluster should form a cohesive visual element
 - Typically located in upper-left portion of the page
 
-TODO The bounding box calculation is currently incorrect and needs fixing.
-
 Debugging
 ---------
 Enable with `LOG_LEVEL=DEBUG` for structured logs.
@@ -76,14 +74,11 @@ class _NewBagScore:
 class NewBagClassifier(LabelClassifier):
     """Classifier for new bag elements."""
 
-    outputs = frozenset({"new_bag"})
+    output = "new_bag"
     requires = frozenset({"bag_number"})
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score bag number + image clusters and create candidates.
-
-        Creates candidates WITHOUT construction.
-        """
+        """Score bag number + image clusters and create candidates."""
         page_data = result.page_data
 
         # Get bag number candidates (not constructed elements)
@@ -254,6 +249,7 @@ class NewBagClassifier(LabelClassifier):
         if num_images == 0:
             return 0.0
 
+        # TODO Re-evaluate this logic. I'm not sure ~8 is a ideal number.
         # Favor clusters with 3-8 images
         # Fewer than 3 might not be a complete bag graphic
         # More than 8 might be overlapping with other elements

@@ -84,7 +84,7 @@ class _PartNumberScore:
 class PartNumberClassifier(LabelClassifier):
     """Classifier for LEGO part numbers (element IDs)."""
 
-    outputs = frozenset({"part_number"})
+    output = "part_number"
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:

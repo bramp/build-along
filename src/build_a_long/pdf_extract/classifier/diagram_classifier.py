@@ -68,7 +68,7 @@ class _DiagramScore:
 class DiagramClassifier(LabelClassifier):
     """Classifier for diagram regions on instruction pages."""
 
-    outputs = frozenset({"diagram"})
+    output = "diagram"
     requires = frozenset({"progress_bar"})
 
     def _score(self, result: ClassificationResult) -> None:
@@ -97,6 +97,7 @@ class DiagramClassifier(LabelClassifier):
                 continue
 
             # Score the block
+            # TODO Does the score or position actually matter?
             area_score = self._score_area(block.bbox, page_bbox)
             position_score = self._score_position(block.bbox, page_bbox)
 

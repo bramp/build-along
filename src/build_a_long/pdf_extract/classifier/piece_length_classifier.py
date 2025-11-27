@@ -74,7 +74,7 @@ class _PieceLengthScore:
 class PieceLengthClassifier(LabelClassifier):
     """Classifier for piece length indicators."""
 
-    outputs = frozenset({"piece_length"})
+    output = "piece_length"
     requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:

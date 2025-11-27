@@ -34,7 +34,7 @@ class LabelClassifier(ABC):
 
     # Class-level metadata to declare pipeline dependencies.
     # Subclasses should override these at the class level
-    outputs: ClassVar[frozenset[str]] = frozenset()
+    output: ClassVar[str] = ""
     requires: ClassVar[frozenset[str]] = frozenset()
 
     def _score_font_size(self, block: Text, target_size: float | None) -> float:
@@ -61,7 +61,7 @@ class LabelClassifier(ABC):
         """Score blocks and create candidates.
 
         This method automatically registers the classifier for all labels in
-        self.outputs, then calls _score() to perform the actual scoring.
+        self.output, then calls _score() to perform the actual scoring.
 
         Subclasses should implement _score() instead of overriding this method.
 
@@ -94,9 +94,8 @@ class LabelClassifier(ABC):
         Args:
             result: The classification result to populate with candidates
         """
-        # Auto-register this classifier for all its output labels
-        for label in self.outputs:
-            result._register_classifier(label, self)
+        # Auto-register this classifier for its output label
+        result._register_classifier(self.output, self)
 
         # Call the subclass implementation
         self._score(result)
@@ -116,7 +115,7 @@ class LabelClassifier(ABC):
     def build_all(self, result: ClassificationResult) -> None:
         """Build LegoPageElements from all candidates for this classifier's label.
 
-        Iterates through all candidates for this classifier's output label(s)
+        Iterates through all candidates for this classifier's output label
         and calls build() on each, storing the result or failure reason.
 
         This is the entry point called by the classification pipeline to trigger
@@ -125,14 +124,13 @@ class LabelClassifier(ABC):
         Args:
             result: The classification result containing candidates to build
         """
-        for label in self.outputs:
-            candidates = result.get_candidates(label)
-            for candidate in candidates:
-                try:
-                    elem = result.build(candidate)
-                    candidate.constructed = elem
-                except Exception as e:
-                    candidate.failure_reason = str(e)
+        candidates = result.get_candidates(self.output)
+        for candidate in candidates:
+            try:
+                elem = result.build(candidate)
+                candidate.constructed = elem
+            except Exception as e:
+                candidate.failure_reason = str(e)
 
     @abstractmethod
     def build(

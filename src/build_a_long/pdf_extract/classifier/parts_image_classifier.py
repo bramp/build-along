@@ -69,7 +69,7 @@ class _PartImageScore:
 class PartsImageClassifier(LabelClassifier):
     """Classifier for part images paired with part count texts."""
 
-    outputs = frozenset({"part_image"})
+    output = "part_image"
     requires = frozenset({"parts_list", "part_count"})
 
     def _score(self, result: ClassificationResult) -> None:

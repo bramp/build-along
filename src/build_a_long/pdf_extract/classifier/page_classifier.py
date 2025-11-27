@@ -53,7 +53,7 @@ class _PageScore(BaseModel):
 class PageClassifier(LabelClassifier):
     """Classifier for building the complete Page element."""
 
-    outputs = frozenset({"page"})
+    output = "page"
     requires = frozenset(
         {"page_number", "progress_bar", "new_bag", "step", "parts_list"}
     )

@@ -78,7 +78,7 @@ class _PartPairScore:
 class PartsClassifier(LabelClassifier):
     """Classifier for Part elements (pairs of part_count + image)."""
 
-    outputs = frozenset({"part"})
+    output = "part"
     requires = frozenset({"part_count", "part_number", "piece_length"})
 
     def _score(self, result: ClassificationResult) -> None:
