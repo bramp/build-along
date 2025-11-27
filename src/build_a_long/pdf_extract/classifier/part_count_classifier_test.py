@@ -1,27 +1,38 @@
 """Tests for the part count classifier."""
 
-from build_a_long.pdf_extract.classifier.classifier import classify_elements
+import pytest
+
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
+    ClassifierConfig,
+)
+from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
+from build_a_long.pdf_extract.classifier.part_count_classifier import (
+    PartCountClassifier,
+)
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import PartCount
-from build_a_long.pdf_extract.extractor.page_blocks import Image, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Text
+
+
+@pytest.fixture
+def classifier() -> PartCountClassifier:
+    return PartCountClassifier(config=ClassifierConfig())
 
 
 class TestPartCountClassification:
     """Tests for detecting piece counts like '2x'."""
 
-    def test_detect_multiple_piece_counts(self) -> None:
+    def test_detect_multiple_piece_counts(
+        self, classifier: PartCountClassifier
+    ) -> None:
         """Test that multiple part counts with various formats are detected.
 
-        Verifies that part counts with different notations (2x, 2X, 3×) are all
-        recognized and successfully paired with nearby images to create Part objects.
+        Verifies that part counts with different notations (2x, 2X, 3×) are
+        recognized as valid candidates.
         """
         page_bbox = BBox(0, 0, 100, 200)
-
-        # Create images above the part counts
-        img1 = Image(id=0, bbox=BBox(10, 30, 20, 45))
-        img2 = Image(id=1, bbox=BBox(30, 30, 40, 45))
-        img3 = Image(id=2, bbox=BBox(50, 30, 60, 45))
 
         # Part counts below images (different x/X variations)
         t1 = Text(id=3, bbox=BBox(10, 50, 20, 60), text="2x")
@@ -31,11 +42,13 @@ class TestPartCountClassification:
 
         page = PageData(
             page_number=1,
-            blocks=[img1, img2, img3, t1, t2, t3, t4],
+            blocks=[t1, t2, t3, t4],
             bbox=page_bbox,
         )
 
-        result = classify_elements(page)
+        result = ClassificationResult(page_data=page)
+        result.register_classifier("part_count", classifier)
+        classifier.score(result)
 
         # Verify that the valid part count texts were classified
         t1_candidate = result.get_candidate_for_block(t1, "part_count")
@@ -45,23 +58,76 @@ class TestPartCountClassification:
 
         # The valid counts should be successfully constructed
         assert t1_candidate is not None
-        assert t1_candidate.constructed is not None
-        assert isinstance(t1_candidate.constructed, PartCount)
-        assert t1_candidate.constructed.count == 2
+        part_count1 = result.construct_candidate(t1_candidate)
+        assert isinstance(part_count1, PartCount)
+        assert part_count1.count == 2
 
         assert t2_candidate is not None
-        assert t2_candidate.constructed is not None
-        assert isinstance(t2_candidate.constructed, PartCount)
-        assert t2_candidate.constructed.count == 2
+        part_count2 = result.construct_candidate(t2_candidate)
+        assert isinstance(part_count2, PartCount)
+        assert part_count2.count == 2
 
         assert t3_candidate is not None
-        assert t3_candidate.constructed is not None
-        assert isinstance(t3_candidate.constructed, PartCount)
-        assert t3_candidate.constructed.count == 3
+        part_count3 = result.construct_candidate(t3_candidate)
+        assert isinstance(part_count3, PartCount)
+        assert part_count3.count == 3
 
         # The invalid text should either have no candidate or failed construction
         if t4_candidate is not None:
-            assert t4_candidate.constructed is None
+            # It might be scored low, but if construction is attempted it should fail?
+            # PartCountClassifier construction checks score and text parsing.
+            # _score_part_count_text checks extract_part_count_value.
+            # "hello" returns None, so text_score is 0.0.
+            # _construct_single checks text_score == 0.0 -> raise ValueError.
+            # So result.construct_candidate should raise or return None if we handle it?
+            # construct_candidate raises ValueError on failure.
+            with pytest.raises(ValueError):
+                result.construct_candidate(t4_candidate)
 
-        # Verify parts were created by pairing with images
-        assert result.count_successful_candidates("part") == 3
+    def test_part_count_with_font_hints(self) -> None:
+        """Test that PartCountClassifier uses font size hints."""
+        # Create font size hints directly
+        hints = FontSizeHints(
+            part_count_size=10.0,
+            catalog_part_count_size=None,
+            catalog_element_id_size=None,
+            step_number_size=None,
+            step_repeat_size=None,
+            page_number_size=None,
+            remaining_font_sizes={},
+        )
+        config = ClassifierConfig(font_size_hints=hints)
+        classifier = PartCountClassifier(config)
+
+        matching_text = Text(text="2x", bbox=BBox(0, 0, 10, 10), id=1)
+        different_text = Text(text="3x", bbox=BBox(0, 0, 15, 15), id=2)
+
+        page_data = PageData(
+            page_number=1,
+            bbox=BBox(0, 0, 100, 100),
+            blocks=[matching_text, different_text],
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        result.register_classifier("part_count", classifier)
+        classifier.score(result)
+
+        # Construct all candidates
+        candidates = result.get_candidates("part_count")
+        for candidate in candidates:
+            if candidate.constructed is None:
+                result.construct_candidate(candidate)
+
+        assert len(candidates) == 2
+
+        matching_candidate = next(
+            c for c in candidates if matching_text in c.source_blocks
+        )
+        different_candidate = next(
+            c for c in candidates if different_text in c.source_blocks
+        )
+
+        assert matching_candidate.score > different_candidate.score, (
+            f"Matching score ({matching_candidate.score}) should be higher than "
+            f"different score ({different_candidate.score})"
+        )

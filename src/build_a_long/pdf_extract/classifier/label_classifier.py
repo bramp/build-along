@@ -37,37 +37,24 @@ class LabelClassifier(ABC):
     outputs: ClassVar[frozenset[str]] = frozenset()
     requires: ClassVar[frozenset[str]] = frozenset()
 
-    def _score_font_size(self, element: Text, expected_size: float | None) -> float:
-        """Score based on how well font size matches an expected size.
-
-        Returns 1.0 if font size matches the expected size exactly, scaling down
-        based on the difference. Returns 0.5 if no expected size is provided or
-        if the element has no font size metadata.
-
-        Args:
-            element: Text element to score
-            expected_size: Expected font size, or None if no hint available
-
-        Returns:
-            Score from 0.0 to 1.0
-        """
-        # Use the font_size from the PDF metadata, not bbox height
-        actual_size = element.font_size
-        if actual_size is None or expected_size is None:
-            # No font size metadata or no hint available, return neutral score
+    def _score_font_size(self, block: Text, target_size: float | None) -> float:
+        """Score how well text font size matches target size."""
+        if target_size is None:
             return 0.5
 
-        # Exact match gets score of 1.0
-        if abs(actual_size - expected_size) < 0.01:
-            return 1.0
+        if block.font_size is None:
+            # Fallback to bbox height if font size not explicitly set
+            size = block.bbox.height
+        else:
+            size = block.font_size
 
-        # Calculate relative difference
-        diff_ratio = abs(actual_size - expected_size) / expected_size
+        # Calculate difference as ratio of target size
+        if target_size == 0:
+            return 0.0
 
-        # Score decreases as difference increases
-        # Within 10% difference: score > 0.8
-        # Within 20% difference: score > 0.6
-        # Within 50% difference: score > 0.0
+        diff_ratio = abs(size - target_size) / target_size
+
+        # Linear penalty: score = 1.0 - (diff_ratio * 2.0)
         return max(0.0, 1.0 - (diff_ratio * 2.0))
 
     @abstractmethod

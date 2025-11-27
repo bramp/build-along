@@ -1,51 +1,62 @@
 """Tests for the step number classifier."""
 
-from build_a_long.pdf_extract.classifier.classifier import classify_elements
+import pytest
+
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
+    ClassifierConfig,
+)
+from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
+from build_a_long.pdf_extract.classifier.step_number_classifier import (
+    StepNumberClassifier,
+)
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.lego_page_elements import PageNumber, StepNumber
+from build_a_long.pdf_extract.extractor.lego_page_elements import StepNumber
 from build_a_long.pdf_extract.extractor.page_blocks import Text
+
+
+@pytest.fixture
+def classifier() -> StepNumberClassifier:
+    return StepNumberClassifier(config=ClassifierConfig())
 
 
 class TestStepNumberClassification:
     """Tests for step number detection."""
 
-    def test_step_numbers_with_font_size_hints(self) -> None:
+    def test_detect_step_numbers(self, classifier: StepNumberClassifier) -> None:
         """Test that multiple step numbers are correctly identified.
 
-        Verifies that step numbers with different font sizes are both detected
-        and paired with the page number correctly.
+        Verifies that step numbers with different font sizes are detected.
         """
         page_bbox = BBox(0, 0, 200, 300)
-        # Page number near bottom, small height (10)
-        pn = Text(id=0, bbox=BBox(10, 285, 20, 295), text="5")
 
-        # Candidate step numbers elsewhere
+        # Candidate step numbers
         big_step = Text(id=1, bbox=BBox(50, 100, 70, 120), text="12")  # height 20
         small_step = Text(id=2, bbox=BBox(80, 100, 88, 108), text="3")  # height 8
 
+        # Non-step text
+        text_block = Text(id=3, bbox=BBox(10, 10, 20, 20), text="abc")
+
         page = PageData(
             page_number=5,
-            blocks=[pn, big_step, small_step],
+            blocks=[big_step, small_step, text_block],
             bbox=page_bbox,
         )
 
-        result = classify_elements(page)
+        result = ClassificationResult(page_data=page)
+        result.register_classifier("step_number", classifier)
+        classifier.score(result)
 
-        # Test StepNumberClassifier results directly
-        # Should have 1 page_number and 2 step_numbers successfully constructed
-        assert result.count_successful_candidates("page_number") == 1
+        # Construct all candidates
+        for candidate in result.get_candidates("step_number"):
+            if candidate.constructed is None:
+                result.construct_candidate(candidate)
+
+        # Should have 2 step_numbers successfully constructed
         assert result.count_successful_candidates("step_number") == 2
 
         # Verify that the specific blocks were classified correctly
-        page_number_winners = result.get_winners_by_score(
-            "page_number", PageNumber, max_count=1
-        )
-        assert len(page_number_winners) == 1
-        page_number_candidate = result.get_candidate_for_block(pn, "page_number")
-        assert page_number_candidate is not None
-        assert page_number_candidate.source_blocks == [pn]
-
         step_winners = result.get_winners_by_score("step_number", StepNumber)
         assert len(step_winners) == 2
 
@@ -58,3 +69,50 @@ class TestStepNumberClassification:
         # Verify the step numbers have the correct values
         step_values = {winner.value for winner in step_winners}
         assert step_values == {3, 12}
+
+    def test_step_number_with_font_hints(self) -> None:
+        """Test that StepNumberClassifier uses font size hints."""
+        hints = FontSizeHints(
+            part_count_size=None,
+            catalog_part_count_size=None,
+            catalog_element_id_size=None,
+            step_number_size=15.0,
+            step_repeat_size=None,
+            page_number_size=None,
+            remaining_font_sizes={},
+        )
+        config = ClassifierConfig(font_size_hints=hints)
+        classifier = StepNumberClassifier(config)
+
+        matching_text = Text(text="1", bbox=BBox(10, 10, 25, 25), id=1)
+        different_text = Text(text="2", bbox=BBox(10, 40, 30, 60), id=2)
+
+        page_data = PageData(
+            page_number=1,
+            bbox=BBox(0, 0, 100, 100),
+            blocks=[matching_text, different_text],
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        result.register_classifier("step_number", classifier)
+        classifier.score(result)
+
+        # Construct all candidates
+        for candidate in result.get_candidates("step_number"):
+            if candidate.constructed is None:
+                result.construct_candidate(candidate)
+
+        candidates = result.get_candidates("step_number")
+        assert len(candidates) == 2
+
+        matching_candidate = next(
+            c for c in candidates if matching_text in c.source_blocks
+        )
+        different_candidate = next(
+            c for c in candidates if different_text in c.source_blocks
+        )
+
+        assert matching_candidate.score > different_candidate.score, (
+            f"Matching score ({matching_candidate.score}) should be higher than "
+            f"different score ({different_candidate.score})"
+        )

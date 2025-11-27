@@ -1,10 +1,11 @@
 """Unit tests for PieceLengthClassifier."""
 
+import pytest
+
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     ClassifierConfig,
 )
-from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.classifier.piece_length_classifier import (
     PieceLengthClassifier,
 )
@@ -14,25 +15,28 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import PieceLength
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
 
 
+@pytest.fixture
+def classifier() -> PieceLengthClassifier:
+    return PieceLengthClassifier(config=ClassifierConfig())
+
+
 class TestPieceLengthClassifier:
     """Tests for piece length classification."""
 
-    def test_parse_piece_length_value_valid(self) -> None:
+    def test_parse_piece_length_value_valid(
+        self, classifier: PieceLengthClassifier
+    ) -> None:
         """Test parsing valid piece length values."""
-        config = ClassifierConfig()
-        classifier = PieceLengthClassifier(config=config)
-
         # Test valid range
         for value in [1, 4, 16, 32]:
             text = Text(id=1, bbox=BBox(0, 0, 10, 10), text=str(value))
             result = classifier._parse_piece_length_value(text)
             assert result == value
 
-    def test_parse_piece_length_value_invalid(self) -> None:
+    def test_parse_piece_length_value_invalid(
+        self, classifier: PieceLengthClassifier
+    ) -> None:
         """Test parsing invalid piece length values."""
-        config = ClassifierConfig()
-        classifier = PieceLengthClassifier(config=config)
-
         # Too small
         text = Text(id=1, bbox=BBox(0, 0, 10, 10), text="0")
         assert classifier._parse_piece_length_value(text) is None
@@ -49,11 +53,10 @@ class TestPieceLengthClassifier:
         text = Text(id=1, bbox=BBox(0, 0, 10, 10), text="")
         assert classifier._parse_piece_length_value(text) is None
 
-    def test_find_smallest_containing_drawing(self) -> None:
+    def test_find_smallest_containing_drawing(
+        self, classifier: PieceLengthClassifier
+    ) -> None:
         """Test finding the smallest drawing containing text."""
-        config = ClassifierConfig()
-        classifier = PieceLengthClassifier(config=config)
-
         text = Text(id=1, bbox=BBox(100, 100, 105, 105), text="4")
 
         # Create multiple nested drawings
@@ -66,22 +69,18 @@ class TestPieceLengthClassifier:
         result = classifier._find_smallest_containing_drawing(text, drawings)
         assert result == small
 
-    def test_find_smallest_containing_drawing_none(self) -> None:
+    def test_find_smallest_containing_drawing_none(
+        self, classifier: PieceLengthClassifier
+    ) -> None:
         """Test when text is not contained in any drawing."""
-        config = ClassifierConfig()
-        classifier = PieceLengthClassifier(config=config)
-
         text = Text(id=1, bbox=BBox(100, 100, 105, 105), text="4")
         drawing = Drawing(id=2, bbox=BBox(200, 200, 300, 300))
 
         result = classifier._find_smallest_containing_drawing(text, [drawing])
         assert result is None
 
-    def test_score_drawing_fit_perfect(self) -> None:
+    def test_score_drawing_fit_perfect(self, classifier: PieceLengthClassifier) -> None:
         """Test scoring when drawing is perfectly sized around text."""
-        config = ClassifierConfig()
-        classifier = PieceLengthClassifier(config=config)
-
         # Text: 10x10 = 100 area
         text = Text(id=1, bbox=BBox(10, 10, 20, 20), text="4")
         # Drawing: 15x15 = 225 area, ratio = 2.25 (ideal)
@@ -90,11 +89,10 @@ class TestPieceLengthClassifier:
         score = classifier._score_drawing_fit(text, drawing)
         assert score == 1.0
 
-    def test_score_drawing_fit_slightly_small(self) -> None:
+    def test_score_drawing_fit_slightly_small(
+        self, classifier: PieceLengthClassifier
+    ) -> None:
         """Test scoring when drawing is slightly smaller than ideal."""
-        config = ClassifierConfig()
-        classifier = PieceLengthClassifier(config=config)
-
         text = Text(id=1, bbox=BBox(10, 10, 20, 20), text="4")
         # Drawing: 12x12 = 144 area, ratio = 1.44
         drawing = Drawing(id=2, bbox=BBox(9, 9, 21, 21))
@@ -102,11 +100,10 @@ class TestPieceLengthClassifier:
         score = classifier._score_drawing_fit(text, drawing)
         assert score == 0.8
 
-    def test_score_drawing_fit_too_large(self) -> None:
+    def test_score_drawing_fit_too_large(
+        self, classifier: PieceLengthClassifier
+    ) -> None:
         """Test scoring when drawing is much larger than text."""
-        config = ClassifierConfig()
-        classifier = PieceLengthClassifier(config=config)
-
         text = Text(id=1, bbox=BBox(10, 10, 20, 20), text="4")
         # Drawing: 30x30 = 900 area, ratio = 9.0
         drawing = Drawing(id=2, bbox=BBox(0, 0, 30, 30))
@@ -114,11 +111,10 @@ class TestPieceLengthClassifier:
         score = classifier._score_drawing_fit(text, drawing)
         assert score == 0.6
 
-    def test_score_drawing_fit_page_sized(self) -> None:
+    def test_score_drawing_fit_page_sized(
+        self, classifier: PieceLengthClassifier
+    ) -> None:
         """Test scoring when drawing is page-sized background."""
-        config = ClassifierConfig()
-        classifier = PieceLengthClassifier(config=config)
-
         text = Text(id=1, bbox=BBox(10, 10, 20, 20), text="4")
         # Drawing: 500x500 = 250000 area, ratio = 2500.0
         drawing = Drawing(id=2, bbox=BBox(0, 0, 500, 500))
@@ -126,10 +122,10 @@ class TestPieceLengthClassifier:
         score = classifier._score_drawing_fit(text, drawing)
         assert score == 0.1
 
-    def test_score_font_size_ideal_range(self) -> None:
+    def test_score_font_size_ideal_range(
+        self, classifier: PieceLengthClassifier
+    ) -> None:
         """Test font size scoring for exact match."""
-        config = ClassifierConfig()
-        classifier = PieceLengthClassifier(config=config)
         classifier.config.font_size_hints.part_count_size = 6.0
         classifier.config.font_size_hints.step_number_size = 16.0
 
@@ -139,13 +135,11 @@ class TestPieceLengthClassifier:
         score = classifier._score_piece_length_font_size(text)
         assert score == 1.0
 
-    def test_score_font_size_too_large(self) -> None:
+    def test_score_font_size_too_large(self, classifier: PieceLengthClassifier) -> None:
         """Test font size scoring for too large font.
 
         Fonts significantly larger than part_count_size get a score of 0.0.
         """
-        config = ClassifierConfig()
-        classifier = PieceLengthClassifier(config=config)
         classifier.config.font_size_hints.part_count_size = 6.0
         classifier.config.font_size_hints.step_number_size = 16.0
 
@@ -156,7 +150,7 @@ class TestPieceLengthClassifier:
         score = classifier._score_piece_length_font_size(text)
         assert score == 0.0
 
-    def test_end_to_end_classification(self) -> None:
+    def test_end_to_end_classification(self, classifier: PieceLengthClassifier) -> None:
         """Test full classification pipeline with piece lengths."""
         # Create a simple page with text in circles
         text1 = Text(id=1, bbox=BBox(10, 10, 15, 15), text="4", font_size=8.0)
@@ -174,11 +168,9 @@ class TestPieceLengthClassifier:
             bbox=BBox(0, 0, 100, 100),
         )
 
-        config = ClassifierConfig()
-        piece_length_classifier = PieceLengthClassifier(config)
         result = ClassificationResult(page_data=page)
-        piece_length_classifier.score(result)
-        result.register_classifier("piece_length", piece_length_classifier)
+        classifier.score(result)
+        result.register_classifier("piece_length", classifier)
 
         # Check that text1 and text2 are classified as piece_length
         candidate1 = result.get_candidate_for_block(text1, "piece_length")
@@ -197,7 +189,7 @@ class TestPieceLengthClassifier:
         candidate3 = result.get_candidate_for_block(text3, "piece_length")
         assert candidate3 is None or candidate3.constructed is None
 
-    def test_rejects_non_numeric_text(self) -> None:
+    def test_rejects_non_numeric_text(self, classifier: PieceLengthClassifier) -> None:
         """Test that non-numeric text is rejected."""
         text = Text(id=1, bbox=BBox(10, 10, 15, 15), text="ABC", font_size=8.0)
         drawing = Drawing(id=2, bbox=BBox(8, 8, 17, 17))
@@ -208,14 +200,18 @@ class TestPieceLengthClassifier:
             bbox=BBox(0, 0, 100, 100),
         )
 
-        result = classify_elements(page)
+        result = ClassificationResult(page_data=page)
+        classifier.score(result)
+        result.register_classifier("piece_length", classifier)
         candidate = result.get_candidate_for_block(text, "piece_length")
 
         # Should either have no candidate or a candidate with no constructed element
         if candidate is not None:
             assert candidate.constructed is None
 
-    def test_rejects_out_of_range_numbers(self) -> None:
+    def test_rejects_out_of_range_numbers(
+        self, classifier: PieceLengthClassifier
+    ) -> None:
         """Test that numbers outside 1-32 range are rejected."""
         # Too small
         text_small = Text(id=1, bbox=BBox(10, 10, 15, 15), text="0", font_size=8.0)
@@ -231,7 +227,9 @@ class TestPieceLengthClassifier:
             bbox=BBox(0, 0, 100, 100),
         )
 
-        result = classify_elements(page)
+        result = ClassificationResult(page_data=page)
+        classifier.score(result)
+        result.register_classifier("piece_length", classifier)
 
         candidate1 = result.get_candidate_for_block(text_small, "piece_length")
         candidate2 = result.get_candidate_for_block(text_large, "piece_length")
@@ -242,7 +240,9 @@ class TestPieceLengthClassifier:
         if candidate2 is not None:
             assert candidate2.constructed is None
 
-    def test_prefers_smaller_drawing_over_page_background(self) -> None:
+    def test_prefers_smaller_drawing_over_page_background(
+        self, classifier: PieceLengthClassifier
+    ) -> None:
         """Test that classifier prefers small circle over page background."""
         text = Text(id=1, bbox=BBox(100, 100, 105, 105), text="8", font_size=8.0)
 
@@ -258,11 +258,9 @@ class TestPieceLengthClassifier:
             bbox=BBox(0, 0, 500, 500),
         )
 
-        config = ClassifierConfig()
-        piece_length_classifier = PieceLengthClassifier(config)
         result = ClassificationResult(page_data=page)
-        piece_length_classifier.score(result)
-        result.register_classifier("piece_length", piece_length_classifier)
+        classifier.score(result)
+        result.register_classifier("piece_length", classifier)
 
         candidate = result.get_candidate_for_block(text, "piece_length")
 

@@ -1,13 +1,15 @@
 """Tests for the parts classifier (Part pairing logic)."""
 
+from collections.abc import Callable
+
+import pytest
+
 from build_a_long.pdf_extract.classifier.classification_result import (
-    Candidate,
     ClassificationResult,
     ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.part_count_classifier import (
     PartCountClassifier,
-    _PartCountScore,
 )
 from build_a_long.pdf_extract.classifier.part_number_classifier import (
     PartNumberClassifier,
@@ -21,82 +23,24 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Image, Text
+
+from .conftest import CandidateFactory
+
+
+@pytest.fixture
+def classifier() -> PartsClassifier:
+    return PartsClassifier(config=ClassifierConfig())
 
 
 class TestPartsClassification:
     """Tests for Part assembly (pairing PartCount with Image)."""
 
-    def _setup_parts_classifier_test(
-        self, page_data: PageData
-    ) -> tuple[PartsClassifier, ClassificationResult]:
-        config = ClassifierConfig()
-        parts_classifier = PartsClassifier(config)
-        result = ClassificationResult(page_data=page_data)
-
-        # Register classifiers so result.construct_candidate works
-        result.register_classifier("part_count", PartCountClassifier(config))
-        result.register_classifier("part_number", PartNumberClassifier(config))
-        result.register_classifier("piece_length", PieceLengthClassifier(config))
-        result.register_classifier("part", parts_classifier)
-
-        return parts_classifier, result
-
-    def _create_and_score_part_count_candidate(
-        self, result: ClassificationResult, text_block: Text, score_value: float = 1.0
-    ) -> Candidate:
-        # Simplified creation of PartCount candidate
-        score_details = _PartCountScore(
-            text_score=score_value,
-            font_size_score=0.5,  # Dummy value
-            matched_hint="catalog_part_count",  # Dummy value
-        )
-        candidate = Candidate(
-            bbox=text_block.bbox,
-            label="part_count",
-            score=score_value,
-            score_details=score_details,
-            constructed=None,
-            source_blocks=[text_block],
-        )
-        result.add_candidate("part_count", candidate)
-        return candidate
-
-    def _create_and_score_part_number_candidate(
-        self, result: ClassificationResult, text_block: Text, score_value: float = 1.0
-    ) -> Candidate:
-        # Simplified creation of PartNumber candidate
-        candidate = Candidate(
-            bbox=text_block.bbox,
-            label="part_number",
-            score=score_value,
-            score_details={"text_score": score_value},  # Simplified score details
-            constructed=None,  # Added
-            source_blocks=[text_block],
-        )
-        result.add_candidate("part_number", candidate)
-        return candidate
-
-    def _create_and_score_piece_length_candidate(
+    def test_duplicate_part_counts_only_match_once(
         self,
-        result: ClassificationResult,
-        text_block: Text,
-        drawing_block: Drawing,
-        score_value: float = 1.0,
-    ) -> Candidate:
-        # Simplified creation of PieceLength candidate
-        candidate = Candidate(
-            bbox=text_block.bbox.union(drawing_block.bbox),
-            label="piece_length",
-            score=score_value,
-            score_details={"text_score": score_value},  # Simplified score details
-            constructed=None,  # Added
-            source_blocks=[text_block, drawing_block],
-        )
-        result.add_candidate("piece_length", candidate)
-        return candidate
-
-    def test_duplicate_part_counts_only_match_once(self) -> None:
+        classifier: PartsClassifier,
+        candidate_factory: Callable[[ClassificationResult], CandidateFactory],
+    ) -> None:
         """Test that duplicate part counts don't both pair with the same image.
 
         When two part count blocks have identical bounding boxes (e.g., drop
@@ -118,16 +62,25 @@ class TestPartsClassification:
             bbox=page_bbox,
         )
 
-        parts_classifier, result = self._setup_parts_classifier_test(page)
+        result = ClassificationResult(page_data=page)
+        # Register classifiers so result.construct_candidate works
+        result.register_classifier("part_count", PartCountClassifier(classifier.config))
+        result.register_classifier(
+            "part_number", PartNumberClassifier(classifier.config)
+        )
+        result.register_classifier(
+            "piece_length", PieceLengthClassifier(classifier.config)
+        )
+        result.register_classifier("part", classifier)
+
+        factory = candidate_factory(result)
 
         # Manually score part_count candidates
-        self._create_and_score_part_count_candidate(result, t1, score_value=1.0)
-        self._create_and_score_part_count_candidate(
-            result, t2, score_value=0.9
-        )  # Slightly lower score for duplicate
-        self._create_and_score_part_count_candidate(result, t3, score_value=1.0)
+        factory.add_part_count(t1, score=1.0)
+        factory.add_part_count(t2, score=0.9)  # Slightly lower score for duplicate
+        factory.add_part_count(t3, score=1.0)
 
-        parts_classifier.score(result)
+        classifier.score(result)
 
         # Now construct the Parts
         parts: list[Part] = []
@@ -146,7 +99,11 @@ class TestPartsClassification:
         # Verify that only 2 PartCounts were successfully constructed (one of t1/t2 lost conflict)
         assert result.count_successful_candidates("part_count") == 2
 
-    def test_part_count_without_nearby_image(self) -> None:
+    def test_part_count_without_nearby_image(
+        self,
+        classifier: PartsClassifier,
+        candidate_factory: Callable[[ClassificationResult], CandidateFactory],
+    ) -> None:
         """Test that part counts are not paired if no images are above them."""
         page_bbox = BBox(0, 0, 200, 200)
 
@@ -159,12 +116,17 @@ class TestPartsClassification:
             bbox=page_bbox,
         )
 
-        parts_classifier, result = self._setup_parts_classifier_test(page)
+        result = ClassificationResult(page_data=page)
+        # Register classifiers
+        result.register_classifier("part_count", PartCountClassifier(classifier.config))
+        result.register_classifier("part", classifier)
+
+        factory = candidate_factory(result)
 
         # Manually score part_count candidate
-        self._create_and_score_part_count_candidate(result, t1, score_value=1.0)
+        factory.add_part_count(t1, score=1.0)
 
-        parts_classifier.score(result)
+        classifier.score(result)
 
         # No Part should be created (image is below, not above)
         assert result.count_successful_candidates("part") == 0
@@ -176,7 +138,11 @@ class TestPartsClassification:
             result.construct_candidate(pc_candidate) is not None
         )  # Should be constructible
 
-    def test_multiple_images_above_picks_closest(self) -> None:
+    def test_multiple_images_above_picks_closest(
+        self,
+        classifier: PartsClassifier,
+        candidate_factory: Callable[[ClassificationResult], CandidateFactory],
+    ) -> None:
         """Test that when multiple images are above a count, the closest is picked."""
         page_bbox = BBox(0, 0, 100, 200)
 
@@ -190,12 +156,17 @@ class TestPartsClassification:
             bbox=page_bbox,
         )
 
-        parts_classifier, result = self._setup_parts_classifier_test(page)
+        result = ClassificationResult(page_data=page)
+        # Register classifiers
+        result.register_classifier("part_count", PartCountClassifier(classifier.config))
+        result.register_classifier("part", classifier)
+
+        factory = candidate_factory(result)
 
         # Manually score part_count candidate
-        self._create_and_score_part_count_candidate(result, t1, score_value=1.0)
+        factory.add_part_count(t1, score=1.0)
 
-        parts_classifier.score(result)
+        classifier.score(result)
 
         # Now construct the Parts
         parts: list[Part] = []
@@ -216,7 +187,11 @@ class TestPartsClassification:
         assert part.bbox.y0 <= img_near.bbox.y0
         assert part.bbox.y1 >= t1.bbox.y1
 
-    def test_horizontal_alignment_required(self) -> None:
+    def test_horizontal_alignment_required(
+        self,
+        classifier: PartsClassifier,
+        candidate_factory: Callable[[ClassificationResult], CandidateFactory],
+    ) -> None:
         """Test that images must be roughly left-aligned with part counts."""
         page_bbox = BBox(0, 0, 200, 200)
 
@@ -229,10 +204,15 @@ class TestPartsClassification:
             bbox=page_bbox,
         )
 
-        parts_classifier, result = self._setup_parts_classifier_test(page)
-        self._create_and_score_part_count_candidate(result, t1, score_value=1.0)
+        result = ClassificationResult(page_data=page)
+        # Register classifiers
+        result.register_classifier("part_count", PartCountClassifier(classifier.config))
+        result.register_classifier("part", classifier)
 
-        parts_classifier.score(result)
+        factory = candidate_factory(result)
+        factory.add_part_count(t1, score=1.0)
+
+        classifier.score(result)
 
         # No Part should be created (horizontal misalignment)
         assert result.count_successful_candidates("part") == 0
@@ -242,7 +222,11 @@ class TestPartsClassification:
         assert pc_candidate is not None
         assert result.construct_candidate(pc_candidate) is not None
 
-    def test_one_to_one_pairing_enforcement(self) -> None:
+    def test_one_to_one_pairing_enforcement(
+        self,
+        classifier: PartsClassifier,
+        candidate_factory: Callable[[ClassificationResult], CandidateFactory],
+    ) -> None:
         """Test that one-to-one pairing is enforced (no image/count reuse)."""
         page_bbox = BBox(0, 0, 100, 200)
 
@@ -256,13 +240,18 @@ class TestPartsClassification:
             bbox=page_bbox,
         )
 
-        parts_classifier, result = self._setup_parts_classifier_test(page)
-        self._create_and_score_part_count_candidate(result, t1, score_value=1.0)
-        self._create_and_score_part_count_candidate(
-            result, t2, score_value=0.9
+        result = ClassificationResult(page_data=page)
+        # Register classifiers
+        result.register_classifier("part_count", PartCountClassifier(classifier.config))
+        result.register_classifier("part", classifier)
+
+        factory = candidate_factory(result)
+        factory.add_part_count(t1, score=1.0)
+        factory.add_part_count(
+            t2, score=0.9
         )  # t2 is farther, so lower score if other factors were equal
 
-        parts_classifier.score(result)
+        classifier.score(result)
 
         # Manually construct Parts
         parts: list[Part] = []
