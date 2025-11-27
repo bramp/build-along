@@ -83,6 +83,8 @@ class PageHint(BaseModel):
         return self.confidences.get(PageType.INFO, 0.0) > 0.8
 
 
+# TODO We should expand PageHints to find step numbers on each page, and try and
+# make appropriate runs of steps. This can help the StepClassifier later.
 class PageHints(BaseModel):
     """Page type hints derived from preliminary analysis of all pages.
 

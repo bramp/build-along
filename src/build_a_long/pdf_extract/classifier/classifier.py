@@ -9,12 +9,7 @@ The classification pipeline operates in two main phases:
    candidates (e.g. page numbers, part counts, step numbers) and score them based
    on heuristics. No construction of final elements happens here.
 
-2. **Conflict Resolution**: Global conflict resolution logic runs to identify
-   cases where a single element is claimed by multiple candidates (e.g. a number
-   could be a step number or a piece length). Candidates are prioritized and
-   filtered.
-
-3. **Top-down Construction**: The root `PageClassifier` is invoked to construct
+2. **Top-down Construction**: The root `PageClassifier` is invoked to construct
    the final `Page` object. It recursively requests the construction of its
    dependencies (e.g. "Give me the best PageNumber"), which in turn construct
    their own dependencies. This ensures a consistent and validated object tree.
@@ -244,6 +239,8 @@ class Classifier:
             PageClassifier(config),
         ]
 
+        # TODO Topological sort classifiers based on dependencies
+
     def classify(self, page_data: PageData) -> ClassificationResult:
         """
         Runs the classification logic and returns a result.
@@ -251,8 +248,7 @@ class Classifier:
 
         The classification process runs in three phases:
         1. Score all classifiers (bottom-up) - auto-registers classifiers
-        2. Resolve conflicts (global)
-        3. Construct final elements (top-down starting from Page)
+        2. Construct final elements (top-down starting from Page)
         """
         result = ClassificationResult(page_data=page_data)
 
@@ -263,16 +259,14 @@ class Classifier:
         for classifier in self.classifiers:
             classifier.score(result)
 
-        # 2. Resolve conflicts
-        # resolve_label_conflicts(result)
-
-        # 3. Construct (Top-Down)
+        # 2. Construct (Top-Down)
         # Find the PageClassifier to start the construction process
         page_classifier = next(
             c for c in self.classifiers if isinstance(c, PageClassifier)
         )
         page_classifier.build_all(result)
 
+        # TODO Do we actualy ever add warnings?
         warnings = self._log_post_classification_warnings(page_data, result)
         for warning in warnings:
             result.add_warning(warning)

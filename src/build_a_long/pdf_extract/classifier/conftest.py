@@ -31,6 +31,7 @@ from build_a_long.pdf_extract.classifier.step_number_classifier import (
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
 
+# TODO Re-evaluate the use of this, and if its needed
 class CandidateFactory:
     """Helper to create and register candidates with proper score details.
 
