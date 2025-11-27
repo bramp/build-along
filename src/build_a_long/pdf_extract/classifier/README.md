@@ -43,47 +43,24 @@ for result in results:
 
 ## Classification Pipeline
 
-The classifier runs in a fixed order, with later stages depending on earlier ones:
+The classifier runs in topologically-sorted order based on declared dependencies. Here are some key examples:
 
-1. **PageNumberClassifier** - Identifies page numbers
-   - Outputs: `"page_number"`
-   - Requires: None
+**Atomic Classifiers** (identify individual elements from source blocks):
 
-2. **PartCountClassifier** - Detects part-count text (e.g., "2x", "3X")
-   - Outputs: `"part_count"`
-   - Requires: None
+- **PageNumberClassifier** - Identifies page numbers from Text blocks
+- **PartCountClassifier** - Detects part-count text (e.g., "2x", "3X")
+- **PartsImageClassifier** - Wraps Image blocks as potential part diagrams
 
-3. **StepNumberClassifier** - Identifies step numbers
-   - Outputs: `"step_number"`
-   - Requires: `"page_number"` (uses page number size as context)
+**Composite Classifiers** (combine other elements):
 
-4. **PartsListClassifier** - Identifies the drawing region for the parts list
-   - Outputs: `"parts_list"`
-   - Requires: `"step_number"`, `"part_count"`
+- **PartsClassifier** - Pairs PartCount + PartImage to create Part elements
+  - Requires: `"part_count"`, `"part_image"`, `"part_number"`, `"piece_length"`
+- **StepClassifier** - Combines StepNumber + PartsList + Diagram
+  - Requires: `"step_number"`, `"parts_list"`, `"diagram"`
 
-5. **PartsImageClassifier** - Associates part counts with their corresponding images
-   - Outputs: `"part_image"`
-   - Requires: `"parts_list"`, `"part_count"`
+The pipeline automatically determines execution order via topological sort of the dependency graph. See the "Classifier Reference" section below for detailed descriptions of each classifier.
 
 ## Candidate-Based Architecture
-
-### Why Candidates?
-
-The classifier uses a **candidate-based architecture** where classifiers construct `LegoPageElement` objects during the scoring phase rather than deferring to separate classification or building phases. This solves several problems:
-
-**Before (Two-Phase)**:
-
-- Scoring: Calculate scores for elements
-- Classification: Parse and label elements based on scores
-- Building: Re-parse labeled elements to construct objects
-- **Problem**: Duplicate parsing, information lost, inconsistent results, no re-evaluation
-
-**After (Single-Phase with Candidates)**:
-
-- Scoring: Calculate scores AND construct candidates with LegoPageElements
-- Classification: Pick winners from pre-built candidates
-- Building: Use pre-constructed objects directly
-- **Benefit**: Single parse, consistency guaranteed, full decision trail with rejection reasons, re-evaluation enabled
 
 ### Core Types
 
@@ -94,13 +71,12 @@ Represents a potential classification decision with complete metadata:
 ```python
 @dataclass
 class Candidate:
-    source_element: Element                    # PDF element being classified
+    source_blocks: Blocks.                     # PDF element being classified
     label: str                                 # Classification label
     score: float                               # Confidence score (0.0-1.0)
     score_details: Any                         # Detailed score breakdown
     constructed: Optional[LegoPageElement]     # Constructed element (or None if failed)
     failure_reason: Optional[str]              # Why construction failed
-    is_winner: bool = False                    # Whether selected as best
 ```
 
 #### ClassificationResult
@@ -112,8 +88,8 @@ Enhanced to preserve all classification decisions:
 class ClassificationResult:
     labeled_elements: Dict[Element, str]                 # Element → label
     removal_reasons: Dict[int, RemovalReason]            # Element → removal reason
-    constructed_elements: Dict[Element, LegoPageElement] # NEW: Pre-constructed objects
-    candidates: Dict[str, List[Candidate]]               # NEW: All candidates by label
+    constructed_elements: Dict[Element, LegoPageElement] # Pre-constructed objects
+    candidates: Dict[str, List[Candidate]]               # All candidates by label
 ```
 
 **Key Methods**:
@@ -123,73 +99,60 @@ class ClassificationResult:
 
 ### Implementation Pattern
 
-Each classifier follows a two-phase pattern:
+Each classifier implements two core methods:
 
-#### Phase 1: Evaluation (`evaluate`)
+#### Method 1: Scoring (`_score`)
 
-Evaluates elements and creates candidates with constructed LegoElements:
+Scores elements and creates candidates:
 
 ```python
-def evaluate(self, page_data, labeled_elements, candidates):
-    candidate_list = []
+class MyClassifier(LabelClassifier):
+    output = "my_label"
+    requires = frozenset({"dependency_label"})  # Or empty set
     
-    for element in page_data.elements:
-        # 1. Score the element
-        score_obj = self._calculate_score(element)
+    def _score(self, result: ClassificationResult) -> None:
+        """Create and score candidates."""
+        # 1. Get dependency candidates if needed
+        dep_candidates = result.get_scored_candidates("dependency_label")
         
-        # 2. Try to construct LegoElement
-        constructed = None
-        failure_reason = None
+        # 2. Score and create candidates
+        for element in result.page_data.blocks:
+            score_details = self._calculate_score(element)
+            
+            result.add_candidate(
+                Candidate(
+                    bbox=element.bbox,
+                    label="my_label",
+                    score=score_details.total_score,
+                    score_details=score_details,  # MUST be non-None
+                    source_blocks=[element],  # Or [] for composite elements
+                )
+            )
+```
+
+#### Method 2: Construction (`build`)
+
+Constructs LegoPageElement from a winning candidate:
+
+```python
+    def build(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> MyLegoElement:
+        """Construct element from candidate."""
+        score_details = candidate.score_details
+        assert isinstance(score_details, MyScoreDetails)
         
-        try:
-            constructed = self._construct_element(element)
-        except Exception as e:
-            failure_reason = f"Construction failed: {e}"
+        # For composite elements, build children
+        child = result.build(score_details.child_candidate)
+        assert isinstance(child, ChildElement)
         
-        # 3. Create candidate with all metadata
-        candidate = Candidate(
-            source_element=element,
-            label=self.label,
-            score=score_obj.combined_score(self.config),
-            score_details=score_obj,
-            constructed=constructed,
-            failure_reason=failure_reason,
-            is_winner=False,  # Will be set in classify()
+        return MyLegoElement(
+            bbox=candidate.bbox,
+            child=child,
         )
-        candidate_list.append(candidate)
-    
-    # Store candidates for classification phase
-    candidates[self.label] = candidate_list
 ```
 
-#### Phase 2: Classification (`classify`)
-
-Picks winners from pre-built candidates:
-
-```python
-def classify(self, page_data, labeled_elements, removal_reasons,
-             hints, constructed_elements, candidates):
-    # 1. Get pre-built candidates
-    candidate_list = candidates.get(self.label, [])
-    
-    # 2. Apply hints to filter/re-rank (optional)
-    candidate_list = self._apply_hints(candidate_list, hints)
-    
-    # 3. Select the winner
-    winner = self._select_winner(candidate_list)
-    
-    # 4. Store results
-    if winner:
-        winner.is_winner = True
-        labeled_elements[winner.source_element] = self.label
-        constructed_elements[winner.source_element] = winner.constructed
-        
-        # Cleanup: remove similar/child elements
-        self.classifier._remove_child_bboxes(...)
-        self.classifier._remove_similar_bboxes(...)
-```
-
-See `PageNumberClassifier` for a complete reference implementation.
+See `PartsClassifier` or `PartsImageClassifier` for complete reference implementations.
 
 ### Benefits
 
@@ -211,8 +174,7 @@ See `PageNumberClassifier` for a complete reference implementation.
 - `PartsListClassifier` - Candidates with proximity scoring
 - `PartsImageClassifier` - Compatible signature (uses old pattern internally)
 
-
-## Classifier Details
+## Classifier Reference
 
 ### Page Number Classifier
 
@@ -247,28 +209,38 @@ See `PageNumberClassifier` for a complete reference implementation.
 
 **Label**: `"step_number"`
 
-### Parts List Classifier
-
-**Purpose**: Identifies the drawing region(s) that represent a step's parts list.
-
-**Heuristics**:
-
-- Looks for `Drawing` elements located above a detected step number.
-- Requires the drawing to contain at least one `part_count` text.
-- Prefers the drawing with the closest vertical proximity to the step number.
-
-**Label**: `"parts_list"`
-
 ### Parts Image Classifier
 
-**Purpose**: Associates each `part_count` text with its corresponding part `Image`.
+**Purpose**: Identifies images that could be part diagrams.
+
+**Architecture**: Atomic element (tracks Image source blocks)
 
 **Heuristics**:
 
-- For each `part_count`, it looks for an `Image` that is directly above it and roughly left-aligned.
-- It enforces a one-to-one mapping between part counts and images.
+- Creates PartImage candidates from all Image blocks on the page
+- No filtering or scoring logic (score = 1.0 for all images)
+- PartsClassifier handles pairing with part counts
 
 **Label**: `"part_image"`
+
+**Dependencies**: None
+
+### Parts Classifier
+
+**Purpose**: Pairs PartCount + PartImage candidates to create Part elements.
+
+**Architecture**: Composite element (no source blocks, composed of child elements)
+
+**Heuristics**:
+
+- Finds PartImage candidates above and aligned with PartCount candidates
+- Scores based on vertical distance and horizontal alignment
+- Also incorporates PartNumber and PieceLength if found nearby
+- One PartCount + PartImage pair = one Part candidate
+
+**Label**: `"part"`
+
+**Dependencies**: `"part_count"`, `"part_number"`, `"piece_length"`, `"part_image"`
 
 ## Implementation Architecture
 
@@ -301,61 +273,67 @@ classifier/
 
 ## Adding New Classifiers
 
-To add a new classifier following the two-phase candidate pattern:
+To add a new classifier:
 
 1. **Create a new file** (e.g., `my_new_classifier.py`)
 2. **Inherit from `LabelClassifier`**
 3. **Define class attributes**:
-   - `outputs`: Set of labels this classifier produces
-   - `requires`: Set of labels this classifier depends on
-4. **Implement `evaluate`**:
-   - Score all elements
-   - Attempt to construct LegoPageElements
-   - Create Candidate objects with scores, constructed elements, and failure reasons
-   - Store candidates in the `candidates` dict
-5. **Implement `classify`**:
-   - Get pre-built candidates from `candidates` dict
-   - Apply hints to filter candidates (optional)
-   - Select the winning candidate(s)
-   - Mark winners and store in `labeled_elements` and `constructed_elements`
-   - Clean up similar/child bboxes
-6. **Add to pipeline**: Instantiate in `Classifier.__init__` in dependency order
-7. **Write tests**: Unit tests for scoring, construction, candidate selection, and edge cases
-8. **Update documentation**: Add classifier details to this README
+   - `output`: The label this classifier produces (string)
+   - `requires`: frozenset of labels this classifier depends on
+4. **Implement `_score()`**:
+   - Get dependency candidates via `result.get_scored_candidates(label)`
+   - Score elements and create Candidate objects
+   - Set `score_details` to a dataclass (never None)
+   - Set `source_blocks` appropriately (atomic vs composite)
+   - Use `result.add_candidate()` to register candidates
+5. **Implement `build()`**:
+   - Extract score_details from candidate
+   - Build child elements via `result.build(child_candidate)` for composites
+   - Assert types of child elements
+   - Construct and return the LegoPageElement
+6. **Add to pipeline**: Register in classifier list (topological sort handles order)
+7. **Write tests**: Unit tests for scoring, construction, and edge cases
+8. **Verify**: Run `classifier_rules_test.py` to check source block tracking
+9. **Update documentation**: Add classifier details to this README
 
-See `PageNumberClassifier`, `StepNumberClassifier`, or `PartCountClassifier` for reference implementations.
+See `PartsImageClassifier` (atomic) or `PartsClassifier` (composite) for reference implementations.
 
-## Adding New Classifiers
+## Architecture Status
 
-## Current Migration Status
-
-The candidate-based architecture has been successfully implemented:
+The candidate-based architecture with composite element pattern is fully implemented:
 
 ### ✅ Completed
 
 - **Core Infrastructure**:
-  - `types.py`: `Candidate` dataclass and enhanced `ClassificationResult`
-  - `classifier.py`: Creates and passes `constructed_elements` and `candidates` dicts
-  - `label_classifier.py`: Updated `calculate_scores()` signature with `candidates` parameter
+  - `classification_result.py`: Candidate tracking, `get_scored_candidates()`, `build()` method
+  - `label_classifier.py`: Abstract base with `_score()` and `build()` interface
+  - `topological_sort.py`: Dependency resolution for classifier pipeline
   - `text_extractors.py`: Shared text parsing functions
 
-- **Classifiers** (two-phase pattern with candidates):
-  - `page_number_classifier.py`: Scores, constructs candidates, picks winners with rejection reasons
-  - `step_number_classifier.py`: Scores with size filtering, constructs candidates, picks winners
-  - `part_count_classifier.py`: Pattern matching, constructs candidates, picks all valid matches
-  - `parts_list_classifier.py`: Proximity scoring, constructs candidates, picks best per step
-  - `parts_image_classifier.py`: Compatible signature (uses pairing logic internally)
+- **Classifiers** (score + build pattern):
+  - `page_number_classifier.py`: Atomic element, tracks Text source
+  - `step_number_classifier.py`: Atomic element, tracks Text source
+  - `part_count_classifier.py`: Atomic element, tracks Text source
+  - `part_number_classifier.py`: Atomic element, tracks Text source
+  - `piece_length_classifier.py`: Atomic element, tracks Text source
+  - `parts_image_classifier.py`: Atomic element, tracks Image source
+  - `parts_classifier.py`: **Composite element**, pairs PartCount + PartImage
+  - `parts_list_classifier.py`: **Composite element**, groups Part elements
+  - `diagram_classifier.py`: Atomic element, tracks Drawing source
+  - `step_classifier.py`: **Composite element**, combines StepNumber + PartsList + Diagram
+
+- **Source Block Tracking**:
+  - Atomic elements set `source_blocks=[source]`
+  - Composite elements set `source_blocks=[]`
+  - Enforced by `classifier_rules_test.py`
 
 ### ⏳ Future Work
 
-- **Builders** (to be updated to use `constructed_elements`):
-
 - **Enhancements**:
-  - Implement hints support for re-evaluation
-  - Add user correction API
-  - Expand debugging UI with candidate alternatives
-
-All classifiers now create candidates during scoring, enabling single-parse consistency and rich debugging information.
+  - Hints support for user corrections
+  - Re-evaluation of alternative candidates
+  - Enhanced debugging UI showing candidate alternatives
+  - Progress bars and bag number classification
 
 ## Testing
 
@@ -371,6 +349,207 @@ Run specific tests:
 pants test src/build_a_long/pdf_extract/classifier/classifier_test.py
 ```
 
+## Composite Elements and Source Block Tracking
+
+### Key Concepts
+
+The classifier architecture distinguishes between **atomic elements** (single source block) and **composite elements** (multiple child elements). This distinction is critical for proper source block tracking and conflict resolution.
+
+### Source Block Tracking Rules
+
+**RULE 1: One Source Block → One Element**
+
+Each source block (Text, Image, Drawing) should map to at most one element in the final Page tree. This is enforced by `classifier_rules_test.py`.
+
+**RULE 2: Atomic Elements Track Sources**
+
+Atomic elements (created from a single source block) should set `source_blocks=[source]`:
+
+- `PartCount` → tracks the Text block
+- `PartImage` → tracks the Image block  
+- `StepNumber` → tracks the Text block
+- `PageNumber` → tracks the Text block
+
+**RULE 3: Composite Elements Don't Track Sources**
+
+Composite elements (made of other LegoPageElements) should set `source_blocks=[]`:
+
+- `Part` → composed of PartCount + PartImage + PartNumber + PieceLength
+- `Step` → composed of StepNumber + PartsList + Diagram
+- `PartsList` → composed of multiple Part elements
+
+**WHY**: If a Part has `source_blocks=[image]`, and its child PartImage also has `source_blocks=[image]`, the same Image would be mapped to two elements, violating RULE 1.
+
+### Example: Part/PartImage Architecture
+
+The `Part` element demonstrates the composite pattern:
+
+```python
+# WRONG - Part claims the Image source block
+result.add_candidate(
+    Candidate(
+        bbox=bbox,
+        label="part",
+        score=1.0,
+        score_details=ps,
+        source_blocks=[ps.image],  # ❌ Conflict with PartImage
+    )
+)
+
+# CORRECT - Part is composite, only children track sources
+result.add_candidate(
+    Candidate(
+        bbox=bbox,
+        label="part",
+        score=1.0,
+        score_details=ps,
+        source_blocks=[],  # ✅ Composite element
+    )
+)
+```
+
+The PartImage (child element) properly tracks the source:
+
+```python
+result.add_candidate(
+    Candidate(
+        bbox=img.bbox,
+        label="part_image",
+        score=1.0,
+        score_details=_PartImageScore(image=img),
+        source_blocks=[img],  # ✅ Atomic element tracks source
+    )
+)
+```
+
+### Dependency Management and Circular Dependencies
+
+**RULE 4: Topological Sort Requirements**
+Classifiers declare dependencies via the `requires` attribute. The pipeline uses topological sort to determine execution order. Circular dependencies will cause a runtime error.
+
+**Example Circular Dependency Problem**:
+
+```python
+# BROKEN - Creates cycle
+class PartsImageClassifier(LabelClassifier):
+    requires = frozenset({"parts_list", "part_count"})  # Depends on parts_list
+
+class PartsListClassifier(LabelClassifier):
+    requires = frozenset({"part"})  # Depends on part
+
+class PartsClassifier(LabelClassifier):
+    requires = frozenset({"part_image"})  # Depends on part_image
+
+# Cycle: PartsClassifier → PartsImageClassifier → PartsListClassifier → PartsClassifier
+```
+
+**Solution**: Break the cycle by removing unnecessary dependencies. Often, a classifier can work with lower-level blocks instead of depending on higher-level classifiers:
+
+```python
+# FIXED - No cycle
+class PartsImageClassifier(LabelClassifier):
+    requires = frozenset()  # No dependencies - works on raw Image blocks
+    
+    def _score(self, result: ClassificationResult) -> None:
+        # Create PartImage candidates from all Images
+        images = [e for e in result.page_data.blocks if isinstance(e, Image)]
+        for img in images:
+            result.add_candidate(...)
+```
+
+### Candidate Visibility with score_details
+
+**RULE 5: Candidates Need score_details for Visibility**
+When a classifier depends on another classifier's candidates, those candidates MUST have `score_details != None` to be returned by `get_scored_candidates()`.
+
+**Example Problem**:
+
+```python
+# PartsImageClassifier creates candidates
+result.add_candidate(
+    Candidate(
+        bbox=img.bbox,
+        label="part_image",
+        score=1.0,
+        score_details=None,  # ❌ Will be filtered out!
+        source_blocks=[img],
+    )
+)
+
+# PartsClassifier tries to use them
+part_image_candidates = result.get_scored_candidates("part_image")
+# Returns [] because score_details=None
+```
+
+**Solution**: Always provide score_details:
+
+```python
+result.add_candidate(
+    Candidate(
+        bbox=img.bbox,
+        label="part_image",
+        score=1.0,
+        score_details=_PartImageScore(image=img),  # ✅ Visible to dependents
+        source_blocks=[img],
+    )
+)
+```
+
+### Building Composite Elements
+
+When constructing composite elements in `build()`, use `result.build()` to properly track child elements:
+
+```python
+def build(
+    self, candidate: Candidate, result: ClassificationResult
+) -> Part:
+    """Construct a Part from its child candidates."""
+    ps = candidate.score_details
+    assert isinstance(ps, _PartPairScore)
+    
+    # Build child elements through result.build()
+    part_image = result.build(ps.part_image_candidate)
+    assert isinstance(part_image, PartImage)
+    
+    part_count = result.build(ps.part_count_candidate)
+    assert isinstance(part_count, PartCount)
+    
+    # Composite Part element
+    return Part(
+        bbox=candidate.bbox,
+        count=part_count,
+        diagram=part_image,
+        number=...,
+        piece_length=...,
+    )
+```
+
+### Checklist for New Classifiers
+
+When creating a new classifier, verify:
+
+- [ ] Is this an atomic or composite element?
+  - Atomic: Set `source_blocks=[source_block]` in candidates
+  - Composite: Set `source_blocks=[]` in candidates
+  
+- [ ] Does this depend on other classifiers?
+  - Add to `requires` set
+  - Verify no circular dependencies
+  - Use `result.get_scored_candidates()` to get candidates
+  
+- [ ] Do I create candidates for downstream classifiers?
+  - Always set `score_details` to a dataclass (never None)
+  - Store candidate references, not constructed elements, in score details
+  
+- [ ] Does `build()` construct child elements correctly?
+  - Use `result.build(child_candidate)` for children
+  - Assert type of built children
+  
+- [ ] Run `classifier_rules_test.py` to verify:
+  - No source block conflicts
+  - All candidates properly tracked
+  - Page tree is valid
+
 ## Design Principles
 
 - **Rule-based** - Uses deterministic heuristics rather than ML models
@@ -382,3 +561,5 @@ pants test src/build_a_long/pdf_extract/classifier/classifier_test.py
 - **Dependency-aware** - Pipeline enforces execution order based on declared dependencies
 - **Non-fatal errors** - Parsing errors produce warnings instead of failing
 - **Auditable** - Full decision trail with scores, alternatives, and failure reasons
+- **Composite Pattern** - Atomic elements track sources, composite elements compose children
+- **Provenance Tracking** - Source blocks traceable through entire classification pipeline

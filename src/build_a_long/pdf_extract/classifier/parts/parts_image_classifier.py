@@ -90,7 +90,7 @@ class PartsImageClassifier(LabelClassifier):
                     label="part_image",
                     score=1.0,
                     score_details=score_details,
-                    source_blocks=[img],  # Part will NOT inherit this source
+                    source_blocks=[img],
                 ),
             )
 

@@ -69,6 +69,8 @@ class _NewBagScore:
         return score
 
 
+# TODO The 40573 set, has a new bag graphic that does not include a number.
+# Indicating you open all bugs
 @dataclass(frozen=True)
 class NewBagClassifier(LabelClassifier):
     """Classifier for new bag elements."""
