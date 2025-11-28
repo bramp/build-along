@@ -112,11 +112,7 @@ def test_steps_do_not_overlap(fixture_file: str) -> None:
     # Known failing fixtures with significant overlaps (50-80% IOU)
     # This indicates issues with step classification.
     known_failing_fixtures = {
-        "6509377_page_011_raw.json",
-        "6509377_page_012_raw.json",
         "6509377_page_014_raw.json",
-        "6509377_page_015_raw.json",
-        "6509377_page_016_raw.json",
     }
     if fixture_file in known_failing_fixtures:
         pytest.skip(
