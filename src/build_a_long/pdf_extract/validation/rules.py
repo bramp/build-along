@@ -1,6 +1,13 @@
 """Individual validation rules for classification results."""
 
+from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.lego_page_elements import Page
+
 from .types import ValidationIssue, ValidationResult, ValidationSeverity
+
+# =============================================================================
+# Sequence Validation Rules (cross-page)
+# =============================================================================
 
 
 def validate_missing_page_numbers(
@@ -277,3 +284,248 @@ def format_ranges(numbers: list[int]) -> str:
     if len(result) > 100:
         return result[:97] + "..."
     return result
+
+
+# =============================================================================
+# Domain Invariant Validation Rules (per-page structural checks)
+# =============================================================================
+
+
+def validate_parts_list_has_parts(
+    validation: ValidationResult,
+    page: Page,
+    page_data: PageData,
+) -> None:
+    """Validate that each PartsList contains at least one Part.
+
+    Domain Invariant: A parts list without parts doesn't make sense in the
+    context of LEGO instructions. Each PartsList should contain ≥1 Part objects.
+
+    Args:
+        validation: ValidationResult to add issues to
+        page: The classified Page object
+        page_data: The raw PageData for context (page number, source)
+    """
+    for step in page.steps:
+        if step.parts_list is None:
+            continue
+
+        if len(step.parts_list.parts) == 0:
+            validation.add(
+                ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    rule="empty_parts_list",
+                    message=f"Step {step.step_number.value} has empty PartsList",
+                    pages=[page_data.page_number],
+                    details=f"PartsList at {step.parts_list.bbox} has no parts",
+                )
+            )
+
+
+def validate_parts_lists_no_overlap(
+    validation: ValidationResult,
+    page: Page,
+    page_data: PageData,
+) -> None:
+    """Validate that PartsList bounding boxes do not overlap.
+
+    Domain Invariant: Each parts list occupies a distinct region on the page.
+    Overlapping parts lists would indicate a classification error.
+
+    Args:
+        validation: ValidationResult to add issues to
+        page: The classified Page object
+        page_data: The raw PageData for context
+    """
+    parts_lists = [step.parts_list for step in page.steps if step.parts_list]
+
+    for i, pl1 in enumerate(parts_lists):
+        for pl2 in parts_lists[i + 1 :]:
+            overlap = pl1.bbox.overlaps(pl2.bbox)
+            if overlap > 0.0:
+                validation.add(
+                    ValidationIssue(
+                        severity=ValidationSeverity.ERROR,
+                        rule="overlapping_parts_lists",
+                        message="PartsList regions overlap",
+                        pages=[page_data.page_number],
+                        details=f"{pl1.bbox} and {pl2.bbox} overlap "
+                        f"(IOU: {pl1.bbox.iou(pl2.bbox):.3f})",
+                    )
+                )
+
+
+def validate_steps_no_significant_overlap(
+    validation: ValidationResult,
+    page: Page,
+    page_data: PageData,
+    overlap_threshold: float = 0.05,
+) -> None:
+    """Validate that Step bounding boxes do not significantly overlap.
+
+    Domain Invariant: Steps should occupy distinct regions on the page.
+    Some minor overlap is acceptable (e.g., at boundaries), but significant
+    overlap would indicate a classification error.
+
+    Args:
+        validation: ValidationResult to add issues to
+        page: The classified Page object
+        page_data: The raw PageData for context
+        overlap_threshold: Maximum allowed IOU (default 5%)
+    """
+    if len(page.steps) < 2:
+        return
+
+    for i, step1 in enumerate(page.steps):
+        for step2 in page.steps[i + 1 :]:
+            iou = step1.bbox.iou(step2.bbox)
+            if iou > overlap_threshold:
+                validation.add(
+                    ValidationIssue(
+                        severity=ValidationSeverity.WARNING,
+                        rule="overlapping_steps",
+                        message=f"Steps {step1.step_number.value} and "
+                        f"{step2.step_number.value} overlap significantly",
+                        pages=[page_data.page_number],
+                        details=f"IOU: {iou:.3f} (threshold: {overlap_threshold})",
+                    )
+                )
+
+
+def validate_part_contains_children(
+    validation: ValidationResult,
+    page: Page,
+    page_data: PageData,
+) -> None:
+    """Validate that Part bbox contains its count and diagram bboxes.
+
+    Domain Invariant: A Part represents a cohesive visual unit consisting of
+    the part diagram (image) and the count label. The Part's bounding box
+    should encompass both elements.
+
+    Args:
+        validation: ValidationResult to add issues to
+        page: The classified Page object
+        page_data: The raw PageData for context
+    """
+    for step in page.steps:
+        if step.parts_list is None:
+            continue
+
+        for part in step.parts_list.parts:
+            # Count must be inside Part bbox
+            if not part.count.bbox.fully_inside(part.bbox):
+                validation.add(
+                    ValidationIssue(
+                        severity=ValidationSeverity.ERROR,
+                        rule="part_count_outside",
+                        message="Part count outside Part bbox",
+                        pages=[page_data.page_number],
+                        details=f"Count {part.count.bbox} not in Part {part.bbox}",
+                    )
+                )
+
+            # Diagram (if present) must be inside Part bbox
+            if part.diagram and not part.diagram.bbox.fully_inside(part.bbox):
+                validation.add(
+                    ValidationIssue(
+                        severity=ValidationSeverity.ERROR,
+                        rule="part_diagram_outside",
+                        message="Part diagram outside Part bbox",
+                        pages=[page_data.page_number],
+                        details=f"Diagram {part.diagram.bbox} not in Part {part.bbox}",
+                    )
+                )
+
+
+def validate_elements_within_page(
+    validation: ValidationResult,
+    page: Page,
+    page_data: PageData,
+) -> None:
+    """Validate all element bboxes stay within page boundaries.
+
+    Domain Invariant: Elements should not extend beyond the page boundaries.
+    This would indicate an extraction or classification error.
+
+    Args:
+        validation: ValidationResult to add issues to
+        page: The classified Page object
+        page_data: The raw PageData for context (contains page bbox)
+    """
+    if page_data.bbox is None:
+        validation.add(
+            ValidationIssue(
+                severity=ValidationSeverity.ERROR,
+                rule="no_page_bbox",
+                message="Page has no bounding box defined",
+                pages=[page_data.page_number],
+            )
+        )
+        return
+
+    page_bbox = page_data.bbox
+
+    for element in page.iter_elements():
+        if not element.bbox.fully_inside(page_bbox):
+            validation.add(
+                ValidationIssue(
+                    severity=ValidationSeverity.ERROR,
+                    rule="element_outside_page",
+                    message=f"{element.__class__.__name__} extends beyond page",
+                    pages=[page_data.page_number],
+                    details=f"{element.bbox} outside page {page_bbox}",
+                )
+            )
+
+
+def validate_content_no_metadata_overlap(
+    validation: ValidationResult,
+    page: Page,
+    page_data: PageData,
+) -> None:
+    """Validate content elements don't overlap page metadata.
+
+    Domain Invariant: The page number and progress bar are navigation elements
+    that should be distinct from actual content (steps, parts, etc.).
+    Any overlap indicates a classification error.
+
+    Args:
+        validation: ValidationResult to add issues to
+        page: The classified Page object
+        page_data: The raw PageData for context
+    """
+    # Define metadata elements
+    metadata_elements: list[tuple[str, object]] = []
+    if page.page_number:
+        metadata_elements.append(("PageNumber", page.page_number))
+    if page.progress_bar:
+        metadata_elements.append(("ProgressBar", page.progress_bar))
+
+    if not metadata_elements:
+        return
+
+    # Collect content elements (top-level only)
+    content_elements: list[tuple[str, object]] = []
+    for step in page.steps:
+        content_elements.append((f"Step {step.step_number.value}", step))
+    for bag in page.new_bags:
+        content_elements.append(("NewBag", bag))
+    for part in page.catalog:
+        content_elements.append(("CatalogPart", part))
+
+    # Check for overlaps
+    for meta_name, meta_elem in metadata_elements:
+        for content_name, content_elem in content_elements:
+            # Use intersection area to detect overlap
+            intersection = meta_elem.bbox.intersect(content_elem.bbox)  # type: ignore[union-attr]
+            if intersection.area > 0:
+                validation.add(
+                    ValidationIssue(
+                        severity=ValidationSeverity.WARNING,
+                        rule="content_metadata_overlap",
+                        message=f"{content_name} overlaps with {meta_name}",
+                        pages=[page_data.page_number],
+                        details=f"{content_elem.bbox} intersects {meta_elem.bbox}",  # type: ignore[union-attr]
+                    )
+                )

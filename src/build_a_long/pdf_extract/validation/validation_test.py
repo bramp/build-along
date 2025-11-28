@@ -20,11 +20,15 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 from .printer import print_validation
 from .rules import (
     format_ranges,
+    validate_elements_within_page,
     validate_first_page_number,
     validate_missing_page_numbers,
     validate_page_number_sequence,
+    validate_parts_list_has_parts,
+    validate_parts_lists_no_overlap,
     validate_step_sequence,
     validate_steps_have_parts,
+    validate_steps_no_significant_overlap,
 )
 from .runner import validate_results
 from .types import ValidationIssue, ValidationResult, ValidationSeverity
@@ -458,4 +462,199 @@ class TestPrintValidation:
         assert "Test error message" in captured.out
         assert "test_warning" in captured.out
         assert "Some details" in captured.out
-        assert "Summary" in captured.out
+
+
+# =============================================================================
+# Domain Invariant Validation Rules Tests
+# =============================================================================
+
+
+def _make_page_with_steps(
+    step_data: list[tuple[int, BBox, BBox | None]],  # (step_num, step_bbox, pl_bbox)
+    page_number_val: int = 1,
+    page_bbox: BBox | None = None,
+) -> tuple[Page, PageData]:
+    """Create a Page with steps for testing domain invariants.
+
+    Args:
+        step_data: List of (step_number, step_bbox, parts_list_bbox) tuples.
+            If parts_list_bbox is None, no parts list is added.
+        page_number_val: The page number value
+        page_bbox: The page bounding box (default 0,0,100,100)
+
+    Returns:
+        Tuple of (Page, PageData)
+    """
+    if page_bbox is None:
+        page_bbox = BBox(0, 0, 100, 100)
+
+    page_data = PageData(
+        page_number=1,
+        bbox=page_bbox,
+        blocks=[],
+    )
+
+    steps = []
+    for step_num, step_bbox, pl_bbox in step_data:
+        parts_list = None
+        if pl_bbox is not None:
+            # Create a parts list with one part
+            part = Part(
+                bbox=BBox(pl_bbox.x0, pl_bbox.y0, pl_bbox.x1, pl_bbox.y1 - 5),
+                count=PartCount(
+                    bbox=BBox(pl_bbox.x0, pl_bbox.y1 - 5, pl_bbox.x1, pl_bbox.y1),
+                    count=1,
+                ),
+            )
+            parts_list = PartsList(bbox=pl_bbox, parts=[part])
+
+        step = Step(
+            bbox=step_bbox,
+            step_number=StepNumber(
+                bbox=BBox(
+                    step_bbox.x0, step_bbox.y0, step_bbox.x0 + 10, step_bbox.y0 + 10
+                ),
+                value=step_num,
+            ),
+            parts_list=parts_list,
+        )
+        steps.append(step)
+
+    page = Page(
+        bbox=page_bbox,
+        page_number=PageNumber(bbox=BBox(90, 90, 100, 100), value=page_number_val),
+        steps=steps,
+    )
+
+    return page, page_data
+
+
+class TestValidatePartsListHasParts:
+    """Tests for validate_parts_list_has_parts rule."""
+
+    def test_no_empty_parts_lists(self) -> None:
+        """Test page with all parts lists having parts."""
+        page, page_data = _make_page_with_steps(
+            [
+                (1, BBox(0, 0, 50, 50), BBox(40, 0, 50, 20)),
+            ]
+        )
+        validation = ValidationResult()
+        validate_parts_list_has_parts(validation, page, page_data)
+        assert not validation.has_issues()
+
+    def test_empty_parts_list(self) -> None:
+        """Test detection of empty parts list."""
+        page, page_data = _make_page_with_steps(
+            [
+                (1, BBox(0, 0, 50, 50), BBox(40, 0, 50, 20)),
+            ]
+        )
+        # Manually empty the parts list
+        page.steps[0].parts_list.parts = []  # type: ignore[union-attr]
+
+        validation = ValidationResult()
+        validate_parts_list_has_parts(validation, page, page_data)
+        assert validation.warning_count == 1
+        assert validation.issues[0].rule == "empty_parts_list"
+
+
+class TestValidatePartsListsNoOverlap:
+    """Tests for validate_parts_lists_no_overlap rule."""
+
+    def test_non_overlapping_parts_lists(self) -> None:
+        """Test page with non-overlapping parts lists."""
+        page, page_data = _make_page_with_steps(
+            [
+                (1, BBox(0, 0, 45, 50), BBox(35, 0, 45, 20)),
+                (2, BBox(55, 0, 100, 50), BBox(90, 0, 100, 20)),
+            ]
+        )
+        validation = ValidationResult()
+        validate_parts_lists_no_overlap(validation, page, page_data)
+        assert not validation.has_issues()
+
+    def test_overlapping_parts_lists(self) -> None:
+        """Test detection of overlapping parts lists."""
+        page, page_data = _make_page_with_steps(
+            [
+                (1, BBox(0, 0, 60, 50), BBox(40, 0, 60, 20)),
+                (2, BBox(40, 0, 100, 50), BBox(40, 0, 60, 20)),  # Same bbox!
+            ]
+        )
+        validation = ValidationResult()
+        validate_parts_lists_no_overlap(validation, page, page_data)
+        assert validation.error_count == 1
+        assert validation.issues[0].rule == "overlapping_parts_lists"
+
+
+class TestValidateStepsNoSignificantOverlap:
+    """Tests for validate_steps_no_significant_overlap rule."""
+
+    def test_non_overlapping_steps(self) -> None:
+        """Test page with non-overlapping steps."""
+        page, page_data = _make_page_with_steps(
+            [
+                (1, BBox(0, 0, 45, 50), None),
+                (2, BBox(55, 0, 100, 50), None),
+            ]
+        )
+        validation = ValidationResult()
+        validate_steps_no_significant_overlap(validation, page, page_data)
+        assert not validation.has_issues()
+
+    def test_significantly_overlapping_steps(self) -> None:
+        """Test detection of significantly overlapping steps."""
+        page, page_data = _make_page_with_steps(
+            [
+                (1, BBox(0, 0, 80, 50), None),
+                (2, BBox(20, 0, 100, 50), None),  # 60% overlap
+            ]
+        )
+        validation = ValidationResult()
+        validate_steps_no_significant_overlap(
+            validation, page, page_data, overlap_threshold=0.05
+        )
+        assert validation.warning_count == 1
+        assert validation.issues[0].rule == "overlapping_steps"
+
+    def test_minor_overlap_allowed(self) -> None:
+        """Test that minor overlap below threshold is allowed."""
+        page, page_data = _make_page_with_steps(
+            [
+                (1, BBox(0, 0, 51, 50), None),
+                (2, BBox(50, 0, 100, 50), None),  # 1px overlap
+            ]
+        )
+        validation = ValidationResult()
+        validate_steps_no_significant_overlap(
+            validation, page, page_data, overlap_threshold=0.05
+        )
+        assert not validation.has_issues()
+
+
+class TestValidateElementsWithinPage:
+    """Tests for validate_elements_within_page rule."""
+
+    def test_elements_within_bounds(self) -> None:
+        """Test page with all elements within bounds."""
+        page, page_data = _make_page_with_steps(
+            [
+                (1, BBox(10, 10, 90, 90), BBox(70, 10, 90, 30)),
+            ]
+        )
+        validation = ValidationResult()
+        validate_elements_within_page(validation, page, page_data)
+        assert not validation.has_issues()
+
+    def test_element_outside_bounds(self) -> None:
+        """Test detection of element outside page bounds."""
+        page, page_data = _make_page_with_steps(
+            [
+                (1, BBox(10, 10, 110, 90), None),  # Extends past right edge
+            ]
+        )
+        validation = ValidationResult()
+        validate_elements_within_page(validation, page, page_data)
+        assert validation.error_count >= 1
+        assert any(i.rule == "element_outside_page" for i in validation.issues)

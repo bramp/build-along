@@ -5,6 +5,9 @@ domain objects (Page, PartsList, Part, etc.) that satisfy LEGO instruction
 layout invariants.
 
 Tests run on real fixture files to ensure end-to-end correctness.
+
+The actual validation logic is implemented in the validation module.
+These tests run those validators against fixture files and assert no issues.
 """
 
 import logging
@@ -18,8 +21,60 @@ from build_a_long.pdf_extract.classifier.classifier_rules_test import (
 from build_a_long.pdf_extract.classifier.classifier_rules_test import (
     _load_pages_from_fixture as load_pages,
 )
+from build_a_long.pdf_extract.validation import (
+    ValidationResult,
+    validate_content_no_metadata_overlap,
+    validate_elements_within_page,
+    validate_part_contains_children,
+    validate_parts_list_has_parts,
+    validate_parts_lists_no_overlap,
+    validate_steps_no_significant_overlap,
+)
 
 log = logging.getLogger(__name__)
+
+# Known failing fixtures that should be skipped for certain tests
+KNOWN_STEP_OVERLAP_FAILURES = {
+    "6509377_page_014_raw.json",  # Significant step overlaps (50-80% IOU)
+}
+
+
+def _run_validation_on_fixtures(
+    fixture_file: str,
+    validator_func: callable,  # type: ignore[type-arg]
+    *,
+    skip_fixtures: set[str] | None = None,
+    skip_reason: str = "Known failing fixture",
+    **validator_kwargs: object,
+) -> ValidationResult:
+    """Helper to run a validation function on all pages in a fixture file.
+
+    Args:
+        fixture_file: Name of the fixture file to test
+        validator_func: Validation function to run (takes validation, page, page_data)
+        skip_fixtures: Set of fixture filenames to skip
+        skip_reason: Reason message for skipping
+        **validator_kwargs: Additional kwargs to pass to validator_func
+
+    Returns:
+        ValidationResult with all issues found
+    """
+    if skip_fixtures and fixture_file in skip_fixtures:
+        pytest.skip(skip_reason)
+
+    pages = load_pages(fixture_file)
+    validation = ValidationResult()
+
+    for _page_idx, page_data in enumerate(pages):
+        result = classify_elements(page_data)
+        page = result.page
+
+        if page is None:
+            continue
+
+        validator_func(validation, page, page_data, **validator_kwargs)
+
+    return validation
 
 
 @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
@@ -33,32 +88,19 @@ def test_parts_list_contains_parts(fixture_file: str) -> None:
     objects are found, but don't fail the test. This appears to be a known
     issue in the classification pipeline that needs investigation.
     """
-    pages = load_pages(fixture_file)
+    validation = _run_validation_on_fixtures(
+        fixture_file, validate_parts_list_has_parts
+    )
 
-    for page_idx, page_data in enumerate(pages):
-        result = classify_elements(page_data)
-        page = result.page
+    # Log warnings but don't fail (known issue in classification)
+    for issue in validation.issues:
+        if issue.rule == "empty_parts_list":
+            log.warning(f"{fixture_file}: {issue.message} - {issue.details}")
 
-        if page is None:
-            continue
-
-        # Check each step's parts_list
-        for step in page.steps:
-            if step.parts_list is None:
-                continue
-
-            parts_list = step.parts_list
-            # TODO: Make this a hard assertion once classification is fixed
-            if len(parts_list.parts) == 0:
-                print(
-                    f"WARNING: PartsList in {fixture_file} page {page_idx} "
-                    f"step {step.step_number.value} is empty at {parts_list.bbox}"
-                )
-
-            log.debug(
-                f"{fixture_file} page {page_idx} step {step.step_number.value}: "
-                f"PartsList has {len(parts_list.parts)} parts"
-            )
+    # TODO: Make this a hard assertion once classification is fixed
+    # assert not validation.has_issues(), (
+    #     f"Found {len(validation.issues)} empty PartsList issues in {fixture_file}"
+    # )
 
 
 @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
@@ -68,30 +110,15 @@ def test_parts_lists_do_not_overlap(fixture_file: str) -> None:
     Domain Invariant: Each parts list occupies a distinct region on the page.
     Overlapping parts lists would indicate a classification error.
     """
-    pages = load_pages(fixture_file)
+    validation = _run_validation_on_fixtures(
+        fixture_file, validate_parts_lists_no_overlap
+    )
 
-    for _page_idx, page_data in enumerate(pages):
-        result = classify_elements(page_data)
-        page = result.page
-
-        if page is None:
-            continue
-
-        # Collect all parts_lists from all steps
-        parts_lists = [
-            step.parts_list for step in page.steps if step.parts_list is not None
-        ]
-
-        # TODO Use a proper spatial index for efficiency if needed
-        # Check pairwise for overlaps
-        for i, pl1 in enumerate(parts_lists):
-            for pl2 in parts_lists[i + 1 :]:
-                overlap = pl1.bbox.overlaps(pl2.bbox)
-                assert overlap == 0.0, (
-                    f"PartsList at {pl1.bbox} and {pl2.bbox} in {fixture_file} "
-                    f"page {page_data.page_number} overlap with IOU "
-                    f"{pl1.bbox.iou(pl2.bbox)}"
-                )
+    errors = [i for i in validation.issues if i.rule == "overlapping_parts_lists"]
+    assert not errors, (
+        f"Found {len(errors)} overlapping PartsList issues in {fixture_file}: "
+        + "; ".join(i.details or i.message for i in errors[:3])
+    )
 
 
 @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
@@ -104,48 +131,21 @@ def test_steps_do_not_overlap(fixture_file: str) -> None:
 
     We allow up to 5% IOU (Intersection over Union) to account for minor
     boundary overlaps or shared visual elements.
-
-    Note: This test only checks pages where diagrams were successfully classified.
-    Pages without extractable diagram elements will have fallback diagrams that
-    may overlap, which is a known limitation of the current PDF extraction.
     """
-    # Known failing fixtures with significant overlaps (50-80% IOU)
-    # This indicates issues with step classification.
-    known_failing_fixtures = {
-        "6509377_page_014_raw.json",
-    }
-    if fixture_file in known_failing_fixtures:
-        pytest.skip(
-            "Step bounding boxes have significant overlaps in this fixture. "
-            "This indicates issues with step classification."
-        )
+    validation = _run_validation_on_fixtures(
+        fixture_file,
+        validate_steps_no_significant_overlap,
+        skip_fixtures=KNOWN_STEP_OVERLAP_FAILURES,
+        skip_reason="Step bounding boxes have significant overlaps. "
+        "This indicates issues with step classification.",
+        overlap_threshold=0.05,
+    )
 
-    pages = load_pages(fixture_file)
-
-    OVERLAP_THRESHOLD = 0.05  # Allow up to 5% IOU overlap
-
-    for _page_idx, page_data in enumerate(pages):
-        result = classify_elements(page_data)
-        page = result.page
-
-        if page is None:
-            continue
-
-        # Need at least 2 steps to check for overlaps
-        if len(page.steps) < 2:
-            continue
-
-        # TODO Use a proper spatial index for efficiency if needed
-        # Check pairwise for significant overlaps
-        for i, step1 in enumerate(page.steps):
-            for step2 in page.steps[i + 1 :]:
-                iou = step1.bbox.iou(step2.bbox)
-                assert iou <= OVERLAP_THRESHOLD, (
-                    f"Step {step1.step_number.value} at {step1.bbox} and "
-                    f"Step {step2.step_number.value} at {step2.bbox} "
-                    f"in {fixture_file} page {page_data.page_number} "
-                    f"overlap with IOU {iou:.3f} (threshold: {OVERLAP_THRESHOLD})"
-                )
+    errors = [i for i in validation.issues if i.rule == "overlapping_steps"]
+    assert not errors, (
+        f"Found {len(errors)} overlapping step issues in {fixture_file}: "
+        + "; ".join(i.details or i.message for i in errors[:3])
+    )
 
 
 @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
@@ -156,33 +156,19 @@ def test_part_bbox_contains_count_and_diagram(fixture_file: str) -> None:
     the part diagram (image) and the count label below it. The Part's bounding
     box should encompass both elements.
     """
-    pages = load_pages(fixture_file)
+    validation = _run_validation_on_fixtures(
+        fixture_file, validate_part_contains_children
+    )
 
-    for page_idx, page_data in enumerate(pages):
-        result = classify_elements(page_data)
-        page = result.page
-
-        if page is None:
-            continue
-
-        # Check all parts in all parts_lists
-        for step in page.steps:
-            if step.parts_list is None:
-                continue
-
-            for part in step.parts_list.parts:
-                # Count must be inside Part bbox
-                assert part.count.bbox.fully_inside(part.bbox), (
-                    f"Part count {part.count.bbox} not inside Part bbox {part.bbox} "
-                    f"in {fixture_file} page {page_idx}"
-                )
-
-                # Diagram (if present) must be inside Part bbox
-                if part.diagram:
-                    assert part.diagram.bbox.fully_inside(part.bbox), (
-                        f"Part diagram {part.diagram.bbox} not inside "
-                        f"Part bbox {part.bbox} in {fixture_file} page {page_idx}"
-                    )
+    errors = [
+        i
+        for i in validation.issues
+        if i.rule in ("part_count_outside", "part_diagram_outside")
+    ]
+    assert not errors, (
+        f"Found {len(errors)} part containment issues in {fixture_file}: "
+        + "; ".join(i.details or i.message for i in errors[:3])
+    )
 
 
 @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
@@ -192,28 +178,19 @@ def test_elements_stay_within_page_bounds(fixture_file: str) -> None:
     Domain Invariant: Elements should not extend beyond the page boundaries.
     This would indicate an extraction or classification error.
     """
-    pages = load_pages(fixture_file)
+    validation = _run_validation_on_fixtures(
+        fixture_file, validate_elements_within_page
+    )
 
-    for page_idx, page_data in enumerate(pages):
-        result = classify_elements(page_data)
-        page = result.page
-
-        if page is None:
-            continue
-
-        # Check that page has valid bbox
-        assert page_data.bbox is not None, (
-            f"Page in {fixture_file} page {page_idx} has no bbox"
-        )
-
-        page_bbox = page_data.bbox
-
-        # Check all elements in the page hierarchy
-        for element in page.iter_elements():
-            assert element.bbox.fully_inside(page_bbox), (
-                f"{element.__class__.__name__} at {element.bbox} extends beyond "
-                f"page bounds {page_bbox} in {fixture_file} page {page_idx}"
-            )
+    errors = [
+        i
+        for i in validation.issues
+        if i.rule in ("element_outside_page", "no_page_bbox")
+    ]
+    assert not errors, (
+        f"Found {len(errors)} page boundary issues in {fixture_file}: "
+        + "; ".join(i.details or i.message for i in errors[:3])
+    )
 
 
 @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
@@ -222,47 +199,14 @@ def test_elements_do_not_overlap_page_metadata(fixture_file: str) -> None:
 
     Domain Invariant: The page number and progress bar are navigation elements
     that should be distinct from the actual content (steps, parts, etc.).
-    Any overlap indicates a classification error where a content element was
-    incorrectly extended or placed.
+    Any overlap indicates a classification error.
     """
-    pages = load_pages(fixture_file)
+    validation = _run_validation_on_fixtures(
+        fixture_file, validate_content_no_metadata_overlap
+    )
 
-    for page_idx, page_data in enumerate(pages):
-        result = classify_elements(page_data)
-        page = result.page
-
-        if page is None:
-            continue
-
-        # Define metadata elements to check against
-        metadata_elements = []
-        if page.page_number:
-            metadata_elements.append(("PageNumber", page.page_number))
-        if page.progress_bar:
-            metadata_elements.append(("ProgressBar", page.progress_bar))
-
-        if not metadata_elements:
-            continue
-
-        # Collect content elements (top-level only)
-        content_elements = []
-        for step in page.steps:
-            content_elements.append((f"Step {step.step_number.value}", step))
-        for bag in page.new_bags:
-            content_elements.append(("NewBag", bag))
-        for part in page.catalog:
-            content_elements.append(("CatalogPart", part))
-
-        # Check for overlaps
-        for meta_name, meta_elem in metadata_elements:
-            for content_name, content_elem in content_elements:
-                # We use intersection area > 0 to detect overlap
-                # IOU might be small if one element is huge, so check intersection
-                intersection = meta_elem.bbox.intersect(content_elem.bbox)
-                has_overlap = intersection.area > 0
-
-                assert not has_overlap, (
-                    f"{content_name} at {content_elem.bbox} overlaps with "
-                    f"{meta_name} at {meta_elem.bbox} in {fixture_file} "
-                    f"page {page_idx}"
-                )
+    errors = [i for i in validation.issues if i.rule == "content_metadata_overlap"]
+    assert not errors, (
+        f"Found {len(errors)} metadata overlap issues in {fixture_file}: "
+        + "; ".join(i.details or i.message for i in errors[:3])
+    )

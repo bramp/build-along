@@ -2,13 +2,20 @@
 
 from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 
 from .rules import (
+    validate_content_no_metadata_overlap,
+    validate_elements_within_page,
     validate_first_page_number,
     validate_missing_page_numbers,
     validate_page_number_sequence,
+    validate_part_contains_children,
+    validate_parts_list_has_parts,
+    validate_parts_lists_no_overlap,
     validate_step_sequence,
     validate_steps_have_parts,
+    validate_steps_no_significant_overlap,
 )
 from .types import ValidationResult
 
@@ -79,5 +86,61 @@ def validate_results(
 
     # Rule 6: Page number sequence validation
     validate_page_number_sequence(validation, lego_page_numbers)
+
+    return validation
+
+
+def validate_page(
+    page: Page,
+    page_data: PageData,
+    validation: ValidationResult | None = None,
+    *,
+    step_overlap_threshold: float = 0.05,
+) -> ValidationResult:
+    """Run domain invariant validation rules on a single classified page.
+
+    This function checks structural/spatial properties of elements on a page
+    to ensure they satisfy LEGO instruction layout invariants.
+
+    Domain invariant rules:
+    - Each PartsList should contain at least one Part
+    - PartsList bounding boxes should not overlap
+    - Step bounding boxes should not significantly overlap
+    - Part bbox should contain its count and diagram bboxes
+    - All elements should stay within page boundaries
+    - Content elements should not overlap page metadata
+
+    Args:
+        page: The classified Page object
+        page_data: The raw PageData for context (page number, bbox, source)
+        validation: Optional existing ValidationResult to add to.
+            If None, a new one is created.
+        step_overlap_threshold: Maximum allowed IOU for step overlap (default 5%)
+
+    Returns:
+        ValidationResult containing all found issues
+    """
+    if validation is None:
+        validation = ValidationResult()
+
+    # Rule 1: Parts lists should have parts
+    validate_parts_list_has_parts(validation, page, page_data)
+
+    # Rule 2: Parts lists should not overlap
+    validate_parts_lists_no_overlap(validation, page, page_data)
+
+    # Rule 3: Steps should not significantly overlap
+    validate_steps_no_significant_overlap(
+        validation, page, page_data, step_overlap_threshold
+    )
+
+    # Rule 4: Part bbox should contain children
+    validate_part_contains_children(validation, page, page_data)
+
+    # Rule 5: Elements should stay within page bounds
+    validate_elements_within_page(validation, page, page_data)
+
+    # Rule 6: Content should not overlap metadata
+    validate_content_no_metadata_overlap(validation, page, page_data)
 
     return validation
