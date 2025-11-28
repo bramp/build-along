@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 from pathlib import Path
 
+from pydantic import BaseModel, ConfigDict
 
-@dataclass
-class ProcessingConfig:
+
+class ProcessingConfig(BaseModel):
     """Configuration for PDF processing."""
+
+    model_config = ConfigDict(frozen=True, extra="ignore")
 
     pdf_paths: list[Path]
     output_dir: Path | None
