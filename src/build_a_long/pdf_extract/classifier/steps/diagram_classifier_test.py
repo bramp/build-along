@@ -2,11 +2,16 @@
 
 import pytest
 
-from build_a_long.pdf_extract.classifier import ClassifierConfig
+from build_a_long.pdf_extract.classifier import (
+    ClassificationResult,
+    ClassifierConfig,
+)
 from build_a_long.pdf_extract.classifier.steps.diagram_classifier import (
     DiagramClassifier,
 )
+from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image
 
 
 @pytest.fixture
@@ -14,44 +19,164 @@ def classifier() -> DiagramClassifier:
     return DiagramClassifier(config=ClassifierConfig())
 
 
-def test_score_area(classifier: DiagramClassifier):
-    """Test area scoring logic."""
-    page_bbox = BBox(0, 0, 100, 100)  # 10,000 area
+class TestDiagramClassification:
+    """Tests for diagram detection and clustering."""
 
-    # Too small (< 3% of page)
-    tiny_bbox = BBox(0, 0, 10, 20)  # 200 area = 2%
-    assert classifier._score_area(tiny_bbox, page_bbox) == 0.0
+    def test_single_image_creates_diagram(self, classifier: DiagramClassifier) -> None:
+        """Test that a single image creates a diagram candidate."""
+        page_bbox = BBox(0, 0, 200, 300)
+        # Medium-sized image (25% of page area)
+        img = Image(id=1, bbox=BBox(50, 100, 150, 200))
 
-    # Minimum size (3% of page)
-    min_bbox = BBox(0, 0, 10, 30)  # 300 area = 3%
-    assert classifier._score_area(min_bbox, page_bbox) == 0.5
+        page_data = PageData(
+            page_number=1,
+            blocks=[img],
+            bbox=page_bbox,
+        )
 
-    # Good size (3-60% of page)
-    medium_bbox = BBox(0, 0, 50, 50)  # 2,500 area = 25%
-    assert classifier._score_area(medium_bbox, page_bbox) >= 1.0
+        result = ClassificationResult(page_data=page_data)
+        classifier.score(result)
 
-    # Very large (> 60% of page)
-    large_bbox = BBox(0, 0, 90, 90)  # 8,100 area = 81%
-    score = classifier._score_area(large_bbox, page_bbox)
-    assert 0.0 <= score < 0.5  # Should have reduced score
+        candidates = result.get_candidates("diagram")
+        assert len(candidates) == 1
+        assert candidates[0].bbox == img.bbox
 
+    def test_clustered_images_create_single_diagram(
+        self, classifier: DiagramClassifier
+    ) -> None:
+        """Test that overlapping images are clustered into a single diagram."""
+        page_bbox = BBox(0, 0, 200, 300)
+        # Three overlapping images that should cluster together
+        img1 = Image(id=1, bbox=BBox(50, 100, 100, 150))
+        img2 = Image(id=2, bbox=BBox(90, 120, 140, 170))  # Overlaps img1
+        img3 = Image(id=3, bbox=BBox(130, 140, 180, 190))  # Overlaps img2
 
-def test_score_position(classifier: DiagramClassifier):
-    """Test position scoring logic."""
-    page_bbox = BBox(0, 0, 100, 100)
+        page_data = PageData(
+            page_number=1,
+            blocks=[img1, img2, img3],
+            bbox=page_bbox,
+        )
 
-    # Center position (should score 1.0)
-    center_bbox = BBox(40, 40, 60, 60)
-    center_score = classifier._score_position(center_bbox, page_bbox)
-    assert center_score == 1.0
+        result = ClassificationResult(page_data=page_data)
+        classifier.score(result)
 
-    # Left position within acceptable range (0.05-0.95)
-    left_bbox = BBox(10, 40, 30, 60)  # center_x = 0.2
-    left_score = classifier._score_position(left_bbox, page_bbox)
-    assert left_score == 1.0  # Still in acceptable range
+        candidates = result.get_candidates("diagram")
+        # Should create a single diagram cluster
+        assert len(candidates) == 1
+        # Cluster bbox should encompass all three images
+        cluster_bbox = candidates[0].bbox
+        assert cluster_bbox.x0 == 50
+        assert cluster_bbox.y0 == 100
+        assert cluster_bbox.x1 == 180
+        assert cluster_bbox.y1 == 190
 
-    # Far left at edge (gets penalized but not 0)
-    far_left_bbox = BBox(0, 40, 2, 60)  # center_x = 0.01
-    far_left_score = classifier._score_position(far_left_bbox, page_bbox)
-    assert 0.0 < far_left_score < 1.0  # Penalized but not zero
-    assert far_left_score < left_score
+    def test_separate_images_create_multiple_diagrams(
+        self, classifier: DiagramClassifier
+    ) -> None:
+        """Test that non-overlapping images create separate diagram candidates."""
+        page_bbox = BBox(0, 0, 400, 300)  # 120,000 area
+        # Two separate images that don't overlap (both > 3% = 3,600 area)
+        img1 = Image(id=1, bbox=BBox(50, 100, 120, 200))  # 7,000 area
+        img2 = Image(id=2, bbox=BBox(250, 100, 320, 200))  # 7,000 area
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[img1, img2],
+            bbox=page_bbox,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        classifier.score(result)
+
+        candidates = result.get_candidates("diagram")
+        # Should create two separate diagrams
+        assert len(candidates) == 2
+
+    def test_filters_out_full_page_images(self, classifier: DiagramClassifier) -> None:
+        """Test that full-page images (>90% of page) are filtered out."""
+        page_bbox = BBox(0, 0, 200, 300)
+        # Image covering 95% of page (background/border)
+        large_img = Image(id=1, bbox=BBox(0, 0, 195, 285))
+        # Normal image
+        normal_img = Image(id=2, bbox=BBox(50, 100, 100, 150))
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[large_img, normal_img],
+            bbox=page_bbox,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        classifier.score(result)
+
+        candidates = result.get_candidates("diagram")
+        # Should only have the normal image
+        assert len(candidates) == 1
+        assert candidates[0].bbox == normal_img.bbox
+
+    def test_filters_out_small_images(self, classifier: DiagramClassifier) -> None:
+        """Test that very small images (<3% of page) are filtered out."""
+        page_bbox = BBox(0, 0, 200, 300)  # 60,000 area
+        # Tiny image (< 3% = 1,800 area)
+        tiny_img = Image(id=1, bbox=BBox(50, 100, 60, 150))  # 500 area
+        # Normal image (> 3%)
+        normal_img = Image(id=2, bbox=BBox(100, 100, 150, 200))  # 5,000 area
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[tiny_img, normal_img],
+            bbox=page_bbox,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        classifier.score(result)
+
+        candidates = result.get_candidates("diagram")
+        # Should only have the normal image
+        assert len(candidates) == 1
+        assert candidates[0].bbox == normal_img.bbox
+
+    def test_filters_out_progress_bar_overlap(
+        self, classifier: DiagramClassifier
+    ) -> None:
+        """Test that images overlapping the progress bar are filtered out."""
+        page_bbox = BBox(0, 0, 200, 300)
+        # Image that would overlap with progress bar
+        img_near_bar = Image(id=1, bbox=BBox(50, 280, 100, 295))
+        # Normal image away from progress bar
+        normal_img = Image(id=2, bbox=BBox(50, 100, 100, 150))
+        # Mock progress bar drawing
+        progress_bar_drawing = Drawing(id=99, bbox=BBox(0, 285, 200, 300))
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[img_near_bar, normal_img, progress_bar_drawing],
+            bbox=page_bbox,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+
+        # Mock a progress bar candidate
+        from build_a_long.pdf_extract.classifier.candidate import Candidate
+        from build_a_long.pdf_extract.classifier.score import Score
+
+        class _MockScore(Score):
+            def score(self):
+                return 1.0
+
+        result.add_candidate(
+            Candidate(
+                bbox=progress_bar_drawing.bbox,
+                label="progress_bar",
+                score=1.0,
+                score_details=_MockScore(),
+                source_blocks=[progress_bar_drawing],
+            )
+        )
+
+        classifier.score(result)
+
+        candidates = result.get_candidates("diagram")
+        # Should only have the normal image (img_near_bar filtered out)
+        assert len(candidates) == 1
+        assert candidates[0].bbox == normal_img.bbox

@@ -197,7 +197,8 @@ def draw_step(draw: ImageDraw.ImageDraw, step: Step) -> None:
     draw_step_number(draw, step.step_number)
 
     # Draw diagram
-    draw_diagram(draw, step.diagram)
+    if step.diagram:
+        draw_diagram(draw, step.diagram)
 
 
 def draw_step_number(draw: ImageDraw.ImageDraw, step_number: StepNumber) -> None:

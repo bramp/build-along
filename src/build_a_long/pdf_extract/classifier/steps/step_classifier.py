@@ -69,8 +69,8 @@ class _StepScore(Score):
     """Score based on left-edge alignment with PartsList above (0.0-1.0).
     1.0 is perfect alignment, 0.0 is very misaligned. 0.0 if no parts list."""
 
-    diagram_area: float
-    """Area of the diagram region."""
+    diagram_candidate: Candidate | None
+    """The diagram candidate paired with this step (if any)."""
 
     def score(self) -> Weight:
         """Return the pairing score as the main score."""
@@ -109,7 +109,7 @@ class StepClassifier(LabelClassifier):
     """Classifier for complete Step structures."""
 
     output = "step"
-    requires = frozenset({"step_number", "parts_list"})
+    requires = frozenset({"step_number", "parts_list", "diagram"})
 
     def _score(self, result: ClassificationResult) -> None:
         """Score step pairings and create candidates."""
@@ -186,13 +186,14 @@ class StepClassifier(LabelClassifier):
             assert isinstance(parts_list_elem, PartsList)
             parts_list = parts_list_elem
 
-        # Identify diagram region
-        diagram_bbox = self._identify_diagram_region(
-            step_num.bbox, parts_list.bbox if parts_list else None, result
-        )
+        # Get the diagram from the diagram candidate
+        diagram = None
+        if score.diagram_candidate:
+            diagram_elem = result.build(score.diagram_candidate)
+            assert isinstance(diagram_elem, Diagram)
+            diagram = diagram_elem
 
         # Build Step
-        diagram = Diagram(bbox=diagram_bbox)
         return Step(
             bbox=self._compute_step_bbox(step_num, parts_list, diagram),
             step_number=step_num,
@@ -245,8 +246,8 @@ class StepClassifier(LabelClassifier):
             if max_alignment_diff > 0:
                 alignment_score = max(0.0, 1.0 - (left_diff / max_alignment_diff))
 
-        # Estimate diagram bbox for scoring purposes
-        diagram_bbox = self._identify_diagram_region(step_bbox, parts_list_bbox, result)
+        # Find the best diagram candidate for this step
+        diagram_candidate = self._find_best_diagram(step_bbox, parts_list_bbox, result)
 
         # Create score object with candidate references
         score = _StepScore(
@@ -255,14 +256,15 @@ class StepClassifier(LabelClassifier):
             has_parts_list=parts_list_candidate is not None,
             step_proximity_score=proximity_score,
             step_alignment_score=alignment_score,
-            diagram_area=diagram_bbox.area,
+            diagram_candidate=diagram_candidate,
         )
 
         # Calculate combined bbox for the candidate
-        bboxes = [step_bbox, diagram_bbox]
+        combined_bbox = step_bbox
+        if diagram_candidate:
+            combined_bbox = BBox.union(combined_bbox, diagram_candidate.bbox)
         if parts_list_bbox:
-            bboxes.append(parts_list_bbox)
-        combined_bbox = BBox.union_all(bboxes)
+            combined_bbox = BBox.union(combined_bbox, parts_list_bbox)
 
         # Create candidate
         return Candidate(
@@ -273,70 +275,89 @@ class StepClassifier(LabelClassifier):
             source_blocks=[],
         )
 
-    def _identify_diagram_region(
+    def _find_best_diagram(
         self,
         step_bbox: BBox,
         parts_list_bbox: BBox | None,
         result: ClassificationResult,
-    ) -> BBox:
-        """Identify the diagram region for a step.
+    ) -> Candidate | None:
+        """Find the best diagram candidate for this step.
 
-        The diagram is typically the large area below the step number and parts list.
-        For now, we create a simple heuristic-based region.
+        Looks for diagram candidates that are positioned below the step number
+        and parts list (if any). Prefers diagrams that are closest and have
+        good overlap with the expected diagram region.
 
         Args:
             step_bbox: The step number bbox
             parts_list_bbox: The associated parts list bbox (if any)
-            result: Classification result containing page_data
+            result: Classification result containing diagram candidates
 
         Returns:
-            BBox representing the diagram region
+            Best matching diagram candidate, or None if no good match
         """
-        page_data = result.page_data
-        # Simple heuristic: use the step number's bbox as a starting point
-        # In the future, we should look for actual drawing elements below the step
+        # Get all diagram candidates
+        diagram_candidates = result.get_scored_candidates(
+            "diagram", valid_only=False, exclude_failed=True
+        )
 
-        # Start with step number position
-        x0 = step_bbox.x0
-        y0 = step_bbox.y1  # Below the step number
+        if not diagram_candidates:
+            return None
 
-        # If there's a parts list, the diagram should be below it
+        # Determine the bottom of the step header (step number and parts list)
+        y_threshold = step_bbox.y1
         if parts_list_bbox:
-            y0 = max(y0, parts_list_bbox.y1)
+            y_threshold = max(y_threshold, parts_list_bbox.y1)
 
-        # Extend to a reasonable area (placeholder logic)
-        # TODO: Find actual drawing elements and use their bounds
-        page_bbox = page_data.bbox
-        assert page_bbox is not None
+        # Filter to diagrams that are below the step header
+        candidates_below = [
+            c
+            for c in diagram_candidates
+            if c.bbox.y0 >= y_threshold - 5.0  # Small tolerance for alignment
+        ]
 
-        # Use the rest of the page width and height as a simple approximation
-        x1 = page_bbox.x1
-        y1 = page_bbox.y1
+        if not candidates_below:
+            return None
 
-        # Create a bbox for the diagram region
-        return BBox(x0=x0, y0=y0, x1=x1, y1=y1)
+        # Find the diagram with the highest overlap with expected region
+        # or closest to the step if no overlap
+        best_candidate = None
+        best_score = -1.0
+
+        for candidate in candidates_below:
+            # Calculate distance from step header to diagram top
+            distance = candidate.bbox.y0 - y_threshold
+            # Prefer closer diagrams (inverse distance score)
+            score = 1.0 / (1.0 + distance)
+
+            if score > best_score:
+                best_score = score
+                best_candidate = candidate
+
+        return best_candidate
 
     def _compute_step_bbox(
         self,
         step_num: StepNumber,
         parts_list: PartsList | None,
-        diagram: Diagram,
+        diagram: Diagram | None,
     ) -> BBox:
         """Compute the overall bounding box for the Step.
 
-        This encompasses the step number, parts list (if any), and diagram.
+        This encompasses the step number, parts list (if any), and diagram (if any).
 
         Args:
             step_num: The step number element
             parts_list: The parts list (if any)
-            diagram: The diagram element
+            diagram: The diagram element (if any)
 
         Returns:
             Combined bounding box
         """
-        bboxes = [step_num.bbox, diagram.bbox]
+        bboxes = [step_num.bbox]
         if parts_list:
             bboxes.append(parts_list.bbox)
+        if diagram:
+            bboxes.append(diagram.bbox)
 
         return BBox.union_all(bboxes)
 

@@ -375,7 +375,7 @@ class Step(LegoPageElement):
 
     step_number: StepNumber
     parts_list: PartsList
-    diagram: Diagram  # TODO maybe this should be a list?
+    diagram: Diagram | None = None
 
     # TODO add other interesting callouts (such as rotate the element)
 
@@ -395,7 +395,8 @@ class Step(LegoPageElement):
         yield self
         yield from self.step_number.iter_elements()
         yield from self.parts_list.iter_elements()
-        yield from self.diagram.iter_elements()
+        if self.diagram:
+            yield from self.diagram.iter_elements()
 
 
 class Page(LegoPageElement):

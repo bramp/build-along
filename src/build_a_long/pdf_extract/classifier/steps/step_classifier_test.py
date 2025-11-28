@@ -74,7 +74,8 @@ class TestStepClassification:
 
         assert constructed_step.step_number.value == 10
         assert len(constructed_step.parts_list.parts) == 2
-        assert constructed_step.diagram is not None
+        # Diagram is None when DiagramClassifier doesn't find any diagrams
+        assert constructed_step.diagram is None
 
     def test_step_without_parts_list(
         self,
@@ -110,7 +111,8 @@ class TestStepClassification:
 
         assert constructed_step.step_number.value == 5
         assert len(constructed_step.parts_list.parts) == 0  # Should have no parts
-        assert constructed_step.diagram is not None
+        # Diagram is None when DiagramClassifier doesn't find any diagrams
+        assert constructed_step.diagram is None
 
     def test_multiple_steps_on_page(
         self,

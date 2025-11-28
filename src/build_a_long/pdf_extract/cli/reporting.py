@@ -584,7 +584,8 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
             else:
                 print("      Parts List: (empty)")
 
-            print(f"      Diagram: {step.diagram.bbox}")
+            if step.diagram:
+                print(f"      Diagram: {step.diagram.bbox}")
 
 
 def build_and_print_page_hierarchy(
