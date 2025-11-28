@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
@@ -23,14 +22,15 @@ if TYPE_CHECKING:
 ScoreKey = Blocks | tuple[Blocks, ...]
 
 
-@dataclass(frozen=True)
-class _BuildSnapshot:
+class _BuildSnapshot(BaseModel):
     """Snapshot of candidate and consumed block state for rollback.
 
     This is used to implement transactional semantics in build():
     if a classifier build fails, we can restore the state as if
     the build never started.
     """
+
+    model_config = {"frozen": True}
 
     # Map candidate id -> (constructed value, failure_reason)
     candidate_states: dict[int, tuple[LegoPageElements | None, str | None]]
