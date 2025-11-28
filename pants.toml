@@ -19,6 +19,9 @@ backend_packages = [
 
     "pants.backend.experimental.javascript.lint.prettier",
     "pants.backend.experimental.tools.yamllint",
+
+    "pants.backend.shell.lint.shfmt",
+    "pants.backend.shell.lint.shellcheck",
 ]
 pants_ignore = [".vscode/settings.json", "apps/**"]
 
