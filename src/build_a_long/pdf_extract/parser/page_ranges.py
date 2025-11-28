@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from dataclasses import dataclass
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
-@dataclass(frozen=True)
-class PageRange:
+class PageRange(BaseModel):
     """A 1-indexed inclusive page range selection.
 
     Either bound may be None to indicate from start or to end respectively.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     start: int | None
     end: int | None
@@ -32,8 +34,7 @@ class PageRange:
         return "-"
 
 
-@dataclass(frozen=True)
-class PageRanges:
+class PageRanges(BaseModel):
     """Collection of PageRange helpers.
 
     Responsible for converting user-specified 1-indexed ranges into concrete
@@ -41,7 +42,9 @@ class PageRanges:
     de-duplication while preserving order.
     """
 
-    ranges: tuple[PageRange, ...] = ()
+    model_config = ConfigDict(frozen=True)
+
+    ranges: tuple[PageRange, ...] = Field(default_factory=tuple)
 
     def __str__(self) -> str:
         if not self.ranges:
@@ -196,5 +199,5 @@ def parse_page_ranges(pages_str: str) -> PageRanges:
     ranges: list[PageRange] = []
     for seg in segments:
         start, end = parse_page_range(seg)
-        ranges.append(PageRange(start, end))
-    return PageRanges(tuple(ranges))
+        ranges.append(PageRange(start=start, end=end))
+    return PageRanges(ranges=tuple(ranges))
