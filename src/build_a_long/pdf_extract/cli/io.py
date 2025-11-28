@@ -9,9 +9,7 @@ from typing import Any
 
 import pymupdf
 
-from build_a_long.pdf_extract.classifier.classification_result import (
-    ClassificationResult,
-)
+from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.cli.output_models import (
     DebugOutput,
 )

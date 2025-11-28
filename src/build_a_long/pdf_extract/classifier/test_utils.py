@@ -3,7 +3,7 @@
 This module provides helper classes and functions for testing classifiers.
 """
 
-from build_a_long.pdf_extract.classifier.classification_result import Score, Weight
+from build_a_long.pdf_extract.classifier.score import Score, Weight
 
 
 class TestScore(Score):

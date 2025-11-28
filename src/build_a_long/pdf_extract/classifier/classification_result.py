@@ -1,22 +1,14 @@
-"""
-Data classes for the classifier.
-"""
+"""ClassificationResult class for single page classification."""
 
 from __future__ import annotations
 
-from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, cast
+from typing import TYPE_CHECKING, cast
 
-from annotated_types import Ge, Le
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
-from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
-from build_a_long.pdf_extract.classifier.pages.page_hint_collection import (
-    PageHintCollection,
-)
-from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
-from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.classifier.candidate import Candidate
+from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
 from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     LegoPageElements,
@@ -29,42 +21,6 @@ if TYPE_CHECKING:
 
 # Score key can be either a single Block or a tuple of Blocks (for pairings)
 ScoreKey = Blocks | tuple[Blocks, ...]
-
-# Weight value constrained to [0.0, 1.0] range
-Weight = Annotated[float, Ge(0), Le(1)]
-
-
-class Score(BaseModel):
-    """Abstract base class for score_details objects.
-
-    All score_details stored in Candidate objects must inherit from this class.
-    This ensures a consistent interface for accessing the final score value.
-
-    The score() method MUST return a value in the range [0.0, 1.0] where:
-    - 0.0 indicates lowest confidence/worst match
-    - 1.0 indicates highest confidence/best match
-
-    Example implementations:
-        class _PageNumberScore(Score):
-            text_score: float
-            position_score: float
-
-            def score(self) -> Weight:
-                # Returns normalized score in range [0.0, 1.0]
-                return (self.text_score + self.position_score) / 2.0
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    @abstractmethod
-    def score(self) -> Weight:
-        """Return the final computed score value.
-
-        Returns:
-            Weight: A score value in the range [0.0, 1.0] where 0.0 is the
-                lowest confidence and 1.0 is the highest confidence.
-        """
-        ...
 
 
 @dataclass(frozen=True)
@@ -80,179 +36,6 @@ class _BuildSnapshot:
     candidate_states: dict[int, tuple[LegoPageElements | None, str | None]]
     # Set of consumed block IDs
     consumed_blocks: set[int]
-
-
-# TODO Make this JSON serializable
-class BatchClassificationResult(BaseModel):
-    """Results from classifying multiple pages together.
-
-    This class holds both the per-page classification results and the
-    global text histogram computed across all pages.
-    """
-
-    results: list[ClassificationResult]
-    """Per-page classification results, one for each input page"""
-
-    histogram: TextHistogram
-    """Global text histogram computed across all pages"""
-
-
-# TODO Change this to be frozen
-class RemovalReason(BaseModel):
-    """Tracks why a block was removed during classification."""
-
-    reason_type: str
-    """Type of removal: 'duplicate_bbox', 'child_bbox', or 'similar_bbox'"""
-
-    # TODO Should this be updated to the Candidate that caused the removal?
-    target_block: Blocks
-    """The block that caused this removal"""
-
-
-# TODO Change this to be frozen
-class Candidate(BaseModel):
-    """A candidate block with its score and constructed LegoElement.
-
-    Represents a single block that was considered for a particular label,
-    including its score, the constructed LegoPageElement (if successful),
-    and information about why it succeeded or failed.
-
-    This enables:
-    - Re-evaluation with hints (exclude specific candidates)
-    - Debugging (see all candidates and why they won/lost)
-    - UI support (show users alternatives)
-    """
-
-    bbox: BBox
-    """The bounding box for this candidate (from source_block or constructed)"""
-
-    label: str
-    """The label this candidate would have (e.g., 'page_number')"""
-
-    # TODO Maybe score is redudant with score_details?
-    score: float
-    """Combined score (0.0-1.0)"""
-
-    score_details: Score
-    """The detailed score object inheriting from Score (e.g., _PageNumberScore)"""
-
-    constructed: LegoPageElements | None = None
-    """The constructed LegoElement if parsing succeeded, None if failed"""
-
-    source_blocks: list[Blocks] = []
-    """The raw elements that were scored (empty for synthetic elements like Step).
-    
-    Multiple source blocks indicate the candidate was derived from multiple inputs.
-    For example, a PieceLength is derived from both a Text block (the number) and
-    a Drawing block (the circle diagram).
-    """
-
-    failure_reason: str | None = None
-    """Why construction failed, if it did"""
-
-    @property
-    def is_valid(self) -> bool:
-        """Check if this candidate is valid (constructed and no failure).
-
-        A valid candidate has been successfully constructed and has no failure reason.
-        Use this to filter candidates when working with dependencies.
-
-        Returns:
-            True if candidate.constructed is not None and failure_reason is None
-        """
-        return self.constructed is not None and self.failure_reason is None
-
-    @model_validator(mode="after")
-    def validate_source_blocks_for_label(self) -> Candidate:
-        """Validate that source_blocks is empty for composite-labeled candidates
-        and non-empty for non-composite-labeled candidates.
-        """
-        composite_labels = {
-            "page",
-            "step",
-            "part",
-            "new_bag",
-        }
-
-        # Non-composite labels are those that correspond to LegoPageElements
-        # that are derived directly from Blocks.
-        # Examples from lego_page_elements.py: PageNumber, StepNumber, PartCount,
-        # PartNumber, PieceLength, PartImage, ProgressBar, BagNumber, Diagram.
-        # These should always have source_blocks.
-
-        if self.label in composite_labels:
-            assert not self.source_blocks, (
-                f"Candidate with label '{self.label}' should have empty source_blocks, "
-                f"but got {len(self.source_blocks)}."
-            )
-        else:
-            # If a candidate is not composite, it should have source_blocks.
-            # This covers cases like 'part_count', 'page_number', etc.
-            assert self.source_blocks, (
-                f"Candidate with label '{self.label}' should have non-empty "
-                f"source_blocks, but got 0."
-            )
-        return self
-
-
-class ClassifierConfig(BaseModel):
-    """Configuration for the classifier.
-
-    Naming Conventions
-    ------------------
-    All classifier-specific settings should be prefixed with the label name:
-
-    - `{label}_min_score`: Minimum score threshold. Candidates scoring below
-      this value are not created (to reduce debug spam). Default: 0.5
-    - `{label}_*_weight`: Weights for different scoring components
-    - `{label}_*`: Other label-specific configuration
-
-    Example: For a "page_number" label:
-    - page_number_min_score
-    - page_number_text_weight
-    - page_number_position_weight
-    """
-
-    # TODO Consistenctly use this, or give it a name more descriptive of where
-    # it's used
-    min_confidence_threshold: Weight = 0.6
-
-    # Page number classifier settings
-    page_number_min_score: Weight = 0.5
-    page_number_text_weight: Weight = 0.7
-    page_number_position_weight: Weight = 0.3
-    page_number_position_scale: float = 50.0
-    page_number_page_value_weight: Weight = 1.0
-    page_number_font_size_weight: Weight = 0.1
-
-    # Step number classifier settings
-    step_number_min_score: Weight = 0.5
-    step_number_text_weight: Weight = 0.7
-    step_number_font_size_weight: Weight = 0.3
-
-    # Part count classifier settings
-    part_count_min_score: Weight = 0.5
-    part_count_text_weight: Weight = 0.7
-    part_count_font_size_weight: Weight = 0.3
-
-    # Part number classifier settings
-    part_number_min_score: Weight = 0.5
-
-    # Parts list classifier settings
-    parts_list_min_score: Weight = 0.5
-    parts_list_max_area_ratio: float = Field(default=0.75, ge=0.0, le=1.0)
-    """Maximum ratio of page area a parts list can occupy (0.0-1.0).
-    
-    Drawings larger than this fraction of the page are rejected as they're
-    likely the entire page background rather than actual parts lists.
-    Default is 0.75 (75% of page area).
-    """
-
-    font_size_hints: FontSizeHints = Field(default_factory=FontSizeHints.empty)
-    """Font size hints derived from analyzing all pages"""
-
-    page_hints: PageHintCollection = Field(default_factory=PageHintCollection.empty)
-    """Page type hints derived from analyzing all pages"""
 
 
 class ClassificationResult(BaseModel):

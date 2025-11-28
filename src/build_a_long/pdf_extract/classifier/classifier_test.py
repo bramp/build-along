@@ -1,9 +1,9 @@
 """Tests for the element classifier."""
 
 from build_a_long.pdf_extract.classifier import (
+    ClassifierConfig,
     classify_pages,
 )
-from build_a_long.pdf_extract.classifier.classification_result import ClassifierConfig
 from build_a_long.pdf_extract.classifier.classifier import Classifier
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox

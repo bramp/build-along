@@ -4,9 +4,7 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from build_a_long.pdf_extract.classifier.classification_result import (
-    ClassificationResult,
-)
+from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.cli import ProcessingConfig
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox

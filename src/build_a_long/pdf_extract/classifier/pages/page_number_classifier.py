@@ -7,16 +7,15 @@ import math
 import re
 from dataclasses import dataclass
 
+from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
-    Candidate,
     ClassificationResult,
-    ClassifierConfig,
-    Score,
-    Weight,
 )
+from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
+from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_page_number_value,
 )

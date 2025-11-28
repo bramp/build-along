@@ -2,9 +2,7 @@
 
 from pydantic import BaseModel
 
-from build_a_long.pdf_extract.classifier.classification_result import (
-    ClassificationResult,
-)
+from build_a_long.pdf_extract.classifier import ClassificationResult
 
 
 class DebugOutput(BaseModel):

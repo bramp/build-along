@@ -53,13 +53,14 @@ from build_a_long.pdf_extract.classifier.steps import (
 )
 
 from ..extractor.lego_page_elements import Page
-from .classification_result import (
-    Candidate,
-    ClassificationResult,
-    ClassifierConfig,
-)
+from .batch_classification_result import BatchClassificationResult
+from .candidate import Candidate
+from .classification_result import ClassificationResult
 from .classifier import Classifier, classify_elements, classify_pages
+from .classifier_config import ClassifierConfig
 from .label_classifier import LabelClassifier
+from .removal_reason import RemovalReason
+from .score import Score, Weight
 
 PageType = Page.PageType
 
@@ -67,6 +68,7 @@ __all__ = [
     "classify_elements",
     "classify_pages",
     "BagNumberClassifier",
+    "BatchClassificationResult",
     "Candidate",
     "Classifier",
     "ClassificationResult",
@@ -77,15 +79,20 @@ __all__ = [
     "PageHint",
     "PageHintCollection",
     "PageType",
+    "RemovalReason",
+    "Score",
     "StepClassifier",
     "PageNumberClassifier",
+    "PageClassifier",
     "PartCountClassifier",
     "PartNumberClassifier",
+    "PartsClassifier",
     "PieceLengthClassifier",
     "StepNumberClassifier",
     "PartsListClassifier",
     "PartsImageClassifier",
     "ProgressBarClassifier",
+    "Weight",
 ]
 
 _level = os.getenv("LOG_LEVEL")

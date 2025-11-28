@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from build_a_long.pdf_extract.classifier.classification_result import RemovalReason
+from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 
 if TYPE_CHECKING:

@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 import pytest
 
-from build_a_long.pdf_extract.classifier.classification_result import (
+from build_a_long.pdf_extract.classifier import (
     ClassificationResult,
     ClassifierConfig,
 )

@@ -24,15 +24,14 @@ Set environment variables to aid investigation without code changes:
 import logging
 from dataclasses import dataclass
 
+from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
-    Candidate,
     ClassificationResult,
-    Score,
-    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
+from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartsList,

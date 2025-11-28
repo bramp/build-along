@@ -25,15 +25,14 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
-    Candidate,
     ClassificationResult,
-    Score,
-    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
+from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox, build_connected_cluster
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     BagNumber,
@@ -152,6 +151,8 @@ class NewBagClassifier(LabelClassifier):
                     label="new_bag",
                     score=combined,
                     score_details=score_details,
+                    # TODO Update this to reference all the images that make up
+                    # the new_bag graphic (but not the text block referenced by BagNumber)
                     source_blocks=[],  # Synthetic element
                 ),
             )

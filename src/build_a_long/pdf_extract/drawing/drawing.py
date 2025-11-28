@@ -5,9 +5,7 @@ from pathlib import Path
 import pymupdf
 from PIL import Image, ImageDraw
 
-from build_a_long.pdf_extract.classifier.classification_result import (
-    ClassificationResult,
-)
+from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.drawing.path_renderer import (
     draw_dashed_rectangle,
     draw_path_items,

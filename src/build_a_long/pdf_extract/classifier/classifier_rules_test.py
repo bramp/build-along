@@ -13,8 +13,7 @@ import logging
 
 import pytest
 
-from build_a_long.pdf_extract.classifier import classify_elements
-from build_a_long.pdf_extract.classifier.classification_result import Candidate
+from build_a_long.pdf_extract.classifier import Candidate, classify_elements
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,

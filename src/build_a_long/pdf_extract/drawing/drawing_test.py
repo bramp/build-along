@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 
 import pymupdf
 
-from build_a_long.pdf_extract.classifier.classification_result import (
+from build_a_long.pdf_extract.classifier import (
     Candidate,
     ClassificationResult,
     RemovalReason,

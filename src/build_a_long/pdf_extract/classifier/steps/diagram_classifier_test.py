@@ -2,7 +2,7 @@
 
 import pytest
 
-from build_a_long.pdf_extract.classifier.classification_result import ClassifierConfig
+from build_a_long.pdf_extract.classifier import ClassifierConfig
 from build_a_long.pdf_extract.classifier.steps.diagram_classifier import (
     DiagramClassifier,
 )

@@ -24,13 +24,14 @@ from build_a_long.pdf_extract.classifier.bags import (
     BagNumberClassifier,
     NewBagClassifier,
 )
+from build_a_long.pdf_extract.classifier.batch_classification_result import (
+    BatchClassificationResult,
+)
 from build_a_long.pdf_extract.classifier.block_filter import filter_duplicate_blocks
 from build_a_long.pdf_extract.classifier.classification_result import (
-    BatchClassificationResult,
     ClassificationResult,
-    ClassifierConfig,
-    RemovalReason,
 )
+from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.pages import (
     PageHintCollection,
@@ -50,6 +51,7 @@ from build_a_long.pdf_extract.classifier.parts import (
     PartsListClassifier,
     PieceLengthClassifier,
 )
+from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
 from build_a_long.pdf_extract.classifier.steps import (
     DiagramClassifier,
     StepClassifier,

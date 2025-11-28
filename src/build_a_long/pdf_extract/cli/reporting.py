@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from build_a_long.pdf_extract.classifier.classification_result import (
+from build_a_long.pdf_extract.classifier import (
     Candidate,
     ClassificationResult,
 )

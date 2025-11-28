@@ -2,12 +2,12 @@
 
 import pytest
 
-from build_a_long.pdf_extract.classifier.bags.bag_number_classifier import (
-    BagNumberClassifier,
-)
-from build_a_long.pdf_extract.classifier.classification_result import (
+from build_a_long.pdf_extract.classifier import (
     ClassificationResult,
     ClassifierConfig,
+)
+from build_a_long.pdf_extract.classifier.bags.bag_number_classifier import (
+    BagNumberClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
