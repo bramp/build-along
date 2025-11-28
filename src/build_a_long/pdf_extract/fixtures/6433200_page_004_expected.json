@@ -1,0 +1,35 @@
+{
+  "bbox": {
+    "x0": 0.0,
+    "y0": 0.0,
+    "x1": 552.76,
+    "y1": 496.06
+  },
+  "__tag__": "Page",
+  "categories": [
+    "info"
+  ],
+  "page_number": {
+    "bbox": {
+      "x0": 14.17,
+      "y0": 471.89,
+      "x1": 19.79,
+      "y1": 484.32
+    },
+    "__tag__": "PageNumber",
+    "value": 4
+  },
+  "progress_bar": {
+    "bbox": {
+      "x0": 35.02,
+      "y0": 474.1,
+      "x1": 552.76,
+      "y1": 482.59
+    },
+    "__tag__": "ProgressBar",
+    "full_width": 517.74
+  },
+  "new_bags": [],
+  "steps": [],
+  "catalog": []
+}

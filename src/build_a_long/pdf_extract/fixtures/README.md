@@ -139,6 +139,14 @@ pants run src/build_a_long/pdf_extract:main -- \
   --debug-json \
   --debug-extra-json
 
+# Individual page fixtures from 6433200 (pages 4, 5, 7, 31)
+pants run src/build_a_long/pdf_extract:main -- \
+  data/40573/6433200.pdf \
+  --pages 4,5,7,31 \
+  --output-dir src/build_a_long/pdf_extract/fixtures \
+  --debug-json \
+  --debug-extra-json
+
 # Full document fixtures
 pants run src/build_a_long/pdf_extract:main -- \
   data/10237/6055741.pdf \
@@ -193,6 +201,10 @@ Once the classifier issues are fixed:
   - **`6055739_*`** Manual 1 of 3
   - **`6055740_*`** Manual 2 of 3
   - **`6055741_*`** Manual 3 of 3
+
+- **40573** Ideas Christmas Tree
+  - 784 pieces, released in 2022
+  - **`6433200_*`** Manual 1 of 1 (pages 4, 5, 7, 31)
 
 - **75375** Star Wars™ Millennium Falcon™
   - 921 pieces, released in 2024
