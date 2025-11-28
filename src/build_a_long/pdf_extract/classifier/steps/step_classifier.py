@@ -34,7 +34,7 @@ from build_a_long.pdf_extract.classifier.parts.parts_list_classifier import (
     _PartsListScore,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.classifier.text_extractors import (
+from build_a_long.pdf_extract.classifier.text import (
     extract_step_number_value,
 )
 from build_a_long.pdf_extract.extractor.bbox import BBox

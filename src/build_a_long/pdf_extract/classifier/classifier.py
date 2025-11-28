@@ -32,7 +32,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
-from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.pages import (
     PageHintCollection,
 )
@@ -57,7 +56,7 @@ from build_a_long.pdf_extract.classifier.steps import (
     StepClassifier,
     StepNumberClassifier,
 )
-from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
+from build_a_long.pdf_extract.classifier.text import FontSizeHints, TextHistogram
 from build_a_long.pdf_extract.classifier.topological_sort import topological_sort
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (

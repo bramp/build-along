@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
+from build_a_long.pdf_extract.classifier.text import FontSizeHints
 from build_a_long.pdf_extract.cli.io import load_json
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox

@@ -2,7 +2,7 @@
 Tests for text extraction utilities.
 """
 
-from build_a_long.pdf_extract.classifier.text_extractors import (
+from build_a_long.pdf_extract.classifier.text import (
     extract_element_id,
     extract_page_number_value,
     extract_part_count_value,

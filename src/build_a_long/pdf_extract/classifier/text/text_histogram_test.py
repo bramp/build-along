@@ -1,6 +1,6 @@
 """Tests for TextHistogram functionality."""
 
-from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
+from build_a_long.pdf_extract.classifier.text import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Image, Text

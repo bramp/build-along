@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.pages.page_hint_collection import (
     PageHintCollection,
 )
 from build_a_long.pdf_extract.classifier.score import Weight
+from build_a_long.pdf_extract.classifier.text import FontSizeHints
 
 
 class ClassifierConfig(BaseModel):

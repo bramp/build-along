@@ -6,10 +6,10 @@ from build_a_long.pdf_extract.classifier import (
     ClassificationResult,
     ClassifierConfig,
 )
-from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
 from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
     PageNumberClassifier,
 )
+from build_a_long.pdf_extract.classifier.text import FontSizeHints
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import PageNumber

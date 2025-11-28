@@ -4,19 +4,21 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from dataclasses import dataclass
+
+from pydantic import BaseModel, ConfigDict
 
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
-@dataclass
-class TextHistogram:
+class TextHistogram(BaseModel):
     """Global statistics about numeric text elements across all pages.
 
     This data structure collects font size and font name distributions
     to help guide classification decisions.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     font_name_counts: Counter[str]
 

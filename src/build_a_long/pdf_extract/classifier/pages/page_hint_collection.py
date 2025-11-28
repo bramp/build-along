@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import logging
-from typing import ClassVar
 
 from pydantic import BaseModel
 
+from build_a_long.pdf_extract.classifier.constants import (
+    CATALOG_ELEMENT_ID_THRESHOLD,
+)
 from build_a_long.pdf_extract.classifier.pages.page_hint import PageHint, PageType
-from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
+from build_a_long.pdf_extract.classifier.text import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
 
 logger = logging.getLogger(__name__)
@@ -32,10 +34,6 @@ class PageHintCollection(BaseModel):
 
     hints: dict[int, PageHint]
     """Mapping from page number to page hint"""
-
-    # Threshold for classifying a page as CATALOG based on part number count
-    # Pages with more than this many element IDs are considered catalog pages
-    CATALOG_ELEMENT_ID_THRESHOLD: ClassVar[int] = 3
 
     @classmethod
     def empty(cls) -> PageHintCollection:
@@ -93,7 +91,7 @@ class PageHintCollection(BaseModel):
             confidences: dict[PageType, float] = {}
 
             # CATALOG confidence: based on number of part numbers
-            if part_number_count > cls.CATALOG_ELEMENT_ID_THRESHOLD:
+            if part_number_count > CATALOG_ELEMENT_ID_THRESHOLD:
                 # Catalog indicator
                 confidences[PageType.CATALOG] = min(
                     0.95, 0.6 + (part_number_count / 100)

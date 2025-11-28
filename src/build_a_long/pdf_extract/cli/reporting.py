@@ -8,8 +8,7 @@ from build_a_long.pdf_extract.classifier import (
     Candidate,
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
-from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
+from build_a_long.pdf_extract.classifier.text import FontSizeHints, TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks

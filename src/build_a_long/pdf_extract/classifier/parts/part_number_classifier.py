@@ -23,9 +23,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.classifier.text_extractors import (
-    extract_element_id,
-)
+from build_a_long.pdf_extract.classifier.text import extract_element_id
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartNumber,
 )

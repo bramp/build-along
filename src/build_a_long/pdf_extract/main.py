@@ -5,8 +5,11 @@ from pathlib import Path
 
 import pymupdf
 
-from build_a_long.pdf_extract.classifier import classify_elements, classify_pages
-from build_a_long.pdf_extract.classifier.font_size_hints import FontSizeHints
+from build_a_long.pdf_extract.classifier import (
+    FontSizeHints,
+    classify_elements,
+    classify_pages,
+)
 from build_a_long.pdf_extract.cli import (
     ProcessingConfig,
     parse_arguments,

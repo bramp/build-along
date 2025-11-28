@@ -61,6 +61,7 @@ from .classifier_config import ClassifierConfig
 from .label_classifier import LabelClassifier
 from .removal_reason import RemovalReason
 from .score import Score, Weight
+from .text import FontSizeHints, TextHistogram
 
 PageType = Page.PageType
 
@@ -74,6 +75,7 @@ __all__ = [
     "ClassificationResult",
     "ClassifierConfig",
     "DiagramClassifier",
+    "FontSizeHints",
     "LabelClassifier",
     "NewBagClassifier",
     "PageHint",
@@ -92,6 +94,7 @@ __all__ = [
     "PartsListClassifier",
     "PartsImageClassifier",
     "ProgressBarClassifier",
+    "TextHistogram",
     "Weight",
 ]
 

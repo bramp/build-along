@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.text_histogram import TextHistogram
+from build_a_long.pdf_extract.classifier.text import TextHistogram
 
 
 class BatchClassificationResult(BaseModel):

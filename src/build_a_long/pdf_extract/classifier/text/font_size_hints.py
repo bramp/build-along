@@ -7,12 +7,10 @@ from collections import Counter
 
 from pydantic import BaseModel
 
-from build_a_long.pdf_extract.classifier.pages.page_hint_collection import (
-    PageHintCollection,
+from build_a_long.pdf_extract.classifier.constants import (
+    CATALOG_ELEMENT_ID_THRESHOLD,
 )
-from build_a_long.pdf_extract.classifier.text_histogram import (
-    TextHistogram,
-)
+from build_a_long.pdf_extract.classifier.text.text_histogram import TextHistogram
 from build_a_long.pdf_extract.extractor import PageData
 
 logger = logging.getLogger(__name__)
@@ -118,7 +116,7 @@ class FontSizeHints(BaseModel):
 
             # If page has many element IDs, classify as catalog
             element_id_count = sum(page_histogram.element_id_font_sizes.values())
-            if element_id_count > PageHintCollection.CATALOG_ELEMENT_ID_THRESHOLD:
+            if element_id_count > CATALOG_ELEMENT_ID_THRESHOLD:
                 catalog_histogram.update(page_histogram)
                 catalog_page_count += 1
             else:
