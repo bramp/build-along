@@ -68,14 +68,14 @@ class ClassifierConfig(BaseModel):
     rotation_symbol_min_score: Weight = 0.3
     """Minimum score threshold for rotation symbol candidates."""
 
-    rotation_symbol_min_size: float = 35.0
-    """Minimum width/height in points for rotation symbols."""
-
-    rotation_symbol_max_size: float = 120.0
-    """Maximum width/height in points for rotation symbols."""
-
     rotation_symbol_ideal_size: float = 46.0
     """Ideal width/height in points for rotation symbols (used for scoring)."""
+
+    rotation_symbol_min_size: float = rotation_symbol_ideal_size * 0.90
+    """Minimum width/height in points for rotation symbols."""
+
+    rotation_symbol_max_size: float = rotation_symbol_ideal_size * 1.10
+    """Maximum width/height in points for rotation symbols."""
 
     rotation_symbol_min_aspect: float = 0.95
     """Minimum aspect ratio (width/height) - must be close to square."""
@@ -88,9 +88,6 @@ class ClassifierConfig(BaseModel):
 
     rotation_symbol_max_drawings_in_cluster: int = 25
     """Maximum number of drawings to form a rotation symbol cluster."""
-
-    rotation_symbol_max_drawing_size: float = 50.0
-    """Maximum size of individual drawings in a cluster."""
 
     rotation_symbol_size_weight: Weight = 0.5
     """Weight for size score in final rotation symbol score."""
