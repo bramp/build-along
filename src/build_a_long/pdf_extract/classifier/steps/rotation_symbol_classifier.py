@@ -4,16 +4,23 @@ Rotation symbol classifier.
 Purpose
 -------
 Identify rotation symbols on LEGO instruction pages. These symbols indicate
-that the builder should rotate the assembled model. They can appear as either:
-1. Small raster images (most common) - square icons ~40-80px
-2. Clusters of vector drawings forming arrow patterns
+that the builder should rotate the assembled model. They appear as small,
+isolated, square clusters of Drawing elements (~46px).
 
 Heuristic
 ---------
-- Look for square Image blocks (aspect ratio ~0.95-1.05)
-- Size range: ~41-51 pixels per side (±10% of ideal 46px)
-- Often positioned near Diagram elements
-- Can also be clusters of 4-25 small Drawing elements forming arrows
+1. Collect all Drawing blocks on the page
+2. Build connected components (clusters) using bbox overlap
+3. For each cluster, compute the union bbox
+4. Score clusters that are:
+   - Square-ish (aspect ratio ~0.95-1.05)
+   - Small (~41-51 pixels per side, ±10% of ideal 46px)
+   - Near a Diagram element
+
+The key insight is that rotation symbols are vector drawings that are ISOLATED -
+they don't overlap with nearby diagram elements. Images are excluded because
+their bounding boxes may overlap with diagrams even when the visible content
+(ignoring transparent areas) appears disconnected.
 
 Debugging
 ---------
@@ -33,13 +40,15 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import BBox, build_connected_cluster
+from build_a_long.pdf_extract.extractor.bbox import (
+    BBox,
+    build_all_connected_clusters,
+)
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     RotationSymbol,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
-    Image,
 )
 
 log = logging.getLogger(__name__)
@@ -79,87 +88,91 @@ class RotationSymbolClassifier(LabelClassifier):
     requires = frozenset({"diagram"})
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score Image blocks and Drawing clusters as rotation symbol candidates."""
+        """Score connected clusters of Drawing blocks as rotation symbols."""
         page_data = result.page_data
         config = self.config
+        page_bbox = page_data.bbox
+        assert page_bbox is not None
 
         # Get diagram candidates to check proximity
         diagram_candidates = result.get_scored_candidates(
             "diagram", valid_only=False, exclude_failed=True
         )
 
-        # Approach 1: Check raster Images
-        for block in page_data.blocks:
-            if isinstance(block, Image):
-                score_details = self._score_bbox(block.bbox, diagram_candidates)
-                if (
-                    score_details
-                    and score_details.score() > config.rotation_symbol_min_score
-                ):
-                    result.add_candidate(
-                        Candidate(
-                            bbox=block.bbox,
-                            label="rotation_symbol",
-                            score=score_details.score(),
-                            score_details=score_details,
-                            # Don't claim source_blocks - rotation symbols
-                            # can coexist with diagrams and part images
-                            source_blocks=[],
-                        )
-                    )
-                    log.debug(
-                        "[rotation_symbol] Image candidate at %s score=%.2f "
-                        "(size=%.2f aspect=%.2f proximity=%.2f)",
-                        block.bbox,
-                        score_details.score(),
-                        score_details.size_score,
-                        score_details.aspect_score,
-                        score_details.proximity_to_diagram,
-                    )
-
-        # Approach 2: Check Drawing clusters (for vector-based symbols)
-        drawings = [
+        # Filter out page-spanning drawings (>90% of page width or height).
+        # These are typically background/border elements that would connect
+        # unrelated symbols together during clustering.
+        max_width = page_bbox.width * 0.9
+        max_height = page_bbox.height * 0.9
+        drawings: list[Drawing] = [
             block
             for block in page_data.blocks
-            if isinstance(block, Drawing) and self._is_small_drawing(block)
+            if isinstance(block, Drawing)
+            and block.bbox.width <= max_width
+            and block.bbox.height <= max_height
         ]
 
-        if drawings:
-            clusters = self._build_drawing_clusters(drawings)
-            for cluster in clusters:
-                if (
-                    config.rotation_symbol_min_drawings_in_cluster
-                    <= len(cluster)
-                    <= config.rotation_symbol_max_drawings_in_cluster
-                ):
-                    cluster_bbox = BBox.union_all([d.bbox for d in cluster])
-                    score_details = self._score_bbox(
-                        cluster_bbox,
-                        diagram_candidates,
-                        size_score_override=config.rotation_symbol_cluster_size_score,
-                    )
-                    if (
-                        score_details
-                        and score_details.score() > config.rotation_symbol_min_score
-                    ):
-                        result.add_candidate(
-                            Candidate(
-                                bbox=cluster_bbox,
-                                label="rotation_symbol",
-                                score=score_details.score(),
-                                score_details=score_details,
-                                # Don't claim source_blocks - these drawings
-                                # are also part of diagrams and should coexist
-                                source_blocks=[],
-                            )
-                        )
-                        log.debug(
-                            "[rotation_symbol] Drawing cluster candidate "
-                            "at %s with %d drawings score=%.2f",
-                            cluster_bbox,
-                            len(cluster),
-                            score_details.score(),
-                        )
+        if not drawings:
+            return
+
+        # Build connected components using bbox overlap
+        clusters = build_all_connected_clusters(drawings)
+
+        log.debug(
+            "[rotation_symbol] Found %d clusters from %d drawings",
+            len(clusters),
+            len(drawings),
+        )
+
+        # Score each cluster
+        for cluster in clusters:
+            cluster_bbox = BBox.union_all([block.bbox for block in cluster])
+
+            score_details = self._score_bbox(cluster_bbox, diagram_candidates)
+            if score_details is None:
+                log.debug(
+                    "[rotation_symbol] Rejected cluster at %s "
+                    "(%d blocks) size=%.1fx%.1f - outside size/aspect constraints",
+                    cluster_bbox,
+                    len(cluster),
+                    cluster_bbox.width,
+                    cluster_bbox.height,
+                )
+                continue
+
+            if score_details.score() <= config.rotation_symbol_min_score:
+                log.debug(
+                    "[rotation_symbol] Rejected cluster at %s "
+                    "(%d blocks) score=%.2f < min_score=%.2f",
+                    cluster_bbox,
+                    len(cluster),
+                    score_details.score(),
+                    config.rotation_symbol_min_score,
+                )
+                continue
+
+            result.add_candidate(
+                Candidate(
+                    bbox=cluster_bbox,
+                    label="rotation_symbol",
+                    score=score_details.score(),
+                    score_details=score_details,
+                    # Don't claim source_blocks - rotation symbols
+                    # can coexist with diagrams and part images
+                    source_blocks=[],
+                )
+            )
+            log.debug(
+                "[rotation_symbol] Cluster candidate at %s "
+                "(%d blocks) score=%.2f "
+                "(size=%.2f aspect=%.2f proximity=%.2f)",
+                cluster_bbox,
+                len(cluster),
+                score_details.score(),
+                score_details.size_score,
+                score_details.aspect_score,
+                score_details.proximity_to_diagram,
+            )
 
     def build(
         self, candidate: Candidate, result: ClassificationResult
@@ -173,15 +186,12 @@ class RotationSymbolClassifier(LabelClassifier):
         self,
         bbox: BBox,
         diagram_candidates: list[Candidate],
-        size_score_override: float | None = None,
     ) -> _RotationSymbolScore | None:
         """Score a bounding box as a potential rotation symbol.
 
         Args:
             bbox: Bounding box to score
             diagram_candidates: List of diagram candidates for proximity scoring
-            size_score_override: If provided, use this fixed size score instead
-                of calculating from ideal size (used for drawing clusters)
 
         Returns:
             Score details if this could be a rotation symbol, None otherwise
@@ -200,12 +210,9 @@ class RotationSymbolClassifier(LabelClassifier):
             return None
 
         # Score size (prefer images close to ideal size)
-        if size_score_override is not None:
-            size_score = size_score_override
-        else:
-            ideal_size = config.rotation_symbol_ideal_size
-            size_diff = abs(width - ideal_size) + abs(height - ideal_size)
-            size_score = max(0.0, 1.0 - (size_diff / (ideal_size * 2)))
+        ideal_size = config.rotation_symbol_ideal_size
+        size_diff = abs(width - ideal_size) + abs(height - ideal_size)
+        size_score = max(0.0, 1.0 - (size_diff / (ideal_size * 2)))
 
         # Score aspect ratio (prefer square)
         aspect = width / height if height > 0 else 0
@@ -271,50 +278,3 @@ class RotationSymbolClassifier(LabelClassifier):
             return 1.0 - (
                 (min_distance - close_distance) / (far_distance - close_distance)
             )
-
-    def _is_small_drawing(self, drawing: Drawing) -> bool:
-        """Check if a drawing is small enough to be part of a rotation symbol.
-
-        Args:
-            drawing: The Drawing block to check
-
-        Returns:
-            True if the drawing could be part of a rotation symbol cluster
-        """
-        max_size = self.config.rotation_symbol_max_size
-        return drawing.bbox.width < max_size and drawing.bbox.height < max_size
-
-    def _build_drawing_clusters(self, drawings: list[Drawing]) -> list[list[Drawing]]:
-        """Build clusters of connected small drawings.
-
-        Args:
-            drawings: List of small drawing blocks
-
-        Returns:
-            List of clusters, where each cluster is a list of connected drawings
-        """
-        if not drawings:
-            return []
-
-        remaining = set(range(len(drawings)))
-        clusters: list[list[Drawing]] = []
-
-        while remaining:
-            seed_idx = min(remaining)
-            seed_drawing = drawings[seed_idx]
-            remaining.remove(seed_idx)
-
-            # Build cluster using connected drawings
-            cluster = build_connected_cluster([seed_drawing], drawings)
-
-            # Remove clustered drawings from remaining set
-            for drawing in cluster:
-                try:
-                    idx = drawings.index(drawing)
-                    remaining.discard(idx)
-                except ValueError:
-                    pass
-
-            clusters.append(cluster)
-
-        return clusters

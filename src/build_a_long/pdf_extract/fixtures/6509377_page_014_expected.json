@@ -154,15 +154,6 @@
           "y1": 212.92
         },
         "__tag__": "Diagram"
-      },
-      "rotation_symbol": {
-        "bbox": {
-          "x0": 139.75,
-          "y0": 165.84,
-          "x1": 181.2,
-          "y1": 209.28
-        },
-        "__tag__": "RotationSymbol"
       }
     },
     {
