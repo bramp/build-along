@@ -32,7 +32,6 @@ from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
     StepNumberClassifier,
     _StepNumberScore,
 )
-from build_a_long.pdf_extract.classifier.test_utils import TestScore
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
 

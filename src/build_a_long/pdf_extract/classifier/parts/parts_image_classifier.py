@@ -162,39 +162,24 @@ class PartsImageClassifier(LabelClassifier):
         """Find a shine candidate that matches this image.
 
         Shines are small stars typically in the top-right corner of the image.
+        The shine must overlap with the image - shines below or outside the image
+        are not considered matches.
         """
         best_shine = None
         best_dist = float("inf")
-        MAX_DIST = 10.0  # Maximum distance to consider match
 
         for shine in shine_candidates:
-            # Check if shine is near the image
-            # Use intersection or proximity
+            # Shine must overlap with the image to be considered a match.
+            # Shines that are merely "near" but below or outside the image
+            # are likely other elements (e.g., decorations under count text).
             if not shine.bbox.overlaps(image.bbox):
-                # Also check proximity if not overlapping
-                dist = shine.bbox.min_distance(image.bbox)
-                if dist > MAX_DIST:
-                    continue
-            else:
-                dist = 0.0
+                continue
 
-            # Prefer shines closer to top-right corner
-            # Image TR corner
+            # Prefer shines closer to top-right corner of the image
+            # Image TR corner: (x1, y0) where y0 is top in this coordinate system
             tr_x = image.bbox.x1
-            tr_y = image.bbox.y0  # y0 is top in this coordinate system?
-            # Wait, coordinate system. usually y0 is top?
-            # In BBox implementation: y0 is min_y (top in PDF if y starts at bottom? or top-left origin?)
-            # The extractor uses PDF coordinates where (0,0) is usually bottom-left.
-            # But let's check the data.
-            # Page bbox: 0,0 to 552, 496.
-            # Text at y=471 is page number at bottom. So y=0 is likely top.
-            # Or y=0 is bottom?
-            # Text "15" (page num) at y0=471.89.
-            # Text "2x" (top of page) at y0=47.82.
-            # So y=0 is TOP.
-            # Therefore y0 is top edge (smaller value).
+            tr_y = image.bbox.y0
 
-            # Top-Right corner of image: (x1, y0)
             shine_center_x = (shine.bbox.x0 + shine.bbox.x1) / 2
             shine_center_y = (shine.bbox.y0 + shine.bbox.y1) / 2
 
@@ -207,6 +192,4 @@ class PartsImageClassifier(LabelClassifier):
                 best_dist = corner_dist
                 best_shine = shine
 
-        # Heuristic: Shine should be reasonably close to Top Right
-        # We already filtered by general proximity/overlap
         return best_shine
