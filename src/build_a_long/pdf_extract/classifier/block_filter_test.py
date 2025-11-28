@@ -1,11 +1,92 @@
 """Tests for the block filter module."""
 
 from build_a_long.pdf_extract.classifier.block_filter import (
+    filter_background_blocks,
     filter_duplicate_blocks,
     filter_overlapping_text_blocks,
 )
+from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
+
+
+class TestFilterBackgroundBlocks:
+    """Tests for the filter_background_blocks function."""
+
+    def test_empty_list(self) -> None:
+        """Test with empty list returns empty list."""
+        kept, removed = filter_background_blocks([], 100, 100)
+        assert kept == []
+        assert removed == {}
+
+    def test_no_background_blocks(self) -> None:
+        """Test with blocks smaller than threshold - all should be kept."""
+        page_width = 100.0
+        page_height = 100.0
+        blocks = [
+            # 50% size
+            Drawing(id=1, bbox=BBox(0, 0, 50, 50)),
+            # 98% size (below 99% threshold)
+            Drawing(id=2, bbox=BBox(1, 1, 99, 99)),
+        ]
+        kept, removed = filter_background_blocks(blocks, page_width, page_height)
+        assert len(kept) == 2
+        assert set(kept) == set(blocks)
+        assert removed == {}
+
+    def test_background_block_removal(self) -> None:
+        """Test that full-page blocks are removed."""
+        page_width = 100.0
+        page_height = 200.0
+        blocks = [
+            # Full page block (100% size)
+            Drawing(id=1, bbox=BBox(0, 0, 100, 200)),
+            # Small content block
+            Text(id=2, bbox=BBox(10, 10, 20, 20), text="A"),
+        ]
+        kept, removed = filter_background_blocks(blocks, page_width, page_height)
+
+        assert len(kept) == 1
+        assert kept[0].id == 2  # Only text block kept
+        assert len(removed) == 1
+        removed_block = next(iter(removed.keys()))
+        assert removed_block.id == 1
+        reason = removed[removed_block]
+        assert isinstance(reason, RemovalReason)
+        assert reason.reason_type == "background_block"
+        assert reason.target_block is None
+
+    def test_nearly_full_page_removal(self) -> None:
+        """Test that blocks slightly smaller than full page (>=99%) are removed."""
+        page_width = 1000.0
+        page_height = 1000.0
+
+        # 990x990 is exactly 99% - should be removed
+        # 989x989 is 98.9% - should be kept
+
+        blocks = [
+            # Exactly 99%
+            Drawing(id=1, bbox=BBox(0, 0, 990, 990)),
+            # Slightly larger (99.5%)
+            Drawing(id=2, bbox=BBox(0, 0, 995, 995)),
+            # Slightly smaller (98.9%)
+            Drawing(id=3, bbox=BBox(0, 0, 989, 989)),
+        ]
+
+        kept, removed = filter_background_blocks(blocks, page_width, page_height)
+
+        assert len(kept) == 1
+        assert kept[0].id == 3
+
+        assert len(removed) == 2
+        removed_ids = {b.id for b in removed}
+        assert 1 in removed_ids
+        assert 2 in removed_ids
+
+        for block, reason in removed.items():
+            assert isinstance(reason, RemovalReason)
+            assert reason.reason_type == "background_block"
+            assert reason.target_block is None
 
 
 class TestFilterDuplicateBlocks:
@@ -42,7 +123,8 @@ class TestFilterDuplicateBlocks:
             # IOU = 380/404 = 0.94 (well above 0.9 threshold)
             Drawing(id=2, bbox=BBox(10.5, 10.5, 30.5, 30.5)),  # area = 400
             # Larger, contains most of block 1
-            Drawing(id=3, bbox=BBox(10, 10, 32, 32)),  # area = 484 (largest)
+            # Adjusted to 31,31 (21x21=441) to ensure IOU > 0.9 with block 1 (400/441 = 0.907)
+            Drawing(id=3, bbox=BBox(10, 10, 31, 31)),  # area = 441 (largest)
         ]
         kept, removed = filter_duplicate_blocks(blocks)
         # Should filter to reduce duplicates
@@ -51,6 +133,12 @@ class TestFilterDuplicateBlocks:
         assert any(b.id == 3 for b in kept)
         # At least one block should be removed
         assert len(removed) >= 1
+
+        for block, reason in removed.items():
+            assert isinstance(reason, RemovalReason)
+            assert reason.reason_type == "duplicate_bbox"
+            assert reason.target_block is not None
+            assert reason.target_block.id == 3
 
     def test_center_proximity_catches_small_offsets(self) -> None:
         """Test that center proximity check catches minimally-overlapping duplicates.
@@ -131,6 +219,11 @@ class TestFilterDuplicateBlocks:
         assert len(kept) == 1
         assert len(removed) == 2
 
+        kept_block = kept[0]
+        for block, reason in removed.items():
+            assert reason.reason_type == "duplicate_bbox"
+            assert reason.target_block == kept_block
+
     def test_multiple_groups_of_duplicates(self) -> None:
         """Test multiple groups of similar blocks - one from each group kept."""
         blocks = [
@@ -203,6 +296,11 @@ class TestFilterOverlappingTextBlocks:
         # Block with "4" should be removed
         removed_block = next(iter(removed.keys()))
         assert isinstance(removed_block, Text) and removed_block.text == "4"
+
+        reason = removed[removed_block]
+        assert isinstance(reason, RemovalReason)
+        assert reason.reason_type == "overlapping_text"
+        assert reason.target_block == kept[0]
 
     def test_multiple_groups_of_overlapping_text(self) -> None:
         """Test multiple groups of overlapping text at different positions."""

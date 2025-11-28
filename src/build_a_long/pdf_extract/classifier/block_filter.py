@@ -19,12 +19,13 @@ if TYPE_CHECKING:
         ClassificationResult,
     )
 
+
 logger = logging.getLogger(__name__)
 
 
 def filter_duplicate_blocks(
     blocks: Sequence[Blocks],
-) -> tuple[list[Blocks], dict[Blocks, Blocks]]:
+) -> tuple[list[Blocks], dict[Blocks, RemovalReason]]:
     """Filter out duplicate/similar blocks, keeping the largest one from each group.
 
     Pages often contain multiple overlapping blocks at similar positions to create
@@ -41,20 +42,7 @@ def filter_duplicate_blocks(
     Returns:
         A tuple of:
         - Filtered list of blocks with duplicates removed, preserving original order
-        - Dict mapping removed blocks to the block that was kept instead
-
-    Example:
-        >>> # Three blocks forming a drop shadow effect
-        >>> blocks = [
-        ...     Drawing(bbox=BBox(10, 10, 30, 30)),  # Main element
-        ...     Drawing(bbox=BBox(11, 11, 31, 31)),  # Shadow offset by 1px
-        ...     Drawing(bbox=BBox(12, 12, 32, 32)),  # Second shadow offset by 2px
-        ... ]
-        >>> kept, removed = filter_duplicate_blocks(blocks)
-        >>> len(kept)  # Returns 1, keeping only the largest
-        1
-        >>> len(removed)  # Returns 2, the two smaller blocks
-        2
+        - Dict mapping removed blocks to the RemovalReason
     """
     if not blocks:
         return [], {}
@@ -96,7 +84,7 @@ def filter_duplicate_blocks(
 
     # For each group, keep the block with the largest area
     result_indices = []
-    removed_mapping: dict[Blocks, Blocks] = {}
+    removed_mapping: dict[Blocks, RemovalReason] = {}
 
     for group_indices in groups.values():
         # Find the block with the largest area in this group
@@ -107,11 +95,62 @@ def filter_duplicate_blocks(
         kept_block = blocks[largest_idx]
         for idx in group_indices:
             if idx != largest_idx:
-                removed_mapping[blocks[idx]] = kept_block
+                removed_mapping[blocks[idx]] = RemovalReason(
+                    reason_type="duplicate_bbox", target_block=kept_block
+                )
 
     # Return blocks in their original order
     result_indices.sort()
     return [blocks[i] for i in result_indices], removed_mapping
+
+
+def filter_background_blocks(
+    blocks: Sequence[Blocks],
+    page_width: float,
+    page_height: float,
+) -> tuple[list[Blocks], dict[Blocks, RemovalReason]]:
+    """Filter out background blocks that cover most of the page.
+
+    Removes blocks that have width >= 99% of page width AND height >= 99% of page height.
+    These are typically background images or full-page rectangles.
+
+    Args:
+        blocks: List of blocks to filter.
+        page_width: Width of the page.
+        page_height: Height of the page.
+
+    Returns:
+        A tuple of:
+        - Filtered list of blocks with background blocks removed, preserving order
+        - Dict mapping removed blocks to the RemovalReason
+    """
+    if not blocks:
+        return [], {}
+
+    SIZE_THRESHOLD = 0.99
+    min_width = page_width * SIZE_THRESHOLD
+    min_height = page_height * SIZE_THRESHOLD
+
+    filtered_blocks = []
+    removed_mapping: dict[Blocks, RemovalReason] = {}
+
+    for block in blocks:
+        if block.bbox.width >= min_width and block.bbox.height >= min_height:
+            removed_mapping[block] = RemovalReason(
+                reason_type="background_block", target_block=None
+            )
+            logger.debug(
+                "Filtered background block %s (size %.1fx%.1f on %.1fx%.1f page)",
+                block.id,
+                block.bbox.width,
+                block.bbox.height,
+                page_width,
+                page_height,
+            )
+        else:
+            filtered_blocks.append(block)
+
+    return filtered_blocks, removed_mapping
 
 
 def remove_child_bboxes(
@@ -199,7 +238,7 @@ def remove_similar_bboxes(
 
 def filter_overlapping_text_blocks(
     blocks: Sequence[Blocks],
-) -> tuple[list[Blocks], dict[Blocks, Blocks]]:
+) -> tuple[list[Blocks], dict[Blocks, RemovalReason]]:
     """Filter out overlapping text blocks with the same origin, keeping the longest.
 
     Some PDFs contain multiple text spans at the same origin where one is a
@@ -215,7 +254,7 @@ def filter_overlapping_text_blocks(
     Returns:
         A tuple of:
         - Filtered list of blocks with duplicate text removed, preserving order
-        - Dict mapping removed text blocks to the block that was kept instead
+        - Dict mapping removed text blocks to the RemovalReason
 
     Example:
         >>> blocks = [
@@ -259,7 +298,7 @@ def filter_overlapping_text_blocks(
         groups[key].append((idx, block))
 
     # For each group, keep the block with the longest text
-    removed_mapping: dict[Blocks, Blocks] = {}
+    removed_mapping: dict[Blocks, RemovalReason] = {}
     removed_text_indices: set[int] = set()
 
     for blocks_in_group in groups.values():
@@ -274,7 +313,9 @@ def filter_overlapping_text_blocks(
             for idx, block in blocks_in_group:
                 if idx != best_idx:
                     removed_text_indices.add(idx)
-                    removed_mapping[block] = best_block
+                    removed_mapping[block] = RemovalReason(
+                        reason_type="overlapping_text", target_block=best_block
+                    )
                     logger.debug(
                         "Filtered overlapping text at origin (%.1f, %.1f): "
                         "kept %r, removed %r",

@@ -16,5 +16,5 @@ class RemovalReason(BaseModel):
     """Type of removal: 'duplicate_bbox', 'child_bbox', or 'similar_bbox'"""
 
     # TODO Should this be updated to the Candidate that caused the removal?
-    target_block: Blocks
+    target_block: Blocks | None = None
     """The block that caused this removal"""

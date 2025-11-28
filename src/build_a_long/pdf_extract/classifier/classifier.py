@@ -28,6 +28,7 @@ from build_a_long.pdf_extract.classifier.batch_classification_result import (
     BatchClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.block_filter import (
+    filter_background_blocks,
     filter_duplicate_blocks,
     filter_overlapping_text_blocks,
 )
@@ -114,24 +115,36 @@ def classify_pages(
     hint_pages = pages_for_hints if pages_for_hints is not None else pages
 
     # Phase 1: Filter duplicate blocks on each page and track removals
-    duplicate_removals: list[dict[Blocks, Blocks]] = []
+    removed_blocks_per_page: list[dict[Blocks, RemovalReason]] = []
     for page_data in pages:
-        # First filter overlapping text blocks (e.g., "4" and "43" at same origin)
-        kept_blocks, text_removed = filter_overlapping_text_blocks(page_data.blocks)
+        kept_blocks = page_data.blocks
 
-        # Then filter duplicate image/drawing blocks based on IOU
+        # Filter background blocks (full page blocks like background images)
+        kept_blocks, background_removed = filter_background_blocks(
+            kept_blocks, page_data.bbox.width, page_data.bbox.height
+        )
+
+        # Filter overlapping text blocks (e.g., "4" and "43" at same origin)
+        kept_blocks, text_removed = filter_overlapping_text_blocks(kept_blocks)
+
+        # Filter duplicate image/drawing blocks based on IOU
         kept_blocks, bbox_removed = filter_duplicate_blocks(kept_blocks)
 
-        # Combine both removal mappings
-        removed_mapping = {**text_removed, **bbox_removed}
+        # Combine all removal mappings into a single dict for this page
+        combined_removed_mapping = {
+            **text_removed,
+            **bbox_removed,
+            **background_removed,
+        }
 
         logger.debug(
             f"Page {page_data.page_number}: "
             f"filtered {len(text_removed)} overlapping text, "
-            f"{len(bbox_removed)} duplicate bbox blocks"
+            f"{len(bbox_removed)} duplicate bbox blocks, "
+            f"{len(background_removed)} background blocks"
         )
 
-        duplicate_removals.append(removed_mapping)
+        removed_blocks_per_page.append(combined_removed_mapping)
 
     # Phase 2: Extract font size hints from hint pages (excluding removed blocks)
     # Build pages with non-removed blocks for hint extraction and histogram
@@ -141,8 +154,13 @@ def classify_pages(
     for page_data in hint_pages:
         # TODO We are re-filtering duplicates here; optimize by changing the API
         # to accept one list of PageData, and seperate by page_numbers.
-        kept_blocks, _ = filter_overlapping_text_blocks(page_data.blocks)
+        kept_blocks = page_data.blocks
+        kept_blocks, _ = filter_background_blocks(
+            kept_blocks, page_data.bbox.width, page_data.bbox.height
+        )
+        kept_blocks, _ = filter_overlapping_text_blocks(kept_blocks)
         kept_blocks, _ = filter_duplicate_blocks(kept_blocks)
+
         hint_pages_without_duplicates.append(
             PageData(
                 page_number=page_data.page_number,
@@ -153,7 +171,8 @@ def classify_pages(
 
     # Build pages without duplicates for classification
     pages_without_duplicates = []
-    for page_data, removed_mapping in zip(pages, duplicate_removals, strict=True):
+    for page_data, removed_mapping in zip(pages, removed_blocks_per_page, strict=True):
+        # We need to filter blocks that were removed by ANY filter
         non_removed_blocks = [
             block for block in page_data.blocks if block not in removed_mapping
         ]
@@ -176,7 +195,7 @@ def classify_pages(
 
     results = []
     for page_data, page_without_duplicates, removed_mapping in zip(
-        pages, pages_without_duplicates, duplicate_removals, strict=True
+        pages, pages_without_duplicates, removed_blocks_per_page, strict=True
     ):
         # Classify using only non-removed blocks
         result = classifier.classify(page_without_duplicates)
@@ -184,12 +203,9 @@ def classify_pages(
         # Update result to use original page_data (with all blocks)
         result.page_data = page_data
 
-        # Mark duplicate blocks as removed
-        for removed_block, kept_block in removed_mapping.items():
-            result.mark_removed(
-                removed_block,
-                RemovalReason(reason_type="duplicate_bbox", target_block=kept_block),
-            )
+        # Mark removed blocks
+        for removed_block, removal_reason in removed_mapping.items():
+            result.mark_removed(removed_block, removal_reason)
 
         results.append(result)
 

@@ -372,10 +372,17 @@ def print_classification_debug(
                 line += f"* REMOVED: {reason_text}"
                 if reason:
                     target = reason.target_block
-                    line += f" by {target.id}"
-                    target_best = result.get_best_candidate(target)
-                    if target_best:
-                        line += f" ({target_best.label})"
+                    if target:
+                        line += f" by {target.id}"
+                        # Cast to Blocks to satisfy type checker since get_best_candidate expects Blocks not Blocks | None
+                        from build_a_long.pdf_extract.extractor.page_blocks import (
+                            Blocks,
+                        )
+
+                        target_block: Blocks = target
+                        target_best = result.get_best_candidate(target_block)
+                        if target_best:
+                            line += f" ({target_best.label})"
                 line += f"* {str(block)}"
             elif node.candidates:
                 # Show all candidates for this block

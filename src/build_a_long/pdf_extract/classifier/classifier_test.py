@@ -7,7 +7,7 @@ from build_a_long.pdf_extract.classifier import (
 from build_a_long.pdf_extract.classifier.classifier import Classifier
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
 
 
 class TestClassifier:
@@ -121,8 +121,10 @@ class TestClassifyElements:
         # Create a page with duplicate blocks
         page_bbox = BBox(0, 0, 100, 200)
         # Two identical blocks (duplicates) - one should be marked as removed
-        block1 = Text(id=0, bbox=BBox(10, 10, 50, 30), text="1")
-        block2 = Text(id=1, bbox=BBox(10, 10, 50, 30), text="1")
+        # Use Drawing blocks because Text blocks with same bbox are filtered by
+        # filter_overlapping_text_blocks first (reason='overlapping_text')
+        block1 = Drawing(id=0, bbox=BBox(10, 10, 50, 30))
+        block2 = Drawing(id=1, bbox=BBox(10, 10, 50, 30))
         # A unique block
         block3 = Text(id=2, bbox=BBox(5, 190, 15, 198), text="10")
 
