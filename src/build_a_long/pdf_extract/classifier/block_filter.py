@@ -6,16 +6,20 @@ created for visual effects like drop shadows in PDF rendering.
 
 from __future__ import annotations
 
+import logging
+from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
-from build_a_long.pdf_extract.extractor.page_blocks import Blocks
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Text
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classification_result import (
         ClassificationResult,
     )
+
+logger = logging.getLogger(__name__)
 
 
 def filter_duplicate_blocks(
@@ -191,3 +195,96 @@ def remove_similar_bboxes(
                     ele,
                     RemovalReason(reason_type="similar_bbox", target_block=target),
                 )
+
+
+def filter_overlapping_text_blocks(
+    blocks: Sequence[Blocks],
+) -> tuple[list[Blocks], dict[Blocks, Blocks]]:
+    """Filter out overlapping text blocks with the same origin, keeping the longest.
+
+    Some PDFs contain multiple text spans at the same origin where one is a
+    substring of another (e.g., "4" and "43" both starting at the same position).
+    This keeps only the text block with the longest text for each unique origin.
+
+    Two text blocks are considered to have the same origin if their x0, y0, and y1
+    coordinates match within a small tolerance (0.5 points).
+
+    Args:
+        blocks: List of blocks to filter (only Text blocks are affected).
+
+    Returns:
+        A tuple of:
+        - Filtered list of blocks with duplicate text removed, preserving order
+        - Dict mapping removed text blocks to the block that was kept instead
+
+    Example:
+        >>> blocks = [
+        ...     Text(bbox=BBox(34.0, 16.3, 48.6, 48.6), text="4"),
+        ...     Text(bbox=BBox(34.0, 16.3, 63.2, 48.6), text="43"),
+        ... ]
+        >>> kept, removed = filter_overlapping_text_blocks(blocks)
+        >>> len(kept)  # Returns 1, keeping "43"
+        1
+        >>> kept[0].text
+        '43'
+    """
+    if not blocks:
+        return [], {}
+
+    # Collect text blocks and their indices
+    text_blocks: list[Text] = []
+    text_indices: list[int] = []
+
+    for i, block in enumerate(blocks):
+        if isinstance(block, Text):
+            text_blocks.append(block)
+            text_indices.append(i)
+
+    if len(text_blocks) <= 1:
+        return list(blocks), {}
+
+    # Group text blocks by origin (x0, y0, y1) with tolerance
+    tolerance = 0.5
+
+    def origin_key(block: Text) -> tuple[float, float, float]:
+        return (
+            round(block.bbox.x0 / tolerance) * tolerance,
+            round(block.bbox.y0 / tolerance) * tolerance,
+            round(block.bbox.y1 / tolerance) * tolerance,
+        )
+
+    groups: dict[tuple[float, float, float], list[tuple[int, Text]]] = defaultdict(list)
+    for idx, block in zip(text_indices, text_blocks, strict=True):
+        key = origin_key(block)
+        groups[key].append((idx, block))
+
+    # For each group, keep the block with the longest text
+    removed_mapping: dict[Blocks, Blocks] = {}
+    removed_text_indices: set[int] = set()
+
+    for blocks_in_group in groups.values():
+        if len(blocks_in_group) > 1:
+            # Find the block with the longest text (or widest bbox as tiebreaker)
+            best_idx, best_block = max(
+                blocks_in_group,
+                key=lambda ib: (len(ib[1].text), ib[1].bbox.width),
+            )
+
+            # Map removed blocks to the kept block
+            for idx, block in blocks_in_group:
+                if idx != best_idx:
+                    removed_text_indices.add(idx)
+                    removed_mapping[block] = best_block
+                    logger.debug(
+                        "Filtered overlapping text at origin (%.1f, %.1f): "
+                        "kept %r, removed %r",
+                        best_block.bbox.x0,
+                        best_block.bbox.y0,
+                        best_block.text,
+                        block.text,
+                    )
+
+    # Rebuild the block list preserving original order
+    result = [b for i, b in enumerate(blocks) if i not in removed_text_indices]
+
+    return result, removed_mapping

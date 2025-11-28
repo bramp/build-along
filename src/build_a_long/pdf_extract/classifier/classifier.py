@@ -27,7 +27,10 @@ from build_a_long.pdf_extract.classifier.bags import (
 from build_a_long.pdf_extract.classifier.batch_classification_result import (
     BatchClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.block_filter import filter_duplicate_blocks
+from build_a_long.pdf_extract.classifier.block_filter import (
+    filter_duplicate_blocks,
+    filter_overlapping_text_blocks,
+)
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
@@ -112,12 +115,19 @@ def classify_pages(
     # Phase 1: Filter duplicate blocks on each page and track removals
     duplicate_removals: list[dict[Blocks, Blocks]] = []
     for page_data in pages:
-        # Get blocks to keep and mapping of removed blocks
-        kept_blocks, removed_mapping = filter_duplicate_blocks(page_data.blocks)
+        # First filter overlapping text blocks (e.g., "4" and "43" at same origin)
+        kept_blocks, text_removed = filter_overlapping_text_blocks(page_data.blocks)
+
+        # Then filter duplicate image/drawing blocks based on IOU
+        kept_blocks, bbox_removed = filter_duplicate_blocks(kept_blocks)
+
+        # Combine both removal mappings
+        removed_mapping = {**text_removed, **bbox_removed}
 
         logger.debug(
             f"Page {page_data.page_number}: "
-            f"filtered {len(removed_mapping)} duplicate blocks"
+            f"filtered {len(text_removed)} overlapping text, "
+            f"{len(bbox_removed)} duplicate bbox blocks"
         )
 
         duplicate_removals.append(removed_mapping)
@@ -130,7 +140,8 @@ def classify_pages(
     for page_data in hint_pages:
         # TODO We are re-filtering duplicates here; optimize by changing the API
         # to accept one list of PageData, and seperate by page_numbers.
-        kept_blocks, _ = filter_duplicate_blocks(page_data.blocks)
+        kept_blocks, _ = filter_overlapping_text_blocks(page_data.blocks)
+        kept_blocks, _ = filter_duplicate_blocks(kept_blocks)
         hint_pages_without_duplicates.append(
             PageData(
                 page_number=page_data.page_number,

@@ -1,6 +1,9 @@
 """Tests for the block filter module."""
 
-from build_a_long.pdf_extract.classifier.block_filter import filter_duplicate_blocks
+from build_a_long.pdf_extract.classifier.block_filter import (
+    filter_duplicate_blocks,
+    filter_overlapping_text_blocks,
+)
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
@@ -150,3 +153,128 @@ class TestFilterDuplicateBlocks:
         # Verify one from group 2 is kept
         assert any(b.id in {4, 5} for b in kept)
         assert len(removed) >= 2  # At least blocks 2 and 5 removed
+
+
+class TestFilterOverlappingTextBlocks:
+    """Tests for the filter_overlapping_text_blocks function."""
+
+    def test_empty_list(self) -> None:
+        """Test with empty list returns empty list."""
+        kept, removed = filter_overlapping_text_blocks([])
+        assert kept == []
+        assert removed == {}
+
+    def test_no_text_blocks(self) -> None:
+        """Test with non-text blocks - all should pass through unchanged."""
+        blocks = [
+            Drawing(id=1, bbox=BBox(10, 10, 20, 20)),
+            Image(id=2, bbox=BBox(50, 50, 60, 60)),
+        ]
+        kept, removed = filter_overlapping_text_blocks(blocks)
+        assert kept == blocks
+        assert removed == {}
+
+    def test_no_overlapping_text(self) -> None:
+        """Test with text blocks at different positions - all should be kept."""
+        blocks = [
+            Text(id=1, bbox=BBox(10, 10, 20, 20), text="A"),
+            Text(id=2, bbox=BBox(50, 50, 60, 60), text="B"),
+            Text(id=3, bbox=BBox(100, 100, 110, 110), text="C"),
+        ]
+        kept, removed = filter_overlapping_text_blocks(blocks)
+        assert len(kept) == 3
+        assert set(kept) == set(blocks)
+        assert removed == {}
+
+    def test_overlapping_text_keeps_longest(self) -> None:
+        """Test overlapping text at same origin - keeps longest text.
+
+        This is the main use case: PDF has "4" and "43" at same origin
+        as separate text blocks. We keep "43" (longer text).
+        """
+        blocks = [
+            Text(id=1, bbox=BBox(100, 200, 110, 220), text="4"),
+            Text(id=2, bbox=BBox(100, 200, 125, 220), text="43"),
+        ]
+        kept, removed = filter_overlapping_text_blocks(blocks)
+        assert len(kept) == 1
+        assert isinstance(kept[0], Text) and kept[0].text == "43"
+        assert len(removed) == 1
+        # Block with "4" should be removed
+        removed_block = next(iter(removed.keys()))
+        assert isinstance(removed_block, Text) and removed_block.text == "4"
+
+    def test_multiple_groups_of_overlapping_text(self) -> None:
+        """Test multiple groups of overlapping text at different positions."""
+        blocks = [
+            # Group at origin (100, 200)
+            Text(id=1, bbox=BBox(100, 200, 110, 220), text="1"),
+            Text(id=2, bbox=BBox(100, 200, 125, 220), text="12"),
+            # Group at origin (300, 400)
+            Text(id=3, bbox=BBox(300, 400, 310, 420), text="A"),
+            Text(id=4, bbox=BBox(300, 400, 325, 420), text="AB"),
+            Text(id=5, bbox=BBox(300, 400, 340, 420), text="ABC"),
+        ]
+        kept, removed = filter_overlapping_text_blocks(blocks)
+        assert len(kept) == 2
+        # Should keep "12" from first group and "ABC" from second
+        kept_texts = {b.text for b in kept if isinstance(b, Text)}
+        assert kept_texts == {"12", "ABC"}
+        assert len(removed) == 3
+
+    def test_mixed_blocks_preserves_non_text(self) -> None:
+        """Test that non-text blocks are preserved even at same bbox."""
+        blocks = [
+            Text(id=1, bbox=BBox(100, 200, 110, 220), text="4"),
+            Text(id=2, bbox=BBox(100, 200, 125, 220), text="43"),
+            Drawing(id=3, bbox=BBox(100, 200, 130, 220)),  # Same origin
+            Image(id=4, bbox=BBox(100, 200, 140, 220)),  # Same origin
+        ]
+        kept, removed = filter_overlapping_text_blocks(blocks)
+        # Text deduplication: keeps "43"
+        # Non-text blocks: preserved
+        assert len(kept) == 3
+        assert any(b.id == 2 for b in kept)  # Text "43"
+        assert any(b.id == 3 for b in kept)  # Drawing
+        assert any(b.id == 4 for b in kept)  # Image
+        assert len(removed) == 1
+
+    def test_tolerance_groups_nearby_origins(self) -> None:
+        """Test that text with slightly different origins are grouped.
+
+        The tolerance is 0.5, and values are rounded to nearest 0.5.
+        So (100.2, 200.2, 220.2) rounds to (100.0, 200.0, 220.0).
+        """
+        blocks = [
+            Text(id=1, bbox=BBox(100.0, 200.0, 110.0, 220.0), text="4"),
+            # Slightly offset (within rounding to same 0.5 bucket)
+            Text(id=2, bbox=BBox(100.2, 200.2, 125.0, 220.2), text="43"),
+        ]
+        kept, removed = filter_overlapping_text_blocks(blocks)
+        assert len(kept) == 1
+        assert isinstance(kept[0], Text) and kept[0].text == "43"
+        assert len(removed) == 1
+
+    def test_outside_tolerance_not_grouped(self) -> None:
+        """Test that text with origins beyond tolerance are not grouped."""
+        blocks = [
+            Text(id=1, bbox=BBox(100.0, 200.0, 110.0, 220.0), text="4"),
+            # Offset by more than 0.5 tolerance
+            Text(id=2, bbox=BBox(101.0, 200.0, 126.0, 220.0), text="43"),
+        ]
+        kept, removed = filter_overlapping_text_blocks(blocks)
+        # Both should be kept as they're at different origins
+        assert len(kept) == 2
+        assert removed == {}
+
+    def test_same_length_text_keeps_widest(self) -> None:
+        """Test same length text at same origin - keeps the one with widest bbox."""
+        blocks = [
+            Text(id=1, bbox=BBox(100, 200, 110, 220), text="AB"),  # width=10
+            Text(id=2, bbox=BBox(100, 200, 125, 220), text="CD"),  # width=25
+        ]
+        kept, removed = filter_overlapping_text_blocks(blocks)
+        assert len(kept) == 1
+        # Should keep the one with the widest bbox (id=2, width=25)
+        assert kept[0].id == 2
+        assert isinstance(kept[0], Text) and kept[0].text == "CD"
