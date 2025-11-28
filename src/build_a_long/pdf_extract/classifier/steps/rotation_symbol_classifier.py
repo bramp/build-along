@@ -10,8 +10,8 @@ that the builder should rotate the assembled model. They can appear as either:
 
 Heuristic
 ---------
-- Look for square Image blocks (aspect ratio ~0.85-1.15)
-- Size range: 35-120 pixels per side
+- Look for square Image blocks (aspect ratio ~0.95-1.05)
+- Size range: ~41-51 pixels per side (±10% of ideal 46px)
 - Often positioned near Diagram elements
 - Can also be clusters of 4-25 small Drawing elements forming arrows
 

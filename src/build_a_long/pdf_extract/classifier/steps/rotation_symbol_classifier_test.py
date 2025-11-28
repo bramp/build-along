@@ -23,8 +23,8 @@ class TestRotationSymbolClassifier:
         """Test that a square medium-sized image is identified."""
         classifier = RotationSymbolClassifier(ClassifierConfig())
 
-        # Create a square image (60x60 pixels) - typical rotation symbol
-        rotation_img = Image(id=1, bbox=BBox(270.0, 380.0, 330.0, 440.0))
+        # Create a square image (~46x46 pixels) - typical rotation symbol
+        rotation_img = Image(id=1, bbox=BBox(270.0, 380.0, 316.0, 426.0))
         diagram_drawing = Drawing(id=2, bbox=BBox(200.0, 300.0, 400.0, 450.0))
 
         # Create a diagram candidate
@@ -107,8 +107,8 @@ class TestRotationSymbolClassifier:
         """Test building a RotationSymbol element from a candidate."""
         classifier = RotationSymbolClassifier(ClassifierConfig())
 
-        # Create a square image (60x60 pixels)
-        rotation_img = Image(id=1, bbox=BBox(270.0, 380.0, 330.0, 440.0))
+        # Create a square image (~46x46 pixels)
+        rotation_img = Image(id=1, bbox=BBox(270.0, 380.0, 316.0, 426.0))
         diagram_drawing = Drawing(id=2, bbox=BBox(200.0, 300.0, 400.0, 450.0))
 
         page = PageData(
@@ -149,19 +149,19 @@ class TestRotationSymbolClassifier:
         """Test that small drawings can be evaluated for rotation symbols."""
         classifier = RotationSymbolClassifier(ClassifierConfig())
 
-        # Create cluster of small drawings spread out to form a ~60px symbol
+        # Create cluster of small drawings spread out to form a ~46px symbol
         # (simulating arrows in a circular rotation pattern)
         drawings = [
             Drawing(id=0, bbox=BBox(100.0, 100.0, 110.0, 110.0)),  # top-left
-            Drawing(id=1, bbox=BBox(130.0, 100.0, 140.0, 110.0)),  # top
-            Drawing(id=2, bbox=BBox(150.0, 100.0, 160.0, 110.0)),  # top-right
-            Drawing(id=3, bbox=BBox(150.0, 125.0, 160.0, 135.0)),  # right
-            Drawing(id=4, bbox=BBox(150.0, 145.0, 160.0, 155.0)),  # bottom-right
-            Drawing(id=5, bbox=BBox(130.0, 145.0, 140.0, 155.0)),  # bottom
-            Drawing(id=6, bbox=BBox(100.0, 145.0, 110.0, 155.0)),  # bottom-left
-            Drawing(id=7, bbox=BBox(100.0, 125.0, 110.0, 135.0)),  # left
+            Drawing(id=1, bbox=BBox(118.0, 100.0, 128.0, 110.0)),  # top
+            Drawing(id=2, bbox=BBox(136.0, 100.0, 146.0, 110.0)),  # top-right
+            Drawing(id=3, bbox=BBox(136.0, 118.0, 146.0, 128.0)),  # right
+            Drawing(id=4, bbox=BBox(136.0, 136.0, 146.0, 146.0)),  # bottom-right
+            Drawing(id=5, bbox=BBox(118.0, 136.0, 128.0, 146.0)),  # bottom
+            Drawing(id=6, bbox=BBox(100.0, 136.0, 110.0, 146.0)),  # bottom-left
+            Drawing(id=7, bbox=BBox(100.0, 118.0, 110.0, 128.0)),  # left
         ]
-        diagram_drawing = Drawing(id=99, bbox=BBox(90.0, 80.0, 200.0, 180.0))
+        diagram_drawing = Drawing(id=99, bbox=BBox(90.0, 90.0, 160.0, 160.0))
 
         page = PageData(
             page_number=1,
@@ -174,11 +174,11 @@ class TestRotationSymbolClassifier:
         # Add diagram for proximity
         result.add_candidate(
             Candidate(
-                bbox=BBox(90.0, 80.0, 200.0, 180.0),
+                bbox=BBox(90.0, 90.0, 160.0, 160.0),
                 label="diagram",
                 score=1.0,
                 score_details=_DiagramScore(
-                    cluster_bbox=BBox(90.0, 80.0, 200.0, 180.0),
+                    cluster_bbox=BBox(90.0, 90.0, 160.0, 160.0),
                     num_images=1,
                 ),
                 source_blocks=[diagram_drawing],
