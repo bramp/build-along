@@ -35,7 +35,10 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import BBox, build_connected_cluster
+from build_a_long.pdf_extract.extractor.bbox import (
+    BBox,
+    build_all_connected_clusters,
+)
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
 )
@@ -118,7 +121,7 @@ class DiagramClassifier(LabelClassifier):
         )
 
         # Build clusters of connected images
-        clusters = self._build_clusters(image_blocks)
+        clusters = build_all_connected_clusters(image_blocks)
 
         log.debug(
             "[diagram] Found %d diagram clusters",
@@ -185,49 +188,6 @@ class DiagramClassifier(LabelClassifier):
             return progress_bar_candidates[0].bbox
 
         return None
-
-    def _build_clusters(
-        self, image_blocks: list[Drawing | Image]
-    ) -> list[list[Drawing | Image]]:
-        """Build clusters of connected images.
-
-        Images that overlap or are adjacent are grouped into the same cluster.
-        This handles cases where a single diagram is split into multiple
-        smaller images.
-
-        Args:
-            image_blocks: All image/drawing blocks to cluster
-
-        Returns:
-            List of clusters, where each cluster is a list of connected images
-        """
-        if not image_blocks:
-            return []
-
-        # Track which images have been assigned to clusters
-        remaining = set(range(len(image_blocks)))
-        clusters: list[list[Drawing | Image]] = []
-
-        while remaining:
-            # Pick an arbitrary seed from remaining images
-            seed_idx = min(remaining)
-            seed_image = image_blocks[seed_idx]
-            remaining.remove(seed_idx)
-
-            # Build a cluster starting from this seed
-            cluster = build_connected_cluster([seed_image], image_blocks)
-
-            # Remove clustered images from remaining set
-            for img in cluster:
-                try:
-                    idx = image_blocks.index(img)
-                    remaining.discard(idx)
-                except ValueError:
-                    pass
-
-            clusters.append(cluster)
-
-        return clusters
 
     def _calculate_cluster_bbox(self, cluster: list[Drawing | Image]) -> BBox:
         """Calculate the bounding box encompassing all images in the cluster.

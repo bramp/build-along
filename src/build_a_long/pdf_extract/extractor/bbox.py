@@ -358,3 +358,50 @@ def build_connected_cluster(
 
     # Return clustered items in original order
     return [candidate_items[idx] for idx in sorted(cluster_indices)]
+
+
+def build_all_connected_clusters[T: HasBBox](items: list[T]) -> list[list[T]]:
+    """Build all connected clusters from a list of items based on bbox overlap.
+
+    Groups all items into clusters where items in each cluster are
+    transitively connected through overlapping bounding boxes.
+
+    Args:
+        items: List of items with bbox property
+
+    Returns:
+        List of clusters, where each cluster is a list of connected items
+
+    Example:
+        >>> # Find all groups of overlapping images on a page
+        >>> clusters = build_all_connected_clusters(images)
+        >>> for cluster in clusters:
+        ...     print(f"Cluster of {len(cluster)} images")
+    """
+    if not items:
+        return []
+
+    # Track which items have been assigned to clusters
+    remaining = set(range(len(items)))
+    clusters: list[list[T]] = []
+
+    while remaining:
+        # Pick an arbitrary seed from remaining items
+        seed_idx = min(remaining)
+        seed_item = items[seed_idx]
+        remaining.remove(seed_idx)
+
+        # Build a cluster starting from this seed
+        cluster = build_connected_cluster([seed_item], items)
+
+        # Remove clustered items from remaining set
+        for item in cluster:
+            try:
+                idx = items.index(item)
+                remaining.discard(idx)
+            except ValueError:
+                pass
+
+        clusters.append(cluster)
+
+    return clusters

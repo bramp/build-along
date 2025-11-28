@@ -2,7 +2,11 @@ from dataclasses import dataclass
 
 import pytest
 
-from build_a_long.pdf_extract.extractor.bbox import BBox, build_connected_cluster
+from build_a_long.pdf_extract.extractor.bbox import (
+    BBox,
+    build_all_connected_clusters,
+    build_connected_cluster,
+)
 
 
 def test_overlaps():
@@ -308,3 +312,69 @@ def test_build_connected_cluster_preserves_order():
 
     # Result should be in same order as original list
     assert result == [item1, item2, item4]
+
+
+# Tests for build_all_connected_clusters
+
+
+def test_build_all_connected_clusters_empty():
+    """Test with empty list."""
+    result = build_all_connected_clusters([])
+    assert result == []
+
+
+def test_build_all_connected_clusters_single_item():
+    """Test with single item returns one cluster."""
+    item = MockItem(1, BBox(0, 0, 10, 10))
+    result = build_all_connected_clusters([item])
+    assert len(result) == 1
+    assert result[0] == [item]
+
+
+def test_build_all_connected_clusters_separate():
+    """Test that non-overlapping items form separate clusters."""
+    item1 = MockItem(1, BBox(0, 0, 10, 10))
+    item2 = MockItem(2, BBox(20, 20, 30, 30))  # No overlap
+    item3 = MockItem(3, BBox(50, 50, 60, 60))  # No overlap
+
+    result = build_all_connected_clusters([item1, item2, item3])
+    assert len(result) == 3
+    # Each item in its own cluster
+    assert [item1] in result
+    assert [item2] in result
+    assert [item3] in result
+
+
+def test_build_all_connected_clusters_chain():
+    """Test that overlapping items form one cluster."""
+    item1 = MockItem(1, BBox(0, 0, 10, 10))
+    item2 = MockItem(2, BBox(5, 5, 15, 15))  # Overlaps item1
+    item3 = MockItem(3, BBox(10, 10, 20, 20))  # Overlaps item2
+    item4 = MockItem(4, BBox(50, 50, 60, 60))  # Separate
+
+    result = build_all_connected_clusters([item1, item2, item3, item4])
+    assert len(result) == 2
+    # item1, item2, item3 should form one cluster
+    cluster1 = next(c for c in result if len(c) == 3)
+    assert sorted(i.id for i in cluster1) == [1, 2, 3]
+    # item4 should be alone
+    cluster2 = next(c for c in result if len(c) == 1)
+    assert cluster2[0].id == 4
+
+
+def test_build_all_connected_clusters_multiple_groups():
+    """Test with multiple distinct groups."""
+    # Group 1
+    item1 = MockItem(1, BBox(0, 0, 10, 10))
+    item2 = MockItem(2, BBox(5, 5, 15, 15))  # Overlaps item1
+    # Group 2
+    item3 = MockItem(3, BBox(100, 100, 110, 110))
+    item4 = MockItem(4, BBox(105, 105, 115, 115))  # Overlaps item3
+    # Isolated
+    item5 = MockItem(5, BBox(200, 200, 210, 210))
+
+    result = build_all_connected_clusters([item1, item2, item3, item4, item5])
+    assert len(result) == 3
+    # Check group sizes
+    sizes = sorted(len(c) for c in result)
+    assert sizes == [1, 2, 2]
