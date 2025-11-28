@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
+    Score,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -38,14 +39,16 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 log = logging.getLogger(__name__)
 
 
-class _PageScore(BaseModel):
+class _PageScore(Score, BaseModel):
     """Score details for Page candidates.
 
     PageClassifier always succeeds with score 1.0 since it's a synthetic
     element that aggregates other classified components.
     """
 
-    score: float = 1.0
+    def score(self) -> float:
+        """Return the score value (always 1.0 for pages)."""
+        return 1.0
 
 
 @dataclass(frozen=True)

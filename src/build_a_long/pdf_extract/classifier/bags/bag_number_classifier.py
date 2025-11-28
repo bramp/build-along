@@ -28,7 +28,8 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
-    ClassifierConfig,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -45,8 +46,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import Text
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class _BagNumberScore:
+class _BagNumberScore(Score):
     """Internal score representation for bag number classification."""
 
     text_score: float
@@ -58,7 +58,7 @@ class _BagNumberScore:
     font_size_score: float
     """Score based on font size (larger is better) (0.0-1.0)."""
 
-    def combined_score(self, config: ClassifierConfig) -> float:
+    def score(self) -> Weight:
         """Calculate final weighted score from components.
 
         Combines text matching, position, and font size with position and text
@@ -120,7 +120,7 @@ class BagNumberClassifier(LabelClassifier):
                 Candidate(
                     bbox=block.bbox,
                     label="bag_number",
-                    score=detail_score.combined_score(self.config),
+                    score=detail_score.score(),
                     score_details=detail_score,
                     source_blocks=[block],
                 ),

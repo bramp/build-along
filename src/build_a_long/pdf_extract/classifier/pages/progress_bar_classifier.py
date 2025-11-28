@@ -28,7 +28,8 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
-    ClassifierConfig,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -45,8 +46,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class _ProgressBarScore:
+class _ProgressBarScore(Score):
     """Internal score representation for progress bar classification."""
 
     position_score: float
@@ -64,7 +64,7 @@ class _ProgressBarScore:
     clipped_bbox: BBox
     """Bounding box clipped to page boundaries."""
 
-    def combined_score(self, config: ClassifierConfig) -> float:
+    def score(self) -> Weight:
         """Calculate final weighted score from components."""
         # Equal weighting for all components
         score = (self.position_score + self.width_score + self.aspect_ratio_score) / 3.0
@@ -124,7 +124,7 @@ class ProgressBarClassifier(LabelClassifier):
                 clipped_bbox=clipped_bbox,
             )
 
-            combined = score_details.combined_score(self.config)
+            combined = score_details.score()
 
             # Store candidate
             result.add_candidate(

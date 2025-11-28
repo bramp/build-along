@@ -10,6 +10,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
     RemovalReason,
 )
+from build_a_long.pdf_extract.classifier.test_utils import TestScore
 from build_a_long.pdf_extract.drawing.drawing import (
     DrawableItem,
     _create_drawable_items,
@@ -40,7 +41,7 @@ def _make_candidate(
         bbox=bbox,
         source_blocks=[source_block] if source_block else [],
         score=0.9,
-        score_details={},
+        score_details=TestScore(),
         constructed=PageNumber(bbox=bbox, value=1) if has_constructed else None,
     )
 
@@ -91,7 +92,7 @@ def test_create_drawable_items_elements_only():
         bbox=block.bbox,
         source_blocks=[block],
         score=0.9,
-        score_details={},
+        score_details=TestScore(),
         constructed=page_number,
     )
     result.add_candidate(candidate)
@@ -103,7 +104,7 @@ def test_create_drawable_items_elements_only():
         bbox=BBox(0, 0, 200, 200),
         source_blocks=[],
         score=1.0,
-        score_details={},
+        score_details=TestScore(),
         constructed=page,
     )
     result.add_candidate(page_candidate)
@@ -133,7 +134,7 @@ def test_create_drawable_items_no_duplicate_blocks():
         bbox=block.bbox,
         source_blocks=[block],
         score=0.9,
-        score_details={},
+        score_details=TestScore(),
         constructed=page_number,
     )
     result.add_candidate(candidate)
@@ -145,7 +146,7 @@ def test_create_drawable_items_no_duplicate_blocks():
         bbox=BBox(0, 0, 200, 200),
         source_blocks=[],
         score=1.0,
-        score_details={},
+        score_details=TestScore(),
         constructed=page,
     )
     result.add_candidate(page_candidate)
@@ -174,7 +175,7 @@ def test_create_drawable_items_element_without_source_block():
         bbox=BBox(5, 5, 15, 15),
         source_blocks=[],
         score=1.0,
-        score_details={},
+        score_details=TestScore(),
         constructed=page,
     )
     result.add_candidate(candidate)
@@ -244,7 +245,7 @@ def test_create_drawable_items_filter_non_winner_elements():
         bbox=block.bbox,
         source_blocks=[block],
         score=0.9,
-        score_details={},
+        score_details=TestScore(),
         constructed=page_number,
     )
 
@@ -257,7 +258,7 @@ def test_create_drawable_items_filter_non_winner_elements():
         bbox=block.bbox,
         source_blocks=[block],
         score=0.8,
-        score_details={},
+        score_details=TestScore(),
         constructed=step_number_elem,
     )
 
@@ -272,7 +273,7 @@ def test_create_drawable_items_filter_non_winner_elements():
         bbox=BBox(0, 0, 200, 200),
         source_blocks=[],
         score=1.0,
-        score_details={},
+        score_details=TestScore(),
         constructed=page,
     )
     result.add_candidate(page_candidate)
@@ -302,7 +303,7 @@ def test_create_drawable_items_include_non_winner_elements():
         bbox=block.bbox,
         source_blocks=[block],
         score=0.9,
-        score_details={},
+        score_details=TestScore(),
         constructed=page_number,
     )
 
@@ -315,7 +316,7 @@ def test_create_drawable_items_include_non_winner_elements():
         bbox=block.bbox,
         source_blocks=[block],
         score=0.8,
-        score_details={},
+        score_details=TestScore(),
         constructed=step_number_elem,
     )
 
@@ -329,7 +330,7 @@ def test_create_drawable_items_include_non_winner_elements():
         bbox=BBox(0, 0, 200, 200),
         source_blocks=[],
         score=1.0,
-        score_details={},
+        score_details=TestScore(),
         constructed=page,
     )
     result.add_candidate(page_candidate)

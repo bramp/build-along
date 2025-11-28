@@ -30,7 +30,8 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
-    ClassifierConfig,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -47,8 +48,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class _DiagramScore:
+class _DiagramScore(Score):
     """Internal score representation for diagram classification."""
 
     area_score: float
@@ -57,7 +57,7 @@ class _DiagramScore:
     position_score: float
     """Score based on position in main content area (0.0-1.0)."""
 
-    def combined_score(self, config: ClassifierConfig) -> float:
+    def score(self) -> Weight:
         """Calculate final weighted score from components."""
         # Equal weighting for all components
         return (self.area_score + self.position_score) / 2.0
@@ -108,7 +108,7 @@ class DiagramClassifier(LabelClassifier):
                 position_score=position_score,
             )
 
-            combined = score_details.combined_score(self.config)
+            combined = score_details.score()
 
             result.add_candidate(
                 Candidate(

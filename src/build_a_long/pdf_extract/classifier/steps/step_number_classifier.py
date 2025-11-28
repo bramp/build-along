@@ -8,6 +8,8 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
     ClassifierConfig,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -21,8 +23,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
-@dataclass
-class _StepNumberScore:
+class _StepNumberScore(Score):
     """Internal score representation for step number classification."""
 
     text_score: float
@@ -31,24 +32,27 @@ class _StepNumberScore:
     font_size_score: float
     """Score based on font size match to expected step number size (0.0-1.0)."""
 
-    def combined_score(self, config: ClassifierConfig) -> float:
+    config: ClassifierConfig
+    """Classifier configuration for dynamic score calculations."""
+
+    def score(self) -> Weight:
         """Calculate final weighted score from components.
 
         Combines text matching and font size matching with text weighted more heavily.
         """
         # Determine font size weight based on whether hints are available
-        font_size_weight = config.step_number_font_size_weight
-        if config.font_size_hints.step_number_size is None:
+        font_size_weight = self.config.step_number_font_size_weight
+        if self.config.font_size_hints.step_number_size is None:
             # No hint available, zero out the font size weight
             font_size_weight = 0.0
 
         # Sum the weighted components
         score = (
-            config.step_number_text_weight * self.text_score
+            self.config.step_number_text_weight * self.text_score
             + font_size_weight * self.font_size_score
         )
         # Normalize by the sum of weights to keep score in [0, 1]
-        total_weight = config.step_number_text_weight + font_size_weight
+        total_weight = self.config.step_number_text_weight + font_size_weight
         return score / total_weight if total_weight > 0 else 0.0
 
 
@@ -101,6 +105,7 @@ class StepNumberClassifier(LabelClassifier):
             detail_score = _StepNumberScore(
                 text_score=text_score,
                 font_size_score=font_size_score,
+                config=self.config,
             )
 
             # Create candidate
@@ -108,7 +113,7 @@ class StepNumberClassifier(LabelClassifier):
                 Candidate(
                     bbox=block.bbox,
                     label="step_number",
-                    score=detail_score.combined_score(self.config),
+                    score=detail_score.score(),
                     score_details=detail_score,
                     source_blocks=[block],
                 ),

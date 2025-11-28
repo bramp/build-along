@@ -11,6 +11,8 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
     ClassifierConfig,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -27,8 +29,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import Text
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class _PageNumberScore:
+class _PageNumberScore(Score):
     """Internal score representation for page number classification."""
 
     text_score: float
@@ -44,27 +45,30 @@ class _PageNumberScore:
     font_size_score: float
     """Score based on font size match to expected page number size (0.0-1.0)."""
 
+    config: ClassifierConfig
+    """Classifier configuration for dynamic score calculations."""
+
     # TODO Test this score is always between 0.0 and 1.0
-    def combined_score(self, config: ClassifierConfig) -> float:
+    def score(self) -> Weight:
         """Calculate final weighted score from components."""
         # Determine font size weight based on whether hints are available
-        font_size_weight = config.page_number_font_size_weight
-        if config.font_size_hints.page_number_size is None:
+        font_size_weight = self.config.page_number_font_size_weight
+        if self.config.font_size_hints.page_number_size is None:
             # No hint available, zero out the font size weight
             font_size_weight = 0.0
 
         # Sum the weighted components
         score = (
-            config.page_number_text_weight * self.text_score
-            + config.page_number_position_weight * self.position_score
-            + config.page_number_page_value_weight * self.page_value_score
+            self.config.page_number_text_weight * self.text_score
+            + self.config.page_number_position_weight * self.position_score
+            + self.config.page_number_page_value_weight * self.page_value_score
             + font_size_weight * self.font_size_score
         )
         # Normalize by the sum of weights to keep score in [0, 1]
         total_weight = (
-            config.page_number_text_weight
-            + config.page_number_position_weight
-            + config.page_number_page_value_weight
+            self.config.page_number_text_weight
+            + self.config.page_number_position_weight
+            + self.config.page_number_page_value_weight
             + font_size_weight
         )
         return score / total_weight if total_weight > 0 else 0.0
@@ -119,9 +123,10 @@ class PageNumberClassifier(LabelClassifier):
                 position_score=position_score,
                 page_value_score=page_value_score,
                 font_size_score=font_size_score,
+                config=self.config,
             )
 
-            combined = score.combined_score(self.config)
+            combined = score.score()
 
             # Skip candidates below minimum score threshold
             if combined < self.config.page_number_min_score:

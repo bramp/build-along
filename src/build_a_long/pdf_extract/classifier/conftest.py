@@ -31,6 +31,7 @@ from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
     StepNumberClassifier,
     _StepNumberScore,
 )
+from build_a_long.pdf_extract.classifier.test_utils import TestScore
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
 
@@ -75,6 +76,7 @@ class CandidateFactory:
         score_details = _PartCountScore(
             text_score=score,
             font_size_score=0.5,
+            config=self.config,
             matched_hint="catalog_part_count",
         )
         candidate = Candidate(
@@ -89,7 +91,11 @@ class CandidateFactory:
 
     def add_step_number(self, block: Text, score: float = 1.0) -> Candidate:
         self._ensure_classifier_registered("step_number")
-        score_details = _StepNumberScore(text_score=score, font_size_score=0.5)
+        score_details = _StepNumberScore(
+            text_score=score,
+            font_size_score=0.5,
+            config=self.config,
+        )
         candidate = Candidate(
             bbox=block.bbox,
             label="step_number",
@@ -116,7 +122,7 @@ class CandidateFactory:
             bbox=image_block.bbox,
             label="part_image",
             score=1.0,
-            score_details=None,
+            score_details=TestScore(),
             source_blocks=[image_block],
         )
         self.result.add_candidate(part_image_candidate)

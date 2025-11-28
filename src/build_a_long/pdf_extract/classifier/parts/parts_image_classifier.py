@@ -22,6 +22,8 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -36,8 +38,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 log = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class _PartImageScore:
+class _PartImageScore(Score):
     """Score details for a part image candidate.
 
     Attributes:
@@ -45,6 +46,10 @@ class _PartImageScore:
     """
 
     image: Image
+
+    def score(self) -> Weight:
+        """Return the score value (always 1.0 for part images)."""
+        return 1.0
 
 
 # TODO Should this be called PartImageClassifier instead?

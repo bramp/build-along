@@ -29,6 +29,8 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -42,8 +44,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
 log = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class _PieceLengthScore:
+class _PieceLengthScore(Score):
     """Internal score representation for piece length classification."""
 
     text_score: float
@@ -61,7 +62,7 @@ class _PieceLengthScore:
     containing_drawing: Drawing | None = None
     """The Drawing element that contains this piece length text."""
 
-    def combined_score(self) -> float:
+    def score(self) -> Weight:
         """Calculate final score from components.
 
         All three components are equally weighted.
@@ -139,7 +140,7 @@ class PieceLengthClassifier(LabelClassifier):
                 containing_drawing=containing_drawing,
             )
 
-            combined = detail_score.combined_score()
+            combined = detail_score.score()
 
             log.debug(
                 "[piece_length] Score for '%s': combined=%.3f "
@@ -220,7 +221,7 @@ class PieceLengthClassifier(LabelClassifier):
             font_size_score=font_size_score,
         )
 
-        combined = detail_score.combined_score()
+        combined = detail_score.score()
 
         log.debug(
             "[piece_length] Score for '%s': combined=%.3f "

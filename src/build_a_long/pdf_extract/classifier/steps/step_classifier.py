@@ -26,9 +26,14 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
+)
+from build_a_long.pdf_extract.classifier.parts.parts_list_classifier import (
+    _PartsListScore,
 )
 from build_a_long.pdf_extract.classifier.text_extractors import (
     extract_step_number_value,
@@ -45,8 +50,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import Text
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class _StepScore:
+class _StepScore(Score):
     """Internal score representation for step classification."""
 
     step_number_candidate: Candidate
@@ -68,6 +72,10 @@ class _StepScore:
 
     diagram_area: float
     """Area of the diagram region."""
+
+    def score(self) -> Weight:
+        """Return the pairing score as the main score."""
+        return self.pairing_score()
 
     def pairing_score(self) -> float:
         """Calculate pairing quality score (average of proximity and alignment)."""
@@ -347,7 +355,11 @@ class StepClassifier(LabelClassifier):
         # Sort candidates by score (highest first)
         sorted_candidates = sorted(
             candidates,
-            key=lambda c: c.score_details.sort_key(),
+            key=lambda c: (
+                c.score_details.sort_key()
+                if isinstance(c.score_details, _StepScore)
+                else (0.0, 0)
+            ),
         )
 
         # Track which StepNumber values and PartsLists have been used
@@ -390,7 +402,7 @@ class StepClassifier(LabelClassifier):
             if parts_list_candidate is not None:
                 # Check if parts list has parts (look at its score details)
                 has_parts = False
-                if hasattr(parts_list_candidate.score_details, "part_candidates"):
+                if isinstance(parts_list_candidate.score_details, _PartsListScore):
                     has_parts = (
                         len(parts_list_candidate.score_details.part_candidates) > 0
                     )

@@ -2,7 +2,7 @@ python_sources()
 
 python_test_utils(
     name="conftest",
-    sources=["conftest.py"],
+    sources=["conftest.py", "test_utils.py"],
 )
 
 python_tests(

@@ -9,6 +9,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassifierConfig,
     RemovalReason,
 )
+from build_a_long.pdf_extract.classifier.test_utils import TestScore
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
@@ -83,7 +84,7 @@ class TestClassificationResult:
             bbox=BBox(0, 0, 10, 10),
             label="page_number",
             score=0.95,
-            score_details={},
+            score_details=TestScore(),
             constructed=constructed,
             source_blocks=[block],
         )
@@ -152,7 +153,7 @@ class TestClassificationResultValidation:
             bbox=BBox(20, 20, 30, 30),
             label="page_number",
             score=0.95,
-            score_details={},
+            score_details=TestScore(),
             source_blocks=[block2],  # Not in PageData!
         )
 
@@ -174,7 +175,7 @@ class TestClassificationResultValidation:
             bbox=BBox(0, 0, 10, 10),
             label="page_number",
             score=0.95,
-            score_details={},
+            score_details=TestScore(),
             source_blocks=[block],
         )
 
@@ -194,7 +195,7 @@ class TestClassificationResultValidation:
             bbox=BBox(0, 0, 10, 10),
             label="step",
             score=0.95,
-            score_details={},
+            score_details=TestScore(),
             source_blocks=[],  # Synthetic candidate
         )
 
@@ -264,7 +265,7 @@ class TestGetScoredCandidates:
                 bbox=text.bbox,
                 label="test_label",
                 score=0.8,
-                score_details={"detail": "high"},
+                score_details=TestScore(value=0.8),
                 constructed=PageNumber(bbox=text.bbox, value=1),
                 source_blocks=[text],
             ),
@@ -274,7 +275,7 @@ class TestGetScoredCandidates:
                 bbox=text.bbox,
                 label="test_label",
                 score=0.3,
-                score_details={"detail": "low"},
+                score_details=TestScore(value=0.3),
                 constructed=PageNumber(bbox=text.bbox, value=2),
                 source_blocks=[text],
             ),
@@ -284,7 +285,7 @@ class TestGetScoredCandidates:
                 bbox=text.bbox,
                 label="test_label",
                 score=0.9,
-                score_details={"detail": "highest"},
+                score_details=TestScore(value=0.9),
                 constructed=PageNumber(bbox=text.bbox, value=3),
                 source_blocks=[text],
             ),
@@ -318,7 +319,7 @@ class TestGetScoredCandidates:
                 bbox=text.bbox,
                 label="test_label",
                 score=0.8,
-                score_details={"detail": "high"},
+                score_details=TestScore(value=0.8),
                 constructed=PageNumber(bbox=text.bbox, value=1),
                 source_blocks=[text],
             ),
@@ -328,7 +329,7 @@ class TestGetScoredCandidates:
                 bbox=text.bbox,
                 label="test_label",
                 score=0.3,
-                score_details={"detail": "low"},
+                score_details=TestScore(value=0.3),
                 constructed=PageNumber(bbox=text.bbox, value=2),
                 source_blocks=[text],
             ),
@@ -360,19 +361,19 @@ class TestGetScoredCandidates:
                 bbox=text.bbox,
                 label="test_label",
                 score=0.8,
-                score_details={"detail": "scored"},
+                score_details=TestScore(value=0.8),
                 constructed=PageNumber(bbox=text.bbox, value=1),
                 source_blocks=[text],
             ),
         )
 
-        # Add a candidate without score_details (shouldn't happen, but test it)
         result.add_candidate(
             Candidate(
                 bbox=text.bbox,
                 label="test_label",
                 score=0.9,
-                score_details=None,  # No score details
+                score_details=TestScore(value=0.9),
+                constructed=PageNumber(bbox=text.bbox, value=2),
                 source_blocks=[text],
             ),
         )
@@ -380,9 +381,8 @@ class TestGetScoredCandidates:
         # Get scored candidates
         candidates = result.get_scored_candidates("test_label")
 
-        # Should only include candidates with score_details
-        assert len(candidates) == 1
-        assert candidates[0].score == 0.8
+        # Should include all valid candidates with score_details
+        assert len(candidates) == 2
 
     def test_valid_only_parameter(self) -> None:
         """Test get_scored_candidates with valid_only parameter.
@@ -407,7 +407,7 @@ class TestGetScoredCandidates:
                 bbox=text.bbox,
                 label="test_label",
                 score=0.8,
-                score_details={"detail": "not constructed"},
+                score_details=TestScore(value=0.8),
                 source_blocks=[text],
             ),
         )

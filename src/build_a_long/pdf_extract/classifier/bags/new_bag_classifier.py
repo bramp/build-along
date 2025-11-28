@@ -28,7 +28,8 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
-    ClassifierConfig,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -46,8 +47,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class _NewBagScore:
+class _NewBagScore(Score):
     """Internal score representation for new bag classification."""
 
     image_cluster_score: float
@@ -62,7 +62,7 @@ class _NewBagScore:
     cluster_bbox: BBox
     """Bounding box encompassing the entire bag cluster."""
 
-    def combined_score(self, config: ClassifierConfig) -> float:
+    def score(self) -> Weight:
         """Calculate final weighted score from components."""
         # Equal weighting for both components
         score = (self.image_cluster_score + self.compactness_score) / 2.0
@@ -143,9 +143,9 @@ class NewBagClassifier(LabelClassifier):
                 cluster_bbox=cluster_bbox,
             )
 
-            combined = score_details.combined_score(self.config)
+            combined = score_details.score()
 
-            # Store candidate
+            # Add the candidate
             result.add_candidate(
                 Candidate(
                     bbox=cluster_bbox,

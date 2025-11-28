@@ -7,7 +7,10 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassifierConfig,
 )
 from build_a_long.pdf_extract.classifier.conftest import CandidateFactory
-from build_a_long.pdf_extract.classifier.steps.step_classifier import StepClassifier
+from build_a_long.pdf_extract.classifier.steps.step_classifier import (
+    StepClassifier,
+    _StepScore,
+)
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
@@ -206,7 +209,11 @@ class TestStepClassification:
         step_candidates = result.get_candidates("step")
         sorted_candidates = sorted(
             step_candidates,
-            key=lambda c: c.score_details.sort_key(),
+            key=lambda c: (
+                c.score_details.sort_key()
+                if isinstance(c.score_details, _StepScore)
+                else (0.0, 0)
+            ),
         )
 
         # Construct both steps

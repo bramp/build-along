@@ -18,6 +18,8 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
     ClassifierConfig,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -44,8 +46,7 @@ LENGTH_DISTRIBUTION: dict[int, float] = {
 }
 
 
-@dataclass
-class _PartNumberScore:
+class _PartNumberScore(Score):
     """Internal score representation for part number classification."""
 
     text_score: float
@@ -58,17 +59,20 @@ class _PartNumberScore:
     font_size_score: float
     """Score based on font size match to expected catalog element ID size (0.0-1.0)."""
 
-    def combined_score(self, config: ClassifierConfig) -> float:
+    config: ClassifierConfig
+    """Classifier configuration for dynamic score calculations."""
+
+    def score(self) -> Weight:
         """Calculate final weighted score from components.
 
         Combines text matching and font size matching with text weighted more heavily.
         """
         # For part numbers, reuse the part-count weights
-        text_weight = config.part_count_text_weight
-        font_size_weight = config.part_count_font_size_weight
+        text_weight = self.config.part_count_text_weight
+        font_size_weight = self.config.part_count_font_size_weight
 
         # If catalog element ID hint is not available, zero out font weight
-        if config.font_size_hints.catalog_element_id_size is None:
+        if self.config.font_size_hints.catalog_element_id_size is None:
             font_size_weight = 0.0
 
         # Sum the weighted components
@@ -116,9 +120,10 @@ class PartNumberClassifier(LabelClassifier):
             detail_score = _PartNumberScore(
                 text_score=text_score,
                 font_size_score=font_size_score,
+                config=self.config,
             )
 
-            combined = detail_score.combined_score(self.config)
+            combined = detail_score.score()
 
             # Skip candidates below minimum score threshold
             if combined < self.config.part_number_min_score:

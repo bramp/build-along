@@ -18,6 +18,8 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
     ClassifierConfig,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -33,8 +35,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import Text
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class _PartCountScore:
+class _PartCountScore(Score):
     """Internal score representation for part count classification."""
 
     text_score: float
@@ -43,29 +44,32 @@ class _PartCountScore:
     font_size_score: float
     """Score based on font size match to expected part count size (0.0-1.0)."""
 
+    config: ClassifierConfig
+    """Classifier configuration for dynamic score calculations."""
+
     matched_hint: Literal["part_count", "catalog_part_count"] | None = None
     """Which font size hint matched best ('part_count' or 'catalog_part_count')."""
 
-    def combined_score(self, config: ClassifierConfig) -> float:
+    def score(self) -> Weight:
         """Calculate final weighted score from components.
 
         Combines text matching and font size matching with text weighted more heavily.
         """
         # Determine font size weight based on whether hints are available
-        font_size_weight = config.part_count_font_size_weight
+        font_size_weight = self.config.part_count_font_size_weight
 
         # If neither instruction nor catalog hints are available, zero out weight
-        hints = config.font_size_hints
+        hints = self.config.font_size_hints
         if hints.part_count_size is None and hints.catalog_part_count_size is None:
             font_size_weight = 0.0
 
         # Sum the weighted components
         score = (
-            config.part_count_text_weight * self.text_score
+            self.config.part_count_text_weight * self.text_score
             + font_size_weight * self.font_size_score
         )
         # Normalize by the sum of weights to keep score in [0, 1]
-        total_weight = config.part_count_text_weight + font_size_weight
+        total_weight = self.config.part_count_text_weight + font_size_weight
         return score / total_weight if total_weight > 0 else 0.0
 
 
@@ -114,10 +118,11 @@ class PartCountClassifier(LabelClassifier):
             detail_score = _PartCountScore(
                 text_score=text_score,
                 font_size_score=font_size_score,
+                config=self.config,
                 matched_hint=matched_hint,
             )
 
-            combined = detail_score.combined_score(self.config)
+            combined = detail_score.score()
 
             # Skip candidates below minimum score threshold
             if combined < self.config.part_count_min_score:

@@ -27,6 +27,8 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -42,14 +44,13 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class _PartsListScore:
+class _PartsListScore(Score):
     """Internal score representation for parts list classification."""
 
     part_candidates: list[Candidate]
     """The Part candidates contained in this drawing."""
 
-    def combined_score(self) -> float:
+    def score(self) -> Weight:
         """Calculate final score (simply 1.0 if has parts, 0.0 otherwise)."""
         return 1.0 if len(self.part_candidates) > 0 else 0.0
 
@@ -102,9 +103,7 @@ class PartsListClassifier(LabelClassifier):
             drawing_scores.append((drawing, score))
 
         # Sort by score (highest first), then by drawing ID for determinism
-        drawing_scores.sort(
-            key=lambda x: (x[1].combined_score(), -x[0].id), reverse=True
-        )
+        drawing_scores.sort(key=lambda x: (x[1].score(), -x[0].id), reverse=True)
 
         # Track accepted candidates to check for overlaps
         IOU_THRESHOLD = 0.9
@@ -112,7 +111,7 @@ class PartsListClassifier(LabelClassifier):
 
         # Process each drawing in score order
         for drawing, score in drawing_scores:
-            combined = score.combined_score()
+            combined = score.score()
 
             # Skip candidates below minimum score threshold
             if combined < self.config.parts_list_min_score:
@@ -164,7 +163,7 @@ class PartsListClassifier(LabelClassifier):
             candidate = Candidate(
                 bbox=drawing.bbox,
                 label="parts_list",
-                score=score.combined_score(),
+                score=score.score(),
                 score_details=score,
                 source_blocks=[drawing],
                 failure_reason=failure_reason,

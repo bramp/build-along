@@ -30,6 +30,8 @@ from dataclasses import dataclass
 from build_a_long.pdf_extract.classifier.classification_result import (
     Candidate,
     ClassificationResult,
+    Score,
+    Weight,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
@@ -45,8 +47,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class _PartPairScore:
+class _PartPairScore(Score):
     """Internal score representation for part pairing."""
 
     distance: float
@@ -63,6 +64,12 @@ class _PartPairScore:
 
     piece_length_candidate: Candidate | None
     """The associated piece_length candidate (if any)."""
+
+    def score(self) -> Weight:
+        """Return the score based on distance (inverse of distance, normalized)."""
+        # Use 1.0 as fixed score for now, as pairing is based on distance
+        # The actual sorting is done via sort_key()
+        return 1.0
 
     def sort_key(self) -> float:
         """Return sort key for matching (prefer smaller distance)."""
