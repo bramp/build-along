@@ -15,6 +15,7 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.hierarchy import build_hierarchy_from_blocks
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks
+from build_a_long.pdf_extract.validation import print_validation, validate_results
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,7 @@ def print_summary(
     results: list[ClassificationResult],
     *,
     detailed: bool = False,
+    validate: bool = True,
 ) -> None:
     """Print a human-readable summary of classification results to stdout.
 
@@ -56,6 +58,7 @@ def print_summary(
         pages: List of PageData containing extracted elements
         results: List of ClassificationResult with labels
         detailed: If True, include additional details like missing page numbers
+        validate: If True (default), run and print validation checks
     """
     total_pages = len(pages)
     total_blocks = 0
@@ -104,6 +107,12 @@ def print_summary(
         sample = ", ".join(str(n) for n in missing_page_numbers[:20])
         more = " ..." if len(missing_page_numbers) > 20 else ""
         print(f"Pages missing page number: {sample}{more}")
+
+    # Run validation checks
+    if validate:
+        print()
+        validation = validate_results(pages, results)
+        print_validation(validation)
 
 
 def _print_font_size_distribution(

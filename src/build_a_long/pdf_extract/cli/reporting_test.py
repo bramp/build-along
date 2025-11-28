@@ -3,7 +3,9 @@
 import io
 from contextlib import redirect_stdout
 
-from build_a_long.pdf_extract.cli.reporting import print_page_hierarchy
+from build_a_long.pdf_extract.cli.reporting import (
+    print_page_hierarchy,
+)
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
