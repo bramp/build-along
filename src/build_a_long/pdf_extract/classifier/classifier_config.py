@@ -64,6 +64,52 @@ class ClassifierConfig(BaseModel):
     Default is 0.75 (75% of page area).
     """
 
+    # Rotation symbol classifier settings
+    rotation_symbol_min_score: Weight = 0.3
+    """Minimum score threshold for rotation symbol candidates."""
+
+    rotation_symbol_min_size: float = 35.0
+    """Minimum width/height in points for rotation symbols."""
+
+    rotation_symbol_max_size: float = 120.0
+    """Maximum width/height in points for rotation symbols."""
+
+    rotation_symbol_ideal_size: float = 46.0
+    """Ideal width/height in points for rotation symbols (used for scoring)."""
+
+    rotation_symbol_min_aspect: float = 0.95
+    """Minimum aspect ratio (width/height) - must be close to square."""
+
+    rotation_symbol_max_aspect: float = 1.05
+    """Maximum aspect ratio (width/height) - must be close to square."""
+
+    rotation_symbol_min_drawings_in_cluster: int = 4
+    """Minimum number of drawings to form a rotation symbol cluster."""
+
+    rotation_symbol_max_drawings_in_cluster: int = 25
+    """Maximum number of drawings to form a rotation symbol cluster."""
+
+    rotation_symbol_max_drawing_size: float = 50.0
+    """Maximum size of individual drawings in a cluster."""
+
+    rotation_symbol_size_weight: Weight = 0.5
+    """Weight for size score in final rotation symbol score."""
+
+    rotation_symbol_aspect_weight: Weight = 0.3
+    """Weight for aspect ratio score in final rotation symbol score."""
+
+    rotation_symbol_proximity_weight: Weight = 0.2
+    """Weight for proximity to diagram score in final rotation symbol score."""
+
+    rotation_symbol_cluster_size_score: float = 0.7
+    """Base size score for drawing clusters (slightly lower than images)."""
+
+    rotation_symbol_proximity_close_distance: float = 100.0
+    """Distance in points within which proximity score is 1.0."""
+
+    rotation_symbol_proximity_far_distance: float = 300.0
+    """Distance in points beyond which proximity score is 0.0."""
+
     font_size_hints: FontSizeHints = Field(default_factory=FontSizeHints.empty)
     """Font size hints derived from analyzing all pages"""
 

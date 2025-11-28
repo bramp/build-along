@@ -235,6 +235,26 @@ class ProgressBar(LegoPageElement):
         return f"ProgressBar(bbox={str(self.bbox)}{progress_str})"
 
 
+class RotationSymbol(LegoPageElement):
+    """A symbol indicating the builder should rotate the assembled model.
+
+    Positional context: Typically appears near diagram elements, often positioned
+    beside or below the main instruction diagram. Can be either a small raster
+    image (~40-80 pixels square) or a cluster of vector drawings forming curved
+    arrows in a circular pattern.
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["RotationSymbol"] = Field(
+        default="RotationSymbol", alias="__tag__", frozen=True
+    )
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"RotationSymbol(bbox={self.bbox})"
+
+
 class Part(LegoPageElement):
     """A single part entry within a parts list.
 
@@ -374,15 +394,17 @@ class Step(LegoPageElement):
     tag: Literal["Step"] = Field(default="Step", alias="__tag__", frozen=True)
 
     step_number: StepNumber
-    parts_list: PartsList
+    parts_list: PartsList  # TODO I think PartsList may be optional
     diagram: Diagram | None = None
-
-    # TODO add other interesting callouts (such as rotate the element)
+    rotation_symbol: RotationSymbol | None = None
+    """Optional rotation symbol indicating the builder should rotate the model."""
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
+        rotation_str = ", rotation" if self.rotation_symbol else ""
         return (
-            f"Step(number={self.step_number.value}, parts={len(self.parts_list.parts)})"
+            f"Step(number={self.step_number.value}, "
+            f"parts={len(self.parts_list.parts)}{rotation_str})"
         )
 
     @property
@@ -397,6 +419,8 @@ class Step(LegoPageElement):
         yield from self.parts_list.iter_elements()
         if self.diagram:
             yield from self.diagram.iter_elements()
+        if self.rotation_symbol:
+            yield from self.rotation_symbol.iter_elements()
 
 
 class Page(LegoPageElement):
@@ -510,6 +534,7 @@ LegoPageElements = Annotated[
     | PieceLength
     | PartImage
     | ProgressBar
+    | RotationSymbol
     | Part
     | PartsList
     | BagNumber
