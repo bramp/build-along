@@ -207,6 +207,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
                 doc,
                 batch_result.results,
                 output_dir,
+                pdf_path,
                 draw_blocks=config.draw_blocks,
                 draw_elements=config.draw_elements,
                 draw_deleted=config.draw_deleted,

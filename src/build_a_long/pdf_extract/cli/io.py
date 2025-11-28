@@ -223,6 +223,7 @@ def render_annotated_images(
     doc: pymupdf.Document,
     results: list[ClassificationResult],
     output_dir: Path,
+    pdf_path: Path,
     *,
     draw_blocks: bool = False,
     draw_elements: bool = False,
@@ -236,6 +237,7 @@ def render_annotated_images(
         doc: The open PyMuPDF Document
         results: List of ClassificationResult with labels and elements
         output_dir: Directory where PNG images should be saved
+        pdf_path: Path to the original PDF file (used for naming output files)
         draw_blocks: If True, render classified PDF blocks.
         draw_elements: If True, render classified LEGO page elements.
         draw_deleted: If True, also render elements marked as deleted.
@@ -245,7 +247,7 @@ def render_annotated_images(
     for result in results:
         page_num = result.page_data.page_number  # 1-indexed
         page = doc[page_num - 1]  # 0-indexed
-        output_path = output_dir / f"page_{page_num:03d}.png"
+        output_path = output_dir / f"{pdf_path.stem}_page_{page_num:03d}.png"
         draw_and_save_bboxes(
             page,
             result,
