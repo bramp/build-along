@@ -162,6 +162,38 @@ class Candidate(BaseModel):
         """
         return self.constructed is not None and self.failure_reason is None
 
+    @model_validator(mode="after")
+    def validate_source_blocks_for_label(self) -> Candidate:
+        """Validate that source_blocks is empty for composite-labeled candidates
+        and non-empty for non-composite-labeled candidates.
+        """
+        composite_labels = {
+            "page",
+            "step",
+            "part",
+            "new_bag",
+        }
+
+        # Non-composite labels are those that correspond to LegoPageElements
+        # that are derived directly from Blocks.
+        # Examples from lego_page_elements.py: PageNumber, StepNumber, PartCount,
+        # PartNumber, PieceLength, PartImage, ProgressBar, BagNumber, Diagram.
+        # These should always have source_blocks.
+
+        if self.label in composite_labels:
+            assert not self.source_blocks, (
+                f"Candidate with label '{self.label}' should have empty source_blocks, "
+                f"but got {len(self.source_blocks)}."
+            )
+        else:
+            # If a candidate is not composite, it should have source_blocks.
+            # This covers cases like 'part_count', 'page_number', etc.
+            assert self.source_blocks, (
+                f"Candidate with label '{self.label}' should have non-empty "
+                f"source_blocks, but got 0."
+            )
+        return self
+
 
 class ClassifierConfig(BaseModel):
     """Configuration for the classifier.
