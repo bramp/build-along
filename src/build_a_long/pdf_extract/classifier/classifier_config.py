@@ -107,6 +107,37 @@ class ClassifierConfig(BaseModel):
     rotation_symbol_proximity_far_distance: float = 300.0
     """Distance in points beyond which proximity score is 0.0."""
 
+    # NewBag classifier settings (for numberless bag detection)
+    new_bag_min_score: Weight = 0.5
+    """Minimum score threshold for new bag candidates."""
+
+    new_bag_icon_min_size: float = 180.0
+    """Minimum width/height in points for bag icon images.
+    
+    Based on observed data: bag icons are ~240x240 with overlapping images
+    as small as 165x177. Using 180 to capture most bag icon components.
+    """
+
+    new_bag_icon_min_aspect: float = 0.90
+    """Minimum aspect ratio (width/height) for bag icon images."""
+
+    new_bag_icon_max_aspect: float = 1.10
+    """Maximum aspect ratio (width/height) for bag icon images."""
+
+    new_bag_icon_max_x_ratio: float = 0.15
+    """Maximum x position as ratio of page width.
+    
+    Bag icons are typically positioned very close to the top-left corner,
+    around x=14 on a 552pt wide page (~2.5%). Using 15% to allow some margin.
+    """
+
+    new_bag_icon_max_y_ratio: float = 0.15
+    """Maximum y position as ratio of page height.
+    
+    Bag icons are typically positioned very close to the top-left corner,
+    around y=14 on a 496pt tall page (~2.8%). Using 15% to allow some margin.
+    """
+
     font_size_hints: FontSizeHints = Field(default_factory=FontSizeHints.empty)
     """Font size hints derived from analyzing all pages"""
 

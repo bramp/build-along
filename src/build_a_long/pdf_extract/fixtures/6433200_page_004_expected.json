@@ -29,7 +29,17 @@
     "__tag__": "ProgressBar",
     "full_width": 517.74
   },
-  "new_bags": [],
+  "new_bags": [
+    {
+      "bbox": {
+        "x0": 15.0,
+        "y0": 15.0,
+        "x1": 254.0,
+        "y1": 254.0
+      },
+      "__tag__": "NewBag"
+    }
+  ],
   "steps": [],
   "catalog": []
 }

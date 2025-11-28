@@ -556,7 +556,8 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
     if page.new_bags:
         print(f"  ✓ New Bags: {len(page.new_bags)}")
         for new_bag in page.new_bags:
-            print(f"    - Bag {new_bag.number.value} at {new_bag.bbox}")
+            bag_label = f"Bag {new_bag.number.value}" if new_bag.number else "Bag (all)"
+            print(f"    - {bag_label} at {new_bag.bbox}")
 
     if page.catalog:
         parts_count = len(page.catalog)

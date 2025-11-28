@@ -347,19 +347,27 @@ class BagNumber(LegoPageElement):
 
 
 class NewBag(LegoPageElement):
-    """The graphic showing a new bag icon on the page."""
+    """The graphic showing a new bag icon on the page.
+
+    A NewBag can have an optional bag number. When present, the number indicates
+    which specific bag to open (e.g., "Bag 1", "Bag 2"). When absent, the bag
+    graphic indicates that all bags should be opened (no specific number).
+    """
 
     tag: Literal["NewBag"] = Field(default="NewBag", alias="__tag__", frozen=True)
-    number: BagNumber
+    number: BagNumber | None = None
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        return f"NewBag(bag={self.number.value})"
+        if self.number:
+            return f"NewBag(bag={self.number.value})"
+        return "NewBag(all)"
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this Step and all child elements."""
         yield self
-        yield from self.number.iter_elements()
+        if self.number:
+            yield from self.number.iter_elements()
 
 
 class Diagram(LegoPageElement):

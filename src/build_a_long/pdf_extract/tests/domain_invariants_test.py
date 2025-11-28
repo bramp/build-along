@@ -95,11 +95,6 @@ def test_parts_lists_do_not_overlap(fixture_file: str) -> None:
 
 
 @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
-@pytest.mark.skip(
-    reason="Step bounding boxes have significant overlaps (50-80% IOU) in "
-    "several fixtures. This indicates issues with step classification. "
-    "Failing fixtures: 6509377_page_010/011/012/014/015/016_raw.json"
-)
 def test_steps_do_not_overlap(fixture_file: str) -> None:
     """Step bounding boxes should not significantly overlap.
 
@@ -114,6 +109,21 @@ def test_steps_do_not_overlap(fixture_file: str) -> None:
     Pages without extractable diagram elements will have fallback diagrams that
     may overlap, which is a known limitation of the current PDF extraction.
     """
+    # Known failing fixtures with significant overlaps (50-80% IOU)
+    # This indicates issues with step classification.
+    known_failing_fixtures = {
+        "6509377_page_011_raw.json",
+        "6509377_page_012_raw.json",
+        "6509377_page_014_raw.json",
+        "6509377_page_015_raw.json",
+        "6509377_page_016_raw.json",
+    }
+    if fixture_file in known_failing_fixtures:
+        pytest.skip(
+            "Step bounding boxes have significant overlaps in this fixture. "
+            "This indicates issues with step classification."
+        )
+
     pages = load_pages(fixture_file)
 
     OVERLAP_THRESHOLD = 0.05  # Allow up to 5% IOU overlap

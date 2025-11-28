@@ -48,15 +48,46 @@ class TestNewBagClassification:
         assert candidate.constructed is not None
         assert isinstance(candidate.constructed, NewBag)
         new_bag = candidate.constructed
+        assert new_bag.number is not None
         assert new_bag.number.value == 1
 
-    def test_new_bag_requires_bag_number(self) -> None:
-        """Test that new bag requires a bag number."""
+    def test_new_bag_without_bag_number(self) -> None:
+        """Test that large square images in top-left create a numberless new bag."""
         page_bbox = BBox(0, 0, 552.76, 496.06)
 
-        # Only images, no bag number
-        image1 = Image(id=1, bbox=BBox(16.0, 39.0, 253.0, 254.0))
-        image2 = Image(id=2, bbox=BBox(28.35, 15.94, 208.48, 206.98))
+        # Large square-ish images in top-left (typical numberless bag icon)
+        # These match the dimensions from 40573/6433200.pdf page 4
+        image1 = Image(id=1, bbox=BBox(15.0, 15.0, 254.0, 254.0))  # 239x239 square
+        image2 = Image(id=2, bbox=BBox(28.35, 15.94, 208.48, 207.98))  # 180x192
+
+        page_data = PageData(
+            page_number=4,
+            blocks=[image1, image2],
+            bbox=page_bbox,
+        )
+
+        result = classify_elements(page_data)
+
+        # Should have a new bag candidate without a bag number
+        new_bag_candidates = [
+            c for c in result.candidates.get("new_bag", []) if c.constructed
+        ]
+        assert len(new_bag_candidates) > 0
+
+        # Check that the new bag has no bag number
+        candidate = new_bag_candidates[0]
+        assert candidate.constructed is not None
+        assert isinstance(candidate.constructed, NewBag)
+        new_bag = candidate.constructed
+        assert new_bag.number is None
+
+    def test_small_images_dont_create_numberless_bag(self) -> None:
+        """Test that small images don't create a numberless new bag."""
+        page_bbox = BBox(0, 0, 552.76, 496.06)
+
+        # Small images that shouldn't trigger numberless bag detection
+        image1 = Image(id=1, bbox=BBox(16.0, 39.0, 100.0, 120.0))  # 84x81
+        image2 = Image(id=2, bbox=BBox(28.35, 15.94, 100.0, 100.0))  # 72x84
 
         page_data = PageData(
             page_number=10,
