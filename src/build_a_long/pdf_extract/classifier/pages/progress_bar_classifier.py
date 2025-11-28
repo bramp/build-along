@@ -38,6 +38,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     ProgressBar,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
+    Blocks,
     Drawing,
     Image,
 )
@@ -62,6 +63,12 @@ class _ProgressBarScore(Score):
 
     clipped_bbox: BBox
     """Bounding box clipped to page boundaries."""
+
+    indicator_block: Blocks | None = None
+    """The block representing the progress indicator, if found."""
+
+    indicator_progress: float | None = None
+    """The calculated progress (0.0-1.0) based on indicator position."""
 
     def score(self) -> Weight:
         """Calculate final weighted score from components."""
@@ -115,15 +122,27 @@ class ProgressBarClassifier(LabelClassifier):
             original_width = block.bbox.width
             clipped_bbox = block.bbox.clip_to(page_bbox)
 
+            # Find progress indicator within the bar's vertical range
+            indicator_block, indicator_progress = self._find_progress_indicator(
+                block, result, original_width
+            )
+
             score_details = _ProgressBarScore(
                 position_score=position_score,
                 width_score=width_score,
                 aspect_ratio_score=aspect_ratio_score,
                 original_width=original_width,
                 clipped_bbox=clipped_bbox,
+                indicator_block=indicator_block,
+                indicator_progress=indicator_progress,
             )
 
             combined = score_details.score()
+
+            # Build source_blocks list including indicator if found
+            source_blocks: list[Blocks] = [block]
+            if indicator_block is not None:
+                source_blocks.append(indicator_block)
 
             # Store candidate
             result.add_candidate(
@@ -132,7 +151,7 @@ class ProgressBarClassifier(LabelClassifier):
                     label="progress_bar",
                     score=combined,
                     score_details=score_details,
-                    source_blocks=[block],
+                    source_blocks=source_blocks,
                 ),
             )
 
@@ -145,7 +164,7 @@ class ProgressBarClassifier(LabelClassifier):
         # Construct the ProgressBar element
         return ProgressBar(
             bbox=detail_score.clipped_bbox,
-            progress=None,
+            progress=detail_score.indicator_progress,
             full_width=detail_score.original_width,
         )
 
@@ -231,3 +250,94 @@ class ProgressBarClassifier(LabelClassifier):
 
         # Linear interpolation between 3 and 10
         return (aspect_ratio - 3.0) / 7.0
+
+    def _find_progress_indicator(
+        self,
+        bar_block: Drawing | Image,
+        result: ClassificationResult,
+        bar_full_width: float,
+    ) -> tuple[Blocks | None, float | None]:
+        """Find a progress indicator within the progress bar's vertical range.
+
+        Progress bars often have a small visual indicator (a narrow drawing or
+        image element) that shows how far through the instructions the reader is.
+        This method searches for such an indicator within the bar's Y-range.
+
+        The indicator must:
+        - Be a Drawing or Image element
+        - Be narrow (width < 20 pixels)
+        - Be at least as tall as the progress bar (to avoid false positives)
+        - Have its vertical center aligned with the bar
+
+        Args:
+            bar_block: The main progress bar drawing/image block
+            result: The classification result containing all page blocks
+            bar_full_width: The original unclipped width of the progress bar
+
+        Returns:
+            A tuple of (indicator_block, progress) where:
+            - indicator_block: The block representing the indicator, or None
+            - progress: The calculated progress (0.0-1.0), or None if not found
+        """
+        bar_bbox = bar_block.bbox
+        bar_start_x = bar_bbox.x0
+        bar_height = bar_bbox.height
+
+        # Maximum width for an indicator (should be a narrow element)
+        max_indicator_width = 20.0
+
+        best_indicator: Blocks | None = None
+        best_indicator_x: float | None = None
+
+        for block in result.page_data.blocks:
+            # Consider both Drawing and Image elements as potential indicators
+            if not isinstance(block, Drawing | Image):
+                continue
+
+            # Skip the bar itself
+            if block is bar_block:
+                continue
+
+            block_bbox = block.bbox
+
+            # Check if block is narrow enough to be an indicator
+            if block_bbox.width > max_indicator_width:
+                continue
+
+            # Indicator must be at least as tall as the bar to avoid false positives
+            if block_bbox.height < bar_height:
+                continue
+
+            # Check if the block's center Y is aligned with the bar's center Y
+            block_center_y = (block_bbox.y0 + block_bbox.y1) / 2
+            bar_center_y = (bar_bbox.y0 + bar_bbox.y1) / 2
+            if abs(block_center_y - bar_center_y) > bar_height:
+                continue
+
+            # This looks like an indicator - use the center X position
+            indicator_x = (block_bbox.x0 + block_bbox.x1) / 2
+
+            # Keep the indicator with the largest X (furthest progress)
+            # This handles cases where there might be multiple small elements
+            if best_indicator_x is None or indicator_x > best_indicator_x:
+                best_indicator = block
+                best_indicator_x = indicator_x
+
+        if best_indicator is None or best_indicator_x is None:
+            return None, None
+
+        # Calculate progress as position relative to bar start, normalized by width
+        # Clamp to 0.0-1.0 range
+        progress = (best_indicator_x - bar_start_x) / bar_full_width
+        progress = max(0.0, min(1.0, progress))
+
+        log.debug(
+            "Found progress indicator at x=%.1f, bar_start=%.1f, "
+            "full_width=%.1f, progress=%.1%%",
+            best_indicator_x,
+            bar_start_x,
+            bar_full_width,
+            progress * 100,
+        )
+
+        return best_indicator, progress
