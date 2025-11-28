@@ -29,18 +29,18 @@ class _RoundingEncoder(json.JSONEncoder):
         """Encode object in chunks, rounding floats during iteration."""
 
         # Pre-process the entire object to round floats before encoding
-        def round_floats(obj: Any) -> Any:
+        def process_values(obj: Any) -> Any:
             if isinstance(obj, float):
                 return round(obj, self.DEFAULT_DECIMALS)
             elif isinstance(obj, dict):
-                return {k: round_floats(v) for k, v in obj.items()}
+                return {k: process_values(v) for k, v in obj.items()}
             elif isinstance(obj, tuple):
-                return tuple(round_floats(item) for item in obj)
+                return tuple(process_values(item) for item in obj)
             elif isinstance(obj, list):
-                return [round_floats(item) for item in obj]
+                return [process_values(item) for item in obj]
             return obj
 
-        return super().iterencode(round_floats(o), _one_shot)
+        return super().iterencode(process_values(o), _one_shot)
 
 
 def open_compressed(path: Path, mode: str = "rt", **kwargs):

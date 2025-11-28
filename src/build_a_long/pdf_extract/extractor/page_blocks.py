@@ -16,10 +16,20 @@ from __future__ import annotations
 from abc import ABC
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Discriminator, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Discriminator,
+    Field,
+    field_serializer,
+    field_validator,
+)
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.pymupdf_types import PointLikeTuple
+from build_a_long.pdf_extract.extractor.pymupdf_types import (
+    PointLikeTuple,
+    TransformTuple,
+)
 
 
 class Block(BaseModel, ABC):
@@ -148,12 +158,30 @@ class Image(Block):
     xres: int | None = None  # horizontal resolution
     yres: int | None = None  # vertical resolution
     bpc: int | None = None  # bits per component
-    size: int | None = None  # size in bytes
-    transform: tuple[float, float, float, float, float, float] | None = (
-        None  # transformation matrix
-    )
+    size: int | None = None  # uncompressed size in bytes
+    transform: TransformTuple | None = None  # transformation matrix
+    xref: int | None = None  # PDF cross-reference number (identifies unique image)
+    smask: int | None = None  # xref of soft mask (alpha/transparency) if any
+    digest: bytes | None = None  # MD5 hash for duplicate detection
 
     model_config = ConfigDict(frozen=True, populate_by_name=True)
+
+    @field_validator("digest", mode="before")
+    @classmethod
+    def _parse_digest(cls, v: str | bytes | None) -> bytes | None:
+        """Parse digest from hex string (for JSON deserialization) or bytes."""
+        if v is None:
+            return None
+        if isinstance(v, bytes):
+            return v
+        # Assume hex string from JSON
+        return bytes.fromhex(v)
+
+    @field_serializer("digest")
+    @classmethod
+    def _serialize_digest(cls, v: bytes | None) -> str | None:
+        """Serialize digest bytes to hex string for JSON output."""
+        return v.hex() if v is not None else None
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""

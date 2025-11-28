@@ -17,6 +17,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
     DrawingDict,
     ImageBlockDict,
+    ImageInfoDict,
     PointLikeTuple,
     RawDict,
     RectLikeTuple,
@@ -147,55 +148,62 @@ class Extractor:
 
         return text_blocks
 
-    def _extract_image_blocks(
-        self, blocks: list[TextBlockDict | ImageBlockDict]
-    ) -> list[Image]:
-        """Extract image blocks from a page's raw dictionary blocks.
+    def _extract_image_blocks(self, page: pymupdf.Page) -> list[Image]:
+        """Extract image blocks from a page using get_image_info.
+
+        This method uses page.get_image_info(xrefs=True) which provides:
+        - xref: PDF cross-reference number for identifying unique/reused images
+        - digest: MD5 hash for duplicate detection
+        - Full bounding box and transform information
 
         Args:
-            blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
+            page: PyMuPDF page object
 
         Returns:
             List of Image blocks with assigned IDs
         """
         image_blocks: list[Image] = []
 
-        for b in blocks:
-            assert isinstance(b, dict)
+        # Use get_image_info with xrefs=True to get xref and digest (MD5 hash)
+        # This is more comprehensive than extracting from rawdict
+        image_infos: list[ImageInfoDict] = page.get_image_info(xrefs=True)  # type: ignore[assignment]
 
-            bi: int | None = b.get("number")
-            btype: int | None = b.get("type")  # 0=text, 1=image
-
-            if btype != 1:  # Skip non-image blocks
-                continue
-
-            # Now we know b is an image block
-            image_block: ImageBlockDict = b  # type: ignore[assignment]
-
-            bbox: RectLikeTuple = image_block.get("bbox", (0.0, 0.0, 0.0, 0.0))
+        for img_info in image_infos:
+            bbox: RectLikeTuple = img_info.get("bbox", (0.0, 0.0, 0.0, 0.0))
             nbbox = BBox.from_tuple(bbox)
+
+            # Get the xref - 0 means inline image (no xref)
+            xref: int | None = img_info.get("xref")
+            if xref == 0:
+                xref = None  # Inline images have no xref
+
+            # Get smask (soft mask) xref if present
+            # We need to look this up from page.get_images() for the full info
+            smask: int | None = None
 
             # Extract additional metadata if requested
             width: int | None = None
             height: int | None = None
-            ext: str | None = None
             colorspace: int | None = None
             xres: int | None = None
             yres: int | None = None
             bpc: int | None = None
             size: int | None = None
             transform: tuple[float, float, float, float, float, float] | None = None
+            digest: bytes | None = None
 
             if self._include_metadata:
-                width = image_block.get("width")
-                height = image_block.get("height")
-                ext = image_block.get("ext")
-                colorspace = image_block.get("colorspace")
-                xres = image_block.get("xres")
-                yres = image_block.get("yres")
-                bpc = image_block.get("bpc")
-                size = image_block.get("size")
-                transform = image_block.get("transform")
+                width = img_info.get("width")
+                height = img_info.get("height")
+                colorspace = img_info.get("colorspace")
+                xres = img_info.get("xres")
+                yres = img_info.get("yres")
+                bpc = img_info.get("bpc")
+                size = img_info.get("size")
+                transform = img_info.get("transform")
+                digest = img_info.get("digest")
+
+            bi = img_info.get("number")
 
             image_blocks.append(
                 Image(
@@ -203,17 +211,39 @@ class Extractor:
                     image_id=f"image_{bi}",
                     width=width,
                     height=height,
-                    ext=ext,
                     colorspace=colorspace,
                     xres=xres,
                     yres=yres,
                     bpc=bpc,
                     size=size,
                     transform=transform,
+                    xref=xref,
+                    smask=smask,
+                    digest=digest,
                     id=self._get_next_id(),
                 )
             )
-            logger.debug("Found image %s with %s", bi, nbbox)
+            logger.debug("Found image %s with %s, xref=%s", bi, nbbox, xref)
+
+        # Now get smask info from page.get_images() and update the image blocks
+        # page.get_images() returns: (xref, smask, width, height, bpc, colorspace, ...)
+        if image_blocks:
+            page_images = page.get_images(full=True)
+            xref_to_smask: dict[int, int] = {}
+            for img_tuple in page_images:
+                img_xref = img_tuple[0]
+                img_smask = img_tuple[1]
+                if img_smask > 0:
+                    xref_to_smask[img_xref] = img_smask
+
+            # Update image blocks with smask info
+            updated_blocks: list[Image] = []
+            for img in image_blocks:
+                if img.xref is not None and img.xref in xref_to_smask:
+                    # Create a new Image with smask set (since Image is frozen)
+                    img = img.model_copy(update={"smask": xref_to_smask[img.xref]})
+                updated_blocks.append(img)
+            image_blocks = updated_blocks
 
         return image_blocks
 
@@ -473,7 +503,7 @@ class Extractor:
         if "text" in include_types:
             typed_blocks.extend(self._extract_text_blocks(blocks))
         if "image" in include_types:
-            typed_blocks.extend(self._extract_image_blocks(blocks))
+            typed_blocks.extend(self._extract_image_blocks(page))
         if "drawing" in include_types:
             # Use extended=True to get clipping hierarchy
             drawings = page.get_drawings(extended=True)

@@ -11,6 +11,10 @@ PointLikeTuple = tuple[float, float]
 # Type alias for bounding box coordinates (x0, y0, x1, y1)
 RectLikeTuple = tuple[float, float, float, float]
 
+# Type alias for transformation matrix (a, b, c, d, e, f)
+# Represents an affine transformation: [a b 0; c d 0; e f 1]
+TransformTuple = tuple[float, float, float, float, float, float]
+
 
 class RectLike(Protocol):
     """Protocol for PyMuPDF Rect-like objects with coordinate attributes.
@@ -98,11 +102,32 @@ class ImageBlockDict(BlockDict):
     xres: int  # resolution in x-direction (always 96)
     yres: int  # resolution in y-direction (always 96)
     bpc: int  # bits per component
-    transform: tuple[float, float, float, float, float, float]  # image transform
+    transform: TransformTuple  # image transform
     size: int  # size of the image in bytes
     image: bytes  # image content
     mask: NotRequired[bytes]  # image mask for transparent images
     name: NotRequired[str]  # image reference name
+
+
+class ImageInfoDict(TypedDict):
+    """Type definition for image info from page.get_image_info().
+
+    See https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_image_info
+    """
+
+    number: int  # block number
+    bbox: RectLikeTuple  # image bbox on page
+    width: int  # original image width
+    height: int  # original image height
+    colorspace: int  # colorspace.n (component count)
+    cs_name: NotRequired[str]  # colorspace name (e.g., "DeviceRGB")
+    xres: int  # resolution in x-direction
+    yres: int  # resolution in y-direction
+    bpc: int  # bits per component
+    size: int  # storage occupied by image
+    digest: NotRequired[bytes]  # MD5 hashcode (if hashes=True)
+    xref: NotRequired[int]  # image xref (if xrefs=True), 0 if inline
+    transform: TransformTuple  # transform matrix
 
 
 class DrawingDict(TypedDict):

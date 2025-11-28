@@ -273,12 +273,11 @@
 					"image_id": "image_0",
 					"width": 270,
 					"height": 188,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 30574,
+					"size": 30631,
 					"transform": [
 						129.12,
 						0.0,
@@ -286,7 +285,9 @@
 						89.76,
 						68.67,
 						340.78
-					]
+					],
+					"xref": 249,
+					"digest": "dca09596a1f3f552cd3765dd4ebcaf9b"
 				},
 				{
 					"bbox": {
@@ -300,12 +301,11 @@
 					"image_id": "image_1",
 					"width": 270,
 					"height": 177,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 28322,
+					"size": 28379,
 					"transform": [
 						129.36,
 						0.0,
@@ -313,7 +313,9 @@
 						84.47,
 						68.55,
 						107.24
-					]
+					],
+					"xref": 247,
+					"digest": "36764b92a4bb94876e032d28e8ac9aa5"
 				},
 				{
 					"bbox": {
@@ -327,12 +329,11 @@
 					"image_id": "image_2",
 					"width": 46,
 					"height": 39,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 2260,
+					"size": 2317,
 					"transform": [
 						21.83,
 						0.0,
@@ -340,7 +341,9 @@
 						18.47,
 						36.72,
 						260.36
-					]
+					],
+					"xref": 2756,
+					"digest": "1a3b468eaef927cf31356d05dd3c6090"
 				},
 				{
 					"bbox": {
@@ -354,12 +357,11 @@
 					"image_id": "image_4",
 					"width": 51,
 					"height": 45,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 2622,
+					"size": 2679,
 					"transform": [
 						24.23,
 						0.0,
@@ -367,7 +369,9 @@
 						21.35,
 						79.31,
 						257.48
-					]
+					],
+					"xref": 2755,
+					"digest": "4bc23daf1119ba786f429c95beff1da9"
 				},
 				{
 					"bbox": {
@@ -381,12 +385,11 @@
 					"image_id": "image_6",
 					"width": 43,
 					"height": 32,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1909,
+					"size": 1966,
 					"transform": [
 						20.39,
 						0.0,
@@ -394,7 +397,9 @@
 						14.85,
 						124.31,
 						263.97
-					]
+					],
+					"xref": 2750,
+					"digest": "1a7def1894e2289848526112b3315e5e"
 				},
 				{
 					"bbox": {
@@ -408,12 +413,11 @@
 					"image_id": "image_8",
 					"width": 270,
 					"height": 188,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 30147,
+					"size": 30204,
 					"transform": [
 						129.12,
 						0.0,
@@ -421,7 +425,9 @@
 						89.76,
 						335.13,
 						224.89
-					]
+					],
+					"xref": 248,
+					"digest": "884b293fec0cc31f1d5de8e7180a68ef"
 				},
 				{
 					"bbox": {
@@ -435,12 +441,11 @@
 					"image_id": "image_9",
 					"width": 63,
 					"height": 38,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 2611,
+					"size": 2668,
 					"transform": [
 						29.99,
 						0.0,
@@ -448,7 +453,9 @@
 						17.99,
 						344.09,
 						26.98
-					]
+					],
+					"xref": 2752,
+					"digest": "9ae099ebff34d737525fc5f743d2a033"
 				},
 				{
 					"bbox": {
@@ -462,12 +469,11 @@
 					"image_id": "image_11",
 					"width": 51,
 					"height": 45,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 2622,
+					"size": 2679,
 					"transform": [
 						24.23,
 						0.0,
@@ -475,7 +481,9 @@
 						21.35,
 						301.13,
 						23.62
-					]
+					],
+					"xref": 2755,
+					"digest": "4bc23daf1119ba786f429c95beff1da9"
 				},
 				{
 					"bbox": {
@@ -489,12 +497,11 @@
 					"image_id": "image_13",
 					"width": 43,
 					"height": 32,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1909,
+					"size": 1966,
 					"transform": [
 						20.39,
 						0.0,
@@ -502,7 +509,9 @@
 						14.85,
 						392.81,
 						30.11
-					]
+					],
+					"xref": 2750,
+					"digest": "1a7def1894e2289848526112b3315e5e"
 				},
 				{
 					"bbox": {
@@ -516,12 +525,11 @@
 					"image_id": "image_15",
 					"width": 69,
 					"height": 42,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 3107,
+					"size": 3164,
 					"transform": [
 						32.63,
 						0.0,
@@ -529,7 +537,9 @@
 						19.91,
 						45.76,
 						24.34
-					]
+					],
+					"xref": 246,
+					"digest": "75a231dac258da885f198e2fd8ff6a17"
 				},
 				{
 					"bbox": {
@@ -543,12 +553,11 @@
 					"image_id": "image_18",
 					"width": 63,
 					"height": 38,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 2611,
+					"size": 2668,
 					"transform": [
 						29.99,
 						0.0,
@@ -556,7 +565,9 @@
 						17.99,
 						105.67,
 						26.26
-					]
+					],
+					"xref": 2752,
+					"digest": "9ae099ebff34d737525fc5f743d2a033"
 				},
 				{
 					"bbox": {

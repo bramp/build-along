@@ -357,12 +357,11 @@
 					"image_id": "image_0",
 					"width": 194,
 					"height": 144,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 18139,
+					"size": 18196,
 					"transform": [
 						92.64,
 						0.0,
@@ -370,7 +369,9 @@
 						68.88,
 						239.98,
 						186.81
-					]
+					],
+					"xref": 312,
+					"digest": "5a9724ee9b530ce67189bc041143be8f"
 				},
 				{
 					"bbox": {
@@ -384,12 +385,11 @@
 					"image_id": "image_1",
 					"width": 25,
 					"height": 23,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1282,
+					"size": 1339,
 					"transform": [
 						11.48,
 						0.0,
@@ -397,7 +397,9 @@
 						10.78,
 						51.14,
 						28.9
-					]
+					],
+					"xref": 2789,
+					"digest": "b0cbc18b29f4ea373c9f2c31db8ef6ad"
 				},
 				{
 					"bbox": {
@@ -411,12 +413,11 @@
 					"image_id": "image_3",
 					"width": 25,
 					"height": 23,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1437,
+					"size": 1494,
 					"transform": [
 						11.48,
 						0.0,
@@ -424,7 +425,9 @@
 						10.78,
 						77.97,
 						28.9
-					]
+					],
+					"xref": 2786,
+					"digest": "9b178855c1ebef9c619f27a2c8a9964e"
 				},
 				{
 					"bbox": {
@@ -438,12 +441,11 @@
 					"image_id": "image_5",
 					"width": 25,
 					"height": 23,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1617,
+					"size": 1674,
 					"transform": [
 						11.48,
 						0.0,
@@ -451,7 +453,9 @@
 						10.78,
 						104.81,
 						28.9
-					]
+					],
+					"xref": 311,
+					"digest": "40799148e43b1ab0f69acfff0ed6408e"
 				},
 				{
 					"bbox": {
@@ -465,12 +469,11 @@
 					"image_id": "image_7",
 					"width": 25,
 					"height": 23,
-					"ext": "png",
 					"colorspace": 1,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1057,
+					"size": 1584,
 					"transform": [
 						11.48,
 						0.0,
@@ -478,7 +481,9 @@
 						10.78,
 						131.65,
 						28.9
-					]
+					],
+					"xref": 2783,
+					"digest": "23e01c0bc14b379a87b72d29eab33115"
 				},
 				{
 					"bbox": {
@@ -492,12 +497,11 @@
 					"image_id": "image_9",
 					"width": 25,
 					"height": 22,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1312,
+					"size": 1369,
 					"transform": [
 						11.48,
 						0.0,
@@ -505,7 +509,9 @@
 						10.03,
 						158.49,
 						29.64
-					]
+					],
+					"xref": 303,
+					"digest": "08308e92bec643391dab6a0a2e782231"
 				},
 				{
 					"bbox": {
@@ -519,12 +525,11 @@
 					"image_id": "image_12",
 					"width": 25,
 					"height": 80,
-					"ext": "png",
 					"colorspace": 1,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 154,
+					"size": 1081,
 					"transform": [
 						11.92,
 						0.0,
@@ -532,7 +537,9 @@
 						38.36,
 						270.32,
 						149.46
-					]
+					],
+					"xref": 2787,
+					"digest": "b5007e6a71b8f47b61d9f0868d09e36a"
 				},
 				{
 					"bbox": {
@@ -546,12 +553,11 @@
 					"image_id": "image_13",
 					"width": 47,
 					"height": 141,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 5240,
+					"size": 5297,
 					"transform": [
 						11.25,
 						0.0,
@@ -559,7 +565,9 @@
 						33.84,
 						270.86,
 						187.05
-					]
+					],
+					"xref": 314,
+					"digest": "abc06db66ea0e494e265e03842a00859"
 				},
 				{
 					"bbox": {
@@ -573,12 +581,11 @@
 					"image_id": "image_14",
 					"width": 25,
 					"height": 3,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 694,
+					"size": 1081,
 					"transform": [
 						11.92,
 						0.0,
@@ -586,7 +593,9 @@
 						1.44,
 						270.32,
 						148.98
-					]
+					],
+					"xref": 2790,
+					"digest": "5b9dbe569e4420492b9dcdab056e1148"
 				},
 				{
 					"bbox": {
@@ -600,12 +609,11 @@
 					"image_id": "image_15",
 					"width": 37,
 					"height": 112,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 3933,
+					"size": 3990,
 					"transform": [
 						17.51,
 						0.0,
@@ -613,7 +621,9 @@
 						53.27,
 						267.73,
 						88.0
-					]
+					],
+					"xref": 305,
+					"digest": "b873aee3377020f98d05a28a4a18353f"
 				},
 				{
 					"bbox": {
@@ -627,12 +637,11 @@
 					"image_id": "image_16",
 					"width": 25,
 					"height": 94,
-					"ext": "png",
 					"colorspace": 1,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 157,
+					"size": 1081,
 					"transform": [
 						0.0,
 						-11.92,
@@ -640,7 +649,9 @@
 						0.0,
 						196.03,
 						235.9
-					]
+					],
+					"xref": 2782,
+					"digest": "244155d5fd764415e17445de1e6cea2b"
 				},
 				{
 					"bbox": {
@@ -654,12 +665,11 @@
 					"image_id": "image_17",
 					"width": 71,
 					"height": 48,
-					"ext": "png",
 					"colorspace": 1,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1228,
+					"size": 2697,
 					"transform": [
 						17.0,
 						0.0,
@@ -667,7 +677,9 @@
 						11.52,
 						240.22,
 						224.01
-					]
+					],
+					"xref": 308,
+					"digest": "45cf835554386acb8eb53b7f3d07cd0c"
 				},
 				{
 					"bbox": {
@@ -681,12 +693,11 @@
 					"image_id": "image_18",
 					"width": 25,
 					"height": 4,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 694,
+					"size": 1081,
 					"transform": [
 						0.0,
 						-11.92,
@@ -694,7 +705,9 @@
 						0.0,
 						195.07,
 						235.9
-					]
+					],
+					"xref": 2753,
+					"digest": "fac69a283412dd3a4757787291ac2c7a"
 				},
 				{
 					"bbox": {
@@ -708,12 +721,11 @@
 					"image_id": "image_19",
 					"width": 37,
 					"height": 194,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 6547,
+					"size": 6604,
 					"transform": [
 						17.51,
 						0.0,
@@ -721,7 +733,9 @@
 						92.88,
 						170.25,
 						183.3
-					]
+					],
+					"xref": 313,
+					"digest": "7127045be24f0621c1701258367f4f55"
 				},
 				{
 					"bbox": {
@@ -735,12 +749,11 @@
 					"image_id": "image_20",
 					"width": 25,
 					"height": 57,
-					"ext": "png",
 					"colorspace": 1,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 146,
+					"size": 1081,
 					"transform": [
 						0.0,
 						11.92,
@@ -748,7 +761,9 @@
 						-0.0,
 						358.91,
 						230.84
-					]
+					],
+					"xref": 2779,
+					"digest": "8776d3881701881a5d85a8e36df82dbc"
 				},
 				{
 					"bbox": {
@@ -762,12 +777,11 @@
 					"image_id": "image_21",
 					"width": 162,
 					"height": 48,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 4068,
+					"size": 4125,
 					"transform": [
 						38.78,
 						0.0,
@@ -775,7 +789,9 @@
 						11.52,
 						293.6,
 						231.21
-					]
+					],
+					"xref": 307,
+					"digest": "507f6b641b19fadb2b90324b31f30282"
 				},
 				{
 					"bbox": {
@@ -789,12 +805,11 @@
 					"image_id": "image_22",
 					"width": 25,
 					"height": 4,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 694,
+					"size": 1081,
 					"transform": [
 						0.0,
 						11.92,
@@ -802,7 +817,9 @@
 						-0.0,
 						359.87,
 						230.84
-					]
+					],
+					"xref": 2753,
+					"digest": "fac69a283412dd3a4757787291ac2c7a"
 				},
 				{
 					"bbox": {
@@ -816,12 +833,11 @@
 					"image_id": "image_23",
 					"width": 37,
 					"height": 115,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 4553,
+					"size": 4610,
 					"transform": [
 						17.51,
 						0.0,
@@ -829,7 +845,37 @@
 						54.71,
 						367.31,
 						209.65
-					]
+					],
+					"xref": 306,
+					"digest": "229c807e31c18da40879dc2ed16ece35"
+				},
+				{
+					"bbox": {
+						"x0": 17.53,
+						"y0": 317.08,
+						"x1": 553.45,
+						"y1": 463.48
+					},
+					"id": 34,
+					"__tag__": "Image",
+					"image_id": "image_24",
+					"width": 1117,
+					"height": 305,
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 107899,
+					"transform": [
+						535.92,
+						0.0,
+						-0.0,
+						146.4,
+						17.53,
+						317.08
+					],
+					"xref": 2788,
+					"digest": "e62d47dde6072cc1991c432ce1ff13a3"
 				},
 				{
 					"bbox": {
@@ -838,17 +884,16 @@
 						"x1": 544.33,
 						"y1": 444.28
 					},
-					"id": 34,
+					"id": 35,
 					"__tag__": "Image",
-					"image_id": "image_24",
+					"image_id": "image_25",
 					"width": 1457,
 					"height": 509,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 206573,
+					"size": 206630,
 					"transform": [
 						349.52,
 						0.0,
@@ -856,7 +901,9 @@
 						122.16,
 						194.81,
 						322.12
-					]
+					],
+					"xref": 304,
+					"digest": "f09b96e1dabacb12aaa049fb361f8f0b"
 				},
 				{
 					"bbox": {
@@ -865,7 +912,7 @@
 						"x1": 552.76,
 						"y1": 496.06
 					},
-					"id": 35,
+					"id": 36,
 					"__tag__": "Drawing",
 					"fill_color": [
 						0.54,
@@ -895,7 +942,7 @@
 						"x1": 186.59,
 						"y1": 61.91
 					},
-					"id": 36,
+					"id": 37,
 					"__tag__": "Drawing",
 					"fill_color": [
 						0.54,
@@ -925,7 +972,7 @@
 						"x1": 187.09,
 						"y1": 62.41
 					},
-					"id": 37,
+					"id": 38,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -1110,7 +1157,7 @@
 						"x1": 55.56,
 						"y1": 46.68
 					},
-					"id": 38,
+					"id": 39,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -1360,7 +1407,7 @@
 						"x1": 60.27,
 						"y1": 46.68
 					},
-					"id": 39,
+					"id": 40,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -1513,7 +1560,7 @@
 						"x1": 82.39,
 						"y1": 46.68
 					},
-					"id": 40,
+					"id": 41,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -1763,7 +1810,7 @@
 						"x1": 87.11,
 						"y1": 46.68
 					},
-					"id": 41,
+					"id": 42,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -1916,7 +1963,7 @@
 						"x1": 107.3,
 						"y1": 46.68
 					},
-					"id": 42,
+					"id": 43,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -2014,7 +2061,7 @@
 						"x1": 112.27,
 						"y1": 46.68
 					},
-					"id": 43,
+					"id": 44,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -2167,7 +2214,7 @@
 						"x1": 134.13,
 						"y1": 46.68
 					},
-					"id": 44,
+					"id": 45,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -2265,7 +2312,7 @@
 						"x1": 139.11,
 						"y1": 46.68
 					},
-					"id": 45,
+					"id": 46,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -2418,7 +2465,7 @@
 						"x1": 160.97,
 						"y1": 46.68
 					},
-					"id": 46,
+					"id": 47,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -2516,7 +2563,7 @@
 						"x1": 165.95,
 						"y1": 46.68
 					},
-					"id": 47,
+					"id": 48,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -2669,7 +2716,7 @@
 						"x1": 46.89,
 						"y1": 90.51
 					},
-					"id": 48,
+					"id": 49,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -2919,7 +2966,7 @@
 						"x1": 62.58,
 						"y1": 90.77
 					},
-					"id": 49,
+					"id": 50,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -3092,7 +3139,7 @@
 						"x1": 293.26,
 						"y1": 149.3
 					},
-					"id": 50,
+					"id": 51,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -3122,7 +3169,7 @@
 						"x1": 294.01,
 						"y1": 150.05
 					},
-					"id": 51,
+					"id": 52,
 					"__tag__": "Drawing",
 					"fill_color": [
 						0.09,
@@ -3285,7 +3332,7 @@
 						"x1": 276.98,
 						"y1": 208.4
 					},
-					"id": 52,
+					"id": 53,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -3315,7 +3362,7 @@
 						"x1": 281.03,
 						"y1": 219.71
 					},
-					"id": 53,
+					"id": 54,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -3379,7 +3426,7 @@
 						"x1": 293.26,
 						"y1": 149.3
 					},
-					"id": 54,
+					"id": 55,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -3409,7 +3456,7 @@
 						"x1": 195.79,
 						"y1": 284.2
 					},
-					"id": 55,
+					"id": 56,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -3439,7 +3486,7 @@
 						"x1": 196.54,
 						"y1": 284.95
 					},
-					"id": 56,
+					"id": 57,
 					"__tag__": "Drawing",
 					"fill_color": [
 						0.09,
@@ -3602,7 +3649,7 @@
 						"x1": 244.74,
 						"y1": 230.24
 					},
-					"id": 57,
+					"id": 58,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -3632,7 +3679,7 @@
 						"x1": 256.05,
 						"y1": 234.29
 					},
-					"id": 58,
+					"id": 59,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -3696,7 +3743,7 @@
 						"x1": 195.79,
 						"y1": 284.2
 					},
-					"id": 59,
+					"id": 60,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -3726,7 +3773,7 @@
 						"x1": 392.85,
 						"y1": 272.39
 					},
-					"id": 60,
+					"id": 61,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -3756,7 +3803,7 @@
 						"x1": 393.6,
 						"y1": 273.14
 					},
-					"id": 61,
+					"id": 62,
 					"__tag__": "Drawing",
 					"fill_color": [
 						0.09,
@@ -3919,7 +3966,7 @@
 						"x1": 376.06,
 						"y1": 237.51
 					},
-					"id": 62,
+					"id": 63,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -3949,7 +3996,7 @@
 						"x1": 307.4,
 						"y1": 241.56
 					},
-					"id": 63,
+					"id": 64,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -4013,7 +4060,7 @@
 						"x1": 392.85,
 						"y1": 272.39
 					},
-					"id": 64,
+					"id": 65,
 					"__tag__": "Drawing",
 					"fill_color": [
 						1.0,
@@ -4043,7 +4090,7 @@
 						"x1": 552.76,
 						"y1": 462.9
 					},
-					"id": 65,
+					"id": 66,
 					"__tag__": "Drawing",
 					"fill_color": [
 						0.05,
@@ -4073,7 +4120,7 @@
 						"x1": 517.74,
 						"y1": 482.59
 					},
-					"id": 66,
+					"id": 67,
 					"__tag__": "Drawing",
 					"fill_color": [
 						0.74,
@@ -4205,7 +4252,7 @@
 						"x1": 532.66,
 						"y1": 481.89
 					},
-					"id": 67,
+					"id": 68,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,
@@ -4303,7 +4350,7 @@
 						"x1": 538.33,
 						"y1": 481.89
 					},
-					"id": 68,
+					"id": 69,
 					"__tag__": "Drawing",
 					"stroke_color": [
 						1.0,

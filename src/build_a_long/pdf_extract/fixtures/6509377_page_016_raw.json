@@ -231,12 +231,11 @@
 					"image_id": "image_0",
 					"width": 34,
 					"height": 42,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1756,
+					"size": 1813,
 					"transform": [
 						15.81,
 						0.0,
@@ -244,7 +243,9 @@
 						19.91,
 						292.61,
 						29.29
-					]
+					],
+					"xref": 296,
+					"digest": "9b42025b7bec1368723625a4a504a3a0"
 				},
 				{
 					"bbox": {
@@ -258,12 +259,11 @@
 					"image_id": "image_2",
 					"width": 69,
 					"height": 42,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 2555,
+					"size": 2612,
 					"transform": [
 						32.63,
 						0.0,
@@ -271,7 +271,9 @@
 						19.91,
 						329.22,
 						29.29
-					]
+					],
+					"xref": 2771,
+					"digest": "9f44c1365962428017b484b3f931bc30"
 				},
 				{
 					"bbox": {
@@ -285,12 +287,11 @@
 					"image_id": "image_4",
 					"width": 25,
 					"height": 23,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1712,
+					"size": 1769,
 					"transform": [
 						11.48,
 						0.0,
@@ -298,7 +299,9 @@
 						10.78,
 						381.52,
 						38.42
-					]
+					],
+					"xref": 2754,
+					"digest": "8d3adc359dfb6edb2f990ddb4fb22316"
 				},
 				{
 					"bbox": {
@@ -312,12 +315,11 @@
 					"image_id": "image_6",
 					"width": 193,
 					"height": 181,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 18832,
+					"size": 18889,
 					"transform": [
 						92.4,
 						0.0,
@@ -325,7 +327,9 @@
 						86.64,
 						353.49,
 						342.51
-					]
+					],
+					"xref": 300,
+					"digest": "2a27ce3fcea93bb933216b9695e46b8e"
 				},
 				{
 					"bbox": {
@@ -339,12 +343,11 @@
 					"image_id": "image_7",
 					"width": 194,
 					"height": 212,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 18421,
+					"size": 18478,
 					"transform": [
 						92.64,
 						0.0,
@@ -352,7 +355,9 @@
 						101.52,
 						90.23,
 						247.55
-					]
+					],
+					"xref": 298,
+					"digest": "213a3eda3e37c47dab73d25b352c670b"
 				},
 				{
 					"bbox": {
@@ -366,12 +371,11 @@
 					"image_id": "image_8",
 					"width": 194,
 					"height": 144,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 15484,
+					"size": 15541,
 					"transform": [
 						92.64,
 						0.0,
@@ -379,7 +383,9 @@
 						68.88,
 						353.37,
 						127.08
-					]
+					],
+					"xref": 299,
+					"digest": "30325ffdc6cf5fc0feef6bbae216a10d"
 				},
 				{
 					"bbox": {
@@ -393,12 +399,11 @@
 					"image_id": "image_9",
 					"width": 25,
 					"height": 23,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 1712,
+					"size": 1769,
 					"transform": [
 						11.48,
 						0.0,
@@ -406,7 +411,9 @@
 						10.78,
 						337.94,
 						262.76
-					]
+					],
+					"xref": 2754,
+					"digest": "8d3adc359dfb6edb2f990ddb4fb22316"
 				},
 				{
 					"bbox": {
@@ -420,12 +427,11 @@
 					"image_id": "image_12",
 					"width": 123,
 					"height": 79,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 6298,
+					"size": 6355,
 					"transform": [
 						58.55,
 						0.0,
@@ -433,7 +439,9 @@
 						37.67,
 						38.3,
 						86.12
-					]
+					],
+					"xref": 2772,
+					"digest": "a9fc1b8e9103383f42e4a424e7ad4d3b"
 				},
 				{
 					"bbox": {
@@ -447,12 +455,11 @@
 					"image_id": "image_14",
 					"width": 69,
 					"height": 56,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 2852,
+					"size": 2909,
 					"transform": [
 						32.63,
 						0.0,
@@ -460,7 +467,9 @@
 						26.63,
 						111.5,
 						97.16
-					]
+					],
+					"xref": 2773,
+					"digest": "b544ced699acca6855ce0eb573ab09fe"
 				},
 				{
 					"bbox": {
@@ -474,12 +483,11 @@
 					"image_id": "image_16",
 					"width": 79,
 					"height": 59,
-					"ext": "jpeg",
 					"colorspace": 3,
 					"xres": 96,
 					"yres": 96,
 					"bpc": 8,
-					"size": 3534,
+					"size": 3591,
 					"transform": [
 						37.72,
 						0.0,
@@ -487,7 +495,9 @@
 						28.12,
 						71.85,
 						24.11
-					]
+					],
+					"xref": 297,
+					"digest": "b86c381f64c06ba6edc17f88ce85875b"
 				},
 				{
 					"bbox": {
