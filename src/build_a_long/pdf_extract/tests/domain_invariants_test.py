@@ -135,22 +135,6 @@ def test_steps_do_not_overlap(fixture_file: str) -> None:
         if len(page.steps) < 2:
             continue
 
-        # Check if any Drawing/Image elements exist on this page
-        # If not, diagrams will be fallbacks and may overlap (known limitation)
-        drawing_or_image_blocks = [
-            block
-            for block in page_data.blocks
-            if block.__class__.__name__ in ("Drawing", "Image")
-        ]
-
-        if not drawing_or_image_blocks:
-            # Skip check for pages without diagram elements
-            # (fallback diagrams extend to page boundaries and will overlap)
-            pytest.skip(
-                f"Page {page_data.page_number} has no Drawing/Image elements - "
-                "skipping overlap check (fallback diagrams will overlap)"
-            )
-
         # TODO Use a proper spatial index for efficiency if needed
         # Check pairwise for significant overlaps
         for i, step1 in enumerate(page.steps):
@@ -232,4 +216,53 @@ def test_elements_stay_within_page_bounds(fixture_file: str) -> None:
             )
 
 
-# TODO Add test to ensure nothing overlaps the page number or progress bar
+@pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
+def test_elements_do_not_overlap_page_metadata(fixture_file: str) -> None:
+    """Elements should not overlap with page number or progress bar.
+
+    Domain Invariant: The page number and progress bar are navigation elements
+    that should be distinct from the actual content (steps, parts, etc.).
+    Any overlap indicates a classification error where a content element was
+    incorrectly extended or placed.
+    """
+    pages = load_pages(fixture_file)
+
+    for page_idx, page_data in enumerate(pages):
+        result = classify_elements(page_data)
+        page = result.page
+
+        if page is None:
+            continue
+
+        # Define metadata elements to check against
+        metadata_elements = []
+        if page.page_number:
+            metadata_elements.append(("PageNumber", page.page_number))
+        if page.progress_bar:
+            metadata_elements.append(("ProgressBar", page.progress_bar))
+
+        if not metadata_elements:
+            continue
+
+        # Collect content elements (top-level only)
+        content_elements = []
+        for step in page.steps:
+            content_elements.append((f"Step {step.step_number.value}", step))
+        for bag in page.new_bags:
+            content_elements.append(("NewBag", bag))
+        for part in page.catalog:
+            content_elements.append(("CatalogPart", part))
+
+        # Check for overlaps
+        for meta_name, meta_elem in metadata_elements:
+            for content_name, content_elem in content_elements:
+                # We use intersection area > 0 to detect overlap
+                # IOU might be small if one element is huge, so check intersection
+                intersection = meta_elem.bbox.intersect(content_elem.bbox)
+                has_overlap = intersection.area > 0
+
+                assert not has_overlap, (
+                    f"{content_name} at {content_elem.bbox} overlaps with "
+                    f"{meta_name} at {meta_elem.bbox} in {fixture_file} "
+                    f"page {page_idx}"
+                )
