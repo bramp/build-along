@@ -14,31 +14,9 @@ from build_a_long.pdf_extract.cli.output_models import DebugOutput
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import Manual
+from build_a_long.pdf_extract.utils import round_floats
 
 logger = logging.getLogger(__name__)
-
-
-class _RoundingEncoder(json.JSONEncoder):
-    """JSON encoder that rounds floats to 2 decimal places."""
-
-    DEFAULT_DECIMALS = 2
-
-    def iterencode(self, o: Any, _one_shot: bool = False):
-        """Encode object in chunks, rounding floats during iteration."""
-
-        # Pre-process the entire object to round floats before encoding
-        def round_floats(obj: Any) -> Any:
-            if isinstance(obj, float):
-                return round(obj, self.DEFAULT_DECIMALS)
-            elif isinstance(obj, dict):
-                return {k: round_floats(v) for k, v in obj.items()}
-            elif isinstance(obj, tuple):
-                return tuple(round_floats(item) for item in obj)
-            elif isinstance(obj, list):
-                return [round_floats(item) for item in obj]
-            return obj
-
-        return super().iterencode(round_floats(o), _one_shot)
 
 
 def open_compressed(path: Path, mode: str = "rt", **kwargs):
@@ -172,8 +150,9 @@ def save_raw_json(
         data: dict[str, Any], output_path: Path, page_desc: str
     ) -> None:
         with opener(output_path, "wt", encoding="utf-8") as f:  # type: ignore[operator]
-            # Use custom encoder to round floats
-            json.dump(data, f, indent="\t", cls=_RoundingEncoder)
+            # Round floats to 2 decimal places before serializing
+            rounded_data = round_floats(data)
+            json.dump(rounded_data, f, indent="\t")
 
         logger.info(
             "Saved %sraw JSON for %s to %s",

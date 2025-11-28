@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from abc import ABC
 from collections.abc import Iterator
 from enum import Enum
@@ -16,6 +17,7 @@ from pydantic import (
 )
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.utils import round_floats
 
 
 class LegoPageElement(BaseModel, ABC):
@@ -47,14 +49,25 @@ class LegoPageElement(BaseModel, ABC):
         defaults.update(kwargs)
         return self.model_dump(**defaults)
 
-    def to_json(self, **kwargs: Any) -> str:
+    def to_json(self, *, indent: int | None = None, **kwargs: Any) -> str:
         """Serialize to JSON with proper defaults (by_alias=True, exclude_none=True).
 
-        Override by passing explicit kwargs if different behavior is needed.
+        Floats are rounded to 2 decimal places for consistent output.
+
+        Args:
+            indent: Optional indentation level for pretty-printing
+            **kwargs: Additional arguments passed to model_dump()
         """
         defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
         defaults.update(kwargs)
-        return self.model_dump_json(**defaults)
+
+        # First dump to dict, round floats, then serialize to JSON
+        data = self.model_dump(**defaults)
+        rounded_data = round_floats(data)
+
+        # Use compact separators when not indented (matches Pydantic's behavior)
+        separators = (",", ":") if indent is None else (",", ": ")
+        return json.dumps(rounded_data, indent=indent, separators=separators)
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
@@ -716,14 +729,25 @@ class Manual(BaseModel):
         defaults.update(kwargs)
         return self.model_dump(**defaults)
 
-    def to_json(self, **kwargs: Any) -> str:
+    def to_json(self, *, indent: int | None = None, **kwargs: Any) -> str:
         """Serialize to JSON with proper defaults (by_alias=True, exclude_none=True).
 
-        Override by passing explicit kwargs if different behavior is needed.
+        Floats are rounded to 2 decimal places for consistent output.
+
+        Args:
+            indent: Optional indentation level for pretty-printing
+            **kwargs: Additional arguments passed to model_dump()
         """
         defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
         defaults.update(kwargs)
-        return self.model_dump_json(**defaults)
+
+        # First dump to dict, round floats, then serialize to JSON
+        data = self.model_dump(**defaults)
+        rounded_data = round_floats(data)
+
+        # Use compact separators when not indented (matches Pydantic's behavior)
+        separators = (",", ":") if indent is None else (",", ": ")
+        return json.dumps(rounded_data, indent=indent, separators=separators)
 
 
 # TODO Add sub-assembly (or sub-step) element.
