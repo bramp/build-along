@@ -18,6 +18,7 @@ from build_a_long.pdf_extract.classifier.parts.parts_classifier import (
 )
 from build_a_long.pdf_extract.classifier.parts.parts_image_classifier import (
     PartsImageClassifier,
+    _PartImageScore,
 )
 from build_a_long.pdf_extract.classifier.parts.parts_list_classifier import (
     PartsListClassifier,
@@ -122,7 +123,7 @@ class CandidateFactory:
             bbox=image_block.bbox,
             label="part_image",
             score=1.0,
-            score_details=TestScore(),
+            score_details=_PartImageScore(image=image_block),
             source_blocks=[image_block],
         )
         self.result.add_candidate(part_image_candidate)

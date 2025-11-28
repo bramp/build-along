@@ -52,6 +52,7 @@ from build_a_long.pdf_extract.classifier.parts import (
     PartsImageClassifier,
     PartsListClassifier,
     PieceLengthClassifier,
+    ShineClassifier,
 )
 from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
 from build_a_long.pdf_extract.classifier.steps import (
@@ -206,6 +207,7 @@ type Classifiers = (
     | PartsClassifier
     | PartsListClassifier
     | PartsImageClassifier
+    | ShineClassifier
     | NewBagClassifier
     | DiagramClassifier
     | StepClassifier
@@ -236,6 +238,7 @@ class Classifier:
                 DiagramClassifier(config),
                 RotationSymbolClassifier(config),
                 PartsImageClassifier(config),
+                ShineClassifier(config),
                 NewBagClassifier(config),
                 StepClassifier(config),
                 PageClassifier(config),

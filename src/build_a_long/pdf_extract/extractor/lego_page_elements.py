@@ -182,6 +182,20 @@ class PieceLength(LegoPageElement):
         return f"PieceLength(value={self.value})"
 
 
+class Shine(LegoPageElement):
+    """A visual 'shine' or 'star' effect indicating a shiny/metallic part.
+
+    Positional context: Typically a small star-like drawing located in the
+    top-right area of a part image.
+    """
+
+    tag: Literal["Shine"] = Field(default="Shine", alias="__tag__", frozen=True)
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"Shine(bbox={self.bbox})"
+
+
 class PartImage(LegoPageElement):
     """A candidate image that could represent a LEGO part.
 
@@ -196,9 +210,19 @@ class PartImage(LegoPageElement):
 
     tag: Literal["PartImage"] = Field(default="PartImage", alias="__tag__", frozen=True)
 
+    shine: Shine | None = None
+    """Optional shine effect indicating a metallic part."""
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        return f"PartImage(bbox={self.bbox})"
+        shine_str = ", shiny" if self.shine else ""
+        return f"PartImage(bbox={self.bbox}{shine_str})"
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over this PartImage and all child elements."""
+        yield self
+        if self.shine:
+            yield from self.shine.iter_elements()
 
 
 class ProgressBar(LegoPageElement):
@@ -542,6 +566,7 @@ LegoPageElements = Annotated[
     | PartNumber
     | PieceLength
     | PartImage
+    | Shine
     | ProgressBar
     | RotationSymbol
     | Part
