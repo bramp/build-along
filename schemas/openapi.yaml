@@ -144,18 +144,3 @@ components:
         $ref: '#/components/schemas/InstructionMetadata'
       description: >-
         A list of instruction metadata for a single year.
-
-    InstructionBook:
-      type: object
-      description: >-
-        Final classified instruction book output containing the structured,
-        hierarchical Page elements with their catalog, steps, parts lists, etc.
-        This represents the result of PDF extraction and classification.
-      properties:
-        pages:
-          type: array
-          items:
-            type: object
-          default: []
-          description: >-
-            List of classified pages with their hierarchical structure

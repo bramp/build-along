@@ -98,7 +98,7 @@ def test_create_drawable_items_elements_only():
     result.add_candidate(candidate)
 
     # Create a Page that includes this PageNumber
-    page = Page(bbox=BBox(0, 0, 200, 200), page_number=page_number)
+    page = Page(bbox=BBox(0, 0, 200, 200), pdf_page_number=1, page_number=page_number)
     page_candidate = Candidate(
         label="page",
         bbox=BBox(0, 0, 200, 200),
@@ -140,7 +140,7 @@ def test_create_drawable_items_no_duplicate_blocks():
     result.add_candidate(candidate)
 
     # Create a Page that includes this PageNumber
-    page = Page(bbox=BBox(0, 0, 200, 200), page_number=page_number)
+    page = Page(bbox=BBox(0, 0, 200, 200), pdf_page_number=1, page_number=page_number)
     page_candidate = Candidate(
         label="page",
         bbox=BBox(0, 0, 200, 200),
@@ -169,7 +169,7 @@ def test_create_drawable_items_element_without_source_block():
     )
 
     # Create a Page element (has no source block)
-    page = Page(bbox=BBox(5, 5, 15, 15))
+    page = Page(bbox=BBox(5, 5, 15, 15), pdf_page_number=1)
     candidate = Candidate(
         label="page",
         bbox=BBox(5, 5, 15, 15),
@@ -267,7 +267,7 @@ def test_create_drawable_items_filter_non_winner_elements():
 
     # Build a Page that only includes the winner candidate's constructed element
     # This simulates the page builder choosing only the PageNumber
-    page = Page(bbox=BBox(0, 0, 200, 200), page_number=page_number)
+    page = Page(bbox=BBox(0, 0, 200, 200), pdf_page_number=1, page_number=page_number)
     page_candidate = Candidate(
         label="page",
         bbox=BBox(0, 0, 200, 200),
@@ -324,7 +324,7 @@ def test_create_drawable_items_include_non_winner_elements():
     result.add_candidate(non_winner_candidate)
 
     # Build a Page that only includes the winner candidate's constructed element
-    page = Page(bbox=BBox(0, 0, 200, 200), page_number=page_number)
+    page = Page(bbox=BBox(0, 0, 200, 200), pdf_page_number=1, page_number=page_number)
     page_candidate = Candidate(
         label="page",
         bbox=BBox(0, 0, 200, 200),

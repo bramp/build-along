@@ -10,12 +10,10 @@ from typing import Any
 import pymupdf
 
 from build_a_long.pdf_extract.classifier import ClassificationResult
-from build_a_long.pdf_extract.cli.output_models import (
-    DebugOutput,
-)
+from build_a_long.pdf_extract.cli.output_models import DebugOutput
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
-from build_a_long.schemas.generated_models import InstructionBook
+from build_a_long.pdf_extract.extractor.lego_page_elements import Manual
 
 logger = logging.getLogger(__name__)
 
@@ -29,18 +27,18 @@ class _RoundingEncoder(json.JSONEncoder):
         """Encode object in chunks, rounding floats during iteration."""
 
         # Pre-process the entire object to round floats before encoding
-        def process_values(obj: Any) -> Any:
+        def round_floats(obj: Any) -> Any:
             if isinstance(obj, float):
                 return round(obj, self.DEFAULT_DECIMALS)
             elif isinstance(obj, dict):
-                return {k: process_values(v) for k, v in obj.items()}
+                return {k: round_floats(v) for k, v in obj.items()}
             elif isinstance(obj, tuple):
-                return tuple(process_values(item) for item in obj)
+                return tuple(round_floats(item) for item in obj)
             elif isinstance(obj, list):
-                return [process_values(item) for item in obj]
+                return [round_floats(item) for item in obj]
             return obj
 
-        return super().iterencode(process_values(o), _one_shot)
+        return super().iterencode(round_floats(o), _one_shot)
 
 
 def open_compressed(path: Path, mode: str = "rt", **kwargs):
@@ -123,7 +121,7 @@ def save_debug_json(
 
 
 def save_pages_json(
-    results: list[ClassificationResult],
+    manual: Manual,
     output_dir: Path,
     pdf_path: Path,
 ) -> None:
@@ -133,28 +131,13 @@ def save_pages_json(
     steps, parts lists, etc. This is the "final result" of classification.
 
     Args:
-        results: List of ClassificationResult with constructed Page elements
+        manual: Manual containing all classified pages
         output_dir: Directory where JSON should be saved
         pdf_path: Original PDF path (used for naming the JSON file)
     """
-    # Collect pages using the page property from each result
-    pages = []
-    for result in results:
-        if result.page:
-            pages.append(result.page)
-        else:
-            logger.warning("No valid page for page %s", result.page_data.page_number)
-
-    # Create InstructionBook and serialize using Pydantic
-    instruction_book = InstructionBook(
-        pages=[page.to_dict(mode="json") for page in pages]
-    )
-
     output_json_path = output_dir / (pdf_path.stem + ".json")
     with open(output_json_path, "w") as f:
-        f.write(
-            instruction_book.model_dump_json(by_alias=True, indent=2, exclude_none=True)
-        )
+        f.write(manual.to_json(indent=2))
     logger.info("Saved pages JSON to %s", output_json_path)
 
 

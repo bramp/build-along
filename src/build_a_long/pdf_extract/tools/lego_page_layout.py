@@ -303,6 +303,7 @@ def create_sample_page() -> Page:
     """
     return Page(
         bbox=BBox(40, 50, 760, 620),
+        pdf_page_number=10,
         page_number=PageNumber(
             value=10,
             bbox=BBox(680, 570, 720, 595),

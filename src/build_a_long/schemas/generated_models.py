@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import AnyUrl, BaseModel, Field, RootModel
 
 
@@ -77,11 +75,4 @@ class MainIndex(RootModel[list[YearlyIndexSummary]]):
 class YearlyIndex(RootModel[list[InstructionMetadata]]):
     root: list[InstructionMetadata] = Field(
         ..., description="A list of instruction metadata for a single year."
-    )
-
-
-class InstructionBook(BaseModel):
-    pages: list[dict[str, Any]] = Field(
-        default=[],
-        description="List of classified pages with their hierarchical structure",
     )

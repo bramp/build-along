@@ -358,6 +358,7 @@ def _make_classification_result(
 
     page = Page(
         bbox=BBox(0, 0, 100, 100),
+        pdf_page_number=page_data.page_number,
         page_number=page_num_elem,
         steps=step_elems,
     )
@@ -522,6 +523,7 @@ def _make_page_with_steps(
 
     page = Page(
         bbox=page_bbox,
+        pdf_page_number=1,
         page_number=PageNumber(bbox=BBox(90, 90, 100, 100), value=page_number_val),
         steps=steps,
     )

@@ -12,6 +12,7 @@ from pydantic import (
     Discriminator,
     Field,
     PlainSerializer,
+    model_validator,
 )
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
@@ -464,7 +465,8 @@ class Page(LegoPageElement):
     and hierarchy building.
 
     Attributes:
-        page_number: The page number element, if found
+        pdf_page_number: The 1-indexed page number from the original PDF
+        page_number: The LEGO page number element (printed on the page), if found
         steps: List of Step elements on the page (for INSTRUCTION pages)
         catalog: Parts list for catalog/inventory pages (for CATALOG pages)
         warnings: List of warnings generated during hierarchy building
@@ -480,6 +482,9 @@ class Page(LegoPageElement):
         INFO = "info"
 
     tag: Literal["Page"] = Field(default="Page", alias="__tag__", frozen=True)
+
+    pdf_page_number: int
+    """The 1-indexed page number from the original PDF."""
 
     categories: Annotated[
         set[PageType],
@@ -578,6 +583,147 @@ LegoPageElements = Annotated[
     | Page,
     Discriminator("tag"),
 ]
+
+
+class Manual(BaseModel):
+    """A complete LEGO instruction manual containing all pages.
+
+    This is the top-level container that holds all pages from a PDF and provides
+    cross-page analysis capabilities like finding unique parts, matching parts
+    across pages by image digest, and navigating between pages.
+
+    Pages are automatically sorted by PDF page number when the Manual is created.
+
+    Attributes:
+        pages: List of Page objects, sorted by pdf_page_number
+        set_number: Optional LEGO set number (e.g., "75375")
+        name: Optional name of the set (e.g., "Millennium Falcon")
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    tag: Literal["Manual"] = Field(default="Manual", alias="__tag__", frozen=True)
+
+    pages: list[Page] = Field(default_factory=list)
+    """List of Page objects, sorted by pdf_page_number."""
+
+    set_number: str | None = None
+    name: str | None = None
+
+    @model_validator(mode="after")
+    def sort_pages(self) -> Manual:
+        """Sort pages by PDF page number after initialization."""
+        self.pages.sort(key=lambda p: p.pdf_page_number)
+        return self
+
+    def get_page(self, pdf_page_number: int) -> Page | None:
+        """Get a page by its PDF page number.
+
+        Args:
+            pdf_page_number: The PDF page number to find (1-indexed)
+
+        Returns:
+            The Page at that PDF page number, or None if not found
+        """
+        for page in self.pages:
+            if page.pdf_page_number == pdf_page_number:
+                return page
+        return None
+
+    def get_page_by_lego_number(self, lego_page_number: int) -> Page | None:
+        """Get a page by its LEGO page number (the number printed on the page).
+
+        Args:
+            lego_page_number: The LEGO page number to find
+
+        Returns:
+            The Page with the matching LEGO page number, or None if not found
+        """
+        for page in self.pages:
+            if page.page_number and page.page_number.value == lego_page_number:
+                return page
+        return None
+
+    @property
+    def instruction_pages(self) -> list[Page]:
+        """Get all instruction pages (pages with building steps)."""
+        return [p for p in self.pages if p.is_instruction]
+
+    @property
+    def catalog_pages(self) -> list[Page]:
+        """Get all catalog pages (pages with parts inventory)."""
+        return [p for p in self.pages if p.is_catalog]
+
+    @property
+    def info_pages(self) -> list[Page]:
+        """Get all info pages."""
+        return [p for p in self.pages if p.is_info]
+
+    @property
+    def catalog_parts(self) -> list[Part]:
+        """Get all parts from catalog pages.
+
+        Returns:
+            List of all Part objects from catalog pages, which typically have
+            PartNumber (element_id) information for identification.
+        """
+        parts: list[Part] = []
+        for page in self.catalog_pages:
+            parts.extend(page.catalog)
+        return parts
+
+    @property
+    def all_steps(self) -> list[Step]:
+        """Get all steps from all instruction pages in order.
+
+        Returns:
+            List of all Step objects from instruction pages
+        """
+        steps: list[Step] = []
+        for page in self.instruction_pages:
+            steps.extend(page.steps)
+        return steps
+
+    @property
+    def total_parts_count(self) -> int:
+        """Get the total count of all parts across all steps.
+
+        This sums up all part counts from all parts lists in all steps.
+        """
+        total = 0
+        for step in self.all_steps:
+            if step.parts_list:
+                total += step.parts_list.total_items
+        return total
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        set_str = f"set={self.set_number}, " if self.set_number else ""
+        name_str = f'"{self.name}", ' if self.name else ""
+        return (
+            f"Manual({set_str}{name_str}"
+            f"pages={len(self.pages)}, "
+            f"steps={len(self.all_steps)}, "
+            f"catalog_parts={len(self.catalog_parts)})"
+        )
+
+    def to_dict(self, **kwargs: Any) -> dict:
+        """Serialize to dict with proper defaults (by_alias=True, exclude_none=True).
+
+        Override by passing explicit kwargs if different behavior is needed.
+        """
+        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
+        defaults.update(kwargs)
+        return self.model_dump(**defaults)
+
+    def to_json(self, **kwargs: Any) -> str:
+        """Serialize to JSON with proper defaults (by_alias=True, exclude_none=True).
+
+        Override by passing explicit kwargs if different behavior is needed.
+        """
+        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
+        defaults.update(kwargs)
+        return self.model_dump_json(**defaults)
 
 
 # TODO Add sub-assembly (or sub-step) element.

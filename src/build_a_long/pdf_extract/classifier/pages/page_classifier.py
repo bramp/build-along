@@ -211,6 +211,7 @@ class PageClassifier(LabelClassifier):
 
         return Page(
             bbox=candidate.bbox,
+            pdf_page_number=page_data.page_number,
             categories=categories,
             page_number=page_number,
             progress_bar=progress_bar,

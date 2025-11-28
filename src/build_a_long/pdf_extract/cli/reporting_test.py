@@ -49,6 +49,7 @@ def test_print_page_hierarchy_with_part_numbers() -> None:
 
     page = Page(
         bbox=BBox(0, 0, 25, 35),
+        pdf_page_number=1,
         page_number=PageNumber(bbox=BBox(0, 25, 5, 30), value=1),
         steps=[step],
     )
@@ -85,6 +86,7 @@ def test_print_page_hierarchy_empty_parts_list() -> None:
 
     page = Page(
         bbox=BBox(0, 0, 25, 35),
+        pdf_page_number=1,
         page_number=PageNumber(bbox=BBox(0, 25, 5, 30), value=1),
         steps=[step],
     )

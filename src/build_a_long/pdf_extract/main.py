@@ -200,7 +200,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             )
 
         # Save results
-        save_pages_json(batch_result.results, output_dir, pdf_path)
+        save_pages_json(batch_result.manual, output_dir, pdf_path)
 
         if config.draw_blocks or config.draw_elements or config.draw_drawings:
             render_annotated_images(
