@@ -73,6 +73,7 @@ class TestStepClassification:
         assert isinstance(constructed_step, Step)
 
         assert constructed_step.step_number.value == 10
+        assert constructed_step.parts_list is not None
         assert len(constructed_step.parts_list.parts) == 2
         # Diagram is None when DiagramClassifier doesn't find any diagrams
         assert constructed_step.diagram is None
@@ -110,7 +111,7 @@ class TestStepClassification:
         assert isinstance(constructed_step, Step)
 
         assert constructed_step.step_number.value == 5
-        assert len(constructed_step.parts_list.parts) == 0  # Should have no parts
+        assert constructed_step.parts_list is None  # No parts list candidate
         # Diagram is None when DiagramClassifier doesn't find any diagrams
         assert constructed_step.diagram is None
 

@@ -191,7 +191,8 @@ def draw_step(draw: ImageDraw.ImageDraw, step: Step) -> None:
     draw_bbox_with_label(draw, bbox, "Step", COLORS["Step"])
 
     # Draw parts list
-    draw_parts_list(draw, step.parts_list)
+    if step.parts_list:
+        draw_parts_list(draw, step.parts_list)
 
     # Draw step number
     draw_step_number(draw, step.step_number)

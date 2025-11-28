@@ -49,16 +49,6 @@
         "__tag__": "StepNumber",
         "value": 2
       },
-      "parts_list": {
-        "bbox": {
-          "x0": 64.81,
-          "y0": 187.66,
-          "x1": 73.6,
-          "y1": 207.6
-        },
-        "__tag__": "PartsList",
-        "parts": []
-      },
       "diagram": {
         "bbox": {
           "x0": 139.27,

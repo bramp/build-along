@@ -48,16 +48,6 @@
         },
         "__tag__": "StepNumber",
         "value": 1
-      },
-      "parts_list": {
-        "bbox": {
-          "x0": 90.18,
-          "y0": 108.51,
-          "x1": 96.1,
-          "y1": 128.45
-        },
-        "__tag__": "PartsList",
-        "parts": []
       }
     },
     {
@@ -77,16 +67,6 @@
         },
         "__tag__": "StepNumber",
         "value": 2
-      },
-      "parts_list": {
-        "bbox": {
-          "x0": 181.12,
-          "y0": 108.51,
-          "x1": 189.91,
-          "y1": 128.45
-        },
-        "__tag__": "PartsList",
-        "parts": []
       }
     },
     {

@@ -532,7 +532,7 @@ def print_classification_debug(
             print(f"Steps: {len(page_obj.steps)}")
 
             for i, step in enumerate(page_obj.steps, 1):
-                parts_count = len(step.parts_list.parts)
+                parts_count = len(step.parts_list.parts) if step.parts_list else 0
                 print(f"  Step {i}: #{step.step_number.value} ({parts_count} parts)")
 
     print(f"\n{'=' * 80}\n")
@@ -571,16 +571,16 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
     if page.steps:
         print(f"  ✓ Steps: {len(page.steps)}")
         for step in page.steps:
-            parts_count = len(step.parts_list.parts)
+            parts_count = len(step.parts_list.parts) if step.parts_list else 0
             print(f"    - Step {step.step_number.value} ({parts_count} parts)")
             # Print parts list details
-            if step.parts_list.parts:
+            if step.parts_list and step.parts_list.parts:
                 print("      Parts List:")
                 for part in step.parts_list.parts:
                     number_str = part.number.element_id if part.number else "no number"
                     print(f"        • {part.count.count}x ({number_str})")
             else:
-                print("      Parts List: (empty)")
+                print("      Parts List: (none)")
 
             if step.diagram:
                 print(f"      Diagram: {step.diagram.bbox}")

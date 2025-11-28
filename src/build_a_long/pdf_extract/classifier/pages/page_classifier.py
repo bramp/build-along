@@ -167,8 +167,9 @@ class PageClassifier(LabelClassifier):
         # Collect parts that are already used in steps (to exclude from catalog)
         parts_in_steps: set[int] = set()
         for step in steps:
-            for part in step.parts_list.parts:
-                parts_in_steps.add(id(part))
+            if step.parts_list:
+                for part in step.parts_list.parts:
+                    parts_in_steps.add(id(part))
 
         # Filter to get standalone parts (catalog pages) - parts not in steps
         standalone_parts = [p for p in all_parts if id(p) not in parts_in_steps]

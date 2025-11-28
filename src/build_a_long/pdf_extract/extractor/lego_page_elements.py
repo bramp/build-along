@@ -394,7 +394,7 @@ class Step(LegoPageElement):
     tag: Literal["Step"] = Field(default="Step", alias="__tag__", frozen=True)
 
     step_number: StepNumber
-    parts_list: PartsList  # TODO I think PartsList may be optional
+    parts_list: PartsList | None = None
     diagram: Diagram | None = None
     rotation_symbol: RotationSymbol | None = None
     """Optional rotation symbol indicating the builder should rotate the model."""
@@ -402,9 +402,9 @@ class Step(LegoPageElement):
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         rotation_str = ", rotation" if self.rotation_symbol else ""
+        parts_count = len(self.parts_list.parts) if self.parts_list else 0
         return (
-            f"Step(number={self.step_number.value}, "
-            f"parts={len(self.parts_list.parts)}{rotation_str})"
+            f"Step(number={self.step_number.value}, parts={parts_count}{rotation_str})"
         )
 
     @property
@@ -416,7 +416,8 @@ class Step(LegoPageElement):
         """Iterate over this Step and all child elements."""
         yield self
         yield from self.step_number.iter_elements()
-        yield from self.parts_list.iter_elements()
+        if self.parts_list:
+            yield from self.parts_list.iter_elements()
         if self.diagram:
             yield from self.diagram.iter_elements()
         if self.rotation_symbol:

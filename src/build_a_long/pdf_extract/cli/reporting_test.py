@@ -95,4 +95,4 @@ def test_print_page_hierarchy_empty_parts_list() -> None:
 
     result = output.getvalue()
 
-    assert "Parts List: (empty)" in result
+    assert "Parts List: (none)" in result

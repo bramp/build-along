@@ -144,6 +144,17 @@ class LabelClassifier(ABC):
         2. Build the LegoPageElement
         3. Return it (do not set candidate.constructed, the caller does that)
 
+        IMPORTANT: Classifiers should only create elements they are responsible for.
+        A classifier should NOT create elements of types handled by other classifiers.
+        For example:
+        - StepClassifier should NOT create PartsList elements (that's PartsListClassifier's job)
+        - If a dependency is optional and not found, set it to None instead of creating a fallback
+
+        If you find yourself creating an element type that another classifier handles,
+        that's a design smell - either:
+        1. Make the field optional in the parent element, OR
+        2. Ensure the dependency classifier runs first and provides the element
+
         Args:
             candidate: The candidate to construct
             result: The classification result context

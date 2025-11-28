@@ -101,5 +101,7 @@ class TestPartsListClassification:
         assert step_numbers == [5, 6]
 
         # At least one step should have a parts_list with the part
-        steps_with_parts = [s for s in result.page.steps if len(s.parts_list.parts) > 0]
+        steps_with_parts = [
+            s for s in result.page.steps if s.parts_list and len(s.parts_list.parts) > 0
+        ]
         assert len(steps_with_parts) >= 1, "At least one step should have parts"

@@ -213,8 +213,7 @@ class StepClassifier(LabelClassifier):
         return Step(
             bbox=self._compute_step_bbox(step_num, parts_list, diagram),
             step_number=step_num,
-            # TODO we should not be creating PartsList objects
-            parts_list=parts_list or PartsList(bbox=step_num.bbox, parts=[]),
+            parts_list=parts_list,
             diagram=diagram,
             rotation_symbol=rotation_symbol,
         )
