@@ -1,9 +1,9 @@
 import logging
-from dataclasses import dataclass
 from pathlib import Path
 
 import pymupdf
 from PIL import Image, ImageDraw
+from pydantic import BaseModel, ConfigDict
 
 from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.drawing.path_renderer import (
@@ -19,9 +19,10 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class DrawableItem:
+class DrawableItem(BaseModel):
     """A unified structure for things to draw on the page."""
+
+    model_config = ConfigDict(frozen=True)
 
     bbox: BBox
     """The bounding box to draw."""
@@ -245,12 +246,24 @@ def draw_and_save_bboxes(
     # Build hierarchy for depth calculation directly from DrawableItems
     hierarchy = build_hierarchy_from_blocks(items)
 
-    # Compute and store depth in each item
+    # Compute depth and create new items with depth set (since items are frozen)
+    items_with_depth = []
     for item in items:
-        item.depth = hierarchy.get_depth(item)
+        depth = hierarchy.get_depth(item)
+        # Create new item with depth
+        items_with_depth.append(
+            DrawableItem(
+                bbox=item.bbox,
+                label=item.label,
+                is_element=item.is_element,
+                is_winner=item.is_winner,
+                is_removed=item.is_removed,
+                depth=depth,
+            )
+        )
 
     # Draw all items
-    for item in items:
+    for item in items_with_depth:
         _draw_item(draw, item, depth_colors, scale_x, scale_y)
 
     # Draw actual drawing paths if requested
