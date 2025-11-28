@@ -1,8 +1,9 @@
 """Reporting and output formatting for PDF extraction."""
 
 import logging
-from dataclasses import dataclass
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from build_a_long.pdf_extract.classifier import (
     Candidate,
@@ -22,12 +23,13 @@ GREY = "\033[90m"
 RESET = "\033[0m"
 
 
-@dataclass
-class TreeNode:
+class TreeNode(BaseModel):
     """Unified node for the classification debug tree.
 
     Represents either a Block with optional candidates, or a synthetic Candidate.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     bbox: BBox
     """Bounding box for this node"""
@@ -35,15 +37,11 @@ class TreeNode:
     block: Blocks | None = None
     """The source block, if this node represents a block"""
 
-    candidates: list[Candidate] = None  # type: ignore
+    candidates: list[Candidate] = Field(default_factory=list)
     """Candidates for this block (empty if synthetic or no candidates)"""
 
     synthetic_candidate: Candidate | None = None
     """If this is a synthetic candidate (no source blocks)"""
-
-    def __post_init__(self):
-        if self.candidates is None:
-            self.candidates = []
 
 
 def print_summary(
