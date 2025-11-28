@@ -156,7 +156,7 @@ class PageHintCollection(BaseModel):
         for hint in hints.values():
             type_counts[hint.page_type] = type_counts.get(hint.page_type, 0) + 1
 
-        logger.info(
+        logger.debug(
             f"Page hints extracted: {len(hints)} pages - "
             + ", ".join(
                 f"{t.value}={c}"

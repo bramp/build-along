@@ -200,7 +200,7 @@ class FontSizeHints(BaseModel):
             else 0
         )
 
-        logger.info(
+        logger.debug(
             f"Font size hints extracted: "
             f"part_count={part_count_size} (n={part_count_samples}), "
             f"catalog_part_count={catalog_part_count_size} "
