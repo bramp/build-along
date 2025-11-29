@@ -52,6 +52,7 @@ class Block(BaseModel, ABC):
 
     bbox: BBox
     id: int
+    """Unique block ID assigned by the Extractor."""
 
     def to_dict(self, **kwargs: Any) -> dict:
         """Serialize to dict with proper defaults (by_alias=True, exclude_none=True).

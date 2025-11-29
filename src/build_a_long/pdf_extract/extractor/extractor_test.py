@@ -300,7 +300,9 @@ class TestExtractor:
 
     def test_extractor_sequential_ids(self):
         """Test that Extractor assigns sequential IDs."""
-        extractor = Extractor()
+        # Create a minimal mock page
+        mock_page = MagicMock()
+        extractor = Extractor(page=mock_page, page_num=1)
 
         blocks: list[Any] = [
             {
@@ -325,30 +327,6 @@ class TestExtractor:
 
     def test_extractor_ids_across_types(self):
         """Test that IDs increment across different element types."""
-        extractor = Extractor()
-
-        text_blocks: list[Any] = [
-            {
-                "type": 0,
-                "number": 1,
-                "lines": [
-                    {
-                        "spans": [
-                            {"text": "Text1", "bbox": [10.0, 20.0, 30.0, 40.0]},
-                        ]
-                    }
-                ],
-            },
-        ]
-
-        image_blocks: list[Any] = [
-            {
-                "type": 1,
-                "number": 2,
-                "bbox": [100.0, 200.0, 150.0, 250.0],
-            },
-        ]
-
         rect = MagicMock()
         rect.x0 = 10.0
         rect.y0 = 20.0
@@ -381,10 +359,26 @@ class TestExtractor:
         ]
         mock_page.get_drawings.return_value = drawings
 
+        extractor = Extractor(page=mock_page, page_num=1)
+
+        text_blocks: list[Any] = [
+            {
+                "type": 0,
+                "number": 1,
+                "lines": [
+                    {
+                        "spans": [
+                            {"text": "Text1", "bbox": [10.0, 20.0, 30.0, 40.0]},
+                        ]
+                    }
+                ],
+            },
+        ]
+
         # Extract in order and verify IDs increment
         texts = extractor._extract_text_blocks(text_blocks)
-        images = extractor._extract_image_blocks(mock_page)
-        draw = extractor._extract_drawing_blocks(mock_page)
+        images = extractor.extract_image_blocks()
+        draw = extractor.extract_drawing_blocks()
 
         assert texts[0].id == 0
         assert images[0].id == 1
@@ -396,7 +390,8 @@ class TestExtractorMethods:
 
     def test_extract_text_blocks(self):
         """Test Extractor._extract_text_blocks extracts text from blocks."""
-        extractor = Extractor()
+        mock_page = MagicMock()
+        extractor = Extractor(page=mock_page, page_num=1)
         blocks: list[Any] = [
             {
                 "type": 0,
@@ -430,9 +425,7 @@ class TestExtractorMethods:
         assert result[1].id == 1
 
     def test_extract_image_blocks(self):
-        """Test Extractor._extract_image_blocks extracts images from page."""
-        extractor = Extractor()
-
+        """Test Extractor.extract_image_blocks extracts images from page."""
         # Create mock page with get_image_info and get_images
         mock_page = MagicMock()
         mock_page.get_image_info.return_value = [
@@ -469,7 +462,8 @@ class TestExtractorMethods:
             (11, 15, 50, 50, 8, 3, "", "Im2", "DCTDecode", 0),  # has smask=15
         ]
 
-        result = extractor._extract_image_blocks(mock_page)
+        extractor = Extractor(page=mock_page, page_num=1)
+        result = extractor.extract_image_blocks()
 
         assert len(result) == 2
         assert isinstance(result[0], Image)
@@ -486,9 +480,8 @@ class TestExtractorMethods:
         assert result[1].smask == 15  # has smask
 
     def test_extract_drawing_blocks(self):
-        """Test Extractor._extract_drawing_blocks extracts drawings from
+        """Test Extractor.extract_drawing_blocks extracts drawings from
         page.get_drawings()."""
-        extractor = Extractor()
         # Create real rectangle objects for PyMuPDF compatibility
         drawings = cast(
             list[DrawingDict],
@@ -503,7 +496,8 @@ class TestExtractorMethods:
         mock_page.transformation_matrix = pymupdf.Identity
         mock_page.get_drawings.return_value = drawings
 
-        result = extractor._extract_drawing_blocks(mock_page)
+        extractor = Extractor(page=mock_page, page_num=1)
+        result = extractor.extract_drawing_blocks()
 
         assert len(result) == 2
         assert isinstance(result[0], Drawing)
@@ -517,7 +511,8 @@ class TestExtractorMethods:
 
     def test_warn_unknown_block_types_valid(self):
         """Test Extractor._warn_unknown_block_types returns True for valid blocks."""
-        extractor = Extractor()
+        mock_page = MagicMock()
+        extractor = Extractor(page=mock_page, page_num=1)
         blocks = [
             {"type": 0, "number": 1},
             {"type": 1, "number": 2},
@@ -531,7 +526,8 @@ class TestExtractorMethods:
     def test_warn_unknown_block_types_invalid(self):
         """Test Extractor._warn_unknown_block_types returns False and logs warning for
         unknown types."""
-        extractor = Extractor()
+        mock_page = MagicMock()
+        extractor = Extractor(page=mock_page, page_num=1)
         blocks = [
             {"type": 0, "number": 1},
             {"type": 99, "number": 2},  # Unknown type
@@ -543,29 +539,29 @@ class TestExtractorMethods:
 
     def test_extract_text_blocks_empty_blocks(self):
         """Test Extractor._extract_text_blocks handles empty blocks list."""
-        extractor = Extractor()
+        mock_page = MagicMock()
+        extractor = Extractor(page=mock_page, page_num=1)
         result = extractor._extract_text_blocks([])
         assert result == []
 
     def test_extract_image_blocks_empty_page(self):
-        """Test Extractor._extract_image_blocks handles page with no images."""
-        extractor = Extractor()
-
+        """Test Extractor.extract_image_blocks handles page with no images."""
         # Create mock page that returns no images
         mock_page = MagicMock()
         mock_page.get_image_info.return_value = []
         mock_page.get_images.return_value = []
 
-        result = extractor._extract_image_blocks(mock_page)
+        extractor = Extractor(page=mock_page, page_num=1)
+        result = extractor.extract_image_blocks()
         assert result == []
 
     def test_extract_drawing_blocks_empty_drawings(self):
-        """Test Extractor._extract_drawing_blocks handles empty drawings list."""
-        extractor = Extractor()
+        """Test Extractor.extract_drawing_blocks handles empty drawings list."""
         # Create mock page with identity transformation matrix
         mock_page = MagicMock()
         mock_page.transformation_matrix = pymupdf.Identity
         mock_page.get_drawings.return_value = []
 
-        result = extractor._extract_drawing_blocks(mock_page)
+        extractor = Extractor(page=mock_page, page_num=1)
+        result = extractor.extract_drawing_blocks()
         assert result == []

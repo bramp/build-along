@@ -48,29 +48,63 @@ class ExtractionResult(BaseModel):
 
 
 class Extractor:
-    """Handles extraction of page elements with sequential ID assignment.
+    """Handles extraction of elements from a single PDF page.
 
-    Each Extractor instance should be used for a single page to ensure
-    IDs are sequential and reset for each page.
+    Each Extractor instance is bound to a single page and caches the TextPage
+    for efficient repeated extractions. The TextPage is lazily created on first
+    text extraction and reused for subsequent calls.
+
+    Example usage:
+        extractor = Extractor(page, page_num=1)
+        text_blocks = extractor.extract_text_blocks()
+        image_blocks = extractor.extract_image_blocks()
+        # Or extract all at once:
+        page_data = extractor.extract_page_data()
     """
 
     def __init__(
         self,
+        page: pymupdf.Page,
+        page_num: int,  # TODO I wonder if page_num is a property on page.
         *,
-        include_types: set[str] | None = None,
         include_metadata: bool = False,
     ) -> None:
-        """Initialize the extractor with a fresh ID counter.
+        """Initialize the extractor for a specific page.
 
         Args:
-            include_types: Set of element types to include ("text", "image",
-                "drawing"). If None, defaults to all types.
+            page: PyMuPDF page object to extract from.
+            page_num: Page number (1-indexed) for the PageData result.
             include_metadata: If True, extract additional metadata (colors, fonts,
                 dimensions, etc.). If False, only extract core fields.
         """
-        self._next_id = 0
-        self._include_types = include_types or {"text", "image", "drawing"}
+        self._page = page
+        self._page_num = page_num
         self._include_metadata = include_metadata
+        self._next_id = 0
+
+        # Lazy-initialized cached TextPage
+        self._textpage: pymupdf.TextPage | None = None
+
+    @property
+    def page(self) -> pymupdf.Page:
+        """The PyMuPDF page this extractor is bound to."""
+        return self._page
+
+    @property
+    def page_num(self) -> int:
+        """The 1-indexed page number."""
+        return self._page_num
+
+    def _get_textpage(self) -> pymupdf.TextPage:
+        """Get or create the cached TextPage.
+
+        TextPage creation is expensive, so we cache it for reuse across
+        multiple text extractions. This can provide 50-95% speedup when
+        extracting text multiple times from the same page.
+        """
+        if self._textpage is None:
+            self._textpage = self._page.get_textpage()
+        return self._textpage
 
     def _get_next_id(self) -> int:
         """Get the next sequential ID and increment the counter."""
@@ -78,13 +112,20 @@ class Extractor:
         self._next_id += 1
         return current_id
 
+    def reset_ids(self) -> None:
+        """Reset the ID counter to 0.
+
+        Call this if you need to re-extract with fresh IDs.
+        """
+        self._next_id = 0
+
     def _extract_text_blocks(
         self, blocks: list[TextBlockDict | ImageBlockDict]
     ) -> list[Text]:
-        """Extract text blocks from a page's raw dictionary blocks.
+        """Extract text blocks from a page's dictionary blocks.
 
         Args:
-            blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
+            blocks: List of block dictionaries from page.get_text("dict")["blocks"]
 
         Returns:
             List of Text blocks with assigned IDs
@@ -108,13 +149,10 @@ class Extractor:
                     sbbox: RectLikeTuple = span.get("bbox", (0.0, 0.0, 0.0, 0.0))
                     nbbox = BBox.from_tuple(sbbox)
 
-                    text: str = span.get("text", None)
-                    if text is None or text == "":
-                        chars = span.get("chars", [])
-                        text = "".join(c["c"] for c in chars)
+                    text: str = span.get("text", "")
 
-                    font_size: float = span.get("size", 0.0)
-                    font_name: str = span.get("font", "unknown")
+                    font_size: float | None = span.get("size", None)
+                    font_name: str | None = span.get("font", None)
 
                     # Extract additional metadata if requested
                     font_flags: int | None = None
@@ -156,16 +194,13 @@ class Extractor:
 
         return text_blocks
 
-    def _extract_image_blocks(self, page: pymupdf.Page) -> list[Image]:
-        """Extract image blocks from a page using get_image_info.
+    def extract_image_blocks(self) -> list[Image]:
+        """Extract image blocks from the page using get_image_info.
 
         This method uses page.get_image_info(xrefs=True) which provides:
         - xref: PDF cross-reference number for identifying unique/reused images
         - digest: MD5 hash for duplicate detection
         - Full bounding box and transform information
-
-        Args:
-            page: PyMuPDF page object
 
         Returns:
             List of Image blocks with assigned IDs
@@ -174,7 +209,7 @@ class Extractor:
 
         # Use get_image_info with xrefs=True to get xref and digest (MD5 hash)
         # This is more comprehensive than extracting from rawdict
-        image_infos: list[ImageInfoDict] = page.get_image_info(xrefs=True)  # type: ignore[assignment]
+        image_infos: list[ImageInfoDict] = self._page.get_image_info(xrefs=True)  # type: ignore[assignment]
 
         for img_info in image_infos:
             bbox: RectLikeTuple = img_info.get("bbox", (0.0, 0.0, 0.0, 0.0))
@@ -236,7 +271,7 @@ class Extractor:
         # Now get smask info from page.get_images() and update the image blocks
         # page.get_images() returns: (xref, smask, width, height, bpc, colorspace, ...)
         if image_blocks:
-            page_images = page.get_images(full=True)
+            page_images = self._page.get_images(full=True)
             xref_to_smask: dict[int, int] = {}
             for img_tuple in page_images:
                 img_xref = img_tuple[0]
@@ -379,18 +414,14 @@ class Extractor:
 
         return visible
 
-    def _extract_drawing_blocks(self, page: pymupdf.Page) -> list[Drawing]:
-        """Extract drawing (vector path) blocks from a page.
-
-        Args:
-            drawings: List of drawing dictionaries from page.get_drawings(extended=True)
-            page: The PyMuPDF page object (needed for coordinate transformation)
+    def extract_drawing_blocks(self) -> list[Drawing]:
+        """Extract drawing (vector path) blocks from the page.
 
         Returns:
             List of Drawing blocks with assigned IDs
         """
         # Use extended=True to get clipping hierarchy
-        drawings = page.get_drawings(extended=True)
+        drawings = self._page.get_drawings(extended=True)
 
         drawing_blocks: list[Drawing] = []
         for idx, d in enumerate(drawings):
@@ -497,43 +528,63 @@ class Extractor:
                 return False
         return True
 
-    def extract_page_blocks(self, page: pymupdf.Page, page_num: int) -> PageData:
-        """Extract all blocks from a single page.
+    def extract_text_blocks(self) -> list[Text]:
+        """Extract text blocks from the page.
 
-        Args:
-            page: PyMuPDF page object
-            page_num: Page number (1-indexed)
+        Uses the cached TextPage for efficiency. Multiple calls will reuse
+        the same TextPage.
 
         Returns:
-            PageData with all extracted blocks (with sequential IDs)
+            List of Text blocks with assigned IDs
         """
-        logger.debug("Processing page %s", page_num)
-
-        # Get raw dictionary with text and image blocks
-        raw: RawDict = page.get_text("rawdict")  # type: ignore[assignment]
+        # Get dictionary with text blocks using cached TextPage
+        # Using "dict" instead of "rawdict" - dict is faster and provides
+        # pre-assembled text in spans (no char-level detail needed)
+        textpage = self._get_textpage()
+        raw: RawDict = self._page.get_text("dict", textpage=textpage)  # type: ignore[assignment]
         assert isinstance(raw, dict), (
-            f"Expected rawdict to be a dictionary but got {type(raw)}"
+            f"Expected dict to be a dictionary but got {type(raw)}"
         )
 
         blocks = raw.get("blocks", [])
         assert self._warn_unknown_block_types(blocks)
+        return self._extract_text_blocks(blocks)
+
+    def extract_page_data(
+        self,
+        include_types: set[str] | None = None,
+    ) -> PageData:
+        """Extract all blocks from the page.
+
+        Args:
+            include_types: Set of element types to include ("text", "image",
+                "drawing"). If None, defaults to all types.
+
+        Returns:
+            PageData with all extracted blocks (with sequential IDs)
+        """
+        include_types = include_types or {"text", "image", "drawing"}
+        logger.debug("Processing page %s", self._page_num)
 
         # Extract blocks by type (IDs are assigned during creation)
         typed_blocks: list[Blocks] = []
-        if "text" in self._include_types:
-            typed_blocks.extend(self._extract_text_blocks(blocks))
-        if "image" in self._include_types:
-            typed_blocks.extend(self._extract_image_blocks(page))
-        if "drawing" in self._include_types:
-            typed_blocks.extend(self._extract_drawing_blocks(page))
 
-        page_rect = page.rect
+        if "text" in include_types:
+            typed_blocks.extend(self.extract_text_blocks())
+
+        if "image" in include_types:
+            typed_blocks.extend(self.extract_image_blocks())
+
+        if "drawing" in include_types:
+            typed_blocks.extend(self.extract_drawing_blocks())
+
+        page_rect = self._page.rect
         page_bbox = BBox.from_tuple(
             (page_rect.x0, page_rect.y0, page_rect.x1, page_rect.y1)
         )
 
         return PageData(
-            page_number=page_num,
+            page_number=self._page_num,
             blocks=typed_blocks,
             bbox=page_bbox,
         )
@@ -564,6 +615,7 @@ def extract_page_data(
     pages: list[PageData] = []
 
     num_pages = len(doc)
+    include_types = include_types or {"text", "image", "drawing"}
 
     # If not provided, process all pages (1-indexed numbers)
     if not page_numbers:
@@ -576,12 +628,13 @@ def extract_page_data(
             continue
         page = doc[page_index]
 
-        # Create a new Extractor for each page to reset IDs
+        # Create Extractor for this page - it handles TextPage caching internally
         extractor = Extractor(
-            include_types=include_types,
+            page=page,
+            page_num=page_num,
             include_metadata=include_metadata,
         )
-        page_data = extractor.extract_page_blocks(page, page_num)
+        page_data = extractor.extract_page_data(include_types=include_types)
         pages.append(page_data)
 
     return pages

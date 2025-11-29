@@ -29,8 +29,8 @@ from build_a_long.pdf_extract.cli.reporting import (
 )
 from build_a_long.pdf_extract.extractor.extractor import (
     ExtractionResult,
+    Extractor,
     PageData,
-    extract_page_data,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Image
 from build_a_long.pdf_extract.parser import parse_page_ranges
@@ -174,30 +174,41 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
 
         page_numbers = list(page_ranges.page_numbers(len(doc)))
 
-        # Extract text-only for all pages for font hint generation
-        # (hints need global context across the entire document)
-        logger.debug(
-            "Extracting text blocks from all pages for font hint generation..."
-        )
-        full_document_text_pages = extract_page_data(
-            doc,
-            list(range(1, len(doc) + 1)),  # All pages
-            include_types={"text"},  # Only text blocks
-            include_metadata=False,  # No extra metadata needed for hints
-        )
-        logger.debug("Finished extracting text blocks for hints.")
+        # Extract data from all pages in a single pass
+        # - For hint pages (all pages): extract text only
+        # - For requested pages: extract all types with metadata
+        # This approach reuses the TextPage cache within each Extractor
+        logger.debug("Extracting page data...")
 
-        # Extract full data for requested pages
-        # Always include metadata - classifiers need it
-        # (e.g., ArrowClassifier needs Drawing.items to detect arrowheads)
-        logger.debug(f"Extracting all blocks from requested pages: {page_numbers}...")
-        requested_pages_with_all_blocks = extract_page_data(
-            doc,
-            page_numbers,  # Only requested pages
-            include_types=config.include_types,  # All types as per config
-            include_metadata=True,
-        )
-        logger.debug("Finished extracting all blocks from requested pages.")
+        full_document_text_pages: list[PageData] = []
+        requested_pages_with_all_blocks: list[PageData] = []
+        requested_pages_set = set(page_numbers)
+
+        for page_index in range(len(doc)):
+            page_num = page_index + 1  # 1-indexed
+            page = doc[page_index]
+
+            # Create Extractor for this page (caches TextPage internally)
+            extractor = Extractor(
+                page=page,
+                page_num=page_num,
+                include_metadata=(page_num in requested_pages_set),
+            )
+
+            # Always extract text for hints (all pages need this)
+            text_page_data = extractor.extract_page_data(include_types={"text"})
+            full_document_text_pages.append(text_page_data)
+
+            # For requested pages, also extract full data
+            # The TextPage is already cached, so text extraction is reused
+            if page_num in requested_pages_set:
+                extractor.reset_ids()  # Reset IDs for fresh extraction
+                full_page_data = extractor.extract_page_data(
+                    include_types=config.include_types
+                )
+                requested_pages_with_all_blocks.append(full_page_data)
+
+        logger.debug("Finished extracting page data.")
 
         # At this point, `pages` refers to the original `all_pages` which is no longer
         # the case. We need to set `pages` to `requested_pages_with_all_blocks`

@@ -223,30 +223,21 @@ class TestProcessPdf:
         assert saved_data["source_hash"] == hashlib.sha256(pdf_content).hexdigest()
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
-    @patch("build_a_long.pdf_extract.main.extract_page_data")
-    def test_process_pdf_filters_pages(
-        self, mock_extract_page_data, mock_pymupdf_open, tmp_path
-    ):
+    def test_process_pdf_filters_pages(self, mock_pymupdf_open, tmp_path):
         """Test that --pages argument filters output correctly."""
-
-        def _mk_page(n: int) -> PageData:
-            return PageData(page_number=n, blocks=[], bbox=BBox(0.0, 0.0, 1.0, 1.0))
-
-        # All pages for font hints (first call)
-        all_pages = [_mk_page(i) for i in range(1, 201)]
-        # Filtered pages for actual processing (second call)
-        filtered_pages = [_mk_page(i) for i in [10, 11, 12, 15]]
-
-        # Return different values for each call:
-        # - First call: all pages for font hints
-        # - Second call: only filtered pages for processing
-        mock_extract_page_data.side_effect = [all_pages, filtered_pages]
-
-        # Mock PDF document
+        # Mock PDF document with 200 pages
         mock_page = MagicMock()
-        mock_page.get_text.return_value = {
-            "blocks": []
-        }  # Configure get_text to return a dictionary
+        mock_page.get_text.return_value = {"blocks": []}
+        mock_page.get_textpage.return_value = MagicMock()
+        mock_page.get_image_info.return_value = []
+        mock_page.get_images.return_value = []
+        mock_page.get_drawings.return_value = []
+        mock_page.rect = MagicMock()
+        mock_page.rect.x0 = 0.0
+        mock_page.rect.y0 = 0.0
+        mock_page.rect.x1 = 100.0
+        mock_page.rect.y1 = 100.0
+
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 200
         mock_doc.__getitem__.return_value = mock_page
@@ -269,17 +260,6 @@ class TestProcessPdf:
         result = _process_pdf(config, pdf_path, tmp_path)
 
         assert result == 0
-
-        # Verify extract_page_data was called twice
-        assert mock_extract_page_data.call_count == 2
-
-        # First call: all pages were extracted for font hints
-        first_call_pages_arg = mock_extract_page_data.call_args_list[0][0][1]
-        assert first_call_pages_arg == list(range(1, 201))
-
-        # Second call: only filtered pages were extracted for actual processing
-        second_call_pages_arg = mock_extract_page_data.call_args_list[1][0][1]
-        assert second_call_pages_arg == [10, 11, 12, 15]
 
         # Verify that output files were created
         # Main output JSON
