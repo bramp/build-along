@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -153,11 +154,10 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
     # Start timing from this point
     start_time = time.monotonic()
 
-    # Calculate source metadata
-    source_size = pdf_path.stat().st_size
-    # Only calculate hash for reasonable file sizes to avoid OOM on huge files?
-    # For now, just read it all as PDFs aren't usually GBs.
-    source_hash = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+    # Calculate source metadata (size and hash) in a single file open
+    with open(pdf_path, "rb") as f:
+        source_size = os.fstat(f.fileno()).st_size
+        source_hash = hashlib.file_digest(f, "sha256").hexdigest()
 
     # Extract and classify
     with pymupdf.open(str(pdf_path)) as doc:
@@ -209,8 +209,6 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
                 unsupported_reason=reason,
             )
             output_path = save_manual_json(manual, output_dir, pdf_path)
-            elapsed = time.monotonic() - start_time
-            print(f"Saved: {output_path} (took {elapsed:.1f}s)")
 
             # Print validation error for skipped PDF
             if config.save_summary:
@@ -225,6 +223,9 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
                 )
                 print()
                 print_validation(validation)
+
+            elapsed = time.monotonic() - start_time
+            print(f"Saved: {output_path} (took {elapsed:.1f}s)")
 
             return 0
 
