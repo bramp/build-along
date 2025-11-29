@@ -30,7 +30,6 @@
     "__tag__": "ProgressBar",
     "full_width": 517.74
   },
-  "new_bags": [],
   "steps": [
     {
       "bbox": {
@@ -79,6 +78,5 @@
         "value": 43
       }
     }
-  ],
-  "catalog": []
+  ]
 }

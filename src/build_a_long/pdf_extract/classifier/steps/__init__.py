@@ -1,3 +1,6 @@
+from build_a_long.pdf_extract.classifier.steps.arrow_classifier import (
+    ArrowClassifier,
+)
 from build_a_long.pdf_extract.classifier.steps.diagram_classifier import (
     DiagramClassifier,
 )
@@ -10,6 +13,7 @@ from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
 )
 
 __all__ = [
+    "ArrowClassifier",
     "DiagramClassifier",
     "RotationSymbolClassifier",
     "StepClassifier",

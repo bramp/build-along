@@ -22,3 +22,23 @@ def round_floats(obj: Any, decimals: int = 2) -> Any:
     elif isinstance(obj, tuple):
         return tuple(round_floats(item, decimals) for item in obj)
     return obj
+
+
+def remove_empty_lists(obj: Any) -> Any:
+    """Recursively remove empty lists from a nested structure.
+
+    Args:
+        obj: Any Python object (dict, list, or other)
+
+    Returns:
+        The same structure with all empty lists removed from dicts
+    """
+    if isinstance(obj, dict):
+        return {
+            k: remove_empty_lists(v)
+            for k, v in obj.items()
+            if not (isinstance(v, list) and len(v) == 0)
+        }
+    elif isinstance(obj, list):
+        return [remove_empty_lists(item) for item in obj]
+    return obj

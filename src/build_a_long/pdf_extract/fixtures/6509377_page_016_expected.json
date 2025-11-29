@@ -31,7 +31,6 @@
     "progress": 0.08,
     "full_width": 517.74
   },
-  "new_bags": [],
   "steps": [
     {
       "bbox": {
@@ -306,6 +305,5 @@
         ]
       }
     }
-  ],
-  "catalog": []
+  ]
 }

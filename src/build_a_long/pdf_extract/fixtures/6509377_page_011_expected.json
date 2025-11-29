@@ -30,7 +30,6 @@
     "__tag__": "ProgressBar",
     "full_width": 517.74
   },
-  "new_bags": [],
   "steps": [
     {
       "bbox": {
@@ -397,7 +396,23 @@
           "x1": 505.22,
           "y1": 460.56
         },
-        "__tag__": "Diagram"
+        "__tag__": "Diagram",
+        "arrows": [
+          {
+            "bbox": {
+              "x0": 376.47,
+              "y0": 413.39,
+              "x1": 388.98,
+              "y1": 422.49
+            },
+            "__tag__": "Arrow",
+            "direction": 0.0,
+            "tip": [
+              388.98,
+              417.94
+            ]
+          }
+        ]
       },
       "rotation_symbol": {
         "bbox": {
@@ -409,6 +424,5 @@
         "__tag__": "RotationSymbol"
       }
     }
-  ],
-  "catalog": []
+  ]
 }

@@ -107,6 +107,37 @@ class ClassifierConfig(BaseModel):
     rotation_symbol_proximity_far_distance: float = 300.0
     """Distance in points beyond which proximity score is 0.0."""
 
+    # Arrow classifier settings
+    arrow_min_score: Weight = 0.5
+    """Minimum score threshold for arrow (arrowhead) candidates."""
+
+    arrow_ideal_size: float = 12.0
+    """Ideal width/height in points for arrowheads (used for scoring).
+    
+    Based on observed data: arrowheads are typically 10-15px.
+    """
+
+    arrow_min_size: float = 5.0
+    """Minimum width/height in points for arrowheads."""
+
+    arrow_max_size: float = 20.0
+    """Maximum width/height in points for arrowheads."""
+
+    arrow_min_aspect: float = 0.5
+    """Minimum aspect ratio (width/height) for arrowheads.
+    
+    Allows for elongated triangles pointing horizontally or vertically.
+    """
+
+    arrow_max_aspect: float = 2.0
+    """Maximum aspect ratio (width/height) for arrowheads."""
+
+    arrow_shape_weight: Weight = 0.7
+    """Weight for shape score (triangle quality) in final arrow score."""
+
+    arrow_size_weight: Weight = 0.3
+    """Weight for size score in final arrow score."""
+
     # NewBag classifier settings (for numberless bag detection)
     new_bag_min_score: Weight = 0.5
     """Minimum score threshold for new bag candidates."""

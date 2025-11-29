@@ -171,10 +171,12 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         page_numbers = list(page_ranges.page_numbers(len(doc)))
 
         # Extract all pages for font hint generation (hints need global context)
-        # Include metadata if debug-extra-json is set OR if we need to draw paths
-        include_metadata = config.debug_extra_json or config.draw_drawings
+        # Always include metadata during extraction - classifiers need it
+        # (e.g., ArrowClassifier needs Drawing.items to detect arrowheads)
+        # The metadata is only preserved in JSON output if debug_extra_json is set
+        include_metadata = True
 
-        # Warn if extra metadata will be captured due to draw_drawings
+        # Warn if extra metadata will be captured in JSON output
         if (
             config.draw_drawings
             and not config.debug_extra_json

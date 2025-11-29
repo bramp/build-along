@@ -17,7 +17,7 @@ from pydantic import (
 )
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.utils import round_floats
+from build_a_long.pdf_extract.utils import remove_empty_lists, round_floats
 
 
 class LegoPageElement(BaseModel, ABC):
@@ -53,6 +53,7 @@ class LegoPageElement(BaseModel, ABC):
         """Serialize to JSON with proper defaults (by_alias=True, exclude_none=True).
 
         Floats are rounded to 2 decimal places for consistent output.
+        Empty lists are removed from the output.
 
         Args:
             indent: Optional indentation level for pretty-printing
@@ -61,13 +62,14 @@ class LegoPageElement(BaseModel, ABC):
         defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
         defaults.update(kwargs)
 
-        # First dump to dict, round floats, then serialize to JSON
+        # First dump to dict, round floats, remove empty lists, then serialize
         data = self.model_dump(**defaults)
         rounded_data = round_floats(data)
+        cleaned_data = remove_empty_lists(rounded_data)
 
         # Use compact separators when not indented (matches Pydantic's behavior)
         separators = (",", ":") if indent is None else (",", ": ")
-        return json.dumps(rounded_data, indent=indent, separators=separators)
+        return json.dumps(cleaned_data, indent=indent, separators=separators)
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
@@ -293,6 +295,39 @@ class RotationSymbol(LegoPageElement):
         return f"RotationSymbol(bbox={self.bbox})"
 
 
+class Arrow(LegoPageElement):
+    """An arrow indicating direction or relationship between elements.
+
+    Arrows consist of a triangular arrowhead that points in a specific direction.
+    In LEGO instructions, arrows typically:
+    - Point from a main assembly to a sub-step callout
+    - Indicate direction of motion or insertion
+    - Connect related elements visually
+
+    The bbox encompasses the arrowhead. The tip point is where the arrow points TO.
+    Direction is measured in degrees where:
+    - 0° = pointing right
+    - 90° = pointing down
+    - 180° or -180° = pointing left
+    - -90° = pointing up
+    """
+
+    tag: Literal["Arrow"] = Field(default="Arrow", alias="__tag__", frozen=True)
+
+    direction: float
+    """Angle in degrees indicating where the arrow points.
+
+    0° = right, 90° = down, 180° = left, -90° = up.
+    """
+
+    tip: tuple[float, float]
+    """The tip point (x, y) of the arrowhead - where the arrow points TO."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"Arrow(bbox={self.bbox}, direction={self.direction:.0f}°)"
+
+
 class Part(LegoPageElement):
     """A single part entry within a parts list.
 
@@ -420,9 +455,20 @@ class Diagram(LegoPageElement):
 
     tag: Literal["Diagram"] = Field(default="Diagram", alias="__tag__", frozen=True)
 
+    # TODO Figure out where arrows fit in the hierarchy
+    arrows: list[Arrow] = Field(default_factory=list)
+    """Direction arrows indicating piece movement within the diagram."""
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        return f"Diagram(bbox={str(self.bbox)})"
+        arrows_str = f", arrows={len(self.arrows)}" if self.arrows else ""
+        return f"Diagram(bbox={str(self.bbox)}{arrows_str})"
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over this Diagram and all child elements (arrows)."""
+        yield self
+        for arrow in self.arrows:
+            yield from arrow.iter_elements()
 
 
 class Step(LegoPageElement):
@@ -587,6 +633,7 @@ LegoPageElements = Annotated[
     | Shine
     | ProgressBar
     | RotationSymbol
+    | Arrow
     | Part
     | PartsList
     | BagNumber
@@ -748,6 +795,7 @@ class Manual(BaseModel):
         """Serialize to JSON with proper defaults (by_alias=True, exclude_none=True).
 
         Floats are rounded to 2 decimal places for consistent output.
+        Empty lists are removed from the output.
 
         Args:
             indent: Optional indentation level for pretty-printing
@@ -756,13 +804,14 @@ class Manual(BaseModel):
         defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
         defaults.update(kwargs)
 
-        # First dump to dict, round floats, then serialize to JSON
+        # First dump to dict, round floats, remove empty lists, then serialize
         data = self.model_dump(**defaults)
         rounded_data = round_floats(data)
+        cleaned_data = remove_empty_lists(rounded_data)
 
         # Use compact separators when not indented (matches Pydantic's behavior)
         separators = (",", ":") if indent is None else (",", ": ")
-        return json.dumps(rounded_data, indent=indent, separators=separators)
+        return json.dumps(cleaned_data, indent=indent, separators=separators)
 
 
 # TODO Add sub-assembly (or sub-step) element.
