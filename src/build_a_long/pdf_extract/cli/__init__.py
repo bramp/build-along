@@ -14,7 +14,7 @@ from .io import (
     open_compressed,
     render_annotated_images,
     save_debug_json,
-    save_pages_json,
+    save_manual_json,
     save_raw_json,
 )
 from .output_models import DebugOutput
@@ -33,7 +33,7 @@ __all__ = [
     "open_compressed",
     "render_annotated_images",
     "save_debug_json",
-    "save_pages_json",
+    "save_manual_json",
     "save_raw_json",
     "DebugOutput",
     "ValidationIssue",

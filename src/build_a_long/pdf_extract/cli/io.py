@@ -98,15 +98,15 @@ def save_debug_json(
     logger.info("Saved debug JSON to %s", output_json_path)
 
 
-def save_pages_json(
+def save_manual_json(
     manual: Manual,
     output_dir: Path,
     pdf_path: Path,
 ) -> None:
-    """Save final classified Page elements as JSON.
+    """Save final classified Manual elements as JSON.
 
-    This outputs the structured, hierarchical Page elements with their catalog,
-    steps, parts lists, etc. This is the "final result" of classification.
+    This outputs the structured, hierarchical Manual element with its pages,
+    catalog, steps, parts lists, etc. This is the "final result" of classification.
 
     Args:
         manual: Manual containing all classified pages
@@ -116,7 +116,7 @@ def save_pages_json(
     output_json_path = output_dir / (pdf_path.stem + ".json")
     with open(output_json_path, "w") as f:
         f.write(manual.to_json(indent=2))
-    logger.info("Saved pages JSON to %s", output_json_path)
+    logger.info("Saved manual JSON to %s", output_json_path)
 
 
 def save_raw_json(

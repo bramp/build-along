@@ -18,7 +18,7 @@ from build_a_long.pdf_extract.cli import (
     print_histogram,
     render_annotated_images,
     save_debug_json,
-    save_pages_json,
+    save_manual_json,
     save_raw_json,
 )
 from build_a_long.pdf_extract.cli.reporting import (
@@ -200,7 +200,8 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             )
 
         # Save results
-        save_pages_json(batch_result.manual, output_dir, pdf_path)
+        manual = batch_result.manual
+        save_manual_json(manual, output_dir, pdf_path)
 
         if config.draw_blocks or config.draw_elements or config.draw_drawings:
             render_annotated_images(
