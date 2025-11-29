@@ -28,5 +28,5 @@ A Bash script that:
 **Usage:**
 
 ```bash
-./scripts/process_all_examples.sh
+pants run scripts:process-all-examples
 ```

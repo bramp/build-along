@@ -374,13 +374,8 @@ def print_classification_debug(
                     target = reason.target_block
                     if target:
                         line += f" by {target.id}"
-                        # Cast to Blocks to satisfy type checker since get_best_candidate expects Blocks not Blocks | None
-                        from build_a_long.pdf_extract.extractor.page_blocks import (
-                            Blocks,
-                        )
 
-                        target_block: Blocks = target
-                        target_best = result.get_best_candidate(target_block)
+                        target_best = result.get_best_candidate(target)
                         if target_best:
                             line += f" ({target_best.label})"
                 line += f"* {str(block)}"

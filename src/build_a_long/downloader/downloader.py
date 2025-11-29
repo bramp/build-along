@@ -154,6 +154,7 @@ class LegoInstructionDownloader:
         if stream_fn is None:
             client = self._get_client()
             stream_fn = client.stream
+            assert stream_fn is not None
 
         file_hash_obj = hashlib.sha256()
         with stream_fn("GET", str(url), follow_redirects=True, timeout=None) as r:
