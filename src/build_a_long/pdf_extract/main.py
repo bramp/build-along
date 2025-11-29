@@ -404,8 +404,9 @@ def main() -> int:
                 # Default to same directory as the PDF
                 output_dir = file_path.parent
 
-            # Ensure output directory exists
-            output_dir.mkdir(parents=True, exist_ok=True)
+            # Ensure output directory exists, unless it's /dev/null
+            if output_dir != Path("/dev/null"):
+                output_dir.mkdir(parents=True, exist_ok=True)
 
             # Process this PDF
             exit_code = _process_pdf(config, file_path, output_dir)

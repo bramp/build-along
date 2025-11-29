@@ -87,6 +87,9 @@ def save_debug_json(
         output_dir: Directory where JSON should be saved
         pdf_path: Original PDF path (used for naming the JSON file)
     """
+    if output_dir == Path("/dev/null"):
+        return
+
     # Build debug structure using Pydantic models
     debug_output = DebugOutput(pages=results)
 
@@ -116,6 +119,9 @@ def save_manual_json(
     Returns:
         Path to the saved JSON file
     """
+    if output_dir == Path("/dev/null"):
+        return output_dir / (pdf_path.stem + ".json")
+
     output_json_path = output_dir / (pdf_path.stem + ".json")
     with open(output_json_path, "w") as f:
         f.write(manual.to_json(indent=2))
@@ -143,6 +149,9 @@ def save_raw_json(
         per_page: If True, save one JSON file per page; if False, save all
             pages in a single file
     """
+
+    if output_dir == Path("/dev/null"):
+        return
 
     suffix = ".json.bz2" if compress else ".json"
     opener = bz2.open if compress else open  # type: ignore[assignment]
@@ -209,6 +218,9 @@ def render_annotated_images(
         draw_drawings: If True, render the actual drawing paths.
         debug_candidates_label: If provided, only render candidates with this label.
     """
+    if output_dir == Path("/dev/null"):
+        return
+
     for result in results:
         page_num = result.page_data.page_number  # 1-indexed
         page = doc[page_num - 1]  # 0-indexed
