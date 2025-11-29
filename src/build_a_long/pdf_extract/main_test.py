@@ -1,5 +1,6 @@
 """Tests for main.py using minimal mocking and real temp files."""
 
+import hashlib
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -8,7 +9,7 @@ from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.cli import ProcessingConfig
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Image, Text
 from build_a_long.pdf_extract.main import (
     _load_json_pages,
     _parse_page_selection,
@@ -192,7 +193,11 @@ class TestProcessPdf:
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
 
-        pdf_path = Path("/fake/test.pdf")
+        # Create a dummy PDF file in tmp_path for stat() and read_bytes()
+        pdf_path = tmp_path / "test.pdf"
+        pdf_content = b"dummy pdf content"
+        pdf_path.write_bytes(pdf_content)
+
         config = _make_config(
             pdf_paths=[pdf_path],
             output_dir=tmp_path,
@@ -203,13 +208,14 @@ class TestProcessPdf:
 
         assert result == 0
         # Verify JSON file was created
-        json_file = tmp_path / "test_raw.json"
+        json_file = tmp_path / "test.json"
         assert json_file.exists()
 
         # Verify content
         saved_data = json.loads(json_file.read_text())
-        assert len(saved_data["pages"]) == 1
-        assert saved_data["pages"][0]["page_number"] == 1
+        assert saved_data["source_pdf"] == "test.pdf"
+        assert saved_data["source_size"] == len(pdf_content)
+        assert saved_data["source_hash"] == hashlib.sha256(pdf_content).hexdigest()
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
     @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
@@ -232,7 +238,11 @@ class TestProcessPdf:
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
 
-        pdf_path = Path("/fake/test.pdf")
+        # Create a dummy PDF file in tmp_path for stat() and read_bytes()
+        pdf_path = tmp_path / "test.pdf"
+        pdf_content = b"dummy pdf content"
+        pdf_path.write_bytes(pdf_content)
+
         config = _make_config(
             pdf_paths=[pdf_path],
             output_dir=tmp_path,
@@ -286,7 +296,11 @@ class TestProcessPdf:
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
 
-        pdf_path = Path("/fake/test.pdf")
+        # Create a dummy PDF file in tmp_path for stat() and read_bytes()
+        pdf_path = tmp_path / "test.pdf"
+        pdf_content = b"dummy pdf content"
+        pdf_path.write_bytes(pdf_content)
+
         config = _make_config(
             pdf_paths=[pdf_path],
             output_dir=tmp_path,
@@ -304,6 +318,112 @@ class TestProcessPdf:
         assert call_args.kwargs["draw_elements"] is True
         assert call_args.kwargs["draw_deleted"] is False
         assert isinstance(call_args.args[1], ClassificationResult)
+
+    @patch("build_a_long.pdf_extract.main.pymupdf.open")
+    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    def test_process_pdf_skips_full_page_image_pdfs(
+        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
+    ):
+        """Test that _process_pdf skips PDFs dominated by full-page images."""
+        # Create page data where most pages are full-page images
+        full_page_img_page = PageData(
+            page_number=1,
+            blocks=[Image(id=0, bbox=BBox(0, 0, 100, 200))],  # 100% image
+            bbox=BBox(0, 0, 100, 200),
+        )
+        normal_page = PageData(
+            page_number=2,
+            blocks=[Text(id=0, bbox=BBox(10, 10, 20, 20), text="text")],
+            bbox=BBox(0, 0, 100, 200),
+        )
+        mock_extract_bounding_boxes.return_value = [
+            full_page_img_page,
+            full_page_img_page,
+            normal_page,
+            full_page_img_page,
+        ]  # 3/4 pages are full-page images (75%)
+
+        # Mock PDF document
+        mock_doc = MagicMock()
+        mock_doc.__len__.return_value = 4
+        mock_doc.__enter__.return_value = mock_doc
+        mock_doc.__exit__.return_value = None
+        mock_pymupdf_open.return_value = mock_doc
+
+        # Create a dummy PDF file
+        pdf_path = tmp_path / "test_full_page_image.pdf"
+        pdf_content = b"dummy pdf content for full page image test"
+        pdf_path.write_bytes(pdf_content)
+
+        config = _make_config(
+            pdf_paths=[pdf_path],
+            output_dir=tmp_path,
+        )
+
+        result = _process_pdf(config, pdf_path, tmp_path)
+
+        assert result == 0
+        # Verify unsupported JSON was created
+        manual_json_path = tmp_path / "test_full_page_image.json"
+        assert manual_json_path.exists()
+        saved_data = json.loads(manual_json_path.read_text())
+        assert saved_data["unsupported_reason"] is not None
+        assert saved_data["source_pdf"] == pdf_path.name
+        assert saved_data["source_size"] == len(pdf_content)
+        assert saved_data["source_hash"] == hashlib.sha256(pdf_content).hexdigest()
+
+    @patch("build_a_long.pdf_extract.main.pymupdf.open")
+    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    def test_process_pdf_does_not_skip_normal_pdfs(
+        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
+    ):
+        """Test that _process_pdf does not skip normal PDFs (less than 50% full-page images)."""
+        # Create page data where less than 50% of pages are full-page images
+        full_page_img_page = PageData(
+            page_number=1,
+            blocks=[Image(id=0, bbox=BBox(0, 0, 100, 200))],  # 100% image
+            bbox=BBox(0, 0, 100, 200),
+        )
+        normal_page = PageData(
+            page_number=2,
+            blocks=[Text(id=0, bbox=BBox(10, 10, 20, 20), text="text")],
+            bbox=BBox(0, 0, 100, 200),
+        )
+        mock_extract_bounding_boxes.return_value = [
+            full_page_img_page,
+            normal_page,
+            normal_page,
+            normal_page,
+        ]  # 1/4 pages are full-page images (25%)
+
+        # Mock PDF document
+        mock_doc = MagicMock()
+        mock_doc.__len__.return_value = 4
+        mock_doc.__enter__.return_value = mock_doc
+        mock_doc.__exit__.return_value = None
+        mock_pymupdf_open.return_value = mock_doc
+
+        # Create a dummy PDF file
+        pdf_path = tmp_path / "test_normal.pdf"
+        pdf_content = b"dummy pdf content for normal pdf test"
+        pdf_path.write_bytes(pdf_content)
+
+        config = _make_config(
+            pdf_paths=[pdf_path],
+            output_dir=tmp_path,
+        )
+
+        result = _process_pdf(config, pdf_path, tmp_path)
+
+        assert result == 0
+        # Verify unsupported JSON was NOT created
+        manual_json_path = tmp_path / "test_normal.json"
+        assert manual_json_path.exists()
+        saved_data = json.loads(manual_json_path.read_text())
+        assert saved_data.get("unsupported_reason") is None
+        assert saved_data["source_pdf"] == pdf_path.name
+        assert saved_data["source_size"] == len(pdf_content)
+        assert saved_data["source_hash"] == hashlib.sha256(pdf_content).hexdigest()
 
 
 class TestMainIntegration:
@@ -380,8 +500,10 @@ class TestMainIntegration:
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
 
+        # Create a dummy PDF file in tmp_path for stat() and read_bytes()
         pdf_file = tmp_path / "input.pdf"
-        pdf_file.touch()
+        pdf_content = b"dummy pdf content"
+        pdf_file.write_bytes(pdf_content)
 
         output_dir = tmp_path / "output"
 
@@ -394,6 +516,10 @@ class TestMainIntegration:
         assert result == 0
         # Verify output was created
         assert (output_dir / "input.json").exists()
+        manual_data = json.loads((output_dir / "input.json").read_text())
+        assert manual_data["source_pdf"] == "input.pdf"
+        assert manual_data["source_size"] == len(pdf_content)
+        assert manual_data["source_hash"] == hashlib.sha256(pdf_content).hexdigest()
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
     @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
@@ -416,8 +542,10 @@ class TestMainIntegration:
 
         pdf1 = tmp_path / "test1.pdf"
         pdf2 = tmp_path / "test2.pdf"
-        pdf1.touch()
-        pdf2.touch()
+        pdf_content1 = b"dummy pdf content 1"
+        pdf_content2 = b"dummy pdf content 2"
+        pdf1.write_bytes(pdf_content1)
+        pdf2.write_bytes(pdf_content2)
 
         with patch("sys.argv", ["main.py", str(pdf1), str(pdf2)]):
             result = main()
@@ -427,3 +555,13 @@ class TestMainIntegration:
         assert mock_pymupdf_open.call_count == 2
         assert (tmp_path / "test1.json").exists()
         assert (tmp_path / "test2.json").exists()
+
+        manual1 = json.loads((tmp_path / "test1.json").read_text())
+        assert manual1["source_pdf"] == "test1.pdf"
+        assert manual1["source_size"] == len(pdf_content1)
+        assert manual1["source_hash"] == hashlib.sha256(pdf_content1).hexdigest()
+
+        manual2 = json.loads((tmp_path / "test2.json").read_text())
+        assert manual2["source_pdf"] == "test2.pdf"
+        assert manual2["source_size"] == len(pdf_content2)
+        assert manual2["source_hash"] == hashlib.sha256(pdf_content2).hexdigest()

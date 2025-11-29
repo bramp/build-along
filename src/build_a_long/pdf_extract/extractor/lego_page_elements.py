@@ -617,11 +617,26 @@ class Manual(BaseModel):
 
     tag: Literal["Manual"] = Field(default="Manual", alias="__tag__", frozen=True)
 
+    # Set information
+    set_number: str | None = None
+    name: str | None = None
+
+    # Source PDF metadata
+    source_pdf: str | None = None
+    """Path to the source PDF file."""
+
+    source_size: int | None = None
+    """Size of the source PDF file in bytes."""
+
+    source_hash: str | None = None
+    """Hash of the source PDF file (e.g. SHA256)."""
+
+    # Main parsed contents
     pages: list[Page] = Field(default_factory=list)
     """List of Page objects, sorted by pdf_page_number."""
 
-    set_number: str | None = None
-    name: str | None = None
+    unsupported_reason: str | None = None
+    """If present, indicates why this manual could not be fully processed."""
 
     @model_validator(mode="after")
     def sort_pages(self) -> Manual:

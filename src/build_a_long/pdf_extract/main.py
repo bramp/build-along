@@ -1,5 +1,6 @@
 """Main CLI entry point for PDF extraction tool."""
 
+import hashlib
 import logging
 from pathlib import Path
 
@@ -29,6 +30,9 @@ from build_a_long.pdf_extract.extractor import (
     ExtractionResult,
     extract_bounding_boxes,
 )
+from build_a_long.pdf_extract.extractor.extractor import PageData
+from build_a_long.pdf_extract.extractor.lego_page_elements import Manual
+from build_a_long.pdf_extract.extractor.page_blocks import Image
 from build_a_long.pdf_extract.parser import parse_page_ranges
 from build_a_long.pdf_extract.parser.page_ranges import PageRanges
 
@@ -102,6 +106,32 @@ def _parse_page_selection(pages_arg: str | None, doc_length: int) -> PageRanges 
         return None
 
 
+def _is_full_page_image(page: PageData) -> bool:
+    """Check if a page is dominated by a single large image.
+
+    Args:
+        page: The page to check.
+
+    Returns:
+        True if the page is dominated by a single image, False otherwise.
+    """
+    page_area = page.bbox.area
+    if page_area <= 0:
+        return False
+
+    # Find image blocks
+    images = [b for b in page.blocks if isinstance(b, Image)]
+    if not images:
+        return False
+
+    # Check if any image covers > 90% of the page
+    for img in images:
+        if img.bbox.area / page_area > 0.90:
+            return True
+
+    return False
+
+
 def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> int:
     """Process a single PDF file with the given configuration.
 
@@ -114,6 +144,13 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         Exit code (0 for success, non-zero for error)
     """
     logging.info("Processing PDF: %s", pdf_path)
+
+    # Calculate source metadata
+    source_size = pdf_path.stat().st_size
+    # Only calculate hash for reasonable file sizes to avoid OOM on huge files?
+    # For now, just read it all as PDFs aren't usually GBs.
+    source_hash = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+    source_pdf_name = pdf_path.name
 
     # Extract and classify
     with pymupdf.open(str(pdf_path)) as doc:
@@ -146,6 +183,25 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             include_types=config.include_types,
             include_metadata=include_metadata,
         )
+
+        # Check if the PDF is likely a scan / full-page images
+        # If more than 50% of pages are full-page images, skip it
+        full_page_image_count = sum(1 for p in all_pages if _is_full_page_image(p))
+        if len(all_pages) > 0 and (full_page_image_count / len(all_pages)) > 0.5:
+            reason = (
+                f"PDF appears to be composed of full-page images "
+                f"({full_page_image_count}/{len(all_pages)} pages). Skipping."
+            )
+            logger.warning(reason)
+
+            manual = Manual(
+                source_pdf=pdf_path.name,
+                source_size=source_size,
+                source_hash=source_hash,
+                unsupported_reason=reason,
+            )
+            save_manual_json(manual, output_dir, pdf_path)
+            return 0
 
         # Filter to requested pages for actual processing
         if page_numbers:
@@ -201,6 +257,9 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
 
         # Save results
         manual = batch_result.manual
+        manual.source_pdf = pdf_path.name
+        manual.source_size = source_size
+        manual.source_hash = source_hash
         save_manual_json(manual, output_dir, pdf_path)
 
         if config.draw_blocks or config.draw_elements or config.draw_drawings:
