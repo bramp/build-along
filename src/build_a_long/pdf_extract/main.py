@@ -175,7 +175,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         page_numbers = list(page_ranges.page_numbers(len(doc)))
 
         # Extract text-only for all pages for font hint generation
-        # (hints need global context across the full document)
+        # (hints need global context across the entire document)
         logger.debug(
             "Extracting text blocks from all pages for font hint generation..."
         )
@@ -183,11 +183,13 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             doc,
             list(range(1, len(doc) + 1)),  # All pages
             include_types={"text"},  # Only text blocks
+            include_metadata=False,  # No extra metadata needed for hints
         )
         logger.debug("Finished extracting text blocks for hints.")
 
-        # Extract full data for requested pages with metadata
-        # (classifiers need metadata, e.g., ArrowClassifier needs Drawing.items)
+        # Extract full data for requested pages
+        # Always include metadata - classifiers need it
+        # (e.g., ArrowClassifier needs Drawing.items to detect arrowheads)
         logger.debug(f"Extracting all blocks from requested pages: {page_numbers}...")
         requested_pages_with_all_blocks = extract_page_data(
             doc,

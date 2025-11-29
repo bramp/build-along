@@ -54,14 +54,22 @@ class Extractor:
     IDs are sequential and reset for each page.
     """
 
-    def __init__(self, *, include_metadata: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        include_types: set[str] | None = None,
+        include_metadata: bool = False,
+    ) -> None:
         """Initialize the extractor with a fresh ID counter.
 
         Args:
+            include_types: Set of element types to include ("text", "image",
+                "drawing"). If None, defaults to all types.
             include_metadata: If True, extract additional metadata (colors, fonts,
                 dimensions, etc.). If False, only extract core fields.
         """
         self._next_id = 0
+        self._include_types = include_types or {"text", "image", "drawing"}
         self._include_metadata = include_metadata
 
     def _get_next_id(self) -> int:
@@ -489,15 +497,12 @@ class Extractor:
                 return False
         return True
 
-    def extract_page_blocks(
-        self, page: pymupdf.Page, page_num: int, include_types: set[str]
-    ) -> PageData:
+    def extract_page_blocks(self, page: pymupdf.Page, page_num: int) -> PageData:
         """Extract all blocks from a single page.
 
         Args:
             page: PyMuPDF page object
             page_num: Page number (1-indexed)
-            include_types: Set of element types to include
 
         Returns:
             PageData with all extracted blocks (with sequential IDs)
@@ -515,11 +520,11 @@ class Extractor:
 
         # Extract blocks by type (IDs are assigned during creation)
         typed_blocks: list[Blocks] = []
-        if "text" in include_types:
+        if "text" in self._include_types:
             typed_blocks.extend(self._extract_text_blocks(blocks))
-        if "image" in include_types:
+        if "image" in self._include_types:
             typed_blocks.extend(self._extract_image_blocks(page))
-        if "drawing" in include_types:
+        if "drawing" in self._include_types:
             typed_blocks.extend(self._extract_drawing_blocks(page))
 
         page_rect = page.rect
@@ -556,9 +561,6 @@ def extract_page_data(
     Returns:
         List of PageData containing all pages with their blocks
     """
-    if include_types is None:
-        include_types = {"text", "image", "drawing"}
-
     pages: list[PageData] = []
 
     num_pages = len(doc)
@@ -575,8 +577,11 @@ def extract_page_data(
         page = doc[page_index]
 
         # Create a new Extractor for each page to reset IDs
-        extractor = Extractor(include_metadata=include_metadata)
-        page_data = extractor.extract_page_blocks(page, page_num, include_types)
+        extractor = Extractor(
+            include_types=include_types,
+            include_metadata=include_metadata,
+        )
+        page_data = extractor.extract_page_blocks(page, page_num)
         pages.append(page_data)
 
     return pages
