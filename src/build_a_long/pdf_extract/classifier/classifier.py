@@ -75,6 +75,13 @@ from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 
 logger = logging.getLogger(__name__)
 
+# Pages with more blocks than this threshold will be skipped during classification.
+# This avoids O(n²) algorithms (like duplicate detection) that become prohibitively
+# slow on pages with thousands of vector drawings. Such pages are typically info
+# pages where each character is a separate vector graphic.
+# TODO: Add spatial indexing to handle high-block pages efficiently.
+MAX_BLOCKS_PER_PAGE = 1000
+
 
 def classify_elements(page: PageData) -> ClassificationResult:
     """Classify and label elements on a single page using rule-based heuristics.
@@ -115,8 +122,23 @@ def classify_pages(
     hint_pages = pages_for_hints if pages_for_hints is not None else pages
 
     # Phase 1: Filter duplicate blocks on each page and track removals
+    # Skip pages with too many blocks to avoid O(n²) performance issues
     removed_blocks_per_page: list[dict[Blocks, RemovalReason]] = []
+    skipped_pages: set[int] = set()  # Track page numbers that are skipped
+
     for page_data in pages:
+        # Skip pages with too many blocks - these are likely info/inventory pages
+        # with vectorized text that cause O(n²) algorithms to be very slow
+        if len(page_data.blocks) > MAX_BLOCKS_PER_PAGE:
+            logger.info(
+                f"Page {page_data.page_number}: skipping classification "
+                f"({len(page_data.blocks)} blocks exceeds threshold of "
+                f"{MAX_BLOCKS_PER_PAGE})"
+            )
+            skipped_pages.add(page_data.page_number)
+            removed_blocks_per_page.append({})
+            continue
+
         kept_blocks = page_data.blocks
 
         # Filter background blocks (full page blocks like background images)
@@ -152,6 +174,10 @@ def classify_pages(
     # Filter duplicates from hint pages (may be different from pages to classify)
     hint_pages_without_duplicates = []
     for page_data in hint_pages:
+        # Skip high-block pages for hints too (same threshold)
+        if len(page_data.blocks) > MAX_BLOCKS_PER_PAGE:
+            continue
+
         # TODO We are re-filtering duplicates here; optimize by changing the API
         # to accept one list of PageData, and seperate by page_numbers.
         kept_blocks = page_data.blocks
@@ -197,6 +223,19 @@ def classify_pages(
     for page_data, page_without_duplicates, removed_mapping in zip(
         pages, pages_without_duplicates, removed_blocks_per_page, strict=True
     ):
+        # Handle skipped pages
+        if page_data.page_number in skipped_pages:
+            result = ClassificationResult(
+                page_data=page_data,
+                skipped_reason=(
+                    f"Page has {len(page_data.blocks)} blocks, which exceeds "
+                    f"the threshold of {MAX_BLOCKS_PER_PAGE}. This is likely an "
+                    f"info/inventory page with vectorized text."
+                ),
+            )
+            results.append(result)
+            continue
+
         # Classify using only non-removed blocks
         result = classifier.classify(page_without_duplicates)
 

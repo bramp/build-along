@@ -180,3 +180,33 @@ class TestClassifyElements:
         assert id(removed_block) not in blocks_in_candidates, (
             "Removed duplicate block should not be referenced in candidates"
         )
+
+    def test_high_block_page_is_skipped(self) -> None:
+        """Test that pages with too many blocks are skipped."""
+        from build_a_long.pdf_extract.classifier.classifier import MAX_BLOCKS_PER_PAGE
+
+        page_bbox = BBox(0, 0, 100, 200)
+
+        # Create a page with more blocks than the threshold
+        blocks: list[Drawing] = [
+            Drawing(id=i, bbox=BBox(i % 10, i // 10, i % 10 + 1, i // 10 + 1))
+            for i in range(MAX_BLOCKS_PER_PAGE + 100)
+        ]
+
+        page_data = PageData(
+            page_number=1,
+            blocks=list(blocks),  # type: ignore[arg-type]
+            bbox=page_bbox,
+        )
+
+        batch_result = classify_pages([page_data])
+
+        # Verify the page was skipped
+        assert len(batch_result.results) == 1
+        result = batch_result.results[0]
+        assert result.skipped_reason is not None
+        assert str(MAX_BLOCKS_PER_PAGE) in result.skipped_reason
+        assert "blocks" in result.skipped_reason.lower()
+
+        # Verify no candidates were generated (since classification was skipped)
+        assert len(result.candidates) == 0

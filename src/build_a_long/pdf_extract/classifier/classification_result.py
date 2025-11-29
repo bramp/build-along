@@ -63,6 +63,16 @@ class ClassificationResult(BaseModel):
     page_data: PageData
     """The original page data being classified"""
 
+    skipped_reason: str | None = None
+    """If set, classification was skipped for this page.
+    
+    This is used for pages that cannot be reasonably classified, such as:
+    - Pages with too many blocks (e.g., >1000 vector drawings)
+    - Info/inventory pages where each character is a separate vector
+    
+    When set, most classification results will be empty.
+    """
+
     # TODO Do we need this field? Can we remove it?
     warnings: list[str] = Field(default_factory=list)
     """Warning messages generated during classification.
