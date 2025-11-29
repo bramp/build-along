@@ -140,14 +140,14 @@ class RotationSymbolClassifier(LabelClassifier):
                 )
                 continue
 
-            if score_details.score() <= config.rotation_symbol_min_score:
+            if score_details.score() <= config.rotation_symbol.min_score:
                 log.debug(
                     "[rotation_symbol] Rejected cluster at %s "
                     "(%d blocks) score=%.2f < min_score=%.2f",
                     cluster_bbox,
                     len(cluster),
                     score_details.score(),
-                    config.rotation_symbol_min_score,
+                    config.rotation_symbol.min_score,
                 )
                 continue
 
@@ -196,35 +196,32 @@ class RotationSymbolClassifier(LabelClassifier):
         Returns:
             Score details if this could be a rotation symbol, None otherwise
         """
-        config = self.config
+        rs_config = self.config.rotation_symbol
         width = bbox.width
         height = bbox.height
 
         # Check basic size constraints
         if (
-            width < config.rotation_symbol_min_size
-            or width > config.rotation_symbol_max_size
-            or height < config.rotation_symbol_min_size
-            or height > config.rotation_symbol_max_size
+            width < rs_config.min_size
+            or width > rs_config.max_size
+            or height < rs_config.min_size
+            or height > rs_config.max_size
         ):
             return None
 
         # Score size (prefer images close to ideal size)
-        ideal_size = config.rotation_symbol_ideal_size
+        ideal_size = rs_config.ideal_size
         size_diff = abs(width - ideal_size) + abs(height - ideal_size)
         size_score = max(0.0, 1.0 - (size_diff / (ideal_size * 2)))
 
         # Score aspect ratio (prefer square)
         aspect = width / height if height > 0 else 0
-        if (
-            aspect < config.rotation_symbol_min_aspect
-            or aspect > config.rotation_symbol_max_aspect
-        ):
+        if aspect < rs_config.min_aspect or aspect > rs_config.max_aspect:
             return None
 
         # Perfect square = 1.0, score decreases linearly to 0 at boundaries
         aspect_diff = abs(aspect - 1.0)
-        aspect_tolerance = config.rotation_symbol_max_aspect - 1.0
+        aspect_tolerance = rs_config.max_aspect - 1.0
         aspect_score = max(0.0, 1.0 - (aspect_diff / aspect_tolerance))
 
         # Score proximity to diagrams
@@ -236,9 +233,9 @@ class RotationSymbolClassifier(LabelClassifier):
             size_score=size_score,
             aspect_score=aspect_score,
             proximity_to_diagram=proximity_score,
-            size_weight=config.rotation_symbol_size_weight,
-            aspect_weight=config.rotation_symbol_aspect_weight,
-            proximity_weight=config.rotation_symbol_proximity_weight,
+            size_weight=rs_config.size_weight,
+            aspect_weight=rs_config.aspect_weight,
+            proximity_weight=rs_config.proximity_weight,
         )
 
     def _calculate_proximity_to_diagrams(
@@ -255,9 +252,9 @@ class RotationSymbolClassifier(LabelClassifier):
         Returns:
             Score from 0.0 (far from diagrams) to 1.0 (very close to diagram)
         """
-        config = self.config
-        close_distance = config.rotation_symbol_proximity_close_distance
-        far_distance = config.rotation_symbol_proximity_far_distance
+        rs_config = self.config.rotation_symbol
+        close_distance = rs_config.proximity_close_distance
+        far_distance = rs_config.proximity_far_distance
 
         if not diagram_candidates:
             # No diagrams on page, give neutral score

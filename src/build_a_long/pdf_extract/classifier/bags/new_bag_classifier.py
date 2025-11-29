@@ -151,11 +151,11 @@ class NewBagClassifier(LabelClassifier):
             combined = score_details.score()
 
             # Skip low-scoring candidates
-            if combined < config.new_bag_min_score:
+            if combined < config.new_bag.min_score:
                 log.debug(
                     "[new_bag] Skipping cluster score=%.2f (below %.2f) bbox=%s",
                     combined,
-                    config.new_bag_min_score,
+                    config.new_bag.min_score,
                     cluster_bbox,
                 )
                 continue
@@ -200,18 +200,18 @@ class NewBagClassifier(LabelClassifier):
         Returns:
             Score details, or None if cluster doesn't meet basic requirements.
         """
-        config = self.config
+        nb_config = self.config.new_bag
 
         # Check minimum size
         if (
-            cluster_bbox.width < config.new_bag_icon_min_size
-            or cluster_bbox.height < config.new_bag_icon_min_size
+            cluster_bbox.width < nb_config.icon_min_size
+            or cluster_bbox.height < nb_config.icon_min_size
         ):
             return None
 
         # Check position - must be in top-left area
-        max_x = page_bbox.width * config.new_bag_icon_max_x_ratio
-        max_y = page_bbox.height * config.new_bag_icon_max_y_ratio
+        max_x = page_bbox.width * nb_config.icon_max_x_ratio
+        max_y = page_bbox.height * nb_config.icon_max_y_ratio
         if cluster_bbox.x0 > max_x or cluster_bbox.y0 > max_y:
             return None
 
@@ -222,8 +222,8 @@ class NewBagClassifier(LabelClassifier):
 
         # Score aspect ratio (square is best)
         aspect = cluster_bbox.width / cluster_bbox.height if cluster_bbox.height else 0
-        min_aspect = config.new_bag_icon_min_aspect
-        max_aspect = config.new_bag_icon_max_aspect
+        min_aspect = nb_config.icon_min_aspect
+        max_aspect = nb_config.icon_max_aspect
 
         if min_aspect <= aspect <= max_aspect:
             # Within acceptable range - score based on how close to 1.0

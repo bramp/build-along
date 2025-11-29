@@ -65,8 +65,9 @@ class _PartNumberScore(Score):
         Combines text matching and font size matching with text weighted more heavily.
         """
         # For part numbers, reuse the part-count weights
-        text_weight = self.config.part_count_text_weight
-        font_size_weight = self.config.part_count_font_size_weight
+        pc_config = self.config.part_count
+        text_weight = pc_config.text_weight
+        font_size_weight = pc_config.font_size_weight
 
         # If catalog element ID hint is not available, zero out font weight
         if self.config.font_size_hints.catalog_element_id_size is None:
@@ -123,13 +124,13 @@ class PartNumberClassifier(LabelClassifier):
             combined = detail_score.score()
 
             # Skip candidates below minimum score threshold
-            if combined < self.config.part_number_min_score:
+            if combined < self.config.part_number.min_score:
                 log.debug(
                     "[part_number] Skipping low-score candidate: text='%s' "
                     "score=%.3f (below threshold %.3f)",
                     block.text,
                     combined,
-                    self.config.part_number_min_score,
+                    self.config.part_number.min_score,
                 )
                 continue
 

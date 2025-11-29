@@ -77,7 +77,7 @@ class ArrowClassifier(LabelClassifier):
     def _score(self, result: ClassificationResult) -> None:
         """Score Drawing blocks as potential arrowheads."""
         page_data = result.page_data
-        config = self.config
+        arrow_config = self.config.arrow
 
         # Process each Drawing block
         for block in page_data.blocks:
@@ -88,12 +88,12 @@ class ArrowClassifier(LabelClassifier):
             if score_details is None:
                 continue
 
-            if score_details.score() < config.arrow_min_score:
+            if score_details.score() < arrow_config.min_score:
                 log.debug(
                     "[arrow] Rejected at %s: score=%.2f < min_score=%.2f",
                     block.bbox,
                     score_details.score(),
-                    config.arrow_min_score,
+                    arrow_config.min_score,
                 )
                 continue
 
@@ -122,7 +122,7 @@ class ArrowClassifier(LabelClassifier):
         Returns:
             Score details if this could be an arrowhead, None otherwise
         """
-        config = self.config
+        arrow_config = self.config.arrow
         bbox = block.bbox
         items = block.items
 
@@ -135,14 +135,14 @@ class ArrowClassifier(LabelClassifier):
             return None
 
         # Check size constraints
-        if bbox.width < config.arrow_min_size or bbox.width > config.arrow_max_size:
+        if bbox.width < arrow_config.min_size or bbox.width > arrow_config.max_size:
             return None
-        if bbox.height < config.arrow_min_size or bbox.height > config.arrow_max_size:
+        if bbox.height < arrow_config.min_size or bbox.height > arrow_config.max_size:
             return None
 
         # Check aspect ratio (triangles are roughly square-ish to elongated)
         aspect = bbox.width / bbox.height if bbox.height > 0 else 0
-        if aspect < config.arrow_min_aspect or aspect > config.arrow_max_aspect:
+        if aspect < arrow_config.min_aspect or aspect > arrow_config.max_aspect:
             return None
 
         # Must have 3-5 line items forming the shape
@@ -185,7 +185,7 @@ class ArrowClassifier(LabelClassifier):
             shape_score = 0.7
 
         # Score the size (prefer sizes closer to ideal)
-        ideal_size = config.arrow_ideal_size
+        ideal_size = arrow_config.ideal_size
         size_diff = abs(bbox.width - ideal_size) + abs(bbox.height - ideal_size)
         size_score = max(0.0, 1.0 - (size_diff / (ideal_size * 2)))
 
@@ -194,8 +194,8 @@ class ArrowClassifier(LabelClassifier):
             size_score=size_score,
             direction=direction,
             tip=tip,
-            shape_weight=config.arrow_shape_weight,
-            size_weight=config.arrow_size_weight,
+            shape_weight=arrow_config.shape_weight,
+            size_weight=arrow_config.size_weight,
         )
 
     def _extract_unique_points(

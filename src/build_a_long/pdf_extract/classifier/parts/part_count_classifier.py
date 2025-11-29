@@ -54,8 +54,9 @@ class _PartCountScore(Score):
 
         Combines text matching and font size matching with text weighted more heavily.
         """
+        pc_config = self.config.part_count
         # Determine font size weight based on whether hints are available
-        font_size_weight = self.config.part_count_font_size_weight
+        font_size_weight = pc_config.font_size_weight
 
         # If neither instruction nor catalog hints are available, zero out weight
         hints = self.config.font_size_hints
@@ -64,11 +65,11 @@ class _PartCountScore(Score):
 
         # Sum the weighted components
         score = (
-            self.config.part_count_text_weight * self.text_score
+            pc_config.text_weight * self.text_score
             + font_size_weight * self.font_size_score
         )
         # Normalize by the sum of weights to keep score in [0, 1]
-        total_weight = self.config.part_count_text_weight + font_size_weight
+        total_weight = pc_config.text_weight + font_size_weight
         return score / total_weight if total_weight > 0 else 0.0
 
 
@@ -124,13 +125,13 @@ class PartCountClassifier(LabelClassifier):
             combined = detail_score.score()
 
             # Skip candidates below minimum score threshold
-            if combined < self.config.part_count_min_score:
+            if combined < self.config.part_count.min_score:
                 log.debug(
                     "[part_count] Skipping low-score candidate: text='%s' "
                     "score=%.3f (below threshold %.3f)",
                     block.text,
                     combined,
-                    self.config.part_count_min_score,
+                    self.config.part_count.min_score,
                 )
                 continue
 

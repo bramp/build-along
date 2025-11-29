@@ -9,6 +9,7 @@ from build_a_long.pdf_extract.classifier import (
     ClassifierConfig,
     RemovalReason,
 )
+from build_a_long.pdf_extract.classifier.config import PageNumberConfig
 from build_a_long.pdf_extract.classifier.test_utils import TestScore
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
@@ -24,19 +25,18 @@ class TestClassifierConfig:
     def test_negative_weight_raises(self) -> None:
         """Test that negative weights raise a ValidationError."""
         with pytest.raises(ValidationError, match=r"greater than or equal to 0"):
-            ClassifierConfig(page_number_text_weight=-0.1)
+            PageNumberConfig(text_weight=-0.1)
 
     def test_weight_above_one_raises(self) -> None:
         """Test that weights above 1.0 raise a ValidationError."""
         with pytest.raises(ValidationError, match=r"less than or equal to 1"):
-            ClassifierConfig(page_number_text_weight=1.5)
+            PageNumberConfig(text_weight=1.5)
 
     def test_json_round_trip(self) -> None:
         """Test that ClassifierConfig can be serialized and deserialized."""
         config = ClassifierConfig(
             min_confidence_threshold=0.8,
-            page_number_text_weight=0.6,
-            page_number_position_weight=0.4,
+            page_number=PageNumberConfig(text_weight=0.6, position_weight=0.4),
         )
 
         # Serialize
@@ -47,9 +47,9 @@ class TestClassifierConfig:
 
         # Verify all fields match
         assert config2.min_confidence_threshold == config.min_confidence_threshold
-        assert config2.page_number_text_weight == config.page_number_text_weight
-        assert config2.page_number_position_weight == config.page_number_position_weight
-        assert config2.page_number_position_scale == config.page_number_position_scale
+        assert config2.page_number.text_weight == config.page_number.text_weight
+        assert config2.page_number.position_weight == config.page_number.position_weight
+        assert config2.page_number.position_scale == config.page_number.position_scale
 
 
 class TestClassificationResult:

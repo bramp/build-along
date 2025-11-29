@@ -135,7 +135,7 @@ class TestArrowClassifier:
         candidates = result.get_scored_candidates("arrow", valid_only=False)
         assert len(candidates) == 1
         assert candidates[0].label == "arrow"
-        assert candidates[0].score > config.arrow_min_score
+        assert candidates[0].score > config.arrow.min_score
 
     def test_score_rejects_drawing_without_items(
         self, arrow_classifier: ArrowClassifier

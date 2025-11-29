@@ -113,13 +113,13 @@ class PartsListClassifier(LabelClassifier):
             combined = score.score()
 
             # Skip candidates below minimum score threshold
-            if combined < self.config.parts_list_min_score:
+            if combined < self.config.parts_list.min_score:
                 log.debug(
                     "[parts_list] Skipping low-score candidate: drawing=%d "
                     "score=%.3f (below threshold %.3f)",
                     drawing.id,
                     combined,
-                    self.config.parts_list_min_score,
+                    self.config.parts_list.min_score,
                 )
                 continue
 
@@ -133,7 +133,7 @@ class PartsListClassifier(LabelClassifier):
             if failure_reason is None and page_data.bbox:
                 page_area = page_data.bbox.area
                 drawing_area = drawing.bbox.area
-                max_ratio = self.config.parts_list_max_area_ratio
+                max_ratio = self.config.parts_list.max_area_ratio
                 if page_area > 0 and drawing_area / page_area > max_ratio:
                     pct = drawing_area / page_area * 100
                     failure_reason = f"Drawing too large ({pct:.1f}% of page area)"

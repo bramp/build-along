@@ -50,24 +50,25 @@ class _PageNumberScore(Score):
     # TODO Test this score is always between 0.0 and 1.0
     def score(self) -> Weight:
         """Calculate final weighted score from components."""
+        pn_config = self.config.page_number
         # Determine font size weight based on whether hints are available
-        font_size_weight = self.config.page_number_font_size_weight
+        font_size_weight = pn_config.font_size_weight
         if self.config.font_size_hints.page_number_size is None:
             # No hint available, zero out the font size weight
             font_size_weight = 0.0
 
         # Sum the weighted components
         score = (
-            self.config.page_number_text_weight * self.text_score
-            + self.config.page_number_position_weight * self.position_score
-            + self.config.page_number_page_value_weight * self.page_value_score
+            pn_config.text_weight * self.text_score
+            + pn_config.position_weight * self.position_score
+            + pn_config.page_value_weight * self.page_value_score
             + font_size_weight * self.font_size_score
         )
         # Normalize by the sum of weights to keep score in [0, 1]
         total_weight = (
-            self.config.page_number_text_weight
-            + self.config.page_number_position_weight
-            + self.config.page_number_page_value_weight
+            pn_config.text_weight
+            + pn_config.position_weight
+            + pn_config.page_value_weight
             + font_size_weight
         )
         return score / total_weight if total_weight > 0 else 0.0
@@ -128,13 +129,13 @@ class PageNumberClassifier(LabelClassifier):
             combined = score.score()
 
             # Skip candidates below minimum score threshold
-            if combined < self.config.page_number_min_score:
+            if combined < self.config.page_number.min_score:
                 log.debug(
                     "[page_number] Skipping low-score candidate: text='%s' "
                     "score=%.3f (below threshold %.3f)",
                     block.text,
                     combined,
-                    self.config.page_number_min_score,
+                    self.config.page_number.min_score,
                 )
                 continue
 
@@ -232,7 +233,7 @@ class PageNumberClassifier(LabelClassifier):
             + (element_center_y - page_bbox.y1) ** 2
         )
         min_dist = min(dist_bottom_left, dist_bottom_right)
-        return math.exp(-min_dist / self.config.page_number_position_scale)
+        return math.exp(-min_dist / self.config.page_number.position_scale)
 
     def _score_page_number_position(self, element: Text, page_bbox: BBox) -> float:
         # TODO Take the hint, and increase score if near expected position (of

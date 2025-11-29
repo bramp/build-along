@@ -39,19 +39,20 @@ class _StepNumberScore(Score):
 
         Combines text matching and font size matching with text weighted more heavily.
         """
+        sn_config = self.config.step_number
         # Determine font size weight based on whether hints are available
-        font_size_weight = self.config.step_number_font_size_weight
+        font_size_weight = sn_config.font_size_weight
         if self.config.font_size_hints.step_number_size is None:
             # No hint available, zero out the font size weight
             font_size_weight = 0.0
 
         # Sum the weighted components
         score = (
-            self.config.step_number_text_weight * self.text_score
+            sn_config.text_weight * self.text_score
             + font_size_weight * self.font_size_score
         )
         # Normalize by the sum of weights to keep score in [0, 1]
-        total_weight = self.config.step_number_text_weight + font_size_weight
+        total_weight = sn_config.text_weight + font_size_weight
         return score / total_weight if total_weight > 0 else 0.0
 
 
