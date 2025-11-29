@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import logging
-
 from pydantic import BaseModel
 
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -11,8 +9,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.classifier.text import TextHistogram
 from build_a_long.pdf_extract.extractor.lego_page_elements import Manual
-
-logger = logging.getLogger(__name__)
 
 
 class BatchClassificationResult(BaseModel):
@@ -40,8 +36,4 @@ class BatchClassificationResult(BaseModel):
             page = result.page
             if page:
                 pages.append(page)
-            else:
-                logger.warning(
-                    "No valid page for page %s", result.page_data.page_number
-                )
         return Manual(pages=pages)

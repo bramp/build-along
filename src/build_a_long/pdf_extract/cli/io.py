@@ -102,7 +102,7 @@ def save_manual_json(
     manual: Manual,
     output_dir: Path,
     pdf_path: Path,
-) -> None:
+) -> Path:
     """Save final classified Manual elements as JSON.
 
     This outputs the structured, hierarchical Manual element with its pages,
@@ -112,11 +112,14 @@ def save_manual_json(
         manual: Manual containing all classified pages
         output_dir: Directory where JSON should be saved
         pdf_path: Original PDF path (used for naming the JSON file)
+
+    Returns:
+        Path to the saved JSON file
     """
     output_json_path = output_dir / (pdf_path.stem + ".json")
     with open(output_json_path, "w") as f:
         f.write(manual.to_json(indent=2))
-    logger.info("Saved manual JSON to %s", output_json_path)
+    return output_json_path
 
 
 def save_raw_json(

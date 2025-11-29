@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import time
 from pathlib import Path
 
 import pymupdf
@@ -35,6 +36,12 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import Manual
 from build_a_long.pdf_extract.extractor.page_blocks import Image
 from build_a_long.pdf_extract.parser import parse_page_ranges
 from build_a_long.pdf_extract.parser.page_ranges import PageRanges
+from build_a_long.pdf_extract.validation import (
+    ValidationIssue,
+    ValidationResult,
+    ValidationSeverity,
+    print_validation,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -143,14 +150,14 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
     Returns:
         Exit code (0 for success, non-zero for error)
     """
-    logging.info("Processing PDF: %s", pdf_path)
+    # Start timing from this point
+    start_time = time.monotonic()
 
     # Calculate source metadata
     source_size = pdf_path.stat().st_size
     # Only calculate hash for reasonable file sizes to avoid OOM on huge files?
     # For now, just read it all as PDFs aren't usually GBs.
     source_hash = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
-    source_pdf_name = pdf_path.name
 
     # Extract and classify
     with pymupdf.open(str(pdf_path)) as doc:
@@ -158,7 +165,9 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         if page_ranges is None:
             return 2
 
-        logger.info("Selected pages: %s", page_ranges)
+        # Log which PDF and pages we're processing in a single line
+        print(f"Processing: {pdf_path} (pages: {page_ranges})")
+
         page_numbers = list(page_ranges.page_numbers(len(doc)))
 
         # Extract all pages for font hint generation (hints need global context)
@@ -190,9 +199,8 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         if len(all_pages) > 0 and (full_page_image_count / len(all_pages)) > 0.5:
             reason = (
                 f"PDF appears to be composed of full-page images "
-                f"({full_page_image_count}/{len(all_pages)} pages). Skipping."
+                f"({full_page_image_count}/{len(all_pages)} pages)"
             )
-            logger.warning(reason)
 
             manual = Manual(
                 source_pdf=pdf_path.name,
@@ -200,7 +208,24 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
                 source_hash=source_hash,
                 unsupported_reason=reason,
             )
-            save_manual_json(manual, output_dir, pdf_path)
+            output_path = save_manual_json(manual, output_dir, pdf_path)
+            elapsed = time.monotonic() - start_time
+            print(f"Saved: {output_path} (took {elapsed:.1f}s)")
+
+            # Print validation error for skipped PDF
+            if config.save_summary:
+                validation = ValidationResult()
+                validation.add(
+                    ValidationIssue(
+                        severity=ValidationSeverity.ERROR,
+                        rule="full_page_images",
+                        message=reason,
+                        details="Skipping classification for this PDF",
+                    )
+                )
+                print()
+                print_validation(validation)
+
             return 0
 
         # Filter to requested pages for actual processing
@@ -260,7 +285,10 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         manual.source_pdf = pdf_path.name
         manual.source_size = source_size
         manual.source_hash = source_hash
-        save_manual_json(manual, output_dir, pdf_path)
+
+        output_path = save_manual_json(manual, output_dir, pdf_path)
+        elapsed = time.monotonic() - start_time
+        print(f"Saved: {output_path} (took {elapsed:.1f}s)")
 
         if config.draw_blocks or config.draw_elements or config.draw_drawings:
             render_annotated_images(

@@ -8,11 +8,13 @@ from .rules import (
     validate_content_no_metadata_overlap,
     validate_elements_within_page,
     validate_first_page_number,
+    validate_invalid_pages,
     validate_missing_page_numbers,
     validate_page_number_sequence,
     validate_part_contains_children,
     validate_parts_list_has_parts,
     validate_parts_lists_no_overlap,
+    validate_skipped_pages,
     validate_step_sequence,
     validate_steps_have_parts,
     validate_steps_no_significant_overlap,
@@ -50,13 +52,25 @@ def validate_results(
     step_numbers_seen: list[tuple[int, int]] = []  # (pdf_page, step_number)
     steps_without_parts: list[tuple[int, int]] = []  # (pdf_page, step_number)
     lego_page_numbers: list[int] = []  # Detected LEGO page numbers
+    skipped_pages: list[tuple[int, str]] = []  # (pdf_page, reason)
+    invalid_pages: list[int] = []  # Pages where classification produced no Page
 
     for page_data, result in zip(pages, results, strict=True):
         page = result.page
         pdf_page = page_data.page_number
 
+        # Check for skipped pages
+        if result.skipped_reason:
+            skipped_pages.append((pdf_page, result.skipped_reason))
+            continue  # Don't collect other data for skipped pages
+
+        # Check for invalid pages (no Page object but also not skipped)
+        if page is None:
+            invalid_pages.append(pdf_page)
+            continue
+
         # Check for page number
-        if page and page.page_number:
+        if page.page_number:
             lego_page_numbers.append(page.page_number.value)
         else:
             missing_page_numbers.append(pdf_page)
@@ -71,6 +85,12 @@ def validate_results(
                     steps_without_parts.append((pdf_page, step.step_number.value))
 
     # --- Validation Rules ---
+
+    # Rule 0: Skipped pages
+    validate_skipped_pages(validation, skipped_pages)
+
+    # Rule 0b: Invalid pages (classification failed to produce a Page)
+    validate_invalid_pages(validation, invalid_pages)
 
     # Rule 1: Missing page numbers
     validate_missing_page_numbers(validation, missing_page_numbers, len(pages))

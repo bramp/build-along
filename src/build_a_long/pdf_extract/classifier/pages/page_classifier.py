@@ -121,7 +121,7 @@ class PageClassifier(LabelClassifier):
                 assert isinstance(elem, NewBag)
                 new_bags.append(elem)
             except Exception as e:
-                log.warning(
+                log.debug(
                     "Failed to construct new_bag candidate at %s: %s",
                     nb_candidate.bbox,
                     e,
@@ -138,7 +138,7 @@ class PageClassifier(LabelClassifier):
                 assert isinstance(elem, Part)
                 all_parts.append(elem)
             except Exception as e:
-                log.warning(
+                log.debug(
                     "Failed to construct part candidate at %s: %s",
                     part_candidate.bbox,
                     e,
@@ -155,7 +155,7 @@ class PageClassifier(LabelClassifier):
                 assert isinstance(elem, Step)
                 steps.append(elem)
             except Exception as e:
-                log.warning(
+                log.debug(
                     "Failed to construct step candidate at %s: %s",
                     step_candidate.bbox,
                     e,

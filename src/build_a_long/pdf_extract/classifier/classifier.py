@@ -130,7 +130,7 @@ def classify_pages(
         # Skip pages with too many blocks - these are likely info/inventory pages
         # with vectorized text that cause O(n²) algorithms to be very slow
         if len(page_data.blocks) > MAX_BLOCKS_PER_PAGE:
-            logger.info(
+            logger.debug(
                 f"Page {page_data.page_number}: skipping classification "
                 f"({len(page_data.blocks)} blocks exceeds threshold of "
                 f"{MAX_BLOCKS_PER_PAGE})"

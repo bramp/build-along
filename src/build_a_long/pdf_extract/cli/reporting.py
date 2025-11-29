@@ -91,18 +91,15 @@ def print_summary(
 
     # Human-friendly, single-shot summary
     print("=== Classification summary ===")
-    print(f"Pages processed: {total_pages}")
-    print(f"Total blocks: {total_blocks}")
+    print(f"    Pages processed: {total_pages}")
+    print(f"    Total blocks: {total_blocks}")
     if blocks_by_type:
         parts = [f"{k}={v}" for k, v in sorted(blocks_by_type.items())]
         print("Elements by type: " + ", ".join(parts))
     if labeled_counts:
         parts = [f"{k}={v}" for k, v in sorted(labeled_counts.items())]
-        print("Labeled elements: " + ", ".join(parts))
-    print(
-        f"Page-number coverage: {pages_with_page_number}/{total_pages} "
-        f"({coverage:.1f}%)"
-    )
+        print("    Labeled elements: " + ", ".join(parts))
+
     if detailed and missing_page_numbers:
         sample = ", ".join(str(n) for n in missing_page_numbers[:20])
         more = " ..." if len(missing_page_numbers) > 20 else ""

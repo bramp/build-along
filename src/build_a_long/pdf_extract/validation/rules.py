@@ -254,6 +254,60 @@ def validate_page_number_sequence(
         )
 
 
+def validate_skipped_pages(
+    validation: ValidationResult,
+    skipped_pages: list[tuple[int, str]],
+) -> None:
+    """Validate and report pages that were skipped during classification.
+
+    Args:
+        validation: ValidationResult to add issues to
+        skipped_pages: List of (pdf_page, reason) tuples for skipped pages
+    """
+    if not skipped_pages:
+        return
+
+    pages = [p for p, _ in skipped_pages]
+    # All reasons should be similar, just take the first one for the message
+    sample_reason = skipped_pages[0][1] if skipped_pages else ""
+
+    validation.add(
+        ValidationIssue(
+            severity=ValidationSeverity.WARNING,
+            rule="skipped_pages",
+            message=f"{len(skipped_pages)} page(s) skipped during classification",
+            pages=pages,
+            details=sample_reason if len(skipped_pages) == 1 else None,
+        )
+    )
+
+
+def validate_invalid_pages(
+    validation: ValidationResult,
+    invalid_pages: list[int],
+) -> None:
+    """Validate and report pages where classification failed to produce a Page.
+
+    These are pages that weren't explicitly skipped but still couldn't be
+    converted to a valid Page object during classification.
+
+    Args:
+        validation: ValidationResult to add issues to
+        invalid_pages: List of PDF page numbers that failed classification
+    """
+    if not invalid_pages:
+        return
+
+    validation.add(
+        ValidationIssue(
+            severity=ValidationSeverity.WARNING,
+            rule="invalid_pages",
+            message=f"{len(invalid_pages)} page(s) failed to produce valid classification",
+            pages=invalid_pages,
+        )
+    )
+
+
 def format_ranges(numbers: list[int]) -> str:
     """Format a list of numbers as ranges (e.g., '1-3, 5, 7-9').
 
