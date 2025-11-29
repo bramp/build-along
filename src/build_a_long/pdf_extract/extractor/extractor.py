@@ -342,6 +342,18 @@ class Extractor:
                 if prev_level not in clip_stack:
                     scissor = prev.get("scissor")
                     if scissor:
+                        # Skip inverted/invalid clip rectangles - they don't make
+                        # geometric sense as clipping regions and are likely PDF
+                        # artifacts
+                        if scissor.x0 > scissor.x1 or scissor.y0 > scissor.y1:
+                            logger.debug(
+                                "  Skipping inverted clip from drawing %d (L%d): %s",
+                                i,
+                                prev_level,
+                                scissor,
+                            )
+                            continue
+
                         clip_bbox = BBox.from_tuple(
                             (scissor.x0, scissor.y0, scissor.x1, scissor.y1)
                         )
