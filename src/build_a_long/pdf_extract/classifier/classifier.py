@@ -119,6 +119,9 @@ def classify_pages(
     Returns:
         BatchClassificationResult containing per-page results and global histogram
     """
+
+    # TODO There is a bunch of duplication in here between hints and non-hints. Refactor
+
     # Use all pages for hint generation if provided, otherwise use selected pages
     hint_pages = pages_for_hints if pages_for_hints is not None else pages
 

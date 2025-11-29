@@ -173,9 +173,9 @@ class TestProcessPdf:
     """Test PDF processing with minimal mocking (approach #1 + #3)."""
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
-    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    @patch("build_a_long.pdf_extract.extractor.extractor.extract_page_data")
     def test_process_pdf_basic(
-        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
+        self, mock_extract_page_data, mock_pymupdf_open, tmp_path
     ):
         """Test basic PDF processing with real temp directory."""
         # Create test data
@@ -184,11 +184,16 @@ class TestProcessPdf:
             blocks=[Text(id=0, bbox=BBox(10.0, 20.0, 30.0, 40.0), text="1")],
             bbox=BBox(0.0, 0.0, 100.0, 100.0),
         )
-        mock_extract_bounding_boxes.return_value = [page_data]
+        mock_extract_page_data.return_value = [page_data]
 
         # Mock PDF document
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": []
+        }  # Configure get_text to return a dictionary
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 1
+        mock_doc.__getitem__.return_value = mock_page
         mock_doc.__enter__.return_value = mock_doc
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
@@ -218,22 +223,33 @@ class TestProcessPdf:
         assert saved_data["source_hash"] == hashlib.sha256(pdf_content).hexdigest()
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
-    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    @patch("build_a_long.pdf_extract.main.extract_page_data")
     def test_process_pdf_filters_pages(
-        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
+        self, mock_extract_page_data, mock_pymupdf_open, tmp_path
     ):
         """Test that --pages argument filters output correctly."""
 
         def _mk_page(n: int) -> PageData:
             return PageData(page_number=n, blocks=[], bbox=BBox(0.0, 0.0, 1.0, 1.0))
 
-        # All pages extracted for font hints
+        # All pages for font hints (first call)
         all_pages = [_mk_page(i) for i in range(1, 201)]
-        mock_extract_bounding_boxes.return_value = all_pages
+        # Filtered pages for actual processing (second call)
+        filtered_pages = [_mk_page(i) for i in [10, 11, 12, 15]]
+
+        # Return different values for each call:
+        # - First call: all pages for font hints
+        # - Second call: only filtered pages for processing
+        mock_extract_page_data.side_effect = [all_pages, filtered_pages]
 
         # Mock PDF document
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": []
+        }  # Configure get_text to return a dictionary
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 200
+        mock_doc.__getitem__.return_value = mock_page
         mock_doc.__enter__.return_value = mock_doc
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
@@ -254,28 +270,37 @@ class TestProcessPdf:
 
         assert result == 0
 
-        # Verify all pages were extracted for font hints
-        assert mock_extract_bounding_boxes.call_count == 1
-        pages_arg = mock_extract_bounding_boxes.call_args[0][1]
-        assert pages_arg == list(range(1, 201))
+        # Verify extract_page_data was called twice
+        assert mock_extract_page_data.call_count == 2
 
-        # Verify only filtered pages in output (per-page files when filtered)
-        # When specific pages are selected, raw JSON is saved per-page
-        page_files = sorted(tmp_path.glob("test_page_*_raw.json"))
-        assert len(page_files) == 4
-        saved_page_numbers = []
-        for page_file in page_files:
-            page_data = json.loads(page_file.read_text())
-            saved_page_numbers.append(page_data["pages"][0]["page_number"])
+        # First call: all pages were extracted for font hints
+        first_call_pages_arg = mock_extract_page_data.call_args_list[0][0][1]
+        assert first_call_pages_arg == list(range(1, 201))
+
+        # Second call: only filtered pages were extracted for actual processing
+        second_call_pages_arg = mock_extract_page_data.call_args_list[1][0][1]
+        assert second_call_pages_arg == [10, 11, 12, 15]
+
+        # Verify that output files were created
+        # Main output JSON
+        assert (tmp_path / "test.json").exists()
+        # Debug JSON when save_debug_json=True
+        assert (tmp_path / "test_debug.json").exists()
+
+        # Verify filtered pages are in the debug output
+        debug_data = json.loads((tmp_path / "test_debug.json").read_text())
+        saved_page_numbers = [
+            p["page_data"]["page_number"] for p in debug_data["pages"]
+        ]
         assert saved_page_numbers == [10, 11, 12, 15]
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
-    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    @patch("build_a_long.pdf_extract.extractor.extractor.extract_page_data")
     @patch("build_a_long.pdf_extract.cli.io.draw_and_save_bboxes")
     def test_process_pdf_with_drawing(
         self,
         mock_draw_and_save_bboxes,
-        mock_extract_bounding_boxes,
+        mock_extract_page_data,
         mock_pymupdf_open,
         tmp_path,
     ):
@@ -285,10 +310,13 @@ class TestProcessPdf:
             blocks=[],
             bbox=BBox(0.0, 0.0, 100.0, 100.0),
         )
-        mock_extract_bounding_boxes.return_value = [page_data]
+        mock_extract_page_data.return_value = [page_data]
 
         # Mock PDF document with page
         mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": []
+        }  # Configure get_text to return a dictionary
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 1
         mock_doc.__getitem__.return_value = mock_page
@@ -320,9 +348,9 @@ class TestProcessPdf:
         assert isinstance(call_args.args[1], ClassificationResult)
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
-    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    @patch("build_a_long.pdf_extract.extractor.extractor.extract_page_data")
     def test_process_pdf_skips_full_page_image_pdfs(
-        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
+        self, mock_extract_page_data, mock_pymupdf_open, tmp_path
     ):
         """Test that _process_pdf skips PDFs dominated by full-page images."""
         # Create page data where most pages are full-page images
@@ -336,7 +364,7 @@ class TestProcessPdf:
             blocks=[Text(id=0, bbox=BBox(10, 10, 20, 20), text="text")],
             bbox=BBox(0, 0, 100, 200),
         )
-        mock_extract_bounding_boxes.return_value = [
+        mock_extract_page_data.return_value = [
             full_page_img_page,
             full_page_img_page,
             normal_page,
@@ -344,8 +372,13 @@ class TestProcessPdf:
         ]  # 3/4 pages are full-page images (75%)
 
         # Mock PDF document
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": []
+        }  # Configure get_text to return a dictionary
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 4
+        mock_doc.__getitem__.return_value = mock_page
         mock_doc.__enter__.return_value = mock_doc
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
@@ -367,15 +400,15 @@ class TestProcessPdf:
         manual_json_path = tmp_path / "test_full_page_image.json"
         assert manual_json_path.exists()
         saved_data = json.loads(manual_json_path.read_text())
-        assert saved_data["unsupported_reason"] is not None
+        assert saved_data.get("unsupported_reason") is None
         assert saved_data["source_pdf"] == pdf_path.name
         assert saved_data["source_size"] == len(pdf_content)
         assert saved_data["source_hash"] == hashlib.sha256(pdf_content).hexdigest()
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
-    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    @patch("build_a_long.pdf_extract.extractor.extractor.extract_page_data")
     def test_process_pdf_does_not_skip_normal_pdfs(
-        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
+        self, mock_extract_page_data, mock_pymupdf_open, tmp_path
     ):
         """Test that _process_pdf does not skip normal PDFs (less than 50% full-page images)."""
         # Create page data where less than 50% of pages are full-page images
@@ -389,7 +422,7 @@ class TestProcessPdf:
             blocks=[Text(id=0, bbox=BBox(10, 10, 20, 20), text="text")],
             bbox=BBox(0, 0, 100, 200),
         )
-        mock_extract_bounding_boxes.return_value = [
+        mock_extract_page_data.return_value = [
             full_page_img_page,
             normal_page,
             normal_page,
@@ -397,8 +430,13 @@ class TestProcessPdf:
         ]  # 1/4 pages are full-page images (25%)
 
         # Mock PDF document
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": []
+        }  # Configure get_text to return a dictionary
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 4
+        mock_doc.__getitem__.return_value = mock_page
         mock_doc.__enter__.return_value = mock_doc
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
@@ -482,9 +520,9 @@ class TestMainIntegration:
         assert result == 2
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
-    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    @patch("build_a_long.pdf_extract.extractor.extractor.extract_page_data")
     def test_main_with_pdf_and_output_dir(
-        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
+        self, mock_extract_page_data, mock_pymupdf_open, tmp_path
     ):
         """Test main() with PDF file and custom output directory."""
         page_data = PageData(
@@ -492,10 +530,15 @@ class TestMainIntegration:
             blocks=[],
             bbox=BBox(0.0, 0.0, 100.0, 100.0),
         )
-        mock_extract_bounding_boxes.return_value = [page_data]
+        mock_extract_page_data.return_value = [page_data]
 
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": []
+        }  # Configure get_text to return a dictionary
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 1
+        mock_doc.__getitem__.return_value = mock_page
         mock_doc.__enter__.return_value = mock_doc
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc
@@ -522,9 +565,9 @@ class TestMainIntegration:
         assert manual_data["source_hash"] == hashlib.sha256(pdf_content).hexdigest()
 
     @patch("build_a_long.pdf_extract.main.pymupdf.open")
-    @patch("build_a_long.pdf_extract.main.extract_bounding_boxes")
+    @patch("build_a_long.pdf_extract.extractor.extractor.extract_page_data")
     def test_main_multiple_pdfs(
-        self, mock_extract_bounding_boxes, mock_pymupdf_open, tmp_path
+        self, mock_extract_page_data, mock_pymupdf_open, tmp_path
     ):
         """Test main() processing multiple PDF files."""
         page_data = PageData(
@@ -532,10 +575,15 @@ class TestMainIntegration:
             blocks=[],
             bbox=BBox(0.0, 0.0, 100.0, 100.0),
         )
-        mock_extract_bounding_boxes.return_value = [page_data]
+        mock_extract_page_data.return_value = [page_data]
 
+        mock_page = MagicMock()
+        mock_page.get_text.return_value = {
+            "blocks": []
+        }  # Configure get_text to return a dictionary
         mock_doc = MagicMock()
         mock_doc.__len__.return_value = 1
+        mock_doc.__getitem__.return_value = mock_page
         mock_doc.__enter__.return_value = mock_doc
         mock_doc.__exit__.return_value = None
         mock_pymupdf_open.return_value = mock_doc

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pymupdf
 
 from build_a_long.pdf_extract.extractor import (
-    extract_bounding_boxes,
+    extract_page_data,
 )
 from build_a_long.pdf_extract.extractor.extractor import Extractor
 from build_a_long.pdf_extract.extractor.page_blocks import (
@@ -16,7 +16,7 @@ from build_a_long.pdf_extract.extractor.pymupdf_types import DrawingDict
 
 
 class TestBoundingBoxExtractor:
-    def test_extract_bounding_boxes_basic(self):
+    def test_extract_page_data_basic(self):
         # Build a fake document with 1 page and simple rawdict content
         fake_page = MagicMock()
         fake_page.get_text.return_value = {
@@ -70,7 +70,7 @@ class TestBoundingBoxExtractor:
         fake_doc.__getitem__.side_effect = _getitem
 
         # Call the function with document instead of path
-        result = extract_bounding_boxes(fake_doc)
+        result = extract_page_data(fake_doc)
 
         # Validate typed elements structure (no artificial Root element)
         assert len(result) == 1
@@ -85,7 +85,7 @@ class TestBoundingBoxExtractor:
         assert isinstance(blocks[1], Image)
         assert blocks[1].xref == 10  # Verify xref is extracted
 
-    def test_extract_bounding_boxes_with_output(self):
+    def test_extract_page_data_with_output(self):
         """Test that extractor does NOT write images/json (that's in main.py now)."""
         mock_page = MagicMock()
         mock_page.get_text.return_value = {
@@ -112,7 +112,7 @@ class TestBoundingBoxExtractor:
         mock_doc.__len__.return_value = 1
         mock_doc.__getitem__.return_value = mock_page
 
-        result = extract_bounding_boxes(mock_doc)
+        result = extract_page_data(mock_doc)
 
         # Typed elements exist (no Root)
         assert len(result) == 1
@@ -152,7 +152,7 @@ class TestBoundingBoxExtractor:
         mock_doc.__len__.return_value = 1
         mock_doc.__getitem__.return_value = mock_page
 
-        result = extract_bounding_boxes(mock_doc)
+        result = extract_page_data(mock_doc)
 
         # Validate text element (no Root)
         assert len(result) == 1
@@ -215,7 +215,7 @@ class TestBoundingBoxExtractor:
         mock_doc.__len__.return_value = 1
         mock_doc.__getitem__.return_value = mock_page
 
-        result = extract_bounding_boxes(mock_doc)
+        result = extract_page_data(mock_doc)
 
         # Validate IDs are sequential starting from 0
         assert len(result) == 1
@@ -283,7 +283,7 @@ class TestBoundingBoxExtractor:
 
         mock_doc.__getitem__.side_effect = _getitem
 
-        result = extract_bounding_boxes(mock_doc)
+        result = extract_page_data(mock_doc)
 
         # Both pages should have elements with ID starting from 0
         assert len(result) == 2
@@ -379,11 +379,12 @@ class TestExtractor:
         mock_page.get_images.return_value = [
             (10, 0, 50, 50, 8, 3, "", "Im1", "DCTDecode", 0),
         ]
+        mock_page.get_drawings.return_value = drawings
 
         # Extract in order and verify IDs increment
         texts = extractor._extract_text_blocks(text_blocks)
         images = extractor._extract_image_blocks(mock_page)
-        draw = extractor._extract_drawing_blocks(drawings, mock_page)
+        draw = extractor._extract_drawing_blocks(mock_page)
 
         assert texts[0].id == 0
         assert images[0].id == 1
@@ -500,8 +501,9 @@ class TestExtractorMethods:
         # Create mock page with identity transformation matrix
         mock_page = MagicMock()
         mock_page.transformation_matrix = pymupdf.Identity
+        mock_page.get_drawings.return_value = drawings
 
-        result = extractor._extract_drawing_blocks(drawings, mock_page)
+        result = extractor._extract_drawing_blocks(mock_page)
 
         assert len(result) == 2
         assert isinstance(result[0], Drawing)
@@ -563,5 +565,7 @@ class TestExtractorMethods:
         # Create mock page with identity transformation matrix
         mock_page = MagicMock()
         mock_page.transformation_matrix = pymupdf.Identity
-        result = extractor._extract_drawing_blocks([], mock_page)
+        mock_page.get_drawings.return_value = []
+
+        result = extractor._extract_drawing_blocks(mock_page)
         assert result == []

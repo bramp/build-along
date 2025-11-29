@@ -9,7 +9,6 @@ from pathlib import Path
 
 from pydantic import AnyUrl, BaseModel, Field, RootModel
 
-
 # =============================================================================
 # Shared metadata models (source of truth for JSON schema generation)
 # =============================================================================

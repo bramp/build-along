@@ -18,11 +18,11 @@ See the [parent README](../README.md) for overall pipeline architecture.
 ```python
 import pymupdf
 from build_a_long.pdf_extract.classifier import classify_pages
-from build_a_long.pdf_extract.extractor import extract_bounding_boxes
+from build_a_long.pdf_extract.extractor import extract_page_data
 
 # 1. Extract elements from PDF
 with pymupdf.open("instructions.pdf") as doc:
-    pages = extract_bounding_boxes(doc, None)
+    pages = extract_page_data(doc, None)
 
 # 2. Classify elements
 results = classify_pages(pages)

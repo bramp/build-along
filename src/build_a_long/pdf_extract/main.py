@@ -22,27 +22,21 @@ from build_a_long.pdf_extract.cli import (
     render_annotated_images,
     save_debug_json,
     save_manual_json,
-    save_raw_json,
 )
 from build_a_long.pdf_extract.cli.reporting import (
     build_and_print_page_hierarchy,
     print_summary,
 )
-from build_a_long.pdf_extract.extractor import (
+from build_a_long.pdf_extract.extractor.extractor import (
     ExtractionResult,
-    extract_bounding_boxes,
+    PageData,
+    extract_page_data,
 )
-from build_a_long.pdf_extract.extractor.extractor import PageData
-from build_a_long.pdf_extract.extractor.lego_page_elements import Manual
 from build_a_long.pdf_extract.extractor.page_blocks import Image
 from build_a_long.pdf_extract.parser import parse_page_ranges
 from build_a_long.pdf_extract.parser.page_ranges import PageRanges
-from build_a_long.pdf_extract.validation import (
-    ValidationIssue,
-    ValidationResult,
-    ValidationSeverity,
-    print_validation,
-)
+from build_a_long.pdf_extract.validation.printer import print_validation
+from build_a_long.pdf_extract.validation.runner import validate_results
 
 logger = logging.getLogger(__name__)
 
@@ -115,27 +109,37 @@ def _parse_page_selection(pages_arg: str | None, doc_length: int) -> PageRanges 
 
 
 def _is_full_page_image(page: PageData) -> bool:
-    """Check if a page is dominated by a single large image.
+    """Check if a page is dominated by a single large image AND has no other significant content.
+
+    This heuristic aims to identify scanned PDFs where the entire page content
+    is essentially one large image, while avoiding false positives for PDFs
+    with background images but also selectable text or other elements.
 
     Args:
         page: The page to check.
 
     Returns:
-        True if the page is dominated by a single image, False otherwise.
+        True if the page is dominated by a single image with no other significant content,
+        False otherwise.
     """
     page_area = page.bbox.area
     if page_area <= 0:
         return False
 
-    # Find image blocks
-    images = [b for b in page.blocks if isinstance(b, Image)]
-    if not images:
-        return False
+    # Find image blocks that cover more than 95% of the page
+    # TODO make the 95% threshold configurable if needed
+    large_images = []
+    for block in page.blocks:
+        if isinstance(block, Image) and block.bbox.area / page_area > 0.95:
+            large_images.append(block)
 
-    # Check if any image covers > 90% of the page
-    for img in images:
-        if img.bbox.area / page_area > 0.90:
-            return True
+    if len(large_images) > (len(page.blocks) / 2):
+        logger.debug(
+            "Page %d has multiple large images (%d) covering >95%% of page, considered full-page image.",
+            page.page_number,
+            len(large_images),
+        )
+        return True
 
     return False
 
@@ -170,92 +174,55 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
 
         page_numbers = list(page_ranges.page_numbers(len(doc)))
 
-        # Extract all pages for font hint generation (hints need global context)
-        # Always include metadata during extraction - classifiers need it
-        # (e.g., ArrowClassifier needs Drawing.items to detect arrowheads)
-        # The metadata is only preserved in JSON output if debug_extra_json is set
-        include_metadata = True
-
-        # Warn if extra metadata will be captured in JSON output
-        if (
-            config.draw_drawings
-            and not config.debug_extra_json
-            and config.save_debug_json
-        ):
-            logger.warning(
-                "Drawing paths require extra metadata. Raw JSON output will "
-                "include additional metadata (colors, fonts, dimensions, etc.). "
-                "Use --debug-extra-json to explicitly enable this."
-            )
-
-        all_pages = extract_bounding_boxes(
-            doc,
-            list(range(1, len(doc) + 1)),
-            include_types=config.include_types,
-            include_metadata=include_metadata,
+        # Extract text-only for all pages for font hint generation
+        # (hints need global context across the full document)
+        logger.debug(
+            "Extracting text blocks from all pages for font hint generation..."
         )
+        full_document_text_pages = extract_page_data(
+            doc,
+            list(range(1, len(doc) + 1)),  # All pages
+            include_types={"text"},  # Only text blocks
+        )
+        logger.debug("Finished extracting text blocks for hints.")
 
-        # Check if the PDF is likely a scan / full-page images
-        # If more than 50% of pages are full-page images, skip it
-        full_page_image_count = sum(1 for p in all_pages if _is_full_page_image(p))
-        if len(all_pages) > 0 and (full_page_image_count / len(all_pages)) > 0.5:
+        # Extract full data for requested pages with metadata
+        # (classifiers need metadata, e.g., ArrowClassifier needs Drawing.items)
+        logger.debug(f"Extracting all blocks from requested pages: {page_numbers}...")
+        requested_pages_with_all_blocks = extract_page_data(
+            doc,
+            page_numbers,  # Only requested pages
+            include_types=config.include_types,  # All types as per config
+            include_metadata=True,
+        )
+        logger.debug("Finished extracting all blocks from requested pages.")
+
+        # At this point, `pages` refers to the original `all_pages` which is no longer
+        # the case. We need to set `pages` to `requested_pages_with_all_blocks`
+        pages = requested_pages_with_all_blocks
+
+        # Modify full-page image check (applied to
+        # requested_pages_with_all_blocks)
+        # TODO Let's move this into the validation checks
+        full_page_image_count = sum(1 for p in pages if _is_full_page_image(p))
+        if len(pages) > 0 and (full_page_image_count / len(pages)) > 0.5:
             reason = (
-                f"PDF appears to be composed of full-page images "
-                f"({full_page_image_count}/{len(all_pages)} pages)"
+                f"Warning: More than 50% of processed pages appear to be composed of full-page images "
+                f"({full_page_image_count}/{len(pages)} pages). "
+                f"Processing will continue, but results for these pages may be poor."
             )
-
-            manual = Manual(
-                source_pdf=pdf_path.name,
-                source_size=source_size,
-                source_hash=source_hash,
-                unsupported_reason=reason,
-            )
-            output_path = save_manual_json(manual, output_dir, pdf_path)
-
-            # Print validation error for skipped PDF
-            if config.save_summary:
-                validation = ValidationResult()
-                validation.add(
-                    ValidationIssue(
-                        severity=ValidationSeverity.ERROR,
-                        rule="full_page_images",
-                        message=reason,
-                        details="Skipping classification for this PDF",
-                    )
-                )
-                print()
-                print_validation(validation)
-
-            elapsed = time.monotonic() - start_time
-            print(f"Saved: {output_path} (took {elapsed:.1f}s)")
-
-            return 0
-
-        # Filter to requested pages for actual processing
-        if page_numbers:
-            pages = [p for p in all_pages if p.page_number in page_numbers]
-        else:
-            pages = all_pages
-
-        # Save raw JSON if requested
-        if config.save_debug_json:
-            # Save per-page files if specific pages were selected
-            per_page = bool(page_ranges.ranges)  # True if specific ranges, False if all
-            save_raw_json(
-                pages,
-                output_dir,
-                pdf_path,
-                compress=config.compress_json,
-                per_page=per_page,
-            )
+            logger.warning(reason)
 
         # Print font hints if requested (before classification)
         if config.print_font_hints:
-            font_hints = FontSizeHints.from_pages(all_pages)
+            # TODO Why do we generate hints here, AND inside classify_pages
+            font_hints = FontSizeHints.from_pages(
+                full_document_text_pages
+            )  # Use text-only pages for hints
             print_font_hints(font_hints)
 
-        # Classify elements (use all_pages for hints, but only classify selected pages)
-        batch_result = classify_pages(pages, pages_for_hints=all_pages)
+        # Classify elements (use full_document_text_pages for hints, but only classify selected pages)
+        batch_result = classify_pages(pages, pages_for_hints=full_document_text_pages)
 
         # Extract page_data from results for compatibility
         classified_pages = [result.page_data for result in batch_result.results]
@@ -282,6 +249,10 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
                 batch_result.results,
                 detailed=config.summary_detailed,
             )
+
+        # Run validation checks
+        validation = validate_results(classified_pages, batch_result.results)
+        print_validation(validation)
 
         # Save results
         manual = batch_result.manual

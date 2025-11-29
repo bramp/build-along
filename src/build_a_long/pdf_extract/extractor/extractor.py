@@ -371,9 +371,7 @@ class Extractor:
 
         return visible
 
-    def _extract_drawing_blocks(
-        self, drawings: list[DrawingDict], page: pymupdf.Page
-    ) -> list[Drawing]:
+    def _extract_drawing_blocks(self, page: pymupdf.Page) -> list[Drawing]:
         """Extract drawing (vector path) blocks from a page.
 
         Args:
@@ -383,6 +381,9 @@ class Extractor:
         Returns:
             List of Drawing blocks with assigned IDs
         """
+        # Use extended=True to get clipping hierarchy
+        drawings = page.get_drawings(extended=True)
+
         drawing_blocks: list[Drawing] = []
         for idx, d in enumerate(drawings):
             assert isinstance(d, dict)
@@ -505,7 +506,9 @@ class Extractor:
 
         # Get raw dictionary with text and image blocks
         raw: RawDict = page.get_text("rawdict")  # type: ignore[assignment]
-        assert isinstance(raw, dict)
+        assert isinstance(raw, dict), (
+            f"Expected rawdict to be a dictionary but got {type(raw)}"
+        )
 
         blocks = raw.get("blocks", [])
         assert self._warn_unknown_block_types(blocks)
@@ -517,9 +520,7 @@ class Extractor:
         if "image" in include_types:
             typed_blocks.extend(self._extract_image_blocks(page))
         if "drawing" in include_types:
-            # Use extended=True to get clipping hierarchy
-            drawings = page.get_drawings(extended=True)
-            typed_blocks.extend(self._extract_drawing_blocks(drawings, page))
+            typed_blocks.extend(self._extract_drawing_blocks(page))
 
         page_rect = page.rect
         page_bbox = BBox.from_tuple(
@@ -533,8 +534,7 @@ class Extractor:
         )
 
 
-# TODO Perhaps rename to more appropriate name
-def extract_bounding_boxes(
+def extract_page_data(
     doc: pymupdf.Document,
     page_numbers: Sequence[int] | None = None,
     include_types: set[str] | None = None,

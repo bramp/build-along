@@ -4,11 +4,11 @@ from .bbox import BBox
 from .extractor import (
     ExtractionResult,
     PageData,
-    extract_bounding_boxes,
+    extract_page_data,
 )
 
 __all__ = [
-    "extract_bounding_boxes",
+    "extract_page_data",
     "PageData",
     "ExtractionResult",
     "PageRange",
