@@ -1,50 +1,53 @@
-# OpenAPI Schema and Model Generation
+# JSON Schema Files
 
-This directory contains the OpenAPI schema definition and tools for generating Pydantic models.
+This directory contains JSON Schema files (in YAML format for readability) that describe the data structures used by this project. These schemas are **generated from Pydantic models** in Python, making Python the source of truth.
 
-## Overview
+## Schema Files
 
-- **`openapi.yaml`**: The source of truth for all data models shared between Python and other applications
-- **`generate_models.sh`**: Script to generate Pydantic models from the OpenAPI schema
+- **`lego_manual.schema.yaml`**: Schema for parsed LEGO instruction manuals (pages, steps, parts lists, etc.)
+- **`lego_metadata.schema.yaml`**: Schema for LEGO set metadata (set info, PDF URLs, etc.)
+
+## Generating Schemas
+
+The schemas are generated from Pydantic models using:
+
+```bash
+# Generate manual schema (from lego_page_elements.py)
+pants run src/build_a_long/schemas:generate_schema -- manual schemas/lego_manual.schema.yaml
+
+# Generate metadata schema (from downloader/models.py)
+pants run src/build_a_long/schemas:generate_schema -- metadata schemas/lego_metadata.schema.yaml
+```
+
+## Source of Truth
+
+- **Manual schema**: `src/build_a_long/pdf_extract/extractor/lego_page_elements.py`
+- **Metadata schema**: `src/build_a_long/downloader/models.py`
 
 ## Usage
 
-### Generating Python Models
+These schemas can be used by other applications (in any language) to:
 
-To regenerate Python models from the OpenAPI schema:
+1. **Validate** JSON data against the schema
+2. **Generate** type definitions or models for other languages
+3. **Document** the data structures
+
+### Example: TypeScript
 
 ```bash
-pants run src/build_a_long/schemas:generate_models
+# Using json-schema-to-typescript
+npx json-schema-to-typescript schemas/lego_manual.schema.yaml > lego_manual.d.ts
 ```
 
-This will:
+### Example: Validation
 
-1. Read `schemas/openapi.yaml`
-2. Generate Pydantic v2 models in `src/build_a_long/schemas/generated_models.py`
-3. Automatically format the generated file with `pants fix`
+```python
+import jsonschema
+import yaml
 
-### Updating the Schema
+with open("schemas/lego_manual.schema.yaml") as f:
+    schema = yaml.safe_load(f)
 
-1. Edit `schemas/openapi.yaml` to add or modify data models
-2. Run the generation command above to update Python models
-3. Commit both the schema and generated models
-
-## Schema Guidelines
-
-- Use OpenAPI 3.1.0 format
-- Include detailed descriptions for all types and fields
-- Mark required fields explicitly
-- Use appropriate data types (integer, string, boolean, etc.)
-- Use `nullable: true` for optional fields that can be null
-- Define reusable schemas under `components/schemas`
-
-## Generated Models
-
-The generated models are created using `datamodel-codegen` and should **not be edited manually**. Any changes should be made to `openapi.yaml` and regenerated.
-
-Models include:
-
-- Type hints for all fields
-- Default values where specified
-- Validation based on schema constraints
-- Pydantic v2 BaseModel classes
+# Validate your data
+jsonschema.validate(your_data, schema)
+```

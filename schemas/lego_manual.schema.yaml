@@ -1,0 +1,584 @@
+$defs:
+  BBox:
+    properties:
+      x0:
+        title: X0
+        type: number
+      y0:
+        title: Y0
+        type: number
+      x1:
+        title: X1
+        type: number
+      y1:
+        title: Y1
+        type: number
+    required:
+    - x0
+    - y0
+    - x1
+    - y1
+    title: BBox
+    type: object
+  BagNumber:
+    description: The bag number, usually a small integer on the page.
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: BagNumber
+        default: BagNumber
+        title: Tag
+        type: string
+      value:
+        exclusiveMinimum: 0
+        title: Value
+        type: integer
+    required:
+    - bbox
+    - value
+    title: BagNumber
+    type: object
+  Diagram:
+    description: 'The graphic showing how to complete the step.
+
+
+      Positional context: The main diagram is positioned on the right side of the
+
+      step area, occupying most of the horizontal space. It shows the assembly
+
+      instructions for the step.
+
+
+      See layout diagram: lego_page_layout.png'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: Diagram
+        default: Diagram
+        title: Tag
+        type: string
+    required:
+    - bbox
+    title: Diagram
+    type: object
+  NewBag:
+    description: 'The graphic showing a new bag icon on the page.
+
+
+      A NewBag can have an optional bag number. When present, the number indicates
+
+      which specific bag to open (e.g., "Bag 1", "Bag 2"). When absent, the bag
+
+      graphic indicates that all bags should be opened (no specific number).'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: NewBag
+        default: NewBag
+        title: Tag
+        type: string
+      number:
+        anyOf:
+        - $ref: '#/$defs/BagNumber'
+        - type: 'null'
+        default: null
+    required:
+    - bbox
+    title: NewBag
+    type: object
+  Page:
+    description: "A complete page of LEGO instructions.\n\nThis is the top-level element that\
+      \ contains all other elements on a page.\nIt represents the structured, hierarchical\
+      \ view of the page after classification\nand hierarchy building.\n\nAttributes:\n  \
+      \  pdf_page_number: The 1-indexed page number from the original PDF\n    page_number:\
+      \ The LEGO page number element (printed on the page), if found\n    steps: List of Step\
+      \ elements on the page (for INSTRUCTION pages)\n    catalog: Parts list for catalog/inventory\
+      \ pages (for CATALOG pages)\n    warnings: List of warnings generated during hierarchy\
+      \ building\n    unprocessed_elements: Raw elements that were classified but couldn't\n\
+      \        be converted"
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: Page
+        default: Page
+        title: Tag
+        type: string
+      pdf_page_number:
+        title: Pdf Page Number
+        type: integer
+      categories:
+        items:
+          type: string
+        title: Categories
+        type: array
+      page_number:
+        anyOf:
+        - $ref: '#/$defs/PageNumber'
+        - type: 'null'
+        default: null
+      progress_bar:
+        anyOf:
+        - $ref: '#/$defs/ProgressBar'
+        - type: 'null'
+        default: null
+      new_bags:
+        items:
+          $ref: '#/$defs/NewBag'
+        title: New Bags
+        type: array
+      steps:
+        items:
+          $ref: '#/$defs/Step'
+        title: Steps
+        type: array
+      catalog:
+        items:
+          $ref: '#/$defs/Part'
+        title: Catalog
+        type: array
+    required:
+    - bbox
+    - pdf_page_number
+    title: Page
+    type: object
+  PageNumber:
+    description: 'The page number, usually a small integer on the page.
+
+
+      Positional context: Typically located in the lower-left or lower-right corner
+
+      of the page.
+
+
+      See layout diagram: lego_page_layout.png'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: PageNumber
+        default: PageNumber
+        title: Tag
+        type: string
+      value:
+        minimum: 0
+        title: Value
+        type: integer
+    required:
+    - bbox
+    - value
+    title: PageNumber
+    type: object
+  Part:
+    description: 'A single part entry within a parts list.
+
+
+      Positional context: The part image/diagram appears first, with the PartCount
+
+      label positioned directly below it, both left-aligned.
+
+
+      See layout diagram: lego_page_layout.png
+
+      See overview of all parts: https://brickarchitect.com/files/LEGO_BRICK_LABELS-CONTACT_SHEET.pdf'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: Part
+        default: Part
+        title: Tag
+        type: string
+      count:
+        $ref: '#/$defs/PartCount'
+      diagram:
+        anyOf:
+        - $ref: '#/$defs/PartImage'
+        - type: 'null'
+        default: null
+      number:
+        anyOf:
+        - $ref: '#/$defs/PartNumber'
+        - type: 'null'
+        default: null
+      length:
+        anyOf:
+        - $ref: '#/$defs/PieceLength'
+        - type: 'null'
+        default: null
+    required:
+    - bbox
+    - count
+    title: Part
+    type: object
+  PartCount:
+    description: 'The visual count label associated with a part entry (e.g., ''2x'').
+
+
+      Positional context: Positioned directly below the corresponding part image/diagram,
+
+      left-aligned with the part image.
+
+
+      See layout diagram: lego_page_layout.png'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: PartCount
+        default: PartCount
+        title: Tag
+        type: string
+      count:
+        minimum: 0
+        title: Count
+        type: integer
+      matched_hint:
+        anyOf:
+        - enum:
+          - part_count
+          - catalog_part_count
+          type: string
+        - type: 'null'
+        default: null
+        title: Matched Hint
+    required:
+    - bbox
+    - count
+    title: PartCount
+    type: object
+  PartImage:
+    description: 'A candidate image that could represent a LEGO part.
+
+
+      Positional context: These images typically appear in parts lists, positioned
+
+      above their corresponding PartCount text and left-aligned.
+
+
+      This element represents a validated image candidate that will be paired with
+
+      a PartCount by PartsClassifier to construct Part elements.
+
+
+      The bbox field (inherited from LegoPageElement) defines the image region.'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: PartImage
+        default: PartImage
+        title: Tag
+        type: string
+      shine:
+        anyOf:
+        - $ref: '#/$defs/Shine'
+        - type: 'null'
+        default: null
+    required:
+    - bbox
+    title: PartImage
+    type: object
+  PartNumber:
+    description: 'The element ID number for a part (catalog pages).
+
+
+      Positional context: Located directly below the part count on catalog pages.
+
+      This is a 4-8 digit number that identifies the specific LEGO element.
+
+
+      See layout diagram: lego_page_layout.png'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: PartNumber
+        default: PartNumber
+        title: Tag
+        type: string
+      element_id:
+        title: Element Id
+        type: string
+    required:
+    - bbox
+    - element_id
+    title: PartNumber
+    type: object
+  PartsList:
+    description: 'A container of multiple parts for the page''s parts list.
+
+
+      Positional context: Contained within a Step. Located
+
+      at the top of the step area, typically on the left side. Individual parts are
+
+      arranged with their images first, followed by their count labels below.
+
+
+      See layout diagram: lego_page_layout.png'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: PartsList
+        default: PartsList
+        title: Tag
+        type: string
+      parts:
+        items:
+          $ref: '#/$defs/Part'
+        title: Parts
+        type: array
+    required:
+    - bbox
+    - parts
+    title: PartsList
+    type: object
+  PieceLength:
+    description: 'The length indicator for a LEGO piece (e.g., ''4'' for a 4-stud beam).
+
+
+      Positional context: Located in the top-right area of a part image, typically
+
+      surrounded by a circle or oval. Uses a smaller font size than step numbers.
+
+      Can appear on any page type (instruction, catalog, or info pages).
+
+
+      This is distinct from a step number - it indicates the physical length of
+
+      the part being shown, not a construction step.
+
+
+      See layout diagram: lego_page_layout.png'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: PieceLength
+        default: PieceLength
+        title: Tag
+        type: string
+      value:
+        exclusiveMinimum: 0
+        title: Value
+        type: integer
+    required:
+    - bbox
+    - value
+    title: PieceLength
+    type: object
+  ProgressBar:
+    description: 'A progress bar showing building progress through the instruction book.
+
+
+      Positional context: Typically located at the bottom of the page, spanning most
+
+      of the page width, near the page number. Often consists of one or more
+
+      Drawing/Image elements forming a horizontal bar with progress indicators.
+
+
+      Note: The bbox is clipped to page boundaries for display purposes, but the
+
+      original unclipped width is preserved in full_width for progress calculation.
+
+
+      See layout diagram: lego_page_layout.png'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: ProgressBar
+        default: ProgressBar
+        title: Tag
+        type: string
+      progress:
+        anyOf:
+        - type: number
+        - type: 'null'
+        default: null
+        title: Progress
+      full_width:
+        title: Full Width
+        type: number
+    required:
+    - bbox
+    - full_width
+    title: ProgressBar
+    type: object
+  RotationSymbol:
+    description: 'A symbol indicating the builder should rotate the assembled model.
+
+
+      Positional context: Typically appears near diagram elements, often positioned
+
+      beside or below the main instruction diagram. Can be either a small raster
+
+      image (~40-80 pixels square) or a cluster of vector drawings forming curved
+
+      arrows in a circular pattern.
+
+
+      See layout diagram: lego_page_layout.png'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: RotationSymbol
+        default: RotationSymbol
+        title: Tag
+        type: string
+    required:
+    - bbox
+    title: RotationSymbol
+    type: object
+  Shine:
+    description: 'A visual ''shine'' or ''star'' effect indicating a shiny/metallic part.
+
+
+      Positional context: Typically a small star-like drawing located in the
+
+      top-right area of a part image.'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: Shine
+        default: Shine
+        title: Tag
+        type: string
+    required:
+    - bbox
+    title: Shine
+    type: object
+  Step:
+    description: 'A single instruction step on the page.
+
+
+      Positional context: Steps are arranged vertically on the page, typically 1-2
+
+      per page. Within each step:
+
+      - PartsList is at the top-left
+
+      - StepNumber is below the PartsList (left-aligned)
+
+      - Main Diagram is on the right side, taking most of the space
+
+
+      See layout diagram: lego_page_layout.png'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: Step
+        default: Step
+        title: Tag
+        type: string
+      step_number:
+        $ref: '#/$defs/StepNumber'
+      parts_list:
+        anyOf:
+        - $ref: '#/$defs/PartsList'
+        - type: 'null'
+        default: null
+      diagram:
+        anyOf:
+        - $ref: '#/$defs/Diagram'
+        - type: 'null'
+        default: null
+      rotation_symbol:
+        anyOf:
+        - $ref: '#/$defs/RotationSymbol'
+        - type: 'null'
+        default: null
+    required:
+    - bbox
+    - step_number
+    title: Step
+    type: object
+  StepNumber:
+    description: 'A step number label.
+
+
+      Positional context: Located below the PartsList within a Step, left-aligned
+
+      with the PartsList container.
+
+
+      See layout diagram: lego_page_layout.png'
+    properties:
+      bbox:
+        $ref: '#/$defs/BBox'
+      __tag__:
+        const: StepNumber
+        default: StepNumber
+        title: Tag
+        type: string
+      value:
+        exclusiveMinimum: 0
+        title: Value
+        type: integer
+    required:
+    - bbox
+    - value
+    title: StepNumber
+    type: object
+description: JSON Schema for LEGO instruction manuals, generated from Pydantic models. This
+  schema describes the structure of parsed LEGO instruction PDFs, including pages, steps,
+  parts lists, and all visual elements.
+properties:
+  __tag__:
+    const: Manual
+    default: Manual
+    title: Tag
+    type: string
+  set_number:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    title: Set Number
+  name:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    title: Name
+  source_pdf:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    title: Source Pdf
+  source_size:
+    anyOf:
+    - type: integer
+    - type: 'null'
+    default: null
+    title: Source Size
+  source_hash:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    title: Source Hash
+  pages:
+    items:
+      $ref: '#/$defs/Page'
+    title: Pages
+    type: array
+  unsupported_reason:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    title: Unsupported Reason
+title: LEGO Instruction Manual Schema
+type: object
+$schema: https://json-schema.org/draft/2020-12/schema

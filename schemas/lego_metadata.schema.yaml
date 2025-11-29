@@ -1,0 +1,142 @@
+$defs:
+  PdfEntry:
+    description: 'Represents a single instruction PDF file.
+
+
+      This model is serialized to JSON as part of InstructionMetadata and is
+
+      used by both Python and other applications (via generated schemas).'
+    properties:
+      url:
+        description: The URL to the PDF file.
+        format: uri
+        minLength: 1
+        title: Url
+        type: string
+      filename:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: The suggested filename for the PDF.
+        title: Filename
+      filesize:
+        anyOf:
+        - type: integer
+        - type: 'null'
+        default: null
+        description: The size of the PDF file in bytes.
+        title: Filesize
+      filehash:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: SHA256 hash of the PDF file content, if available.
+        title: Filehash
+      preview_url:
+        anyOf:
+        - format: uri
+          minLength: 1
+          type: string
+        - type: 'null'
+        default: null
+        description: An optional URL for a preview image of the PDF.
+        title: Preview Url
+      is_additional_info_booklet:
+        anyOf:
+        - type: boolean
+        - type: 'null'
+        default: null
+        description: Indicates if the PDF is an additional info booklet rather than the main
+          instructions.
+        title: Is Additional Info Booklet
+      sequence_number:
+        anyOf:
+        - type: integer
+        - type: 'null'
+        default: null
+        description: The sequence number of the PDF in a multi-part instruction set (e.g.,
+          1 for 1/4).
+        title: Sequence Number
+      sequence_total:
+        anyOf:
+        - type: integer
+        - type: 'null'
+        default: null
+        description: The total number of PDFs in a multi-part instruction set (e.g., 4 for
+          1/4).
+        title: Sequence Total
+    required:
+    - url
+    title: PdfEntry
+    type: object
+description: JSON Schema for LEGO set metadata, generated from Pydantic models. This schema
+  describes the structure of metadata.json files containing information about LEGO sets and
+  their instruction PDFs.
+properties:
+  set:
+    description: The unique identifier for the LEGO set.
+    title: Set
+    type: string
+  locale:
+    description: The locale for the instructions (e.g., "en-US").
+    title: Locale
+    type: string
+  name:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: The name of the LEGO set.
+    title: Name
+  theme:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: The theme of the LEGO set (e.g., "City", "Star Wars").
+    title: Theme
+  age:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: The recommended age range for the set.
+    title: Age
+  pieces:
+    anyOf:
+    - type: integer
+    - type: 'null'
+    default: null
+    description: The number of pieces in the set.
+    title: Pieces
+  year:
+    anyOf:
+    - type: integer
+    - type: 'null'
+    default: null
+    description: The year the set was released.
+    title: Year
+  set_image_url:
+    anyOf:
+    - format: uri
+      minLength: 1
+      type: string
+    - type: 'null'
+    default: null
+    description: URL to an image of the LEGO set.
+    title: Set Image Url
+  pdfs:
+    default: []
+    description: A list of PDF instruction entries for the set.
+    items:
+      $ref: '#/$defs/PdfEntry'
+    title: Pdfs
+    type: array
+required:
+- set
+- locale
+title: LEGO Set Metadata Schema
+type: object
+$schema: https://json-schema.org/draft/2020-12/schema
