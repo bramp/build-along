@@ -49,6 +49,12 @@ python3 -c "print('PYTHONPATH=./' + ':./'.join('''${ROOTS}'''.replace(' ', '\\\\
 pants export \
     --py-resolve-format=symlinked_immutable_virtualenv \
     --resolve=python-default
+
+# OR if you prefer a regular environment:
+python3.14 -m venv .venv
+source .venv/bin/activate
+pip install -r 3rdparty/requirements.txt
+pip install -r 3rdparty/requirements-dev.txt
 ```
 
 ### Pre-commit Hooks

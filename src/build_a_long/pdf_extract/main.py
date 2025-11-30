@@ -244,7 +244,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
 
         if not needs_classification:
             elapsed = time.monotonic() - start_time
-            print(f"Extraction complete (took {elapsed:.1f}s)")
+            print(f"Extraction (without classification) complete (took {elapsed:.1f}s)")
             return 0
 
         # Modify full-page image check (applied to
@@ -309,7 +309,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
 
             output_path = save_manual_json(manual, output_dir, pdf_path)
             elapsed = time.monotonic() - start_time
-            print(f"Saved: {output_path} (took {elapsed:.1f}s)")
+            print(f"Classification finished saved: {output_path} (took {elapsed:.1f}s)")
 
         if config.draw_blocks or config.draw_elements or config.draw_drawings:
             render_annotated_images(
