@@ -76,7 +76,8 @@ class CandidateFactory:
         score_details = _PartCountScore(
             text_score=score,
             font_size_score=0.5,
-            config=self.config,
+            config=self.config.part_count,
+            font_size_weight=self.config.part_count.font_size_weight,
             matched_hint="catalog_part_count",
         )
         candidate = Candidate(
@@ -94,7 +95,8 @@ class CandidateFactory:
         score_details = _StepNumberScore(
             text_score=score,
             font_size_score=0.5,
-            config=self.config,
+            config=self.config.step_number,
+            font_size_weight=self.config.step_number.font_size_weight,
         )
         candidate = Candidate(
             bbox=block.bbox,

@@ -8,7 +8,7 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
+from build_a_long.pdf_extract.classifier.config import StepNumberConfig
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
@@ -31,28 +31,24 @@ class _StepNumberScore(Score):
     font_size_score: float
     """Score based on font size match to expected step number size (0.0-1.0)."""
 
-    config: ClassifierConfig
-    """Classifier configuration for dynamic score calculations."""
+    config: StepNumberConfig
+    """Step number configuration for dynamic score calculations."""
+
+    font_size_weight: float
+    """Weight to apply to font_size_score (may be 0.0 if no hints available)."""
 
     def score(self) -> Weight:
         """Calculate final weighted score from components.
 
         Combines text matching and font size matching with text weighted more heavily.
         """
-        sn_config = self.config.step_number
-        # Determine font size weight based on whether hints are available
-        font_size_weight = sn_config.font_size_weight
-        if self.config.font_size_hints.step_number_size is None:
-            # No hint available, zero out the font size weight
-            font_size_weight = 0.0
-
         # Sum the weighted components
         score = (
-            sn_config.text_weight * self.text_score
-            + font_size_weight * self.font_size_score
+            self.config.text_weight * self.text_score
+            + self.font_size_weight * self.font_size_score
         )
         # Normalize by the sum of weights to keep score in [0, 1]
-        total_weight = sn_config.text_weight + font_size_weight
+        total_weight = self.config.text_weight + self.font_size_weight
         return score / total_weight if total_weight > 0 else 0.0
 
 
@@ -80,6 +76,13 @@ class StepNumberClassifier(LabelClassifier):
         assert page_bbox is not None
         page_height = page_bbox.height
 
+        sn_config = self.config.step_number
+        # Determine font size weight based on whether hints are available
+        font_size_weight = sn_config.font_size_weight
+        if self.config.font_size_hints.step_number_size is None:
+            # No hint available, zero out the font size weight
+            font_size_weight = 0.0
+
         for block in page_data.blocks:
             if not isinstance(block, Text):
                 continue
@@ -105,7 +108,8 @@ class StepNumberClassifier(LabelClassifier):
             detail_score = _StepNumberScore(
                 text_score=text_score,
                 font_size_score=font_size_score,
-                config=self.config,
+                config=sn_config,
+                font_size_weight=font_size_weight,
             )
 
             # Create candidate

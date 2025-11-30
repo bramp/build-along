@@ -11,7 +11,7 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
+from build_a_long.pdf_extract.classifier.config import PageNumberConfig
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
@@ -44,32 +44,30 @@ class _PageNumberScore(Score):
     font_size_score: float
     """Score based on font size match to expected page number size (0.0-1.0)."""
 
-    config: ClassifierConfig
-    """Classifier configuration for dynamic score calculations."""
+    config: PageNumberConfig
+    """Page number configuration for dynamic score calculations."""
+
+    font_size_weight: float
+    """Weight to apply to font_size_score (may be 0.0 if no hints available)."""
 
     # TODO Test this score is always between 0.0 and 1.0
     def score(self) -> Weight:
         """Calculate final weighted score from components."""
-        pn_config = self.config.page_number
-        # Determine font size weight based on whether hints are available
-        font_size_weight = pn_config.font_size_weight
-        if self.config.font_size_hints.page_number_size is None:
-            # No hint available, zero out the font size weight
-            font_size_weight = 0.0
+        pn_config = self.config
 
         # Sum the weighted components
         score = (
             pn_config.text_weight * self.text_score
             + pn_config.position_weight * self.position_score
             + pn_config.page_value_weight * self.page_value_score
-            + font_size_weight * self.font_size_score
+            + self.font_size_weight * self.font_size_score
         )
         # Normalize by the sum of weights to keep score in [0, 1]
         total_weight = (
             pn_config.text_weight
             + pn_config.position_weight
             + pn_config.page_value_weight
-            + font_size_weight
+            + self.font_size_weight
         )
         return score / total_weight if total_weight > 0 else 0.0
 
@@ -90,6 +88,13 @@ class PageNumberClassifier(LabelClassifier):
         page_data = result.page_data
         page_bbox = page_data.bbox
         assert page_bbox is not None
+
+        pn_config = self.config.page_number
+        # Determine font size weight based on whether hints are available
+        font_size_weight = pn_config.font_size_weight
+        if self.config.font_size_hints.page_number_size is None:
+            # No hint available, zero out the font size weight
+            font_size_weight = 0.0
 
         for block in page_data.blocks:
             # TODO Support non-text blocks - such as images of text.
@@ -123,7 +128,8 @@ class PageNumberClassifier(LabelClassifier):
                 position_score=position_score,
                 page_value_score=page_value_score,
                 font_size_score=font_size_score,
-                config=self.config,
+                config=pn_config,
+                font_size_weight=font_size_weight,
             )
 
             combined = score.score()

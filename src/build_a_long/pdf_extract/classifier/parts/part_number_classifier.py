@@ -18,7 +18,6 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
@@ -56,28 +55,25 @@ class _PartNumberScore(Score):
     font_size_score: float
     """Score based on font size match to expected catalog element ID size (0.0-1.0)."""
 
-    config: ClassifierConfig
-    """Classifier configuration for dynamic score calculations."""
+    text_weight: float
+    """Weight to apply to text_score."""
+
+    font_size_weight: float
+    """Weight to apply to font_size_score."""
 
     def score(self) -> Weight:
         """Calculate final weighted score from components.
 
         Combines text matching and font size matching with text weighted more heavily.
         """
-        # For part numbers, reuse the part-count weights
-        pc_config = self.config.part_count
-        text_weight = pc_config.text_weight
-        font_size_weight = pc_config.font_size_weight
-
-        # If catalog element ID hint is not available, zero out font weight
-        if self.config.font_size_hints.catalog_element_id_size is None:
-            font_size_weight = 0.0
-
         # Sum the weighted components
-        score = text_weight * self.text_score + font_size_weight * self.font_size_score
+        score = (
+            self.text_weight * self.text_score
+            + self.font_size_weight * self.font_size_score
+        )
 
         # Normalize by the sum of weights to keep score in [0, 1]
-        total_weight = text_weight + font_size_weight
+        total_weight = self.text_weight + self.font_size_weight
         return score / total_weight if total_weight > 0 else 0.0
 
 
@@ -93,6 +89,15 @@ class PartNumberClassifier(LabelClassifier):
         page_data = result.page_data
         if not page_data.blocks:
             return
+
+        # For part numbers, reuse the part-count weights
+        pc_config = self.config.part_count
+        text_weight = pc_config.text_weight
+        font_size_weight = pc_config.font_size_weight
+
+        # If catalog element ID hint is not available, zero out font weight
+        if self.config.font_size_hints.catalog_element_id_size is None:
+            font_size_weight = 0.0
 
         for block in page_data.blocks:
             if not isinstance(block, Text):
@@ -118,7 +123,8 @@ class PartNumberClassifier(LabelClassifier):
             detail_score = _PartNumberScore(
                 text_score=text_score,
                 font_size_score=font_size_score,
-                config=self.config,
+                text_weight=text_weight,
+                font_size_weight=font_size_weight,
             )
 
             combined = detail_score.score()
