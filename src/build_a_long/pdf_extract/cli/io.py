@@ -154,8 +154,16 @@ def save_raw_json(
         return
 
     suffix = ".json.bz2" if compress else ".json"
-    opener = bz2.open if compress else open  # type: ignore[assignment]
-    compression_note = "compressed " if compress else ""
+    if compress:
+        compression_note = "compressed "
+
+        # Use compresslevel=9 explicitly to ensure deterministic output.
+        # This matches the default level, but makes it explicit for clarity.
+        def opener(path, mode, **kwargs):
+            return bz2.open(path, mode, compresslevel=9, **kwargs)
+    else:
+        compression_note = ""
+        opener = open  # type: ignore[assignment]
 
     # Helper to save a single JSON file
     def _save_json_file(
