@@ -207,9 +207,10 @@ class StepClassifier(LabelClassifier):
         # Get rotation symbols near this step (if any)
         rotation_symbol = self._get_rotation_symbol_for_step(step_num, diagram, result)
 
-        # Build Step
+        # Build Step - clip bbox to page bounds
+        page_bbox = result.page_data.bbox
         return Step(
-            bbox=self._compute_step_bbox(step_num, parts_list, diagram),
+            bbox=self._compute_step_bbox(step_num, parts_list, diagram, page_bbox),
             step_number=step_num,
             parts_list=parts_list,
             diagram=diagram,
@@ -500,18 +501,22 @@ class StepClassifier(LabelClassifier):
         step_num: StepNumber,
         parts_list: PartsList | None,
         diagram: Diagram | None,
+        page_bbox: BBox,
     ) -> BBox:
         """Compute the overall bounding box for the Step.
 
         This encompasses the step number, parts list (if any), and diagram (if any).
+        The result is clipped to the page bounds to handle elements that extend
+        slightly off-page (e.g., arrows in diagrams).
 
         Args:
             step_num: The step number element
             parts_list: The parts list (if any)
             diagram: The diagram element (if any)
+            page_bbox: The page bounding box to clip to
 
         Returns:
-            Combined bounding box
+            Combined bounding box, clipped to page bounds
         """
         bboxes = [step_num.bbox]
         if parts_list:
@@ -519,7 +524,7 @@ class StepClassifier(LabelClassifier):
         if diagram:
             bboxes.append(diagram.bbox)
 
-        return BBox.union_all(bboxes)
+        return BBox.union_all(bboxes).clip_to(page_bbox)
 
     def _deduplicate_and_assign_diagrams(
         self, candidates: list[Candidate], result: ClassificationResult

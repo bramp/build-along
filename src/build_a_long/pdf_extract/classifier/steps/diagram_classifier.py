@@ -178,7 +178,9 @@ class DiagramClassifier(LabelClassifier):
         score_details = candidate.score_details
         assert isinstance(score_details, _DiagramScore)
 
-        diagram_bbox = score_details.cluster_bbox
+        # Clip diagram bbox to page bounds (arrows may extend slightly off-page)
+        page_bbox = result.page_data.bbox
+        diagram_bbox = score_details.cluster_bbox.clip_to(page_bbox)
 
         # Find arrows that overlap with or are inside this diagram
         arrows: list[Arrow] = []
