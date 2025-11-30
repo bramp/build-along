@@ -10,14 +10,16 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
-from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Protocol, runtime_checkable
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 
 logger = logging.getLogger(__name__)
 
 
+@runtime_checkable
 class HasBBox(Protocol):
     """Protocol for objects that have a bbox attribute."""
 
@@ -25,8 +27,7 @@ class HasBBox(Protocol):
     def bbox(self) -> BBox: ...
 
 
-@dataclass
-class BlockTree[T: HasBBox]:
+class BlockTree[T: HasBBox](BaseModel):
     """A tree structure for managing hierarchical relationships between objects.
 
     This separates the hierarchy structure from the objects themselves, keeping
@@ -39,10 +40,12 @@ class BlockTree[T: HasBBox]:
         depth_map: Maps object id to its nesting depth (0 for roots)
     """
 
-    roots: list[T] = field(default_factory=list)
-    parent_map: dict[int, T | None] = field(default_factory=dict)
-    children_map: dict[int, list[T]] = field(default_factory=dict)
-    depth_map: dict[int, int] = field(default_factory=dict)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    roots: list[T] = Field(default_factory=list)
+    parent_map: dict[int, T | None] = Field(default_factory=dict)
+    children_map: dict[int, list[T]] = Field(default_factory=dict)
+    depth_map: dict[int, int] = Field(default_factory=dict)
 
     def get_children(self, obj: T) -> list[T]:
         """Get the children of a given object.
