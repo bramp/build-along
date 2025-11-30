@@ -17,6 +17,7 @@ import pytest
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.classifier.classifier_rules_test import (
     RAW_FIXTURE_FILES,
+    _load_config_for_fixture,
 )
 from build_a_long.pdf_extract.classifier.classifier_rules_test import (
     _load_pages_from_fixture as load_pages,
@@ -63,10 +64,11 @@ def _run_validation_on_fixtures(
         pytest.skip(skip_reason)
 
     pages = load_pages(fixture_file)
+    config = _load_config_for_fixture(fixture_file)
     validation = ValidationResult()
 
     for _page_idx, page_data in enumerate(pages):
-        result = classify_elements(page_data)
+        result = classify_elements(page_data, config)
         page = result.page
 
         if page is None:

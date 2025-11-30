@@ -14,13 +14,19 @@ import logging
 import pytest
 
 from build_a_long.pdf_extract.classifier import Candidate, classify_elements
+from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
     LegoPageElement,
     PartsList,
 )
-from build_a_long.pdf_extract.fixtures import FIXTURES_DIR, RAW_FIXTURE_FILES
+from build_a_long.pdf_extract.fixtures import (
+    FIXTURES_DIR,
+    RAW_FIXTURE_FILES,
+    extract_element_id,
+    load_classifier_config,
+)
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +54,19 @@ def _load_pages_from_fixture(fixture_file: str) -> list[PageData]:
     return extraction.pages
 
 
+def _load_config_for_fixture(fixture_file: str) -> ClassifierConfig:
+    """Load classifier config with hints for a fixture file.
+
+    Args:
+        fixture_file: Name of the fixture file (e.g., '6509377_page_010_raw.json')
+
+    Returns:
+        ClassifierConfig with font_size_hints and page_hints loaded from fixtures.
+    """
+    element_id = extract_element_id(fixture_file)
+    return load_classifier_config(element_id)
+
+
 class TestClassifierRules:
     """End-to-end rules that must hold on real pages after classification."""
 
@@ -59,10 +78,11 @@ class TestClassifierRules:
         This ensures that the classification and deletion logic don't conflict.
         """
         pages: list[PageData] = _load_pages_from_fixture(fixture_file)
+        config = _load_config_for_fixture(fixture_file)
 
         for page_idx, page in enumerate(pages):
             # Run the full classification pipeline on the page
-            result = classify_elements(page)
+            result = classify_elements(page, config)
 
             # Find all elements that are both labeled and deleted
             # Build a map of source_block -> label for successfully constructed
@@ -102,10 +122,11 @@ class TestClassifierRules:
         produce at most one classified element in the final Page tree.
         """
         pages = _load_pages_from_fixture(fixture_file)
+        config = _load_config_for_fixture(fixture_file)
 
         for page_idx, page_data in enumerate(pages):
             # Run the full classification pipeline on the page
-            result = classify_elements(page_data)
+            result = classify_elements(page_data, config)
             page = result.page
 
             if page is None:
@@ -169,10 +190,11 @@ class TestClassifierRules:
         Ensures proper tracking of all elements through the classification pipeline.
         """
         pages = _load_pages_from_fixture(fixture_file)
+        config = _load_config_for_fixture(fixture_file)
 
         for page_idx, page_data in enumerate(pages):
             # Run the full classification pipeline on the page
-            result = classify_elements(page_data)
+            result = classify_elements(page_data, config)
             page = result.page
 
             if page is None:
@@ -242,10 +264,11 @@ class TestClassifierRules:
            but not actually used in the final tree
         """
         pages = _load_pages_from_fixture(fixture_file)
+        config = _load_config_for_fixture(fixture_file)
 
         for page_idx, page_data in enumerate(pages):
             # Run the full classification pipeline on the page
-            result = classify_elements(page_data)
+            result = classify_elements(page_data, config)
             page = result.page
 
             if page is None:

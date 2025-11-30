@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
@@ -46,14 +48,15 @@ def test_parts_list_total_items():
     assert pl.total_items == 7
 
 
-def test_partcount_non_negative():
-    PartCount(bbox=BBox(0, 0, 1, 1), count=0)  # ok
-    try:
-        # TODO Is this the correct way to test for ValueError?
+def test_partcount_positive():
+    """Test that PartCount requires count > 0."""
+    PartCount(bbox=BBox(0, 0, 1, 1), count=1)  # ok
+
+    with pytest.raises(ValueError):
+        PartCount(bbox=BBox(0, 0, 1, 1), count=0)
+
+    with pytest.raises(ValueError):
         PartCount(bbox=BBox(0, 0, 1, 1), count=-1)
-        raise AssertionError("Expected ValueError")
-    except ValueError:
-        pass
 
 
 def test_text_serialization_with_tag():

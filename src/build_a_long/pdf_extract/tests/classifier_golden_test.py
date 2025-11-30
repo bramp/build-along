@@ -5,10 +5,11 @@ Golden files contain the expected serialized Page output for known inputs.
 
 How it works:
 1. Test loads a raw fixture (PageData from real PDF extraction)
-2. Runs the classifier to produce a ClassificationResult
-3. Builds a Page from the classification result
-4. Serializes the Page using model_dump()
-5. Compares against the expected golden file
+2. Loads classifier config with hints from the PDF's hint fixtures
+3. Runs the classifier to produce a ClassificationResult
+4. Builds a Page from the classification result
+5. Serializes the Page using model_dump()
+6. Compares against the expected golden file
 
 Note: We compare the serialized Page.model_dump() output,
 not the object directly, to ensure JSON round-tripping works correctly.
@@ -24,7 +25,12 @@ import pytest
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import ExtractionResult
-from build_a_long.pdf_extract.fixtures import FIXTURES_DIR, RAW_FIXTURE_FILES
+from build_a_long.pdf_extract.fixtures import (
+    FIXTURES_DIR,
+    RAW_FIXTURE_FILES,
+    extract_element_id,
+    load_classifier_config,
+)
 
 log = logging.getLogger(__name__)
 
@@ -106,8 +112,12 @@ class TestClassifierGolden:
         if not extraction.pages:
             pytest.skip(f"No pages found in {fixture_file}")
 
+        # Load classifier config with hints
+        element_id = extract_element_id(fixture_file)
+        config = load_classifier_config(element_id)
+
         page = extraction.pages[0]
-        result = classify_elements(page)
+        result = classify_elements(page, config)
         page_element = result.page
 
         # Serialize the Page using Pydantic's JSON encoder

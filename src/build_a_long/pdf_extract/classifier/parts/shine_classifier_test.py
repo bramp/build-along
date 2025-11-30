@@ -4,6 +4,9 @@ from typing import Any, cast
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.classifier.classifier_rules_test import (
+    _load_config_for_fixture,
+)
+from build_a_long.pdf_extract.classifier.classifier_rules_test import (
     _load_pages_from_fixture as load_pages,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import PartImage, Shine
@@ -14,9 +17,10 @@ def test_shine_classification() -> None:
     # This page contains a shine on step 16 (image_8 and drawing id=70)
     fixture_file = "6509377_page_015_raw.json"
     pages = load_pages(fixture_file)
+    config = _load_config_for_fixture(fixture_file)
     page_data = pages[0]
 
-    result = classify_elements(page_data)
+    result = classify_elements(page_data, config)
 
     # Check if 'shine' candidates were created
     shine_candidates = result.get_candidates("shine")
