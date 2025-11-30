@@ -22,8 +22,9 @@ pants run src/build_a_long/pdf_extract:main -- \
 	data/75375/6509377.pdf \
 	--pages 10-17,180 \
 	--output-dir "$FIXTURES_DIR" \
-	--debug-json \
-	--debug-extra-json
+	--raw-json \
+	--no-json \
+	--no-summary
 
 # Individual page fixtures from 6433200 (pages 4, 5, 7, 31)
 echo ""
@@ -32,8 +33,9 @@ pants run src/build_a_long/pdf_extract:main -- \
 	data/40573/6433200.pdf \
 	--pages 4,5,7,31 \
 	--output-dir "$FIXTURES_DIR" \
-	--debug-json \
-	--debug-extra-json
+	--raw-json \
+	--no-json \
+	--no-summary
 
 # Full document fixtures (compressed)
 echo ""
@@ -41,8 +43,9 @@ echo "=== 6055739: Tower of Orthanc (10237) - Full document fixture (manual 1/3)
 pants run src/build_a_long/pdf_extract:main -- \
 	data/10237/6055739.pdf \
 	--output-dir "$FIXTURES_DIR" \
-	--debug-json \
-	--debug-extra-json \
+	--raw-json \
+	--no-json \
+	--no-summary \
 	--compress-json
 
 echo ""
@@ -50,8 +53,9 @@ echo "=== 6055740: Tower of Orthanc (10237) - Full document fixture (manual 2/3)
 pants run src/build_a_long/pdf_extract:main -- \
 	data/10237/6055740.pdf \
 	--output-dir "$FIXTURES_DIR" \
-	--debug-json \
-	--debug-extra-json \
+	--raw-json \
+	--no-json \
+	--no-summary \
 	--compress-json
 
 echo ""
@@ -59,8 +63,9 @@ echo "=== 6055741: Tower of Orthanc (10237) - Full document fixture (manual 3/3)
 pants run src/build_a_long/pdf_extract:main -- \
 	data/10237/6055741.pdf \
 	--output-dir "$FIXTURES_DIR" \
-	--debug-json \
-	--debug-extra-json \
+	--raw-json \
+	--no-json \
+	--no-summary \
 	--compress-json
 
 echo ""
@@ -68,8 +73,9 @@ echo "=== 6509377: Star Wars Millennium Falcon (75375) - Full document fixture =
 pants run src/build_a_long/pdf_extract:main -- \
 	data/75375/6509377.pdf \
 	--output-dir "$FIXTURES_DIR" \
-	--debug-json \
-	--debug-extra-json \
+	--raw-json \
+	--no-json \
+	--no-summary \
 	--compress-json
 
 echo ""
@@ -77,8 +83,9 @@ echo "=== 6580053: Star Wars Kylo Ren's Command Shuttle (75406) - Full document 
 pants run src/build_a_long/pdf_extract:main -- \
 	data/75406/6580053.pdf \
 	--output-dir "$FIXTURES_DIR" \
-	--debug-json \
-	--debug-extra-json \
+	--raw-json \
+	--no-json \
+	--no-summary \
 	--compress-json
 
 echo ""

@@ -22,6 +22,7 @@ from build_a_long.pdf_extract.cli import (
     render_annotated_images,
     save_debug_json,
     save_manual_json,
+    save_raw_json,
 )
 from build_a_long.pdf_extract.cli.reporting import (
     build_and_print_page_hierarchy,
@@ -214,6 +215,38 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         # the case. We need to set `pages` to `requested_pages_with_all_blocks`
         pages = requested_pages_with_all_blocks
 
+        # Save raw JSON if requested (before classification)
+        if config.save_raw_json:
+            # When specific pages are requested, save one file per page
+            # Otherwise save all pages in a single file
+            per_page = config.page_ranges is not None and config.page_ranges != "all"
+            save_raw_json(
+                pages,
+                output_dir,
+                pdf_path,
+                compress=config.compress_json,
+                per_page=per_page,
+            )
+
+        # Check if we need classification at all
+        needs_classification = (
+            config.save_json
+            or config.save_debug_json
+            or config.save_summary
+            or config.draw_blocks
+            or config.draw_elements
+            or config.draw_drawings
+            or config.debug_classification
+            or config.debug_candidates
+            or config.print_histogram
+            or config.print_font_hints
+        )
+
+        if not needs_classification:
+            elapsed = time.monotonic() - start_time
+            print(f"Extraction complete (took {elapsed:.1f}s)")
+            return 0
+
         # Modify full-page image check (applied to
         # requested_pages_with_all_blocks)
         # TODO Let's move this into the validation checks
@@ -267,15 +300,16 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         validation = validate_results(classified_pages, batch_result.results)
         print_validation(validation)
 
-        # Save results
-        manual = batch_result.manual
-        manual.source_pdf = pdf_path.name
-        manual.source_size = source_size
-        manual.source_hash = source_hash
+        # Save classified Manual JSON
+        if config.save_json:
+            manual = batch_result.manual
+            manual.source_pdf = pdf_path.name
+            manual.source_size = source_size
+            manual.source_hash = source_hash
 
-        output_path = save_manual_json(manual, output_dir, pdf_path)
-        elapsed = time.monotonic() - start_time
-        print(f"Saved: {output_path} (took {elapsed:.1f}s)")
+            output_path = save_manual_json(manual, output_dir, pdf_path)
+            elapsed = time.monotonic() - start_time
+            print(f"Saved: {output_path} (took {elapsed:.1f}s)")
 
         if config.draw_blocks or config.draw_elements or config.draw_drawings:
             render_annotated_images(

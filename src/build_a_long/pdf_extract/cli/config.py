@@ -18,12 +18,11 @@ class ProcessingConfig(BaseModel):
     include_types: set[str]
     page_ranges: str | None = None
 
-    # Extraction flags
-    debug_extra_json: bool = False
-
     # Output flags
     save_summary: bool = True
     summary_detailed: bool = False
+    save_json: bool = True
+    save_raw_json: bool = False
     save_debug_json: bool = False
     compress_json: bool = False
     draw_blocks: bool = False
@@ -56,9 +55,10 @@ class ProcessingConfig(BaseModel):
             output_dir=args.output_dir,
             include_types=include_types,
             page_ranges=args.pages,
-            debug_extra_json=args.debug_extra_json,
             save_summary=args.summary,
             summary_detailed=args.summary_detailed,
+            save_json=args.json,
+            save_raw_json=args.raw_json,
             save_debug_json=args.debug_json,
             compress_json=args.compress_json,
             draw_blocks=args.draw_blocks,
@@ -121,18 +121,23 @@ def parse_arguments() -> argparse.Namespace:
         ),
         default="text,image,drawing",
     )
-    parser.add_argument(
-        "--debug-extra-json",
-        action="store_true",
-        help=(
-            "Include additional metadata in raw JSON output (colors, fonts, "
-            "dimensions, line widths, etc.). Useful for debugging but increases "
-            "file size."
-        ),
-    )
 
     # Output options group
     output_group = parser.add_argument_group("output options")
+    output_group.add_argument(
+        "--json",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Save classified Manual as JSON (default: enabled). Use --no-json to disable.",
+    )
+    output_group.add_argument(
+        "--raw-json",
+        action="store_true",
+        help=(
+            "Export raw pdf extraction data as JSON (*_raw.json) with all blocks. When --pages is used, "
+            "saves one file per page. Without --pages, saves all pages in one file."
+        ),
+    )
     output_group.add_argument(
         "--summary",
         action=argparse.BooleanOptionalAction,
@@ -184,7 +189,7 @@ def parse_arguments() -> argparse.Namespace:
     debug_group.add_argument(
         "--debug-json",
         action="store_true",
-        help="Export debug JSON files: raw page data and classification details (candidates, scores, removal reasons).",
+        help="Export classification debug JSON (*_debug.json) with candidates, scores, and removal reasons.",
     )
     debug_group.add_argument(
         "--compress-json",
