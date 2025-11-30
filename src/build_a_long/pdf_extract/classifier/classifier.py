@@ -84,16 +84,24 @@ logger = logging.getLogger(__name__)
 MAX_BLOCKS_PER_PAGE = 1000
 
 
-def classify_elements(page: PageData) -> ClassificationResult:
+# TODO require config, so we don't accidentally use default empty config
+def classify_elements(
+    page: PageData, config: ClassifierConfig | None = None
+) -> ClassificationResult:
     """Classify and label elements on a single page using rule-based heuristics.
 
     Args:
         page: A single PageData object to classify.
+        config: Optional classifier configuration with font/page hints.
+            If None, uses default empty configuration (no hints).
+            For better classification accuracy, pass a config with
+            FontSizeHints computed from multiple pages of the same PDF.
 
     Returns:
         A ClassificationResult object containing the classification results.
     """
-    config = ClassifierConfig()
+    if config is None:
+        config = ClassifierConfig()
     classifier = Classifier(config)
 
     return classifier.classify(page)
