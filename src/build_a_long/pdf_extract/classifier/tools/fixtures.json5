@@ -1,0 +1,58 @@
+{
+  // This file defines all fixtures to generate for testing.
+  // Run: pants run src/build_a_long/pdf_extract/classifier/tools/regenerate_fixtures.py
+  //
+  // Each fixture has:
+  //   description: Human-readable description
+  //   pdf: Path to the source PDF file
+  //   pages: (optional) Page range to extract (e.g., "10-17,180"). Omit for all pages.
+  //   compress: (optional) Whether to compress output with bz2 (default: false)
+
+  fixtures: [
+    // === Individual page fixtures ===
+    // These extract specific pages for targeted testing of page types
+
+    {
+      description: "Star Wars Millennium Falcon (75375) - Individual page fixtures",
+      pdf: "data/75375/6509377.pdf",
+      pages: "10-17,180",
+    },
+    {
+      description: "Ideas Christmas Tree (40573) - Individual page fixtures",
+      pdf: "data/40573/6433200.pdf",
+      pages: "4,5,7,31",
+    },
+
+    // === Full document fixtures (compressed) ===
+    // These capture entire manuals for integration testing
+
+    {
+      // Multi-manual set (3 booklets)
+      description: "Tower of Orthanc (10237) - Full document fixture (manual 1/3)",
+      pdf: "data/10237/6055739.pdf",
+      compress: true,
+    },
+    {
+      description: "Tower of Orthanc (10237) - Full document fixture (manual 2/3)",
+      pdf: "data/10237/6055740.pdf",
+      compress: true,
+    },
+    {
+      description: "Tower of Orthanc (10237) - Full document fixture (manual 3/3)",
+      pdf: "data/10237/6055741.pdf",
+      compress: true,
+    },
+    {
+      // Large complex manual with many step types
+      description: "Star Wars Millennium Falcon (75375) - Full document fixture",
+      pdf: "data/75375/6509377.pdf",
+      compress: true,
+    },
+    {
+      // Tests: different layout style
+      description: "Kylo Ren's Command Shuttle (75406) - Full document fixture",
+      pdf: "data/75406/6580053.pdf",
+      compress: true,
+    },
+  ],
+}
