@@ -468,7 +468,7 @@ def validate_part_contains_children(
 
         for part in step.parts_list.parts:
             # Count must be inside Part bbox
-            if not part.count.bbox.fully_inside(part.bbox):
+            if not part.bbox.contains(part.count.bbox):
                 validation.add(
                     ValidationIssue(
                         severity=ValidationSeverity.ERROR,
@@ -480,7 +480,7 @@ def validate_part_contains_children(
                 )
 
             # Diagram (if present) must be inside Part bbox
-            if part.diagram and not part.diagram.bbox.fully_inside(part.bbox):
+            if part.diagram and not part.bbox.contains(part.diagram.bbox):
                 validation.add(
                     ValidationIssue(
                         severity=ValidationSeverity.ERROR,
@@ -521,7 +521,7 @@ def validate_elements_within_page(
     page_bbox = page_data.bbox
 
     for element in page.iter_elements():
-        if not element.bbox.fully_inside(page_bbox):
+        if not page_bbox.contains(element.bbox):
             validation.add(
                 ValidationIssue(
                     severity=ValidationSeverity.ERROR,

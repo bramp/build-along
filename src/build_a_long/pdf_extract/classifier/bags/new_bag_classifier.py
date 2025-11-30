@@ -270,10 +270,7 @@ class NewBagClassifier(LabelClassifier):
 
         for candidate in bag_number_candidates:
             # Check if the bag number is inside the cluster
-            if (
-                candidate.bbox.fully_inside(cluster_bbox)
-                and candidate.score > best_score
-            ):
+            if cluster_bbox.contains(candidate.bbox) and candidate.score > best_score:
                 best_candidate = candidate
                 best_score = candidate.score
 

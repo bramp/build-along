@@ -81,24 +81,17 @@ class BBox(BaseModel):
         # If one rectangle is above the other
         return not (self.y0 >= other.y1 or other.y0 >= self.y1)
 
-    # TODO Deprecate this in favor of contains()
-    def fully_inside(self, other: BBox) -> bool:
-        """
-        Checks if this bounding box is fully inside another bounding box.
-        """
-        return (
-            self.x0 >= other.x0
-            and self.y0 >= other.y0
-            and self.x1 <= other.x1
-            and self.y1 <= other.y1
-        )
-
     def contains(self, other: BBox) -> bool:
         """
         Checks if this bounding box fully contains another bounding box.
         This is the inverse of fully_inside - returns True if other is inside self.
         """
-        return other.fully_inside(self)
+        return (
+            other.x0 >= self.x0
+            and other.y0 >= self.y0
+            and other.x1 <= self.x1
+            and other.y1 <= self.y1
+        )
 
     def adjacent(self, other: BBox, tolerance: float = 1e-6) -> bool:
         """
