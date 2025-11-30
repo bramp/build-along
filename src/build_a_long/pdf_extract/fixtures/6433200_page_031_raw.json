@@ -13,14 +13,22 @@
 					"bbox": {
 						"x0": 34.02,
 						"y0": 16.27,
-						"x1": 48.63,
+						"x1": 63.24,
 						"y1": 48.59
 					},
 					"id": 0,
 					"__tag__": "Text",
-					"text": "4",
+					"text": "43",
 					"font_name": "CeraPro-Medium",
-					"font_size": 26.0
+					"font_size": 26.0,
+					"font_flags": 4,
+					"color": 0,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						34.02,
+						42.27
+					]
 				},
 				{
 					"bbox": {
@@ -33,7 +41,15 @@
 					"__tag__": "Text",
 					"text": "43",
 					"font_name": "CeraPro-Medium",
-					"font_size": 26.0
+					"font_size": 26.0,
+					"font_flags": 4,
+					"color": 0,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						34.02,
+						42.27
+					]
 				},
 				{
 					"bbox": {
@@ -46,7 +62,15 @@
 					"__tag__": "Text",
 					"text": "31",
 					"font_name": "CeraPro-Medium",
-					"font_size": 10.0
+					"font_size": 10.0,
+					"font_flags": 4,
+					"color": 0,
+					"ascender": 1.0,
+					"descender": -0.24,
+					"origin": [
+						529.29,
+						481.89
+					]
 				},
 				{
 					"bbox": {
@@ -57,7 +81,24 @@
 					},
 					"id": 3,
 					"__tag__": "Image",
-					"image_id": "image_1"
+					"image_id": "image_1",
+					"width": 578,
+					"height": 474,
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 202590,
+					"transform": [
+						277.01,
+						0.0,
+						-0.0,
+						227.11,
+						44.88,
+						13.69
+					],
+					"xref": 276,
+					"digest": "dfcf1b849fd65e31dbd49640c85aa9ab"
 				},
 				{
 					"bbox": {
@@ -68,7 +109,24 @@
 					},
 					"id": 4,
 					"__tag__": "Image",
-					"image_id": "image_2"
+					"image_id": "image_2",
+					"width": 37,
+					"height": 38,
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1081,
+					"transform": [
+						17.73,
+						0.0,
+						-0.0,
+						18.21,
+						44.88,
+						24.71
+					],
+					"xref": 267,
+					"digest": "0436b680189bc4f7238b0448b405c3fd"
 				},
 				{
 					"bbox": {
@@ -79,7 +137,24 @@
 					},
 					"id": 5,
 					"__tag__": "Image",
-					"image_id": "image_4"
+					"image_id": "image_4",
+					"width": 37,
+					"height": 38,
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1081,
+					"transform": [
+						17.73,
+						0.0,
+						-0.0,
+						18.21,
+						44.88,
+						24.71
+					],
+					"xref": 265,
+					"digest": "749735a655d72c2293f2088006159d0e"
 				},
 				{
 					"bbox": {
@@ -90,7 +165,24 @@
 					},
 					"id": 6,
 					"__tag__": "Image",
-					"image_id": "image_5"
+					"image_id": "image_5",
+					"width": 496,
+					"height": 496,
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 228882,
+					"transform": [
+						237.77,
+						0.0,
+						-0.0,
+						237.77,
+						300.64,
+						216.26
+					],
+					"xref": 264,
+					"digest": "edf64487771b3f933f3eb3e4d031a7fa"
 				},
 				{
 					"bbox": {
@@ -101,7 +193,52 @@
 					},
 					"id": 7,
 					"__tag__": "Image",
-					"image_id": "image_6"
+					"image_id": "image_6",
+					"width": 86,
+					"height": 100,
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1296,
+					"transform": [
+						20.64,
+						0.0,
+						-0.0,
+						23.98,
+						301.0,
+						216.58
+					],
+					"xref": 269,
+					"digest": "297d8afac37350fb8ca8f77ced8253c8"
+				},
+				{
+					"bbox": {
+						"x0": -0.59,
+						"y0": 170.04,
+						"x1": 187.73,
+						"y1": 276.5
+					},
+					"id": 8,
+					"__tag__": "Image",
+					"image_id": "image_7",
+					"width": 393,
+					"height": 222,
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 2478,
+					"transform": [
+						188.32,
+						0.0,
+						-0.0,
+						-106.46,
+						-0.59,
+						276.5
+					],
+					"xref": 273,
+					"digest": "3444850545a4b53af7db152eebfb90e5"
 				},
 				{
 					"bbox": {
@@ -110,9 +247,54 @@
 						"x1": 187.7,
 						"y1": 240.57
 					},
-					"id": 8,
+					"id": 9,
 					"__tag__": "Image",
-					"image_id": "image_7"
+					"image_id": "image_8",
+					"width": 594,
+					"height": 294,
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 75923,
+					"transform": [
+						142.59,
+						0.0,
+						-0.0,
+						70.51,
+						45.11,
+						170.06
+					],
+					"xref": 266,
+					"digest": "5b9bb32edd0c78b2b748505391dd23a2"
+				},
+				{
+					"bbox": {
+						"x0": -0.59,
+						"y0": 240.06,
+						"x1": 182.94,
+						"y1": 275.55
+					},
+					"id": 10,
+					"__tag__": "Image",
+					"image_id": "image_9",
+					"width": 383,
+					"height": 74,
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1081,
+					"transform": [
+						183.53,
+						0.0,
+						-0.0,
+						-35.49,
+						-0.59,
+						275.55
+					],
+					"xref": 268,
+					"digest": "d10a6b763083d2d389927f744b6bd18d"
 				},
 				{
 					"bbox": {
@@ -121,9 +303,26 @@
 						"x1": 182.66,
 						"y1": 240.57
 					},
-					"id": 9,
+					"id": 11,
 					"__tag__": "Image",
-					"image_id": "image_8"
+					"image_id": "image_10",
+					"width": 6,
+					"height": 243,
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1081,
+					"transform": [
+						1.44,
+						0.0,
+						-0.0,
+						58.28,
+						181.22,
+						182.29
+					],
+					"xref": 272,
+					"digest": "f0112b6a825030141cf1673d6dfdc965"
 				},
 				{
 					"bbox": {
@@ -132,9 +331,26 @@
 						"x1": 186.74,
 						"y1": 183.97
 					},
-					"id": 10,
+					"id": 12,
 					"__tag__": "Image",
-					"image_id": "image_9"
+					"image_id": "image_11",
+					"width": 40,
+					"height": 54,
+					"colorspace": 1,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1081,
+					"transform": [
+						9.6,
+						0.0,
+						-0.0,
+						12.95,
+						177.14,
+						171.02
+					],
+					"xref": 1050,
+					"digest": "55c2b2de48fcb4c03a8a30255b3de22e"
 				},
 				{
 					"bbox": {
@@ -143,9 +359,26 @@
 						"x1": 182.66,
 						"y1": 183.01
 					},
-					"id": 11,
+					"id": 13,
 					"__tag__": "Image",
-					"image_id": "image_10"
+					"image_id": "image_12",
+					"width": 6,
+					"height": 3,
+					"colorspace": 3,
+					"xres": 96,
+					"yres": 96,
+					"bpc": 8,
+					"size": 1081,
+					"transform": [
+						1.44,
+						0.0,
+						-0.0,
+						0.72,
+						181.22,
+						182.29
+					],
+					"xref": 1051,
+					"digest": "8910e6fc12f07a52b796eb55fbf3edda"
 				},
 				{
 					"bbox": {
@@ -154,8 +387,28 @@
 						"x1": 552.76,
 						"y1": 496.06
 					},
-					"id": 12,
-					"__tag__": "Drawing"
+					"id": 14,
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.83,
+						0.93,
+						0.99
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"re",
+							[
+								0.0,
+								0.0,
+								552.76,
+								496.06
+							],
+							1
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -164,8 +417,28 @@
 						"x1": 45.35,
 						"y1": 42.55
 					},
-					"id": 13,
-					"__tag__": "Drawing"
+					"id": 15,
+					"__tag__": "Drawing",
+					"fill_color": [
+						0.83,
+						0.93,
+						0.99
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"re",
+							[
+								34.48,
+								25.11,
+								45.35,
+								42.55
+							],
+							1
+						]
+					]
 				},
 				{
 					"bbox": {
@@ -174,8 +447,124 @@
 						"x1": 517.74,
 						"y1": 482.59
 					},
-					"id": 14,
+					"id": 16,
 					"__tag__": "Drawing",
+					"fill_color": [
+						0.51,
+						0.64,
+						0.84
+					],
+					"stroke_color": [
+						0.83,
+						0.93,
+						0.99
+					],
+					"line_width": 2.0,
+					"fill_opacity": 1.0,
+					"stroke_opacity": 1.0,
+					"path_type": "fs",
+					"dashes": "[] 0",
+					"even_odd": false,
+					"items": [
+						[
+							"c",
+							[
+								-513.5,
+								474.1
+							],
+							[
+								-515.84,
+								474.1
+							],
+							[
+								-517.74,
+								476.01
+							],
+							[
+								-517.74,
+								478.35
+							]
+						],
+						[
+							"c",
+							[
+								-517.74,
+								478.35
+							],
+							[
+								-517.74,
+								480.69
+							],
+							[
+								-515.84,
+								482.59
+							],
+							[
+								-513.5,
+								482.59
+							]
+						],
+						[
+							"l",
+							[
+								-513.5,
+								482.59
+							],
+							[
+								513.5,
+								482.59
+							]
+						],
+						[
+							"c",
+							[
+								513.5,
+								482.59
+							],
+							[
+								515.84,
+								482.59
+							],
+							[
+								517.74,
+								480.69
+							],
+							[
+								517.74,
+								478.35
+							]
+						],
+						[
+							"c",
+							[
+								517.74,
+								478.35
+							],
+							[
+								517.74,
+								476.01
+							],
+							[
+								515.84,
+								474.1
+							],
+							[
+								513.5,
+								474.1
+							]
+						],
+						[
+							"l",
+							[
+								513.5,
+								474.1
+							],
+							[
+								-513.5,
+								474.1
+							]
+						]
+					],
 					"original_bbox": {
 						"x0": -517.74,
 						"y0": 474.1,
@@ -190,8 +579,28 @@
 						"x1": 537.59,
 						"y1": 482.0
 					},
-					"id": 15,
+					"id": 17,
 					"__tag__": "Drawing",
+					"fill_color": [
+						0.83,
+						0.93,
+						0.99
+					],
+					"fill_opacity": 1.0,
+					"path_type": "f",
+					"even_odd": false,
+					"items": [
+						[
+							"re",
+							[
+								529.5,
+								475.29,
+								537.59,
+								482.0
+							],
+							1
+						]
+					],
 					"original_bbox": {
 						"x0": 529.5,
 						"y0": 475.29,

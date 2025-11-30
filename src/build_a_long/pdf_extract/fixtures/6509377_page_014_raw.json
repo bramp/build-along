@@ -244,12 +244,12 @@
 					"bbox": {
 						"x0": 64.81,
 						"y0": 187.66,
-						"x1": 73.6,
+						"x1": 82.29,
 						"y1": 207.6
 					},
 					"id": 11,
 					"__tag__": "Text",
-					"text": "2",
+					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
@@ -286,12 +286,12 @@
 					"bbox": {
 						"x0": 64.81,
 						"y0": 187.66,
-						"x1": 73.6,
+						"x1": 82.29,
 						"y1": 207.6
 					},
 					"id": 13,
 					"__tag__": "Text",
-					"text": "2",
+					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,

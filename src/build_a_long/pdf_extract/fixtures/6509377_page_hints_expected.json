@@ -502,9 +502,9 @@
         "instruction": 0.9
       },
       "page_number": 14,
-      "part_count_count": 8,
+      "part_count_count": 10,
       "part_number_count": 0,
-      "step_number_count": 2
+      "step_number_count": 4
     },
     "140": {
       "confidences": {
@@ -1371,7 +1371,7 @@
         "instruction": 0.9
       },
       "page_number": 45,
-      "part_count_count": 4,
+      "part_count_count": 6,
       "part_number_count": 0,
       "step_number_count": 2
     },
@@ -1415,7 +1415,7 @@
         "instruction": 0.9
       },
       "page_number": 49,
-      "part_count_count": 5,
+      "part_count_count": 6,
       "part_number_count": 0,
       "step_number_count": 2
     },
@@ -2006,12 +2006,12 @@
       "confidences": {
         "catalog": 0.0,
         "info": 0.0,
-        "instruction": 0.6
+        "instruction": 0.9
       },
       "page_number": 98,
-      "part_count_count": 4,
+      "part_count_count": 8,
       "part_number_count": 0,
-      "step_number_count": 0
+      "step_number_count": 4
     },
     "99": {
       "confidences": {
