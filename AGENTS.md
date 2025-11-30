@@ -43,3 +43,4 @@ These guidelines are for the AI agent interacting with this repository:
 - **Process Management**: The agent must avoid running interactive or long-running server processes in the foreground (e.g., `npm start`). For UI testing, rely on non-interactive commands like `npm run build` for verification.
 - **File Deprecation**: When deprecating files, the agent must first read their content and migrate any necessary code or functionality before deleting them to prevent data loss.
 - **Commit Frequency**: The agent should aim for small, regular git commits.
+- **Running Tests and Checks**: The agent must use `pants test ::` to run tests and `pants check ::` for linting and formatting checks.

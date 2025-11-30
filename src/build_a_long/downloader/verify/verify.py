@@ -4,16 +4,15 @@ import hashlib
 import json
 from collections import Counter
 from pathlib import Path
-from typing import NamedTuple
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from tqdm.auto import tqdm  # Keep tqdm.auto for tqdm.write
 from tqdm.contrib.concurrent import process_map
 
 from build_a_long.schemas import InstructionMetadata
 
 
-class VerificationError(NamedTuple):
+class VerificationError(BaseModel):
     type: str
     message: str
 
@@ -38,8 +37,8 @@ def _verify_single_metadata(metadata_path: Path) -> list[VerificationError]:
     except (ValidationError, json.JSONDecodeError) as e:
         errors.append(
             VerificationError(
-                "invalid_metadata",
-                f"Error: Could not validate or parse metadata in {metadata_path}: {e}",
+                type="invalid_metadata",
+                message=f"Error: Could not validate or parse metadata in {metadata_path}: {e}",
             )
         )
         return errors
@@ -49,9 +48,11 @@ def _verify_single_metadata(metadata_path: Path) -> list[VerificationError]:
         if not pdf_entry.filename:
             errors.append(
                 VerificationError(
-                    "missing_filename",
-                    f"Error: Missing filename in metadata for set {metadata.set}, "
-                    f"URL: {pdf_entry.url}",
+                    type="missing_filename",
+                    message=(
+                        f"Error: Missing filename in metadata for set {metadata.set}, "
+                        f"URL: {pdf_entry.url}"
+                    ),
                 )
             )
             continue  # Can't proceed without a filename
@@ -62,8 +63,8 @@ def _verify_single_metadata(metadata_path: Path) -> list[VerificationError]:
         if not pdf_path.exists():
             errors.append(
                 VerificationError(
-                    "missing_file",
-                    f"Error: Missing file {pdf_path} for set {metadata.set}",
+                    type="missing_file",
+                    message=f"Error: Missing file {pdf_path} for set {metadata.set}",
                 )
             )
             continue
@@ -74,12 +75,13 @@ def _verify_single_metadata(metadata_path: Path) -> list[VerificationError]:
             if actual_size != pdf_entry.filesize:
                 errors.append(
                     VerificationError(
-                        "filesize_mismatch",
-                        f"Error: Filesize mismatch for {pdf_path} "
-                        f"(expected: {pdf_entry.filesize}, actual: {actual_size})",
+                        type="filesize_mismatch",
+                        message=(
+                            f"Error: Filesize mismatch for {pdf_path} "
+                            f"(expected: {pdf_entry.filesize}, actual: {actual_size})"
+                        ),
                     )
                 )
-
         # Verify hash
         if pdf_entry.filehash is not None:
             hasher = hashlib.sha256()
@@ -90,12 +92,13 @@ def _verify_single_metadata(metadata_path: Path) -> list[VerificationError]:
             if actual_hash != pdf_entry.filehash:
                 errors.append(
                     VerificationError(
-                        "hash_mismatch",
-                        f"Error: Hash mismatch for {pdf_path} "
-                        f"(expected: {pdf_entry.filehash}, actual: {actual_hash})",
+                        type="hash_mismatch",
+                        message=(
+                            f"Error: Hash mismatch for {pdf_path} "
+                            f"(expected: {pdf_entry.filehash}, actual: {actual_hash})"
+                        ),
                     )
                 )
-
     # Check for orphaned PDFs in this set's directory
     all_pdfs_in_set_dir = set(set_dir.glob("*.pdf"))
     orphaned_pdfs = all_pdfs_in_set_dir - declared_pdf_paths
@@ -103,7 +106,8 @@ def _verify_single_metadata(metadata_path: Path) -> list[VerificationError]:
     for pdf in orphaned_pdfs:
         errors.append(
             VerificationError(
-                "orphaned_file", f"Error: Orphaned PDF file found in {set_dir}: {pdf}"
+                type="orphaned_file",
+                message=f"Error: Orphaned PDF file found in {set_dir}: {pdf}",
             )
         )
 
