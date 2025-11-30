@@ -15,7 +15,7 @@ Note: We compare the serialized Page.model_dump() output,
 not the object directly, to ensure JSON round-tripping works correctly.
 
 To update golden files:
-    pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-files
+    pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
 """
 
 import difflib

@@ -104,7 +104,7 @@
               },
               "__tag__": "PartCount",
               "count": 2,
-              "matched_hint": "catalog_part_count"
+              "matched_hint": "part_count"
             },
             "diagram": {
               "bbox": {
@@ -133,7 +133,7 @@
               },
               "__tag__": "PartCount",
               "count": 2,
-              "matched_hint": "catalog_part_count"
+              "matched_hint": "part_count"
             },
             "diagram": {
               "bbox": {
@@ -231,7 +231,7 @@
               },
               "__tag__": "PartCount",
               "count": 1,
-              "matched_hint": "catalog_part_count"
+              "matched_hint": "part_count"
             },
             "diagram": {
               "bbox": {
@@ -308,7 +308,7 @@
               },
               "__tag__": "PartCount",
               "count": 2,
-              "matched_hint": "catalog_part_count"
+              "matched_hint": "part_count"
             },
             "diagram": {
               "bbox": {
@@ -337,7 +337,7 @@
               },
               "__tag__": "PartCount",
               "count": 1,
-              "matched_hint": "catalog_part_count"
+              "matched_hint": "part_count"
             },
             "diagram": {
               "bbox": {
@@ -405,7 +405,7 @@
               },
               "__tag__": "PartCount",
               "count": 2,
-              "matched_hint": "catalog_part_count"
+              "matched_hint": "part_count"
             },
             "diagram": {
               "bbox": {

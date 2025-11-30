@@ -6,7 +6,7 @@ It uses hint fixtures (font_hints and page_hints) when available for consistent
 classification.
 
 Usage:
-    pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-files
+    pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
 """
 
 import logging
