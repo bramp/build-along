@@ -12,7 +12,9 @@ from build_a_long.pdf_extract.classifier.config import (
     PartNumberConfig,
     PartsListConfig,
     RotationSymbolConfig,
+    StepCountConfig,
     StepNumberConfig,
+    SubStepConfig,
 )
 from build_a_long.pdf_extract.classifier.pages.page_hint_collection import (
     PageHintCollection,
@@ -59,6 +61,14 @@ class ClassifierConfig(BaseModel):
     # NewBag classifier settings (for numberless bag detection)
     new_bag: NewBagConfig = Field(default_factory=NewBagConfig)
     """Configuration for new bag classification."""
+
+    # Step count classifier settings
+    step_count: StepCountConfig = Field(default_factory=StepCountConfig)
+    """Configuration for step count classification."""
+
+    # SubStep classifier settings
+    substep: SubStepConfig = Field(default_factory=SubStepConfig)
+    """Configuration for substep classification."""
 
     font_size_hints: FontSizeHints = Field(default_factory=FontSizeHints.empty)
     """Font size hints derived from analyzing all pages"""

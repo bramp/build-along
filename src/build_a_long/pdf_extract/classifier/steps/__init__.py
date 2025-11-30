@@ -8,8 +8,14 @@ from build_a_long.pdf_extract.classifier.steps.rotation_symbol_classifier import
     RotationSymbolClassifier,
 )
 from build_a_long.pdf_extract.classifier.steps.step_classifier import StepClassifier
+from build_a_long.pdf_extract.classifier.steps.step_count_classifier import (
+    StepCountClassifier,
+)
 from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
     StepNumberClassifier,
+)
+from build_a_long.pdf_extract.classifier.steps.substep_classifier import (
+    SubStepClassifier,
 )
 
 __all__ = [
@@ -17,5 +23,7 @@ __all__ = [
     "DiagramClassifier",
     "RotationSymbolClassifier",
     "StepClassifier",
+    "StepCountClassifier",
     "StepNumberClassifier",
+    "SubStepClassifier",
 ]

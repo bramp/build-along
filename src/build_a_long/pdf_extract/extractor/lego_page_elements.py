@@ -135,7 +135,7 @@ class PartCount(LegoPageElement):
     """
 
     tag: Literal["PartCount"] = Field(default="PartCount", alias="__tag__", frozen=True)
-    count: Annotated[int, Ge(0)]
+    count: Annotated[int, Gt(0)]
 
     matched_hint: Literal["part_count", "catalog_part_count"] | None = None
     """Which font size hint was matched during classification.
@@ -150,6 +150,26 @@ class PartCount(LegoPageElement):
         """Return a single-line string representation with key information."""
         hint_str = f", {self.matched_hint}" if self.matched_hint else ""
         return f"PartCount(count={self.count}x{hint_str})"
+
+
+class StepCount(LegoPageElement):
+    """The visual count label for a substep (e.g., '2x').
+
+    Positional context: Positioned inside a substep callout box, indicating
+    how many times to build that sub-assembly.
+
+    This is similar to PartCount but uses a larger font size and appears
+    in substep callout boxes rather than parts lists.
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["StepCount"] = Field(default="StepCount", alias="__tag__", frozen=True)
+    count: Annotated[int, Gt(0)]
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"StepCount(count={self.count}x)"
 
 
 class PartNumber(LegoPageElement):
@@ -471,6 +491,55 @@ class Diagram(LegoPageElement):
             yield from arrow.iter_elements()
 
 
+class SubStep(LegoPageElement):
+    """A sub-step within a main step, typically shown in a callout box.
+
+    Positional context: SubSteps appear as white/light-colored rectangular boxes
+    with arrows pointing from them to the main diagram. They show smaller
+    sub-assemblies that may need to be built multiple times (indicated by a count
+    like "2x") before being attached to the main assembly.
+
+    Structure:
+    - A white/light rectangular box (detected via Drawing blocks)
+    - A diagram showing the sub-assembly
+    - An optional count indicating how many times to build it (e.g., "2x")
+    - An optional arrow pointing from the substep to the main diagram
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["SubStep"] = Field(default="SubStep", alias="__tag__", frozen=True)
+
+    diagram: Diagram | None = None
+    """The diagram showing the sub-assembly."""
+
+    count: StepCount | None = None
+    """Optional count indicating how many times to build this sub-assembly."""
+
+    arrow: Arrow | None = None
+    """Optional arrow pointing from this substep to the main diagram."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        count_str = f"count={self.count.count}x, " if self.count else ""
+        arrow_str = ", arrow" if self.arrow else ""
+        diagram_str = "diagram" if self.diagram else "no diagram"
+        return f"SubStep({count_str}{diagram_str}{arrow_str})"
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over this SubStep and all child elements."""
+        yield self
+        if self.count:
+            yield from self.count.iter_elements()
+        if self.diagram:
+            yield from self.diagram.iter_elements()
+
+        # TODO We may want to move the Arrow to the Step, or reference it in
+        # both places. If we reference in both places, we should avoid double-yielding here.
+        if self.arrow:
+            yield from self.arrow.iter_elements()
+
+
 class Step(LegoPageElement):
     """A single instruction step on the page.
 
@@ -626,6 +695,7 @@ class Page(LegoPageElement):
 LegoPageElements = Annotated[
     PageNumber
     | StepNumber
+    | StepCount
     | PartCount
     | PartNumber
     | PieceLength
@@ -639,6 +709,7 @@ LegoPageElements = Annotated[
     | BagNumber
     | NewBag
     | Diagram
+    | SubStep
     | Step
     | Page,
     Discriminator("tag"),
