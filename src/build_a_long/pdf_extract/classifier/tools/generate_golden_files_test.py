@@ -8,7 +8,12 @@ import json
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.classifier.tools.generate_golden_files import main
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.fixtures import FIXTURES_DIR, RAW_FIXTURE_FILES
+from build_a_long.pdf_extract.fixtures import (
+    FIXTURES_DIR,
+    RAW_FIXTURE_FILES,
+    extract_element_id,
+    load_classifier_config,
+)
 
 
 def test_page_serialization() -> None:
@@ -26,8 +31,13 @@ def test_page_serialization() -> None:
     # Load the page data
     page: PageData = PageData.model_validate_json(raw_fixture.read_text())
 
-    # Run classification
-    result = classify_elements(page)
+    # Load hints for this element ID
+    element_id = extract_element_id(raw_fixture.name)
+    assert element_id is not None
+    config = load_classifier_config(element_id)
+
+    # Run classification with hints
+    result = classify_elements(page, config)
 
     # Build the Page
     page_element = result.page

@@ -2,20 +2,40 @@
 """Generate golden files for classifier tests.
 
 This script runs the classifier on all fixtures and generates golden output files.
+It uses hint fixtures (font_hints and page_hints) when available for consistent
+classification.
 
 Usage:
     pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-files
 """
 
 import logging
+import re
 import sys
 from pathlib import Path
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
+from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
+from build_a_long.pdf_extract.fixtures import load_classifier_config
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
+
+
+def extract_element_id(filename: str) -> str | None:
+    """Extract element ID from a fixture filename.
+
+    An element ID identifies a LEGO element (manual, piece, sticker sheet, etc.).
+
+    Args:
+        filename: Fixture filename like '6509377_page_013_raw.json'
+
+    Returns:
+        The element ID (e.g., '6509377') or None if not found
+    """
+    match = re.match(r"^(\d+)", filename)
+    return match.group(1) if match else None
 
 
 def main() -> None:
@@ -37,6 +57,9 @@ def main() -> None:
     log.info(f"Found {len(raw_fixtures)} raw fixtures")
     log.info(f"Writing golden files to: {fixtures_dir.absolute()}")
 
+    # Track which instruction IDs are missing hints
+    missing_hints: list[str] = []
+
     for fixture_path in sorted(raw_fixtures):
         golden_path = fixture_path.with_name(
             fixture_path.name.replace("_raw.json", "_expected.json")
@@ -56,8 +79,20 @@ def main() -> None:
 
         page: PageData = extraction_result.pages[0]
 
+        # Try to load hints for this element ID
+        element_id = extract_element_id(fixture_path.name)
+        config: ClassifierConfig | None = None
+
+        if element_id:
+            try:
+                config = load_classifier_config(element_id)
+                log.info(f"  Using hints for {element_id}")
+            except FileNotFoundError:
+                log.warning(f"  No hints found for {element_id}")
+                missing_hints.append(element_id)
+
         # Run classification
-        result = classify_elements(page)
+        result = classify_elements(page, config)
 
         # Build the Page from classification results
         page_element = result.page
@@ -72,6 +107,21 @@ def main() -> None:
         log.info(f"  Wrote {golden_path.absolute()}")
 
     log.info(f"✓ Generated {len(raw_fixtures)} golden files")
+
+    if missing_hints:
+        unique_missing = sorted(set(missing_hints))
+        log.warning("")
+        log.warning("=" * 70)
+        log.warning("WARNING: The following element IDs had no hints:")
+        for elem_id in unique_missing:
+            log.warning(f"  - {elem_id}")
+        log.warning("")
+        log.warning("Run the following to generate hints:")
+        log.warning(
+            "  pants run src/build_a_long/pdf_extract/classifier/"
+            "tools:generate-golden-hints"
+        )
+        log.warning("=" * 70)
 
 
 if __name__ == "__main__":
