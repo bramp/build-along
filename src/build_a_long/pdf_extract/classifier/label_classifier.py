@@ -3,8 +3,9 @@ Base class for label classifiers.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import ClassVar
+
+from pydantic import BaseModel, ConfigDict
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -21,14 +22,15 @@ from build_a_long.pdf_extract.extractor.page_blocks import Text
 #      Then we can abstract out common code/functions, to keep the code DRY.
 
 
-@dataclass(frozen=True)
-class LabelClassifier(ABC):
+class LabelClassifier(BaseModel, ABC):
     """Abstract base class for a single label classifier.
 
-    Classifiers are frozen dataclasses to enforce statelessness - they cannot
+    Classifiers are frozen Pydantic models to enforce statelessness - they cannot
     modify their attributes after initialization. All state must be stored in
     ClassificationResult.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     config: ClassifierConfig
 

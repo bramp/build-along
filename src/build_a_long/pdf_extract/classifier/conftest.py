@@ -67,7 +67,7 @@ class CandidateFactory:
         }
 
         if label in classifier_map:
-            classifier = classifier_map[label](self.config)
+            classifier = classifier_map[label](config=self.config)
             self.result._register_classifier(label, classifier)
             self._registered_classifiers.add(label)
 

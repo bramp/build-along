@@ -25,7 +25,6 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -47,41 +46,65 @@ log = logging.getLogger(__name__)
 
 
 class _PartPairScore(Score):
-    """Internal score representation for part pairing."""
+    """Internal score representation for part pairing classification."""
 
     distance: float
-    """Vertical distance from part count text to part image (lower is better)."""
+    """Vertical distance between image and count."""
 
     part_count_candidate: Candidate
-    """The part_count candidate (not the constructed element)."""
+    """The part_count candidate."""
 
     part_image_candidate: Candidate
-    """The part_image candidate (will become diagram in Part)."""
+    """The part_image candidate."""
 
-    part_number_candidate: Candidate | None
-    """The associated part_number candidate (if any)."""
+    part_number_candidate: Candidate | None = None
+    """The part_number candidate (optional)."""
 
-    piece_length_candidate: Candidate | None
-    """The associated piece_length candidate (if any)."""
+    piece_length_candidate: Candidate | None = None
+    """The piece_length candidate (optional)."""
+
+    def sort_key(self) -> tuple[float, float]:
+        """Return a tuple for sorting candidates.
+
+        We prefer:
+        1. Smaller vertical distance (closer image)
+        2. Lower y-coordinate of image (top-down)
+        """
+        return (self.distance, self.part_image_candidate.bbox.y0)
 
     def score(self) -> Weight:
-        """Return the score based on distance (inverse of distance, normalized)."""
-        # Use 1.0 as fixed score for now, as pairing is based on distance
-        # The actual sorting is done via sort_key()
-        return 1.0
+        """Calculate final weighted score.
 
-    def sort_key(self) -> float:
-        """Return sort key for matching (prefer smaller distance)."""
-        return self.distance
+        Currently uses a simplified score based on component scores.
+        """
+        # Base score is average of count and image scores
+        base_score = (
+            self.part_count_candidate.score + self.part_image_candidate.score
+        ) / 2
+
+        # Boost slightly if optional components are present
+        if self.part_number_candidate:
+            base_score = min(1.0, base_score + 0.05)
+        if self.piece_length_candidate:
+            base_score = min(1.0, base_score + 0.05)
+
+        return base_score
 
 
-# TODO Should this be called PartClassifier instead?
-@dataclass(frozen=True)
 class PartsClassifier(LabelClassifier):
-    """Classifier for Part elements (pairs of part_count + part_image)."""
+    """Classifier for assembling complete Part elements.
+
+    This classifier combines previously classified components:
+    - Part counts (e.g., "2x")
+    - Part images (images above the counts)
+    - Part numbers (optional element IDs)
+    - Piece lengths (optional "1:1" indicators)
+
+    It pairs counts with the closest image directly above them.
+    """
 
     output = "part"
-    requires = frozenset({"part_count", "part_number", "piece_length", "part_image"})
+    requires = frozenset({"part_count", "part_image", "part_number", "piece_length"})
 
     def _score(self, result: ClassificationResult) -> None:
         """Score part pairings and create candidates.

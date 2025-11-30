@@ -1,5 +1,6 @@
 """Tests for the parts list classifier."""
 
+from build_a_long.pdf_extract.classifier import ClassifierConfig
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
@@ -39,7 +40,7 @@ class TestPartsListClassification:
             bbox=page_bbox,
         )
 
-        result = classify_elements(page)
+        result = classify_elements(page, config=ClassifierConfig())
 
         # Check the Page structure was built correctly
         assert result.page is not None
@@ -90,7 +91,7 @@ class TestPartsListClassification:
             bbox=page_bbox,
         )
 
-        result = classify_elements(page)
+        result = classify_elements(page, config=ClassifierConfig())
 
         # Check that both steps were created successfully
         assert result.page is not None

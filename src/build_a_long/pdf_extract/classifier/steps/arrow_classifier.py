@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import logging
 import math
-from dataclasses import dataclass
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -67,7 +66,6 @@ class _ArrowScore(Score):
         return self.shape_score * self.shape_weight + self.size_score * self.size_weight
 
 
-@dataclass(frozen=True)
 class ArrowClassifier(LabelClassifier):
     """Classifier for arrow elements (arrowheads)."""
 

@@ -15,7 +15,6 @@ Set environment variables to aid investigation without code changes:
 """
 
 import logging
-from dataclasses import dataclass
 
 from pydantic import BaseModel
 
@@ -51,7 +50,6 @@ class _PageScore(Score, BaseModel):
         return 1.0
 
 
-@dataclass(frozen=True)
 class PageClassifier(LabelClassifier):
     """Classifier for building the complete Page element."""
 

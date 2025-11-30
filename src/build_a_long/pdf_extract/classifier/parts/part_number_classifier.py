@@ -12,7 +12,6 @@ Enable DEBUG logs with LOG_LEVEL=DEBUG.
 """
 
 import logging
-from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -77,7 +76,6 @@ class _PartNumberScore(Score):
         return score / total_weight if total_weight > 0 else 0.0
 
 
-@dataclass(frozen=True)
 class PartNumberClassifier(LabelClassifier):
     """Classifier for LEGO part numbers (element IDs)."""
 

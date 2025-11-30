@@ -13,7 +13,6 @@ Enable DEBUG logs with LOG_LEVEL=DEBUG.
 """
 
 import logging
-from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -58,7 +57,6 @@ class _StepCountScore(Score):
         )
 
 
-@dataclass(frozen=True)
 class StepCountClassifier(LabelClassifier):
     """Classifier for step counts (substep counts like "2x").
 

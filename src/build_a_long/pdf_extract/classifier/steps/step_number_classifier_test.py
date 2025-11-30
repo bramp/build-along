@@ -81,7 +81,7 @@ class TestStepNumberClassification:
             remaining_font_sizes={},
         )
         config = ClassifierConfig(font_size_hints=hints)
-        classifier = StepNumberClassifier(config)
+        classifier = StepNumberClassifier(config=config)
 
         matching_text = Text(text="1", bbox=BBox(10, 10, 25, 25), id=1)
         different_text = Text(text="2", bbox=BBox(10, 40, 30, 60), id=2)

@@ -20,7 +20,7 @@ class TestClassifier:
         classifiers it depends on (based on its `requires` field).
         """
         config = ClassifierConfig()
-        classifier = Classifier(config)
+        classifier = Classifier(config=config)
 
         # Build a map from output label to classifier index
         label_to_index: dict[str, int] = {}
@@ -42,7 +42,7 @@ class TestClassifier:
     def test_all_classifiers_have_unique_outputs(self) -> None:
         """Verify each output label is produced by exactly one classifier."""
         config = ClassifierConfig()
-        classifier = Classifier(config)
+        classifier = Classifier(config=config)
 
         outputs = [c.output for c in classifier.classifiers if c.output]
         assert len(outputs) == len(set(outputs)), (
@@ -52,7 +52,7 @@ class TestClassifier:
     def test_all_dependencies_are_satisfied(self) -> None:
         """Verify all required labels are produced by some classifier."""
         config = ClassifierConfig()
-        classifier = Classifier(config)
+        classifier = Classifier(config=config)
 
         # Collect all output labels
         outputs = {c.output for c in classifier.classifiers if c.output}

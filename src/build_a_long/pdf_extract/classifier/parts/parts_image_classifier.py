@@ -17,7 +17,6 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -56,7 +55,6 @@ class _PartImageScore(Score):
 
 
 # TODO Should this be called PartImageClassifier instead?
-@dataclass(frozen=True)
 class PartsImageClassifier(LabelClassifier):
     """Classifier for part images based on size heuristics.
 

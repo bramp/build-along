@@ -96,7 +96,7 @@ class TestPartCountClassification:
             remaining_font_sizes={},
         )
         config = ClassifierConfig(font_size_hints=hints)
-        classifier = PartCountClassifier(config)
+        classifier = PartCountClassifier(config=config)
 
         matching_text = Text(text="2x", bbox=BBox(0, 0, 10, 10), id=1)
         different_text = Text(text="3x", bbox=BBox(0, 0, 15, 15), id=2)

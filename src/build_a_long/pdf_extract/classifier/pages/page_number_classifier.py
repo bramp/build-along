@@ -5,7 +5,6 @@ Page number classifier.
 import logging
 import math
 import re
-from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -72,7 +71,6 @@ class _PageNumberScore(Score):
         return score / total_weight if total_weight > 0 else 0.0
 
 
-@dataclass(frozen=True)
 class PageNumberClassifier(LabelClassifier):
     """Classifier for page numbers."""
 

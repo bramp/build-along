@@ -25,7 +25,8 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+
+from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -67,16 +68,20 @@ class _DiagramScore(Score):
         return 1.0
 
 
-@dataclass(frozen=True)
 class DiagramClassifier(LabelClassifier):
     """Classifier for diagram regions on instruction pages."""
 
     output = "diagram"
     requires = frozenset({"progress_bar", "arrow"})
 
+    # TODO Convert to configurable parameters
     # Area filtering thresholds (as ratio of page area)
-    MIN_AREA_RATIO = 0.03  # Filter out images < 3% of page (decorative elements)
-    MAX_AREA_RATIO = 0.90  # Filter out images > 90% of page (backgrounds/borders)
+    MIN_AREA_RATIO: ClassVar[float] = (
+        0.03  # Filter out images < 3% of page (decorative elements)
+    )
+    MAX_AREA_RATIO: ClassVar[float] = (
+        0.90  # Filter out images > 90% of page (backgrounds/borders)
+    )
 
     def _score(self, result: ClassificationResult) -> None:
         """Score Drawing/Image clusters and create candidates."""

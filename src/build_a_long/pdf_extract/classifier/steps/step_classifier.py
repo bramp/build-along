@@ -21,7 +21,6 @@ Set environment variables to aid investigation without code changes:
 """
 
 import logging
-from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -114,7 +113,6 @@ class _StepScore(Score):
         return (-self.overall_score(), 0)  # Fallback if value cannot be extracted
 
 
-@dataclass(frozen=True)
 class StepClassifier(LabelClassifier):
     """Classifier for complete Step structures."""
 

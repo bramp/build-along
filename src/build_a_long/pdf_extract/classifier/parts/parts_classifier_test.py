@@ -63,9 +63,9 @@ class TestPartsClassification:
 
         result = ClassificationResult(page_data=page)
         # Register classifiers so result.construct_candidate works
-        PartsImageClassifier(classifier.config).score(result)
-        PartNumberClassifier(classifier.config).score(result)
-        PieceLengthClassifier(classifier.config).score(result)
+        PartsImageClassifier(config=classifier.config).score(result)
+        PartNumberClassifier(config=classifier.config).score(result)
+        PieceLengthClassifier(config=classifier.config).score(result)
 
         factory = candidate_factory(result)
 
@@ -111,7 +111,7 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
-        PartsImageClassifier(classifier.config).score(result)
+        PartsImageClassifier(config=classifier.config).score(result)
 
         factory = candidate_factory(result)
 
@@ -147,7 +147,7 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
-        PartsImageClassifier(classifier.config).score(result)
+        PartsImageClassifier(config=classifier.config).score(result)
 
         factory = candidate_factory(result)
 
@@ -193,7 +193,7 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
-        PartsImageClassifier(classifier.config).score(result)
+        PartsImageClassifier(config=classifier.config).score(result)
 
         factory = candidate_factory(result)
         factory.add_part_count(t1, score=1.0)
@@ -227,7 +227,7 @@ class TestPartsClassification:
         )
 
         result = ClassificationResult(page_data=page)
-        PartsImageClassifier(classifier.config).score(result)
+        PartsImageClassifier(config=classifier.config).score(result)
 
         factory = candidate_factory(result)
         factory.add_part_count(t1, score=1.0)

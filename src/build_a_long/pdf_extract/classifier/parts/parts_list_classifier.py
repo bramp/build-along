@@ -22,7 +22,6 @@ Set environment variables to aid investigation without code changes:
 """
 
 import logging
-from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -32,13 +31,12 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartsList,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import (
-    Drawing,
-)
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 log = logging.getLogger(__name__)
 
@@ -46,18 +44,22 @@ log = logging.getLogger(__name__)
 class _PartsListScore(Score):
     """Internal score representation for parts list classification."""
 
-    part_candidates: list[Candidate]
-    """The Part candidates contained in this drawing."""
+    box_score: float = 1.0
+    """Score for the bounding box (1.0 if valid box)."""
+
+    part_candidates: list[Candidate] = []
+    """List of part candidates inside this parts list."""
 
     def score(self) -> Weight:
-        """Calculate final score (simply 1.0 if has parts, 0.0 otherwise)."""
-        return 1.0 if len(self.part_candidates) > 0 else 0.0
+        """Return the score."""
+        # If we have a valid box and parts inside, it's a good candidate
+        if self.box_score > 0 and self.part_candidates:
+            return 1.0
+        return 0.0
 
 
-# TODO The Parts List should also be slightly taller than the contained parts
-@dataclass(frozen=True)
 class PartsListClassifier(LabelClassifier):
-    """Classifier for parts lists."""
+    """Classifier for parts lists (lists of parts for a step)."""
 
     output = "parts_list"
     requires = frozenset({"part"})

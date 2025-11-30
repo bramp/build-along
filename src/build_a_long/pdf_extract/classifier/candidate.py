@@ -72,7 +72,6 @@ class Candidate(BaseModel):
             "page",
             "step",
             "part",
-            "new_bag",
             "rotation_symbol",  # Can coexist with diagrams (overlapping blocks)
         }
 

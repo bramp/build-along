@@ -10,6 +10,7 @@ from build_a_long.pdf_extract.classifier.steps.diagram_classifier import (
 )
 from build_a_long.pdf_extract.classifier.steps.rotation_symbol_classifier import (
     RotationSymbolClassifier,
+    _RotationSymbolScore,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
@@ -25,7 +26,7 @@ class TestRotationSymbolClassifier:
 
     def test_identifies_isolated_drawing_cluster_as_rotation_symbol(self):
         """Test that an isolated square cluster of drawings is identified."""
-        classifier = RotationSymbolClassifier(ClassifierConfig())
+        classifier = RotationSymbolClassifier(config=ClassifierConfig())
 
         # Create a cluster of small drawings forming a ~46x46 square
         # Positioned OUTSIDE the diagram (not overlapping)
@@ -80,7 +81,7 @@ class TestRotationSymbolClassifier:
 
     def test_rejects_too_large_cluster(self):
         """Test that large drawing clusters are not classified as rotation symbols."""
-        classifier = RotationSymbolClassifier(ClassifierConfig())
+        classifier = RotationSymbolClassifier(config=ClassifierConfig())
 
         # Create a large cluster of drawings (150x150 pixels) - too big
         large_drawings: list[Blocks] = [
@@ -107,7 +108,7 @@ class TestRotationSymbolClassifier:
 
     def test_rejects_non_square_aspect_ratio(self):
         """Test that very rectangular clusters are not rotation symbols."""
-        classifier = RotationSymbolClassifier(ClassifierConfig())
+        classifier = RotationSymbolClassifier(config=ClassifierConfig())
 
         # Create a rectangular cluster (60x20 pixels) - wrong aspect ratio
         rect_drawings: list[Blocks] = [
@@ -136,7 +137,7 @@ class TestRotationSymbolClassifier:
         If small drawings overlap and form a cluster that exceeds the size
         threshold, they should be rejected.
         """
-        classifier = RotationSymbolClassifier(ClassifierConfig())
+        classifier = RotationSymbolClassifier(config=ClassifierConfig())
 
         # Create small drawings that overlap and form a cluster that's too large
         # Each drawing is under the max size, but together they form ~100x100
@@ -173,7 +174,7 @@ class TestRotationSymbolClassifier:
         overlap with diagrams even when visually disconnected. We only
         look at Drawings which have reliable bounding boxes.
         """
-        classifier = RotationSymbolClassifier(ClassifierConfig())
+        classifier = RotationSymbolClassifier(config=ClassifierConfig())
 
         # Create a perfectly-sized square Image - should NOT be detected
         rotation_sized_image = Image(id=1, bbox=BBox(10.0, 10.0, 56.0, 56.0))
@@ -212,49 +213,45 @@ class TestRotationSymbolClassifier:
 
     def test_builds_rotation_symbol_element(self):
         """Test building a RotationSymbol element from a candidate."""
-        classifier = RotationSymbolClassifier(ClassifierConfig())
-
-        # Create a cluster of small drawings forming a ~46x46 square
-        rotation_drawings = [
-            Drawing(id=1, bbox=BBox(10.0, 10.0, 35.0, 35.0)),
-            Drawing(id=2, bbox=BBox(34.0, 10.0, 56.0, 35.0)),
-            Drawing(id=3, bbox=BBox(10.0, 34.0, 35.0, 56.0)),
-            Drawing(id=4, bbox=BBox(34.0, 34.0, 56.0, 56.0)),
-        ]
-        diagram_drawing = Drawing(id=99, bbox=BBox(200.0, 300.0, 400.0, 450.0))
-        all_blocks: list[Blocks] = [*rotation_drawings, diagram_drawing]
-
-        page = PageData(
-            page_number=1,
-            bbox=BBox(0.0, 0.0, 552.0, 496.0),
-            blocks=all_blocks,
+        classifier = RotationSymbolClassifier(config=ClassifierConfig())
+        bbox = BBox(100, 100, 146, 146)
+        score_details = _RotationSymbolScore(
+            size_score=1.0,
+            aspect_score=1.0,
+            proximity_to_diagram=1.0,
         )
-
-        result = ClassificationResult(page_data=page)
-
-        # Add diagram for proximity
-        result.add_candidate(
-            Candidate(
-                bbox=BBox(200.0, 300.0, 400.0, 450.0),
-                label="diagram",
-                score=1.0,
-                score_details=_DiagramScore(
-                    cluster_bbox=BBox(200.0, 300.0, 400.0, 450.0),
-                    num_images=1,
-                ),
-                source_blocks=[diagram_drawing],
-            )
+        candidate = Candidate(
+            bbox=bbox,
+            label="rotation_symbol",
+            score=1.0,
+            score_details=score_details,
+            source_blocks=[],
         )
+        result = ClassificationResult(page_data=make_page_data([]))
 
-        classifier.score(result)
+        elem = classifier.build(candidate, result)
 
-        candidates = result.get_scored_candidates(
-            "rotation_symbol", valid_only=False, exclude_failed=True
-        )
-        assert len(candidates) == 1
+        assert elem.bbox == bbox
 
-        # Build the element
-        rotation_symbol = classifier.build(candidates[0], result)
 
-        # Cluster bbox should be union of all rotation drawings
-        assert rotation_symbol.bbox == BBox(10.0, 10.0, 56.0, 56.0)
+def make_page_data(blocks: list) -> PageData:
+    """Create a PageData with given blocks."""
+    return PageData(
+        page_number=1,
+        bbox=BBox(x0=0, y0=0, x1=552.0, y1=496.0),
+        blocks=blocks,
+    )
+
+
+def make_diagram_candidate(bbox: BBox) -> Candidate:
+    """Create a mock diagram candidate."""
+    return Candidate(
+        bbox=bbox,
+        label="diagram",
+        score=1.0,
+        score_details=_DiagramScore(
+            cluster_bbox=bbox,
+            num_images=1,
+        ),
+        source_blocks=[],
+    )

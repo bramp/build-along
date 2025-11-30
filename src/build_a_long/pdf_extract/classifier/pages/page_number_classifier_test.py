@@ -238,7 +238,7 @@ class TestPageNumberClassification:
             remaining_font_sizes={},
         )
         config = ClassifierConfig(font_size_hints=hints)
-        classifier = PageNumberClassifier(config)
+        classifier = PageNumberClassifier(config=config)
 
         matching_text = Text(text="1", bbox=BBox(10, 90, 18, 98), id=1)
         different_text = Text(text="2", bbox=BBox(80, 90, 92, 102), id=2)

@@ -1,6 +1,5 @@
 """Tests for topological sorting of classifiers."""
 
-from dataclasses import dataclass
 from typing import ClassVar
 
 import pytest
@@ -16,7 +15,6 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElemen
 
 
 # Test classifiers with various dependency patterns
-@dataclass(frozen=True)
 class TestClassifierA(LabelClassifier):
     """Test classifier with no dependencies."""
 
@@ -32,7 +30,6 @@ class TestClassifierA(LabelClassifier):
         raise NotImplementedError
 
 
-@dataclass(frozen=True)
 class TestClassifierB(LabelClassifier):
     """Test classifier that depends on A."""
 
@@ -48,7 +45,6 @@ class TestClassifierB(LabelClassifier):
         raise NotImplementedError
 
 
-@dataclass(frozen=True)
 class TestClassifierC(LabelClassifier):
     """Test classifier that depends on B."""
 
@@ -64,7 +60,6 @@ class TestClassifierC(LabelClassifier):
         raise NotImplementedError
 
 
-@dataclass(frozen=True)
 class TestClassifierD(LabelClassifier):
     """Test classifier that depends on A and B."""
 
@@ -80,7 +75,6 @@ class TestClassifierD(LabelClassifier):
         raise NotImplementedError
 
 
-@dataclass(frozen=True)
 class TestClassifierDuplicate(LabelClassifier):
     """Test classifier with duplicate output label."""
 
@@ -103,9 +97,9 @@ class TestTopologicalSort:
         """Test sorting a simple dependency chain: A -> B -> C."""
         config = ClassifierConfig()
         classifiers: list[LabelClassifier] = [
-            TestClassifierC(config),  # Out of order
-            TestClassifierA(config),
-            TestClassifierB(config),
+            TestClassifierC(config=config),  # Out of order
+            TestClassifierA(config=config),
+            TestClassifierB(config=config),
         ]
 
         sorted_classifiers = topological_sort(classifiers)
@@ -129,10 +123,10 @@ class TestTopologicalSort:
         """
         config = ClassifierConfig()
         classifiers: list[LabelClassifier] = [
-            TestClassifierD(config),
-            TestClassifierC(config),
-            TestClassifierB(config),
-            TestClassifierA(config),
+            TestClassifierD(config=config),
+            TestClassifierC(config=config),
+            TestClassifierB(config=config),
+            TestClassifierA(config=config),
         ]
 
         sorted_classifiers = topological_sort(classifiers)
@@ -149,7 +143,7 @@ class TestTopologicalSort:
     def test_no_dependencies(self) -> None:
         """Test sorting classifiers with no dependencies."""
         config = ClassifierConfig()
-        classifiers: list[LabelClassifier] = [TestClassifierA(config)]
+        classifiers: list[LabelClassifier] = [TestClassifierA(config=config)]
 
         sorted_classifiers = topological_sort(classifiers)
 
@@ -160,8 +154,8 @@ class TestTopologicalSort:
         """Test that duplicate output labels raise an error."""
         config = ClassifierConfig()
         classifiers: list[LabelClassifier] = [
-            TestClassifierA(config),
-            TestClassifierDuplicate(config),  # Same output as A
+            TestClassifierA(config=config),
+            TestClassifierDuplicate(config=config),  # Same output as A
         ]
 
         with pytest.raises(ValueError, match="Duplicate output label 'a'"):
@@ -176,10 +170,10 @@ class TestTopologicalSort:
         """Test that all classifiers are preserved after sorting."""
         config = ClassifierConfig()
         classifiers: list[LabelClassifier] = [
-            TestClassifierD(config),
-            TestClassifierC(config),
-            TestClassifierB(config),
-            TestClassifierA(config),
+            TestClassifierD(config=config),
+            TestClassifierC(config=config),
+            TestClassifierB(config=config),
+            TestClassifierA(config=config),
         ]
 
         sorted_classifiers = topological_sort(classifiers)

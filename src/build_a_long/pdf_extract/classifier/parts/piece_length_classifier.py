@@ -24,7 +24,6 @@ Distinguishing from Step Numbers
 """
 
 import logging
-from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -69,7 +68,6 @@ class _PieceLengthScore(Score):
         return (self.text_score + self.context_score + self.font_size_score) / 3.0
 
 
-@dataclass(frozen=True)
 class PieceLengthClassifier(LabelClassifier):
     """Classifier for piece length indicators."""
 

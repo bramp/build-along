@@ -8,7 +8,6 @@ These appear in the top-right area of part images.
 """
 
 import logging
-from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -18,24 +17,29 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    Shine,
-)
+from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.lego_page_elements import Shine
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 log = logging.getLogger(__name__)
 
 
 class _ShineScore(Score):
-    """Score details for shine classification."""
+    """Internal score representation for shine/sparkle classification."""
+
+    shape_score: float
+    """Score based on shape being star-like (0.0-1.0)."""
+
+    size_score: float
+    """Score based on size being small (0.0-1.0)."""
 
     def score(self) -> Weight:
-        return 1.0
+        """Calculate final weighted score from components."""
+        return self.shape_score * 0.7 + self.size_score * 0.3
 
 
-@dataclass(frozen=True)
 class ShineClassifier(LabelClassifier):
-    """Classifier for shine/star indicators."""
+    """Classifier for 'shine' or 'sparkle' effects."""
 
     output = "shine"
     requires = frozenset()
@@ -64,6 +68,16 @@ class ShineClassifier(LabelClassifier):
             if not (0.7 <= ratio <= 1.4):
                 continue
 
+            # Simple score based on size/shape match
+            # TODO: Implement better shape analysis
+            shape_score = 1.0
+            size_score = 1.0
+
+            score_details = _ShineScore(
+                shape_score=shape_score,
+                size_score=size_score,
+            )
+
             log.debug(
                 "[shine] Candidate: drawing id=%d bbox=%s size=%.1fx%.1f",
                 drawing.id,
@@ -76,8 +90,8 @@ class ShineClassifier(LabelClassifier):
                 Candidate(
                     bbox=drawing.bbox,
                     label="shine",
-                    score=1.0,
-                    score_details=_ShineScore(),
+                    score=score_details.score(),
+                    score_details=score_details,
                     source_blocks=[drawing],
                 ),
             )

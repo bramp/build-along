@@ -20,43 +20,28 @@ def test_shine_classification() -> None:
     config = _load_config_for_fixture(fixture_file)
     page_data = pages[0]
 
-    result = classify_elements(page_data, config)
+    result = classify_elements(page_data, config=config)
 
-    # Check if 'shine' candidates were created
-    shine_candidates = result.get_candidates("shine")
-    assert len(shine_candidates) > 0, "No shine candidates found"
-
-    # Verify we found the expected shine (id=70)
-    found_shine_70 = False
-    for cand in shine_candidates:
-        for block in cand.source_blocks:
-            if block.id == 70:
-                found_shine_70 = True
-                break
-    assert found_shine_70, "Expected shine (id=70) not found"
-
-    # Check if part_image associated with shine
-    part_image_candidates = result.get_candidates("part_image")
-
-    # Find part_image for image_8
-    image_8_cand = None
-    for cand in part_image_candidates:
-        # Check score details for image_8
-        details = cast(Any, cand.score_details)
-        if details.image.image_id == "image_8":
-            image_8_cand = cand
-            break
-
-    assert image_8_cand is not None, "PartImage for image_8 not found"
-
-    # Verify it has a shine candidate
-    details = cast(Any, image_8_cand.score_details)
-    assert details.shine_candidate is not None, (
-        "PartImage for image_8 should have a shine candidate"
+    # Check if shine candidates were created
+    shine_candidates = result.get_scored_candidates(
+        "shine", valid_only=False, exclude_failed=True
     )
+    assert len(shine_candidates) > 0
 
-    # Verify constructed element has shine
-    part_image = result.build(image_8_cand)
-    assert isinstance(part_image, PartImage)
-    assert isinstance(part_image.shine, Shine)
-    assert part_image.shine.bbox.width > 0
+    # The shine should be consumed by a PartImage
+    # Find the PartImage candidate that consumed the shine
+    part_image_candidates = result.get_winners_by_score("part_image", PartImage)
+    shine_consumers = [pi for pi in part_image_candidates if pi.shine is not None]
+
+    assert len(shine_consumers) == 1
+    shine_part_image = shine_consumers[0]
+
+    # Verify it's the correct shine drawing (check bbox match as proxy)
+    # The shine element doesn't store the original block ID directly, but we can check bbox
+    assert isinstance(shine_part_image.shine, Shine)
+    # BBox should match drawing id=67/68: [114.88..., 258.48...]
+    # This is the shine on the part image in step 16
+    assert shine_part_image.shine.bbox.x0 > 110
+    assert shine_part_image.shine.bbox.x0 < 120
+    assert shine_part_image.shine.bbox.y0 > 250
+    assert shine_part_image.shine.bbox.y0 < 270

@@ -26,7 +26,6 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -82,7 +81,6 @@ class _NewBagScore(Score):
         return base_score
 
 
-@dataclass(frozen=True)
 class NewBagClassifier(LabelClassifier):
     """Classifier for new bag elements."""
 
@@ -142,11 +140,16 @@ class NewBagClassifier(LabelClassifier):
 
             # Score the cluster
             score_details = self._score_cluster(
-                cluster_bbox, cluster, bag_number_candidates, page_bbox
+                cluster_bbox, bag_number_candidates, page_bbox
             )
 
             if score_details is None:
                 continue
+
+            assert (
+                score_details.bag_number_candidate is None
+                or score_details.bag_number_candidate.source_blocks not in cluster
+            ), "NewBag Cluster source blocks should not include the NewBagNumber blocks"
 
             combined = score_details.score()
 
@@ -166,7 +169,7 @@ class NewBagClassifier(LabelClassifier):
                     label="new_bag",
                     score=combined,
                     score_details=score_details,
-                    source_blocks=[],  # Synthetic element (composite label)
+                    source_blocks=list(cluster),  # type: ignore[arg-type]
                 ),
             )
 
@@ -185,7 +188,6 @@ class NewBagClassifier(LabelClassifier):
     def _score_cluster(
         self,
         cluster_bbox: BBox,
-        cluster: list[Drawing | Image],
         bag_number_candidates: list[Candidate],
         page_bbox: BBox,
     ) -> _NewBagScore | None:
@@ -193,7 +195,6 @@ class NewBagClassifier(LabelClassifier):
 
         Args:
             cluster_bbox: Bounding box of the image cluster.
-            cluster: List of images in the cluster.
             bag_number_candidates: All bag number candidates on the page.
             page_bbox: Page bounding box for position calculations.
 

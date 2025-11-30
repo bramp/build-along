@@ -11,7 +11,6 @@ Enable DEBUG logs with LOG_LEVEL=DEBUG.
 """
 
 import logging
-from dataclasses import dataclass
 from typing import Literal
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -67,7 +66,6 @@ class _PartCountScore(Score):
         return score / total_weight if total_weight > 0 else 0.0
 
 
-@dataclass(frozen=True)
 class PartCountClassifier(LabelClassifier):
     """Classifier for part counts."""
 

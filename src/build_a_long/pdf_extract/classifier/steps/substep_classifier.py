@@ -27,7 +27,6 @@ Set environment variables to aid investigation without code changes:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -82,7 +81,6 @@ class _SubStepScore(Score):
         )
 
 
-@dataclass(frozen=True)
 class SubStepClassifier(LabelClassifier):
     """Classifier for substep callout boxes."""
 
