@@ -30,7 +30,8 @@ Example files:
 
 - `6055741_raw.json.bz2` - Complete instruction manual 6055741
 - `6509377_raw.json.bz2` - Complete instruction manual 6509377
-- `6580053_raw.json.bz2` - Complete instruction manual 6580053
+- etc.
+-
 
 ### Golden Output Fixtures
 
@@ -44,7 +45,13 @@ Example files:
 
 - **Format**: JSON serialization of `FontSizeHints` objects
 - **Usage**: Expected output for font size hint extraction testing
-- **Generation**: Created/updated using the `generate-golden-font-hints` script
+- **Generation**: Created/updated using the `generate-golden-hints` script
+
+#### Page Hints Output (`*_page_hints_expected.json`)
+
+- **Format**: JSON serialization of `PageHintCollection` objects
+- **Usage**: Expected output for page type classification hints
+- **Generation**: Created/updated using the `generate-golden-hints` script
 
 ## Test Files Using These Fixtures
 
@@ -57,8 +64,6 @@ Tests universal rules that must always hold:
 - Each part image is inside a parts list
 - No labeled block is deleted
 
-**Status**: Currently skipped due to known classifier issues.
-
 **Usage**: `pants test src/build_a_long/pdf_extract/classifier/classifier_rules_test.py`
 
 ### `classifier_golden_test.py` - Golden File Tests
@@ -68,8 +73,6 @@ Tests that classification output matches expected golden files:
 - Validates exact classification output
 - Also runs all invariant checks
 - Supports comparing against known-good golden files
-
-**Status**: Currently skipped (same classifier issues as rules test).
 
 **Usage**:
 
@@ -85,8 +88,6 @@ Tests the `FontSizeHints.from_pages` method:
 - Unit tests for various scenarios (all sizes, two sizes, one size, etc.)
 - Golden file tests that validate font size extraction from full documents
 - Uses compressed `.json.bz2` fixtures for testing complete instruction manuals
-
-**Status**: Active and passing.
 
 **Usage**:
 
@@ -128,47 +129,18 @@ pants test src/build_a_long/pdf_extract/classifier/font_size_hints_test.py -- -k
 
 #### Regenerating All Current Fixtures
 
-To regenerate all existing raw fixture files from the source PDFs:
+To regenerate all existing fixture files (raw input and golden output files):
 
 ```bash
-# Individual page fixtures from 6509377 (pages 10-17, 180)
-pants run src/build_a_long/pdf_extract:main -- \
-  data/75375/6509377.pdf \
-  --pages 10-17,180 \
-  --output-dir src/build_a_long/pdf_extract/fixtures \
-  --debug-json \
-  --debug-extra-json
-
-# Individual page fixtures from 6433200 (pages 4, 5, 7, 31)
-pants run src/build_a_long/pdf_extract:main -- \
-  data/40573/6433200.pdf \
-  --pages 4,5,7,31 \
-  --output-dir src/build_a_long/pdf_extract/fixtures \
-  --debug-json \
-  --debug-extra-json
-
-# Full document fixtures
-pants run src/build_a_long/pdf_extract:main -- \
-  data/10237/6055741.pdf \
-  --output-dir src/build_a_long/pdf_extract/fixtures \
-  --debug-json \
-  --debug-extra-json \
-  --compress-json
-
-pants run src/build_a_long/pdf_extract:main -- \
-  data/75375/6509377.pdf \
-  --output-dir src/build_a_long/pdf_extract/fixtures \
-  --debug-json \
-  --debug-extra-json \
-  --compress-json
-
-pants run src/build_a_long/pdf_extract:main -- \
-  data/75406/6580053.pdf \
-  --output-dir src/build_a_long/pdf_extract/fixtures \
-  --debug-json \
-  --debug-extra-json \
-  --compress-json
+./src/build_a_long/pdf_extract/classifier/tools/regenerate_fixtures.sh
 ```
+
+This script regenerates:
+
+- Full document fixtures (`*_raw.json.bz2`) from source PDFs
+- Individual page fixtures (`*_raw.json`) from source PDFs
+- Hints golden files (`*_font_hints_expected.json`, `*_page_hints_expected.json`)
+- Classifier golden files (`*_expected.json`)
 
 ### Regenerating Golden Files
 
@@ -176,21 +148,13 @@ When you intentionally change classifier logic and want to update the expected o
 
 ```bash
 # Generate/update classifier golden files
-pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-files
+pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
 
-# Generate/update font hints golden files
-pants run src/build_a_long/pdf_extract/classifier/tools:generate-golden-font-hints
+# Generate/update hints golden files (font hints and page hints)
+pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_hints.py
 ```
 
-These scripts run without sandboxing, allowing them to write files directly to the `fixtures/` directory.
-
-### Enabling the Tests
-
-Once the classifier issues are fixed:
-
-1. Remove the `@pytest.mark.skip` decorator from both test files
-2. Regenerate golden files if needed
-3. Run tests to verify they pass
+**Important**: Use the `.py` file path (not the `:target` name) to run without sandboxing. This allows the scripts to read/write files directly in the repository.
 
 ## Fixture Details
 
@@ -216,8 +180,10 @@ Once the classifier issues are fixed:
 
 ### File Naming Convention
 
-- `{instruction_id}_page_{NNN}_raw.json` - Single page raw extraction
-- `{instruction_id}_raw.json.bz2` - Full document raw extraction (compressed)
-- `{instruction_id}_page_{NNN}_expected.json` - Single page classifier golden output
-- `{instruction_id}_font_hints_expected.json` - Font size hints golden output
-- `real_example_*.json` - Special test cases for specific scenarios
+- `{element_id}_page_{NNN}_raw.json` - Single page raw extraction
+- `{element_id}_raw.json.bz2` - Full document raw extraction (compressed)
+- `{element_id}_page_{NNN}_expected.json` - Single page classifier golden output
+- `{element_id}_font_hints_expected.json` - Font size hints golden output
+- `{element_id}_page_hints_expected.json` - Page hints golden output
+
+Note: An element ID identifies a LEGO element (manual, piece, sticker sheet, etc.).
