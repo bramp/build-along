@@ -23,6 +23,7 @@ from build_a_long.pdf_extract.extractor.pymupdf_types import (
     RectLikeTuple,
     TextBlockDict,
 )
+from build_a_long.pdf_extract.utils import SerializationMixin
 
 logger = logging.getLogger("extractor")
 
@@ -41,7 +42,7 @@ class PageData(BaseModel):
     blocks: list[Blocks]
 
 
-class ExtractionResult(BaseModel):
+class ExtractionResult(SerializationMixin, BaseModel):
     """Top-level container for extracted PDF data."""
 
     pages: list[PageData]

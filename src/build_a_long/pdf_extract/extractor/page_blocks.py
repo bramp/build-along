@@ -14,7 +14,7 @@ hints to keep them easy to test and reason about.
 from __future__ import annotations
 
 from abc import ABC
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 
 from pydantic import (
     BaseModel,
@@ -30,9 +30,10 @@ from build_a_long.pdf_extract.extractor.pymupdf_types import (
     PointLikeTuple,
     TransformTuple,
 )
+from build_a_long.pdf_extract.utils import SerializationMixin
 
 
-class Block(BaseModel, ABC):
+class Block(SerializationMixin, BaseModel, ABC):
     """Base class for raw blocks extracted from PDF.
 
     Contract:
@@ -53,24 +54,6 @@ class Block(BaseModel, ABC):
     bbox: BBox
     id: int
     """Unique block ID assigned by the Extractor."""
-
-    def to_dict(self, **kwargs: Any) -> dict:
-        """Serialize to dict with proper defaults (by_alias=True, exclude_none=True).
-
-        Override by passing explicit kwargs if different behavior is needed.
-        """
-        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
-        defaults.update(kwargs)
-        return self.model_dump(**defaults)
-
-    def to_json(self, **kwargs: Any) -> str:
-        """Serialize to JSON with proper defaults (by_alias=True, exclude_none=True).
-
-        Override by passing explicit kwargs if different behavior is needed.
-        """
-        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
-        defaults.update(kwargs)
-        return self.model_dump_json(**defaults)
 
 
 class Drawing(Block):

@@ -1,5 +1,6 @@
 """Common utilities for PDF extraction."""
 
+import json
 from typing import Any
 
 
@@ -42,3 +43,49 @@ def remove_empty_lists(obj: Any) -> Any:
     elif isinstance(obj, list):
         return [remove_empty_lists(item) for item in obj]
     return obj
+
+
+class SerializationMixin:
+    """Mixin providing consistent to_dict() and to_json() serialization.
+
+    Add this as a base class to any Pydantic BaseModel to get standardized
+    serialization with:
+    - by_alias=True (uses field aliases like __tag__)
+    - exclude_none=True (omits None values)
+    - Floats rounded to 2 decimal places
+    - Tab indentation for JSON (configurable)
+
+    Example:
+        class MyModel(SerializationMixin, BaseModel):
+            name: str
+            value: float
+
+        model = MyModel(name="test", value=3.14159)
+        model.to_json()  # '{"name": "test", "value": 3.14}'
+    """
+
+    def to_dict(self, **kwargs: Any) -> dict:
+        """Serialize to dict with proper defaults.
+
+        Uses by_alias=True, exclude_none=True, and rounds floats to 2 decimals.
+        Override by passing explicit kwargs if different behavior is needed.
+        """
+        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
+        defaults.update(kwargs)
+        data = self.model_dump(**defaults)  # type: ignore[attr-defined]
+        return round_floats(data)
+
+    def to_json(self, *, indent: str | int | None = "\t", **kwargs: Any) -> str:
+        """Serialize to JSON with proper defaults.
+
+        Uses by_alias=True, exclude_none=True, rounds floats to 2 decimals,
+        and uses tab indentation by default.
+        Override by passing explicit kwargs if different behavior is needed.
+
+        Args:
+            indent: Indentation for pretty-printing (default: tab).
+                    Use None for compact output.
+            **kwargs: Additional arguments passed to model_dump()
+        """
+        data = self.to_dict(**kwargs)
+        return json.dumps(data, indent=indent)

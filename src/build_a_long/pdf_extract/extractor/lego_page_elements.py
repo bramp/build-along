@@ -17,10 +17,10 @@ from pydantic import (
 )
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.utils import remove_empty_lists, round_floats
+from build_a_long.pdf_extract.utils import SerializationMixin, remove_empty_lists
 
 
-class LegoPageElement(BaseModel, ABC):
+class LegoPageElement(SerializationMixin, BaseModel, ABC):
     """Base class for LEGO-specific structured elements constructed by classifiers.
 
     LegoPageElements are typically constructed from one or more Blocks during
@@ -40,32 +40,19 @@ class LegoPageElement(BaseModel, ABC):
 
     bbox: BBox
 
-    def to_dict(self, **kwargs: Any) -> dict:
-        """Serialize to dict with proper defaults (by_alias=True, exclude_none=True).
-
-        Override by passing explicit kwargs if different behavior is needed.
-        """
-        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
-        defaults.update(kwargs)
-        return self.model_dump(**defaults)
-
-    def to_json(self, *, indent: int | None = None, **kwargs: Any) -> str:
+    def to_json(self, *, indent: str | int | None = None, **kwargs: Any) -> str:
         """Serialize to JSON with proper defaults (by_alias=True, exclude_none=True).
 
         Floats are rounded to 2 decimal places for consistent output.
         Empty lists are removed from the output.
 
         Args:
-            indent: Optional indentation level for pretty-printing
+            indent: Optional indentation for pretty-printing (str like '\t', int, or None)
             **kwargs: Additional arguments passed to model_dump()
         """
-        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
-        defaults.update(kwargs)
-
-        # First dump to dict, round floats, remove empty lists, then serialize
-        data = self.model_dump(**defaults)
-        rounded_data = round_floats(data)
-        cleaned_data = remove_empty_lists(rounded_data)
+        # Use to_dict() from mixin which rounds floats
+        data = self.to_dict(**kwargs)
+        cleaned_data = remove_empty_lists(data)
 
         # Use compact separators when not indented (matches Pydantic's behavior)
         separators = (",", ":") if indent is None else (",", ": ")
@@ -716,7 +703,7 @@ LegoPageElements = Annotated[
 ]
 
 
-class Manual(BaseModel):
+class Manual(SerializationMixin, BaseModel):
     """A complete LEGO instruction manual containing all pages.
 
     This is the top-level container that holds all pages from a PDF and provides
@@ -853,32 +840,19 @@ class Manual(BaseModel):
             f"catalog_parts={len(self.catalog_parts)})"
         )
 
-    def to_dict(self, **kwargs: Any) -> dict:
-        """Serialize to dict with proper defaults (by_alias=True, exclude_none=True).
-
-        Override by passing explicit kwargs if different behavior is needed.
-        """
-        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
-        defaults.update(kwargs)
-        return self.model_dump(**defaults)
-
-    def to_json(self, *, indent: int | None = None, **kwargs: Any) -> str:
+    def to_json(self, *, indent: str | int | None = None, **kwargs: Any) -> str:
         """Serialize to JSON with proper defaults (by_alias=True, exclude_none=True).
 
         Floats are rounded to 2 decimal places for consistent output.
         Empty lists are removed from the output.
 
         Args:
-            indent: Optional indentation level for pretty-printing
+            indent: Optional indentation for pretty-printing (str like '\t', int, or None)
             **kwargs: Additional arguments passed to model_dump()
         """
-        defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
-        defaults.update(kwargs)
-
-        # First dump to dict, round floats, remove empty lists, then serialize
-        data = self.model_dump(**defaults)
-        rounded_data = round_floats(data)
-        cleaned_data = remove_empty_lists(rounded_data)
+        # Use to_dict() from mixin which rounds floats
+        data = self.to_dict(**kwargs)
+        cleaned_data = remove_empty_lists(data)
 
         # Use compact separators when not indented (matches Pydantic's behavior)
         separators = (",", ":") if indent is None else (",", ": ")
