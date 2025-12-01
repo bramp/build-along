@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, cast
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
@@ -18,8 +19,22 @@ from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 
+log = logging.getLogger(__name__)
+
 # Score key can be either a single Block or a tuple of Blocks (for pairings)
 ScoreKey = Blocks | tuple[Blocks, ...]
+
+
+class CandidateFailedError(Exception):
+    """Raised when a candidate cannot be built due to a failure.
+
+    This exception carries information about which candidate failed,
+    allowing callers to potentially create replacement candidates and retry.
+    """
+
+    def __init__(self, candidate: Candidate, message: str):
+        super().__init__(message)
+        self.candidate = candidate
 
 
 class _BuildSnapshot(BaseModel):
@@ -141,12 +156,17 @@ class ClassificationResult(BaseModel):
         This is the entry point for top-down construction. If the build fails,
         all changes to candidate states and consumed blocks are automatically
         rolled back, ensuring transactional semantics.
+
+        If a nested candidate fails due to conflicts, this method will attempt
+        to create replacement candidates and retry the build.
         """
         if candidate.constructed:
             return candidate.constructed
 
         if candidate.failure_reason:
-            raise ValueError(f"Candidate failed: {candidate.failure_reason}")
+            raise CandidateFailedError(
+                candidate, f"Candidate failed: {candidate.failure_reason}"
+            )
 
         # Check if any source block is already consumed
         # TODO Do we need the following? As _fail_conflicting_candidates should
@@ -166,7 +186,7 @@ class ClassificationResult(BaseModel):
 
                 failure_msg = f"Block {block.id} already consumed by '{winner_label}'"
                 candidate.failure_reason = failure_msg
-                raise ValueError(failure_msg)
+                raise CandidateFailedError(candidate, failure_msg)
 
         classifier = self._classifiers.get(candidate.label)
         if not classifier:
@@ -187,6 +207,26 @@ class ClassificationResult(BaseModel):
             self._fail_conflicting_candidates(candidate)
 
             return element
+        except CandidateFailedError as e:
+            # A nested candidate failed - rollback and check if we can retry
+            self._restore_snapshot(snapshot)
+
+            # If the failed candidate has a "Replaced by reduced candidate" reason,
+            # we may be able to find the replacement and the caller can retry
+            failed_candidate = e.candidate
+            if (
+                failed_candidate.failure_reason
+                and "Replaced by reduced candidate" in failed_candidate.failure_reason
+            ):
+                # The failed candidate was replaced - caller should retry with
+                # new candidates available
+                log.debug(
+                    "[build] Nested candidate %s (%s) was replaced, "
+                    "propagating for retry",
+                    failed_candidate.label,
+                    failed_candidate.bbox,
+                )
+            raise
         except Exception:
             # Rollback all changes made during this build
             self._restore_snapshot(snapshot)
@@ -217,10 +257,17 @@ class ClassificationResult(BaseModel):
         self._consumed_blocks = snapshot.consumed_blocks.copy()
 
     def _fail_conflicting_candidates(self, winner: Candidate) -> None:
-        """Mark other candidates sharing blocks with winner as failed."""
+        """Mark other candidates sharing blocks with winner as failed.
+
+        For candidates that support re-scoring, we try to create a reduced
+        version without the conflicting blocks before failing them entirely.
+        """
         winner_block_ids = {b.id for b in winner.source_blocks}
 
-        for _label, candidates in self.candidates.items():
+        if not winner_block_ids:
+            return
+
+        for label, candidates in self.candidates.items():
             for candidate in candidates:
                 if candidate is winner:
                     continue
@@ -228,13 +275,32 @@ class ClassificationResult(BaseModel):
                     continue
 
                 # Check for overlap
-                for block in candidate.source_blocks:
-                    if block.id in winner_block_ids:
+                conflicting_block_ids = {
+                    b.id for b in candidate.source_blocks if b.id in winner_block_ids
+                }
+
+                if not conflicting_block_ids:
+                    continue
+
+                # Try to create a reduced candidate via rescore_without_blocks
+                classifier = self._classifiers.get(label)
+                if classifier:
+                    reduced = classifier.rescore_without_blocks(
+                        candidate, winner_block_ids, self
+                    )
+                    if reduced is not None:
+                        # Add the reduced candidate as a replacement
+                        candidates.append(reduced)
                         candidate.failure_reason = (
-                            f"Lost conflict to '{winner.label}' "
-                            f"(score={winner.score:.3f})"
+                            f"Replaced by reduced candidate "
+                            f"(excluded blocks: {conflicting_block_ids})"
                         )
-                        break
+                        continue
+
+                # Fall back to failing the candidate
+                candidate.failure_reason = (
+                    f"Lost conflict to '{winner.label}' (score={winner.score:.3f})"
+                )
 
     def _validate_block_in_page_data(
         self, block: Blocks | None, param_name: str = "block"

@@ -311,7 +311,10 @@ class Arrow(LegoPageElement):
     - Indicate direction of motion or insertion
     - Connect related elements visually
 
-    The bbox encompasses the arrowhead. The tip point is where the arrow points TO.
+    The bbox encompasses the arrowhead. The tip is where the arrow points TO,
+    and the tail is where the arrow line originates FROM (the other end of the
+    arrow shaft, if detected).
+
     Direction is measured in degrees where:
     - 0° = pointing right
     - 90° = pointing down
@@ -329,6 +332,13 @@ class Arrow(LegoPageElement):
 
     tip: tuple[float, float]
     """The tip point (x, y) of the arrowhead - where the arrow points TO."""
+
+    tail: tuple[float, float] | None = None
+    """The tail point (x, y) - where the arrow line originates FROM.
+    
+    This is the far end of the arrow shaft (not the arrowhead base).
+    May be None if the arrow shaft was not detected.
+    """
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""

@@ -198,11 +198,33 @@ class StepClassifier(LabelClassifier):
             parts_list = parts_list_elem
 
         # Get the diagram from the diagram candidate
+        # If the original diagram candidate is failed, try to find a replacement
         diagram = None
-        if score.diagram_candidate:
-            diagram_elem = result.build(score.diagram_candidate)
-            assert isinstance(diagram_elem, Diagram)
-            diagram = diagram_elem
+        diagram_candidate = score.diagram_candidate
+        if diagram_candidate:
+            if diagram_candidate.failure_reason:
+                # Original diagram candidate was replaced (e.g., due to conflict)
+                # Try to find a suitable replacement
+                replacement = self._find_replacement_diagram(diagram_candidate, result)
+                if replacement:
+                    log.debug(
+                        "[step] Using replacement diagram for step %d: %s -> %s",
+                        step_num.value,
+                        diagram_candidate.bbox,
+                        replacement.bbox,
+                    )
+                    diagram_candidate = replacement
+                else:
+                    log.debug(
+                        "[step] No replacement diagram found for step %d",
+                        step_num.value,
+                    )
+                    diagram_candidate = None
+
+            if diagram_candidate:
+                diagram_elem = result.build(diagram_candidate)
+                assert isinstance(diagram_elem, Diagram)
+                diagram = diagram_elem
 
         # Get rotation symbols near this step (if any)
         rotation_symbol = self._get_rotation_symbol_for_step(step_num, diagram, result)
@@ -216,6 +238,56 @@ class StepClassifier(LabelClassifier):
             diagram=diagram,
             rotation_symbol=rotation_symbol,
         )
+
+    def _find_replacement_diagram(
+        self,
+        original: Candidate,
+        result: ClassificationResult,
+    ) -> Candidate | None:
+        """Find a replacement for a failed diagram candidate.
+
+        When a diagram candidate fails due to conflict (e.g., blocks consumed
+        by arrows), a reduced replacement candidate may have been created.
+        This method finds the best replacement that overlaps with the original.
+
+        Args:
+            original: The original (failed) diagram candidate
+            result: Classification result with all candidates
+
+        Returns:
+            A suitable replacement candidate, or None if none found
+        """
+        # Get all non-failed diagram candidates
+        diagram_candidates = result.get_scored_candidates(
+            "diagram", valid_only=False, exclude_failed=True
+        )
+
+        # Find candidates that significantly overlap with the original
+        # (reduced candidates should have similar bbox)
+        OVERLAP_THRESHOLD = 0.8  # Require 80% overlap
+
+        best_candidate = None
+        best_overlap = 0.0
+
+        for candidate in diagram_candidates:
+            # Check overlap ratio using intersection_area
+            intersection_area = original.bbox.intersection_area(candidate.bbox)
+            if intersection_area > 0:
+                # Calculate overlap as percentage of the smaller bbox
+                original_area = original.bbox.area
+                candidate_area = candidate.bbox.area
+                min_area = min(original_area, candidate_area)
+
+                if min_area > 0:
+                    overlap_ratio = intersection_area / min_area
+                    if (
+                        overlap_ratio >= OVERLAP_THRESHOLD
+                        and overlap_ratio > best_overlap
+                    ):
+                        best_overlap = overlap_ratio
+                        best_candidate = candidate
+
+        return best_candidate
 
     def _create_step_candidate(
         self,

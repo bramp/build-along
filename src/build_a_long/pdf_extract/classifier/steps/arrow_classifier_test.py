@@ -45,13 +45,14 @@ def make_drawing(
     *,
     fill_color: tuple[float, float, float] | None = (1.0, 1.0, 1.0),
     items: tuple[tuple, ...] | None = None,
+    block_id: int = 1,
 ) -> Drawing:
     """Create a Drawing block."""
     return Drawing(
         bbox=bbox,
         fill_color=fill_color,
         items=items,
-        id=1,
+        id=block_id,
     )
 
 
@@ -274,3 +275,234 @@ class TestExtractUniquePoints:
 
         # Should deduplicate to 3 unique points (10.02 rounds to 10.0)
         assert len(points) == 3
+
+
+def make_shaft_rect_items(bbox: BBox) -> tuple[tuple, ...]:
+    """Create rectangle items for a shaft."""
+    return (("re", (bbox.x0, bbox.y0, bbox.x1, bbox.y1), -1),)
+
+
+class TestShaftDetection:
+    """Tests for arrow shaft detection."""
+
+    def test_finds_horizontal_shaft_for_right_pointing_arrow(
+        self, arrow_classifier: ArrowClassifier
+    ):
+        """Test finding a horizontal shaft for a right-pointing arrow."""
+        # Arrowhead pointing right at x=376, with tip at x=389
+        arrowhead_bbox = BBox(x0=376.47, y0=413.39, x1=388.98, y1=422.49)
+        arrowhead_items = (
+            ("l", (388.98, 417.94), (376.47, 413.39)),
+            ("l", (376.47, 413.39), (377.67, 417.94)),
+            ("l", (377.67, 417.94), (376.47, 422.49)),
+            ("l", (376.47, 422.49), (388.98, 417.94)),
+        )
+        arrowhead = make_drawing(
+            arrowhead_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=arrowhead_items,
+            block_id=84,
+        )
+
+        # Shaft to the left of arrowhead (1 pixel high horizontal line)
+        shaft_bbox = BBox(x0=333.98, y0=417.44, x1=377.67, y1=418.44)
+        shaft_items = make_shaft_rect_items(shaft_bbox)
+        shaft = make_drawing(
+            shaft_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=shaft_items,
+            block_id=83,
+        )
+
+        page_data = make_page_data([shaft, arrowhead])
+        result = ClassificationResult(page_data=page_data)
+
+        arrow_classifier._score(result)
+
+        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        assert len(candidates) == 1
+
+        score_details = candidates[0].score_details
+        assert isinstance(score_details, _ArrowScore)
+        assert score_details.shaft_block is shaft
+        assert score_details.tail is not None
+        # Tail should be at the left end of the shaft (far from arrowhead)
+        assert score_details.tail[0] == pytest.approx(333.98, abs=1.0)
+
+    def test_no_shaft_when_colors_dont_match(self, arrow_classifier: ArrowClassifier):
+        """Test that shaft is not found when colors don't match."""
+        # White arrowhead
+        arrowhead_bbox = BBox(x0=376.47, y0=413.39, x1=388.98, y1=422.49)
+        arrowhead_items = (
+            ("l", (388.98, 417.94), (376.47, 413.39)),
+            ("l", (376.47, 413.39), (377.67, 417.94)),
+            ("l", (377.67, 417.94), (376.47, 422.49)),
+            ("l", (376.47, 422.49), (388.98, 417.94)),
+        )
+        arrowhead = make_drawing(
+            arrowhead_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=arrowhead_items,
+            block_id=84,
+        )
+
+        # Red shaft (different color)
+        shaft_bbox = BBox(x0=333.98, y0=417.44, x1=377.67, y1=418.44)
+        shaft_items = make_shaft_rect_items(shaft_bbox)
+        shaft = make_drawing(
+            shaft_bbox,
+            fill_color=(1.0, 0.0, 0.0),  # Red, not white
+            items=shaft_items,
+            block_id=83,
+        )
+
+        page_data = make_page_data([shaft, arrowhead])
+        result = ClassificationResult(page_data=page_data)
+
+        arrow_classifier._score(result)
+
+        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        assert len(candidates) == 1
+
+        score_details = candidates[0].score_details
+        assert isinstance(score_details, _ArrowScore)
+        # No shaft should be found due to color mismatch
+        assert score_details.shaft_block is None
+        assert score_details.tail is None
+
+    def test_no_shaft_when_too_thick(self, arrow_classifier: ArrowClassifier):
+        """Test that thick rectangles are not matched as shafts."""
+        arrowhead_bbox = BBox(x0=376.47, y0=413.39, x1=388.98, y1=422.49)
+        arrowhead_items = (
+            ("l", (388.98, 417.94), (376.47, 413.39)),
+            ("l", (376.47, 413.39), (377.67, 417.94)),
+            ("l", (377.67, 417.94), (376.47, 422.49)),
+            ("l", (376.47, 422.49), (388.98, 417.94)),
+        )
+        arrowhead = make_drawing(
+            arrowhead_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=arrowhead_items,
+            block_id=84,
+        )
+
+        # Thick rectangle (10 pixels high, too thick for shaft)
+        shaft_bbox = BBox(x0=333.98, y0=412.94, x1=377.67, y1=422.94)
+        shaft_items = make_shaft_rect_items(shaft_bbox)
+        shaft = make_drawing(
+            shaft_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=shaft_items,
+            block_id=83,
+        )
+
+        page_data = make_page_data([shaft, arrowhead])
+        result = ClassificationResult(page_data=page_data)
+
+        arrow_classifier._score(result)
+
+        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        assert len(candidates) == 1
+
+        score_details = candidates[0].score_details
+        assert isinstance(score_details, _ArrowScore)
+        # No shaft should be found due to thickness
+        assert score_details.shaft_block is None
+
+    def test_no_shaft_when_too_short(self, arrow_classifier: ArrowClassifier):
+        """Test that short rectangles are not matched as shafts."""
+        arrowhead_bbox = BBox(x0=376.47, y0=413.39, x1=388.98, y1=422.49)
+        arrowhead_items = (
+            ("l", (388.98, 417.94), (376.47, 413.39)),
+            ("l", (376.47, 413.39), (377.67, 417.94)),
+            ("l", (377.67, 417.94), (376.47, 422.49)),
+            ("l", (376.47, 422.49), (388.98, 417.94)),
+        )
+        arrowhead = make_drawing(
+            arrowhead_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=arrowhead_items,
+            block_id=84,
+        )
+
+        # Short rectangle (5 pixels long, too short for shaft)
+        shaft_bbox = BBox(x0=372.67, y0=417.44, x1=377.67, y1=418.44)
+        shaft_items = make_shaft_rect_items(shaft_bbox)
+        shaft = make_drawing(
+            shaft_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=shaft_items,
+            block_id=83,
+        )
+
+        page_data = make_page_data([shaft, arrowhead])
+        result = ClassificationResult(page_data=page_data)
+
+        arrow_classifier._score(result)
+
+        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        assert len(candidates) == 1
+
+        score_details = candidates[0].score_details
+        assert isinstance(score_details, _ArrowScore)
+        # No shaft should be found due to short length
+        assert score_details.shaft_block is None
+
+    def test_shaft_included_in_source_blocks(self, arrow_classifier: ArrowClassifier):
+        """Test that detected shaft is included in source_blocks."""
+        arrowhead_bbox = BBox(x0=376.47, y0=413.39, x1=388.98, y1=422.49)
+        arrowhead_items = (
+            ("l", (388.98, 417.94), (376.47, 413.39)),
+            ("l", (376.47, 413.39), (377.67, 417.94)),
+            ("l", (377.67, 417.94), (376.47, 422.49)),
+            ("l", (376.47, 422.49), (388.98, 417.94)),
+        )
+        arrowhead = make_drawing(
+            arrowhead_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=arrowhead_items,
+            block_id=84,
+        )
+
+        shaft_bbox = BBox(x0=333.98, y0=417.44, x1=377.67, y1=418.44)
+        shaft_items = make_shaft_rect_items(shaft_bbox)
+        shaft = make_drawing(
+            shaft_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=shaft_items,
+            block_id=83,
+        )
+
+        page_data = make_page_data([shaft, arrowhead])
+        result = ClassificationResult(page_data=page_data)
+
+        arrow_classifier._score(result)
+
+        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        assert len(candidates) == 1
+
+        # Both arrowhead and shaft should be in source_blocks
+        source_blocks = candidates[0].source_blocks
+        assert len(source_blocks) == 2
+        assert arrowhead in source_blocks
+        assert shaft in source_blocks
+
+
+class TestColorsMatch:
+    """Tests for _colors_match helper."""
+
+    def test_exact_match(self, arrow_classifier: ArrowClassifier):
+        """Test exact color match."""
+        assert arrow_classifier._colors_match((1.0, 1.0, 1.0), (1.0, 1.0, 1.0))
+
+    def test_within_tolerance(self, arrow_classifier: ArrowClassifier):
+        """Test colors within tolerance."""
+        assert arrow_classifier._colors_match((1.0, 1.0, 1.0), (0.95, 1.0, 1.0))
+
+    def test_outside_tolerance(self, arrow_classifier: ArrowClassifier):
+        """Test colors outside tolerance."""
+        assert not arrow_classifier._colors_match((1.0, 1.0, 1.0), (0.5, 1.0, 1.0))
+
+    def test_different_lengths(self, arrow_classifier: ArrowClassifier):
+        """Test colors with different channel counts."""
+        assert not arrow_classifier._colors_match((1.0, 1.0, 1.0), (1.0, 1.0))

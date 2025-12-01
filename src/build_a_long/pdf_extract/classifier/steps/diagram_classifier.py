@@ -17,6 +17,13 @@ Heuristic
 - Cluster adjacent/overlapping images into single diagrams
 - Each cluster becomes a diagram candidate
 
+Re-scoring
+----------
+When a diagram's source blocks conflict with another candidate (e.g., an arrow
+that claims part of the diagram), the diagram can be re-scored without those
+blocks. If the remaining blocks still form a valid diagram (meets minimum area),
+a reduced candidate is created instead of failing entirely.
+
 Debugging
 ---------
 Enable with `LOG_LEVEL=DEBUG` for structured logs.
@@ -25,7 +32,6 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
-
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -45,6 +51,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
+    Blocks,
     Drawing,
     Image,
 )
@@ -134,43 +141,106 @@ class DiagramClassifier(LabelClassifier):
             len(clusters),
         )
 
-        # Create a candidate for each cluster
+        # Create a candidate for each cluster (with no exclusions)
         for cluster in clusters:
-            cluster_bbox = self._calculate_cluster_bbox(cluster)
-
-            # Filter based on area relative to page
-            area_ratio = cluster_bbox.area / page_bbox.area
-
-            # Skip very small images (< 3% of page area)
-            # These are likely decorative elements or noise
-            if area_ratio < self.MIN_AREA_RATIO:
-                continue
-
-            # Skip full-page images (> 90% of page area)
-            # These are likely borders/backgrounds
-            if area_ratio > self.MAX_AREA_RATIO:
-                continue
-
-            score_details = _DiagramScore(
-                cluster_bbox=cluster_bbox,
-                num_images=len(cluster),
+            candidate = self._create_candidate_from_blocks(
+                list(cluster), excluded_block_ids=set(), result=result
             )
+            if candidate:
+                result.add_candidate(candidate)
 
-            result.add_candidate(
-                Candidate(
-                    bbox=cluster_bbox,
-                    label="diagram",
-                    score=score_details.score(),
-                    score_details=score_details,
-                    source_blocks=list(cluster),
-                ),
-            )
+    def rescore_without_blocks(
+        self,
+        candidate: Candidate,
+        excluded_block_ids: set[int],
+        result: ClassificationResult,
+    ) -> Candidate | None:
+        """Create a new diagram candidate excluding specified blocks.
 
-            log.debug(
-                "[diagram] cluster images=%d bbox=%s",
-                len(cluster),
-                cluster_bbox,
-            )
+        Args:
+            candidate: The original candidate to re-score
+            excluded_block_ids: Set of block IDs to exclude
+            result: The classification result context
+
+        Returns:
+            A new candidate without the excluded blocks, or None if the
+            candidate is no longer valid without those blocks.
+        """
+        # Filter out excluded blocks
+        remaining_blocks = [
+            b for b in candidate.source_blocks if b.id not in excluded_block_ids
+        ]
+
+        if not remaining_blocks:
+            return None
+
+        return self._create_candidate_from_blocks(
+            remaining_blocks, excluded_block_ids, result
+        )
+
+    def _create_candidate_from_blocks(
+        self,
+        blocks: list[Blocks],
+        excluded_block_ids: set[int],
+        result: ClassificationResult,
+    ) -> Candidate | None:
+        """Create a diagram candidate from a list of blocks.
+
+        Args:
+            blocks: The blocks to include in the diagram
+            excluded_block_ids: Block IDs that were excluded (for logging)
+            result: The classification result context
+
+        Returns:
+            A Candidate if the blocks form a valid diagram, None otherwise
+        """
+        if not blocks:
+            return None
+
+        page_bbox = result.page_data.bbox
+        assert page_bbox is not None
+
+        cluster_bbox = self._calculate_cluster_bbox(blocks)
+
+        # Filter based on area relative to page
+        area_ratio = cluster_bbox.area / page_bbox.area
+
+        # Skip very small images (< 3% of page area)
+        # These are likely decorative elements or noise
+        if area_ratio < self.MIN_AREA_RATIO:
+            if excluded_block_ids:
+                log.debug(
+                    "[diagram] Reduced diagram too small after excluding blocks: "
+                    "area_ratio=%.3f < %.3f",
+                    area_ratio,
+                    self.MIN_AREA_RATIO,
+                )
+            return None
+
+        # Skip full-page images (> 90% of page area)
+        # These are likely borders/backgrounds
+        if area_ratio > self.MAX_AREA_RATIO:
+            return None
+
+        score_details = _DiagramScore(
+            cluster_bbox=cluster_bbox,
+            num_images=len(blocks),
+        )
+
+        log.debug(
+            "[diagram] %s images=%d bbox=%s",
+            "Reduced cluster" if excluded_block_ids else "cluster",
+            len(blocks),
+            cluster_bbox,
+        )
+
+        return Candidate(
+            bbox=cluster_bbox,
+            label="diagram",
+            score=score_details.score(),
+            score_details=score_details,
+            source_blocks=list(blocks),
+        )
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> Diagram:
         """Construct a Diagram element from a single candidate."""
@@ -187,6 +257,16 @@ class DiagramClassifier(LabelClassifier):
         for arrow_candidate in result.get_scored_candidates(
             "arrow", valid_only=False, exclude_failed=True
         ):
+            # Skip if arrow was marked as failed during iteration
+            # (can happen when one arrow's build marks others as conflicting)
+            if arrow_candidate.failure_reason:
+                log.debug(
+                    "[diagram] Skipping failed arrow at %s: %s",
+                    arrow_candidate.bbox,
+                    arrow_candidate.failure_reason,
+                )
+                continue
+
             # Check if arrow overlaps with or is inside the diagram bbox
             if arrow_candidate.bbox.overlaps(diagram_bbox):
                 arrow_elem = result.build(arrow_candidate)
@@ -217,7 +297,7 @@ class DiagramClassifier(LabelClassifier):
 
         return None
 
-    def _calculate_cluster_bbox(self, cluster: list[Drawing | Image]) -> BBox:
+    def _calculate_cluster_bbox(self, cluster: list[Blocks]) -> BBox:
         """Calculate the bounding box encompassing all images in the cluster.
 
         Args:
