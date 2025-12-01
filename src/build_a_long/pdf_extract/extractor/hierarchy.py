@@ -141,10 +141,10 @@ def build_hierarchy_from_blocks[T: HasBBox](
                 continue
             bbox_j = candidate.bbox
             # Skip if bboxes are identical (duplicate blocks at same position)
-            # fully_inside uses >=/<= so identical boxes would be "inside" each other
+            # This check uses `contains` which, like `fully_inside`, considers identical boxes to "contain" each other.
             if bbox_i == bbox_j:
                 continue
-            if bbox_i.fully_inside(bbox_j):
+            if bbox_j.contains(bbox_i):
                 area = bbox_j.area
                 if area < best_parent_area:
                     best_parent = j

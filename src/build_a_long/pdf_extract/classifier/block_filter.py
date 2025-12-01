@@ -178,7 +178,7 @@ def remove_child_bboxes(
         if ele is target or id(ele) in keep_ids:
             continue
         b = ele.bbox
-        if b.fully_inside(target_bbox):
+        if target_bbox.contains(b):
             result.mark_removed(
                 ele, RemovalReason(reason_type="child_bbox", target_block=target)
             )

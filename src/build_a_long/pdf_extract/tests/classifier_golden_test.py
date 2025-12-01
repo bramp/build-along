@@ -86,8 +86,7 @@ class TestClassifierGolden:
         4. Compares the Page against the golden file
 
         To update golden files, use:
-            pants run src/build_a_long/pdf_extract/classifier/
-            tools:generate-golden-files
+            pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
         """
         fixture_path = FIXTURES_DIR / fixture_file
 
@@ -136,8 +135,7 @@ class TestClassifierGolden:
                 f"Page test failed for {fixture_file}:\n"
                 + "\n".join(f"  - {e}" for e in comparison_errors)
                 + "\n\nTo update golden files, run: "
-                "pants run src/build_a_long/pdf_extract/classifier/"
-                "tools:generate-golden-files",
+                "pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py",
                 pytrace=False,
             )
 

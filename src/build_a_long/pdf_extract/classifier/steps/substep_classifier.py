@@ -224,7 +224,7 @@ class SubStepClassifier(LabelClassifier):
         best_score = 0.0
 
         for candidate in candidates:
-            if candidate.bbox.fully_inside(bbox) and candidate.score > best_score:
+            if bbox.contains(candidate.bbox) and candidate.score > best_score:
                 best_candidate = candidate
                 best_score = candidate.score
 

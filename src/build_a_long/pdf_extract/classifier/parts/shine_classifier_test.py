@@ -1,7 +1,5 @@
 """Tests for shine classification."""
 
-from typing import Any, cast
-
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.classifier.classifier_rules_test import (
     _load_config_for_fixture,

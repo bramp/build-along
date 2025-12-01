@@ -24,16 +24,16 @@ def test_overlaps():
     assert bbox1.overlaps(bbox5)
 
 
-def test_fully_inside():
+def test_contains():
     bbox1 = BBox(0, 0, 10, 10)
     bbox2 = BBox(2, 2, 8, 8)
     bbox3 = BBox(0, 0, 10, 10)  # Same bbox
     bbox4 = BBox(0, 0, 10, 11)  # Not fully inside
 
-    assert bbox2.fully_inside(bbox1)
-    assert bbox3.fully_inside(bbox1)
-    assert not bbox1.fully_inside(bbox2)
-    assert not bbox4.fully_inside(bbox1)
+    assert bbox1.contains(bbox2)
+    assert bbox1.contains(bbox3)
+    assert not bbox2.contains(bbox1)
+    assert not bbox1.contains(bbox4)
 
 
 def test_adjacent():
@@ -104,7 +104,7 @@ def test_union_all_empty():
         BBox.union_all([])
 
 
-def test_clip_to_fully_inside():
+def test_clip_to_already_contained():
     """Test clipping when bbox is already fully inside bounds."""
     bbox = BBox(2, 3, 8, 7)
     bounds = BBox(0, 0, 10, 10)

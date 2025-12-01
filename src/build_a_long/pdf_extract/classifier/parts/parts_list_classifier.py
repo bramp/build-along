@@ -31,7 +31,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartsList,
@@ -219,5 +218,5 @@ class PartsListClassifier(LabelClassifier):
         return [
             candidate
             for candidate in part_candidates
-            if candidate.bbox.fully_inside(drawing.bbox)
+            if drawing.bbox.contains(candidate.bbox)
         ]
