@@ -79,7 +79,12 @@ class DiagramClassifier(LabelClassifier):
     """Classifier for diagram regions on instruction pages."""
 
     output = "diagram"
-    requires = frozenset({"progress_bar", "arrow"})
+    requires = frozenset(
+        {
+            # Arrows typically overlap diagrams - so we exclude them upfront
+            "arrow",
+        }
+    )
 
     # TODO Convert to configurable parameters
     # Area filtering thresholds (as ratio of page area)
@@ -87,7 +92,7 @@ class DiagramClassifier(LabelClassifier):
         0.03  # Filter out images < 3% of page (decorative elements)
     )
     MAX_AREA_RATIO: ClassVar[float] = (
-        0.90  # Filter out images > 90% of page (backgrounds/borders)
+        0.95  # Filter out images > 95% of page (backgrounds/borders)
     )
 
     def _score(self, result: ClassificationResult) -> None:
@@ -96,25 +101,28 @@ class DiagramClassifier(LabelClassifier):
         page_bbox = page_data.bbox
         assert page_bbox is not None
 
-        # Get progress bar bbox to filter out overlapping elements
-        progress_bar_bbox = self._get_progress_bar_bbox(result)
+        arrow_candidates = result.get_scored_candidates(
+            "arrow", valid_only=False, exclude_failed=True
+        )
 
         # Get all image/drawing blocks, filtering out full-page images
         image_blocks: list[Drawing | Image] = []
         for block in page_data.blocks:
             # Only consider Drawing and Image elements
-            if not isinstance(block, Drawing | Image):
+            if not isinstance(block, Image):
                 continue
 
-            # Skip if overlaps with progress bar
-            if progress_bar_bbox and block.bbox.overlaps(progress_bar_bbox):
+            # Skip if part of an arrow's source blocks
+            if any(block in arrow.source_blocks for arrow in arrow_candidates):
                 continue
 
             # Filter based on area relative to page
             area_ratio = block.bbox.area / page_bbox.area
 
-            # Skip full-page images (> 90% of page area)
+            # Skip full-page images (> 95% of page area)
             # These are likely borders/backgrounds
+            # TODO This may not be necessary as we filter out all background
+            # blocks a lot earlier
             if area_ratio > self.MAX_AREA_RATIO:
                 continue
 

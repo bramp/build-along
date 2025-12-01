@@ -93,10 +93,10 @@ class TestDiagramClassification:
         assert len(candidates) == 2
 
     def test_filters_out_full_page_images(self, classifier: DiagramClassifier) -> None:
-        """Test that full-page images (>90% of page) are filtered out."""
+        """Test that full-page images (>95% of page) are filtered out."""
         page_bbox = BBox(0, 0, 200, 300)
         # Image covering 95% of page (background/border)
-        large_img = Image(id=1, bbox=BBox(0, 0, 195, 285))
+        large_img = Image(id=1, bbox=BBox(0, 0, 199, 299))
         # Normal image
         normal_img = Image(id=2, bbox=BBox(50, 100, 100, 150))
 
