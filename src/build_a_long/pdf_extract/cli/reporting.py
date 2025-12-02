@@ -1,6 +1,7 @@
 """Reporting and output formatting for PDF extraction."""
 
 import logging
+from collections import defaultdict
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -417,10 +418,17 @@ def print_classification_debug(
     total_candidates = sum(len(candidates) for candidates in all_candidates.values())
     num_synthetic = len(synthetic_nodes)
 
+    # Great a histogram of labels per block
+    block_histogram = defaultdict(int)
+    for block in page.blocks:
+        labels = result.get_all_candidates_for_block(block)
+        block_histogram[len(labels)] += 1
+
     print(f"\n{'─' * 80}")
     print(
         f"Blocks: {total} total | {with_labels} labeled | "
         f"{removed} removed | {no_candidates} no candidates"
+        f" | Histogram: {dict(block_histogram)}"
     )
     print(f"Candidates: {total_candidates} total | {num_synthetic} synthetic")
 
