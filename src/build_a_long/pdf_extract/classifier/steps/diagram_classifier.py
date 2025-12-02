@@ -47,7 +47,6 @@ from build_a_long.pdf_extract.extractor.bbox import (
     build_all_connected_clusters,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    Arrow,
     Diagram,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
@@ -260,34 +259,9 @@ class DiagramClassifier(LabelClassifier):
         page_bbox = result.page_data.bbox
         diagram_bbox = score_details.cluster_bbox.clip_to(page_bbox)
 
-        # Find arrows that overlap with or are inside this diagram
-        arrows: list[Arrow] = []
-        for arrow_candidate in result.get_scored_candidates(
-            "arrow", valid_only=False, exclude_failed=True
-        ):
-            # Skip if arrow was marked as failed during iteration
-            # (can happen when one arrow's build marks others as conflicting)
-            if arrow_candidate.failure_reason:
-                log.debug(
-                    "[diagram] Skipping failed arrow at %s: %s",
-                    arrow_candidate.bbox,
-                    arrow_candidate.failure_reason,
-                )
-                continue
+        log.debug("[diagram] Building diagram at %s", diagram_bbox)
 
-            # Check if arrow overlaps with or is inside the diagram bbox
-            if arrow_candidate.bbox.overlaps(diagram_bbox):
-                arrow_elem = result.build(arrow_candidate)
-                assert isinstance(arrow_elem, Arrow)
-                arrows.append(arrow_elem)
-
-        log.debug(
-            "[diagram] Building diagram at %s with %d arrows",
-            diagram_bbox,
-            len(arrows),
-        )
-
-        return Diagram(bbox=diagram_bbox, arrows=arrows)
+        return Diagram(bbox=diagram_bbox)
 
     def _get_progress_bar_bbox(self, result: ClassificationResult) -> BBox | None:
         """Get the bounding box of the progress bar if present.

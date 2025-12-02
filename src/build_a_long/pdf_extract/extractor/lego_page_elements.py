@@ -500,7 +500,9 @@ class SubStep(LegoPageElement):
     - A white/light rectangular box (detected via Drawing blocks)
     - A diagram showing the sub-assembly
     - An optional count indicating how many times to build it (e.g., "2x")
-    - An optional arrow pointing from the substep to the main diagram
+
+    Note: Arrows pointing from substeps to the main diagram are stored in the
+    parent Step element's arrows field.
 
     See layout diagram: lego_page_layout.png
     """
@@ -513,15 +515,11 @@ class SubStep(LegoPageElement):
     count: StepCount | None = None
     """Optional count indicating how many times to build this sub-assembly."""
 
-    arrow: Arrow | None = None
-    """Optional arrow pointing from this substep to the main diagram."""
-
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         count_str = f"count={self.count.count}x, " if self.count else ""
-        arrow_str = ", arrow" if self.arrow else ""
         diagram_str = "diagram" if self.diagram else "no diagram"
-        return f"SubStep({count_str}{diagram_str}{arrow_str})"
+        return f"SubStep({count_str}{diagram_str})"
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this SubStep and all child elements."""
@@ -530,11 +528,6 @@ class SubStep(LegoPageElement):
             yield from self.count.iter_elements()
         if self.diagram:
             yield from self.diagram.iter_elements()
-
-        # TODO We may want to move the Arrow to the Step, or reference it in
-        # both places. If we reference in both places, we should avoid double-yielding here.
-        if self.arrow:
-            yield from self.arrow.iter_elements()
 
 
 class Step(LegoPageElement):
@@ -557,12 +550,21 @@ class Step(LegoPageElement):
     rotation_symbol: RotationSymbol | None = None
     """Optional rotation symbol indicating the builder should rotate the model."""
 
+    arrows: list[Arrow] = Field(default_factory=list)
+    """Arrows indicating direction or relationship between elements.
+    
+    These typically point from substep callout boxes to the main diagram,
+    or indicate direction of motion/insertion for parts.
+    """
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         rotation_str = ", rotation" if self.rotation_symbol else ""
+        arrows_str = f", arrows={len(self.arrows)}" if self.arrows else ""
         parts_count = len(self.parts_list.parts) if self.parts_list else 0
         return (
-            f"Step(number={self.step_number.value}, parts={parts_count}{rotation_str})"
+            f"Step(number={self.step_number.value}, "
+            f"parts={parts_count}{rotation_str}{arrows_str})"
         )
 
     @property
@@ -580,6 +582,8 @@ class Step(LegoPageElement):
             yield from self.diagram.iter_elements()
         if self.rotation_symbol:
             yield from self.rotation_symbol.iter_elements()
+        for arrow in self.arrows:
+            yield from arrow.iter_elements()
 
 
 class Page(LegoPageElement):

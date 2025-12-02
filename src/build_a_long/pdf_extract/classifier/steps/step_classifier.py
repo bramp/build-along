@@ -38,6 +38,7 @@ from build_a_long.pdf_extract.classifier.text import (
 )
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    Arrow,
     Diagram,
     PartsList,
     RotationSymbol,
@@ -117,7 +118,9 @@ class StepClassifier(LabelClassifier):
     """Classifier for complete Step structures."""
 
     output = "step"
-    requires = frozenset({"step_number", "parts_list", "diagram", "rotation_symbol"})
+    requires = frozenset(
+        {"step_number", "parts_list", "diagram", "rotation_symbol", "substep"}
+    )
 
     def _score(self, result: ClassificationResult) -> None:
         """Score step pairings and create candidates."""
@@ -229,6 +232,9 @@ class StepClassifier(LabelClassifier):
         # Get rotation symbols near this step (if any)
         rotation_symbol = self._get_rotation_symbol_for_step(step_num, diagram, result)
 
+        # Get arrows for this step (from substeps and other sources)
+        arrows = self._get_arrows_for_step(step_num, diagram, result)
+
         # Build Step - clip bbox to page bounds
         page_bbox = result.page_data.bbox
         return Step(
@@ -237,6 +243,7 @@ class StepClassifier(LabelClassifier):
             parts_list=parts_list,
             diagram=diagram,
             rotation_symbol=rotation_symbol,
+            arrows=arrows,
         )
 
     def _find_replacement_diagram(
@@ -567,6 +574,79 @@ class StepClassifier(LabelClassifier):
 
         log.debug("[step] No rotation symbol found for step %d", step_num.value)
         return None
+
+    def _get_arrows_for_step(
+        self,
+        step_num: StepNumber,
+        diagram: Diagram | None,
+        result: ClassificationResult,
+    ) -> list[Arrow]:
+        """Find arrows associated with this step.
+
+        Looks for arrow candidates that are positioned near the step's diagram
+        or step number. Typically these are arrows pointing from substep
+        callout boxes to the main diagram.
+
+        Args:
+            step_num: The step number element
+            diagram: The diagram element (if any)
+            result: Classification result containing arrow candidates
+
+        Returns:
+            List of Arrow elements for this step
+        """
+        arrow_candidates = result.get_scored_candidates(
+            "arrow", valid_only=False, exclude_failed=True
+        )
+
+        log.debug(
+            "[step] Looking for arrows for step %d, found %d candidates",
+            step_num.value,
+            len(arrow_candidates),
+        )
+
+        if not arrow_candidates:
+            return []
+
+        # Determine search region: prefer diagram area, fallback to step area
+        search_bbox = diagram.bbox if diagram else step_num.bbox
+
+        # Expand search region to catch arrows near the diagram
+        # Use a larger margin than rotation symbols since arrows can extend further
+        search_region = BBox(
+            x0=search_bbox.x0 - 100,
+            y0=search_bbox.y0 - 100,
+            x1=search_bbox.x1 + 100,
+            y1=search_bbox.y1 + 100,
+        )
+
+        log.debug(
+            "[step] Arrow search region for step %d: %s",
+            step_num.value,
+            search_region,
+        )
+
+        # Find arrows within or overlapping the search region
+        arrows: list[Arrow] = []
+        for candidate in arrow_candidates:
+            overlaps = candidate.bbox.overlaps(search_region)
+            log.debug(
+                "[step]   Arrow candidate at %s, overlaps=%s, score=%.2f",
+                candidate.bbox,
+                overlaps,
+                candidate.score,
+            )
+            if overlaps:
+                arrow = result.build(candidate)
+                assert isinstance(arrow, Arrow)
+                arrows.append(arrow)
+
+        log.debug(
+            "[step] Found %d arrows for step %d",
+            len(arrows),
+            step_num.value,
+        )
+        return arrows
 
     def _compute_step_bbox(
         self,

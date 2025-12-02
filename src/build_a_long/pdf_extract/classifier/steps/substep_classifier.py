@@ -38,7 +38,6 @@ from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    Arrow,
     Diagram,
     StepCount,
     SubStep,
@@ -313,16 +312,11 @@ class SubStepClassifier(LabelClassifier):
             assert isinstance(diagram_elem, Diagram)
             diagram = diagram_elem
 
-        # Build arrow if present
-        arrow = None
-        if score_details.arrow_candidate:
-            arrow_elem = result.build(score_details.arrow_candidate)
-            assert isinstance(arrow_elem, Arrow)
-            arrow = arrow_elem
+        # Note: Arrow is no longer stored in SubStep; it's stored in the parent Step
+        # The arrow_candidate in score_details can be used by StepClassifier if needed
 
         return SubStep(
             bbox=candidate.bbox,
             diagram=diagram,
             count=count,
-            arrow=arrow,
         )

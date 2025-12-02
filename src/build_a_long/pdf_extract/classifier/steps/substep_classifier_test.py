@@ -215,7 +215,6 @@ class TestSubStepClassifier:
         assert substep.bbox == box_bbox
         assert substep.count is None  # No step_count candidate
         assert substep.diagram is None  # No diagram candidate
-        assert substep.arrow is None
 
 
 class TestFindCandidateInside:
