@@ -7,7 +7,6 @@ from build_a_long.pdf_extract.classifier import (
 )
 from build_a_long.pdf_extract.classifier.parts.part_count_classifier import (
     PartCountClassifier,
-    _PartCountScore,
 )
 from build_a_long.pdf_extract.classifier.parts.part_number_classifier import (
     PartNumberClassifier,
@@ -28,9 +27,9 @@ from build_a_long.pdf_extract.classifier.parts.piece_length_classifier import (
     PieceLengthClassifier,
     _PieceLengthScore,
 )
+from build_a_long.pdf_extract.classifier.rule_based_classifier import RuleScore
 from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
     StepNumberClassifier,
-    _StepNumberScore,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
@@ -73,12 +72,12 @@ class CandidateFactory:
 
     def add_part_count(self, block: Text, score: float = 1.0) -> Candidate:
         self._ensure_classifier_registered("part_count")
-        score_details = _PartCountScore(
-            text_score=score,
-            font_size_score=0.5,
-            config=self.config.part_count,
-            font_size_weight=self.config.part_count.font_size_weight,
-            matched_hint="catalog_part_count",
+        score_details = RuleScore(
+            components={
+                "text_score": score,
+                "font_size_score": 0.5,
+            },
+            total_score=score,
         )
         candidate = Candidate(
             bbox=block.bbox,
@@ -92,11 +91,12 @@ class CandidateFactory:
 
     def add_step_number(self, block: Text, score: float = 1.0) -> Candidate:
         self._ensure_classifier_registered("step_number")
-        score_details = _StepNumberScore(
-            text_score=score,
-            font_size_score=0.5,
-            config=self.config.step_number,
-            font_size_weight=self.config.step_number.font_size_weight,
+        score_details = RuleScore(
+            components={
+                "text_score": score,
+                "font_size_score": 0.5,
+            },
+            total_score=score,
         )
         candidate = Candidate(
             bbox=block.bbox,

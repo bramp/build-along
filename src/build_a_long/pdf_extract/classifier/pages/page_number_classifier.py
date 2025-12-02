@@ -3,22 +3,26 @@ Page number classifier.
 """
 
 import logging
-import math
-import re
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.config import PageNumberConfig
-from build_a_long.pdf_extract.classifier.label_classifier import (
-    LabelClassifier,
+from build_a_long.pdf_extract.classifier.rule_based_classifier import (
+    RuleBasedClassifier,
 )
-from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.classifier.rules import (
+    CornerDistanceScore,
+    FontSizeMatch,
+    InBottomBandFilter,
+    IsInstanceFilter,
+    PageNumberTextRule,
+    PageNumberValueMatch,
+    Rule,
+)
 from build_a_long.pdf_extract.classifier.text import (
     extract_page_number_value,
 )
-from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PageNumber,
 )
@@ -27,224 +31,60 @@ from build_a_long.pdf_extract.extractor.page_blocks import Text
 log = logging.getLogger(__name__)
 
 
-class _PageNumberScore(Score):
-    """Internal score representation for page number classification."""
-
-    text_score: float
-    """Score based on how well the text matches page number patterns (0.0-1.0)."""
-
-    position_score: float
-    """Score based on position in bottom corners of page (0.0-1.0)."""
-
-    page_value_score: float
-    """Score based on how well the text matches the expected page number
-    (0.0-1.0)."""
-
-    font_size_score: float
-    """Score based on font size match to expected page number size (0.0-1.0)."""
-
-    config: PageNumberConfig
-    """Page number configuration for dynamic score calculations."""
-
-    font_size_weight: float
-    """Weight to apply to font_size_score (may be 0.0 if no hints available)."""
-
-    # TODO Test this score is always between 0.0 and 1.0
-    def score(self) -> Weight:
-        """Calculate final weighted score from components."""
-        pn_config = self.config
-
-        # Sum the weighted components
-        score = (
-            pn_config.text_weight * self.text_score
-            + pn_config.position_weight * self.position_score
-            + pn_config.page_value_weight * self.page_value_score
-            + self.font_size_weight * self.font_size_score
-        )
-        # Normalize by the sum of weights to keep score in [0, 1]
-        total_weight = (
-            pn_config.text_weight
-            + pn_config.position_weight
-            + pn_config.page_value_weight
-            + self.font_size_weight
-        )
-        return score / total_weight if total_weight > 0 else 0.0
-
-
-class PageNumberClassifier(LabelClassifier):
+class PageNumberClassifier(RuleBasedClassifier):
     """Classifier for page numbers."""
 
     output = "page_number"
     requires = frozenset()
 
-    def _score(self, result: ClassificationResult) -> None:
-        """Score text blocks and create candidates.
+    @property
+    def min_score(self) -> float:
+        return self.config.page_number.min_score
 
-        This method iterates through all text blocks on the page and creates scores based
-        on text pattern, position, page value, font size.
-        """
-        page_data = result.page_data
-        page_bbox = page_data.bbox
-        assert page_bbox is not None
-
-        pn_config = self.config.page_number
-        # Determine font size weight based on whether hints are available
-        font_size_weight = pn_config.font_size_weight
-        if self.config.font_size_hints.page_number_size is None:
-            # No hint available, zero out the font size weight
-            font_size_weight = 0.0
-
-        for block in page_data.blocks:
-            # TODO Support non-text blocks - such as images of text.
-            if not isinstance(block, Text):
-                continue
-
-            # Score the block
-            text_score = self._score_page_number_text(block.text)
-            position_score = self._score_page_number_position(block, page_bbox)
-            page_value_score = self._score_page_number(
-                block.text, page_data.page_number
-            )
-            font_size_score = self._score_font_size(
-                block, self.config.font_size_hints.page_number_size
-            )
-
-            # Must be in the bottom band.
-            if position_score < 0.1:
-                log.debug(
-                    "[page_number] Skipping low-position-score candidate: text='%s' "
-                    "score=%.3f (below threshold %.3f)",
-                    block.text,
-                    position_score,
-                    0.1,
-                )
-                continue
-
-            # Create detailed score object
-            score = _PageNumberScore(
-                text_score=text_score,
-                position_score=position_score,
-                page_value_score=page_value_score,
-                font_size_score=font_size_score,
-                config=pn_config,
-                font_size_weight=font_size_weight,
-            )
-
-            combined = score.score()
-
-            # Skip candidates below minimum score threshold
-            if combined < self.config.page_number.min_score:
-                log.debug(
-                    "[page_number] Skipping low-score candidate: text='%s' "
-                    "score=%.3f (below threshold %.3f)",
-                    block.text,
-                    combined,
-                    self.config.page_number.min_score,
-                )
-                continue
-
-            # Create candidate
-            result.add_candidate(
-                Candidate(
-                    bbox=block.bbox,
-                    label="page_number",
-                    score=combined,
-                    score_details=score,
-                    source_blocks=[block],
-                ),
-            )
+    @property
+    def rules(self) -> list[Rule]:
+        config = self.config
+        return [
+            # Must be text
+            IsInstanceFilter(Text),
+            # Must be in bottom 10% of page (hard filter)
+            InBottomBandFilter(
+                threshold_ratio=0.1,
+                name="position_band",
+            ),
+            # Score based on text pattern (matches page number format)
+            PageNumberTextRule(
+                weight=config.page_number.text_weight, name="text_score"
+            ),
+            # Score based on proximity to bottom corners
+            CornerDistanceScore(
+                scale=config.page_number.position_scale,
+                weight=config.page_number.position_weight,
+                name="position_score",
+            ),
+            # Score based on matching the expected page number value
+            PageNumberValueMatch(
+                weight=config.page_number.page_value_weight, name="page_value_score"
+            ),
+            # Score based on font size hints
+            FontSizeMatch(
+                target_size=config.font_size_hints.page_number_size,
+                weight=config.page_number.font_size_weight,
+                name="font_size_score",
+            ),
+        ]
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> PageNumber:
-        """Construct a PageNumber element from a single candidate.
-
-        This method:
-        1. Extracts the text from the candidate's source block
-        2. Parses the page number value
-        3. Validates the extraction and score components
-        4. Returns a constructed PageNumber or raises ValueError
-
-        Args:
-            candidate: The winning candidate to construct
-            result: Classification result for context
-
-        Returns:
-            PageNumber: The constructed page number element
-
-        Raises:
-            ValueError: If construction fails (invalid text, parse error, etc.)
-        """
+        """Construct a PageNumber element from a single candidate."""
         # Get the source text block
         assert len(candidate.source_blocks) == 1
         block = candidate.source_blocks[0]
         assert isinstance(block, Text)
 
-        # Get score details for validation
-        score_details = candidate.score_details
-        assert isinstance(score_details, _PageNumberScore)
-
-        # Validate score components
-        if score_details.text_score == 0.0:
-            raise ValueError(f"Text doesn't match page number pattern: '{block.text}'")
-        if score_details.position_score == 0.0:
-            raise ValueError("Block not in bottom 10% of page")
-
         # Parse the page number value
         value = extract_page_number_value(block.text)
-        if value is None or value < 0:
+        if value is None:
             raise ValueError(f"Could not parse page number from text: '{block.text}'")
 
         # Successfully constructed
         return PageNumber(value=value, bbox=block.bbox)
-
-    def _score_page_number_text(self, text: str) -> float:
-        text = text.strip()
-        if re.match(r"^0+\d{1,3}$", text):
-            return 0.95
-        if re.match(r"^\d{1,3}$", text):
-            return 1.0
-        return 0.0
-
-    def _score_page_number(self, text: str, page_number: int) -> float:
-        """Score how well the text matches the expected page number."""
-
-        value = extract_page_number_value(text)
-        if value is None:
-            # Can't extract text.
-            return 0.0
-
-        # For every digit away from the expected page number,
-        # reduce score by 10%
-        diff = abs(value - page_number)
-        return max(0.0, 1.0 - 0.1 * diff)
-
-    def _is_in_bottom_band(self, element: Text, page_bbox: BBox) -> bool:
-        """Check if the element is in the bottom 10% of the page height."""
-        bottom_threshold = page_bbox.y1 - (page_bbox.height * 0.1)
-        element_center_y = (element.bbox.y0 + element.bbox.y1) / 2
-        return element_center_y >= bottom_threshold
-
-    def _calculate_position_score(self, element: Text, page_bbox: BBox) -> float:
-        """Calculate position score based on distance to bottom corners. Based
-        on exp(-min_distance_to_bottom_corners / scale)"""
-        element_center_x = (element.bbox.x0 + element.bbox.x1) / 2
-        element_center_y = (element.bbox.y0 + element.bbox.y1) / 2
-        dist_bottom_left = math.sqrt(
-            (element_center_x - page_bbox.x0) ** 2
-            + (element_center_y - page_bbox.y1) ** 2
-        )
-        dist_bottom_right = math.sqrt(
-            (element_center_x - page_bbox.x1) ** 2
-            + (element_center_y - page_bbox.y1) ** 2
-        )
-        min_dist = min(dist_bottom_left, dist_bottom_right)
-        return math.exp(-min_dist / self.config.page_number.position_scale)
-
-    def _score_page_number_position(self, element: Text, page_bbox: BBox) -> float:
-        # TODO Take the hint, and increase score if near expected position (of
-        # expected size).
-
-        if not self._is_in_bottom_band(element, page_bbox):
-            return 0.0
-
-        # TODO it might be simplier to check if in left or right band.
-        return self._calculate_position_score(element, page_bbox)

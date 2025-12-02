@@ -17,10 +17,16 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.label_classifier import (
-    LabelClassifier,
+from build_a_long.pdf_extract.classifier.rule_based_classifier import (
+    RuleBasedClassifier,
+    RuleScore,
 )
-from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.classifier.rules import (
+    FontSizeMatch,
+    IsInstanceFilter,
+    PartNumberTextRule,
+    Rule,
+)
 from build_a_long.pdf_extract.classifier.text import extract_element_id
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartNumber,
@@ -30,124 +36,35 @@ from build_a_long.pdf_extract.extractor.page_blocks import Text
 log = logging.getLogger(__name__)
 
 
-# Empirical distribution of element ID lengths (fraction of observed IDs)
-# Source: project-wide histogram
-LENGTH_DISTRIBUTION: dict[int, float] = {
-    4: 0.0002,
-    5: 0.0050,
-    6: 0.0498,
-    7: 0.9447,
-    8: 0.0003,
-}
-
-
-class _PartNumberScore(Score):
-    """Internal score representation for part number classification."""
-
-    text_score: float
-    """Score based on text matching pattern and length distribution (0.0-1.0).
-    
-    This combines binary pattern matching (valid element ID format) with the
-    empirical length distribution so uncommon lengths are down-weighted.
-    """
-
-    font_size_score: float
-    """Score based on font size match to expected catalog element ID size (0.0-1.0)."""
-
-    text_weight: float
-    """Weight to apply to text_score."""
-
-    font_size_weight: float
-    """Weight to apply to font_size_score."""
-
-    def score(self) -> Weight:
-        """Calculate final weighted score from components.
-
-        Combines text matching and font size matching with text weighted more heavily.
-        """
-        # Sum the weighted components
-        score = (
-            self.text_weight * self.text_score
-            + self.font_size_weight * self.font_size_score
-        )
-
-        # Normalize by the sum of weights to keep score in [0, 1]
-        total_weight = self.text_weight + self.font_size_weight
-        return score / total_weight if total_weight > 0 else 0.0
-
-
-class PartNumberClassifier(LabelClassifier):
+class PartNumberClassifier(RuleBasedClassifier):
     """Classifier for LEGO part numbers (element IDs)."""
 
     output = "part_number"
     requires = frozenset()
 
-    def _score(self, result: ClassificationResult) -> None:
-        """Score text blocks and create candidates."""
-        page_data = result.page_data
-        if not page_data.blocks:
-            return
+    @property
+    def min_score(self) -> float:
+        return self.config.part_number.min_score
 
-        # For part numbers, reuse the part-count weights
-        pc_config = self.config.part_count
-        text_weight = pc_config.text_weight
-        font_size_weight = pc_config.font_size_weight
-
-        # If catalog element ID hint is not available, zero out font weight
-        if self.config.font_size_hints.catalog_element_id_size is None:
-            font_size_weight = 0.0
-
-        for block in page_data.blocks:
-            if not isinstance(block, Text):
-                continue
-
-            # Try to extract element ID (which also validates the format)
-            element_id = extract_element_id(block.text)
-
-            # Score based on pattern match and length distribution
-            if element_id is not None:
-                num_digits = len(element_id)
-                # Base score (0.5) + distribution bonus (scaled to 0.0-0.5 range)
-                distribution_score = LENGTH_DISTRIBUTION.get(num_digits, 0.0)
-                text_score = 0.5 + (0.5 * distribution_score)
-            else:
-                text_score = 0.0
-
-            font_size_score = self._score_font_size(
-                block, self.config.font_size_hints.catalog_element_id_size
-            )
-
-            # Store detailed score object
-            detail_score = _PartNumberScore(
-                text_score=text_score,
-                font_size_score=font_size_score,
-                text_weight=text_weight,
-                font_size_weight=font_size_weight,
-            )
-
-            combined = detail_score.score()
-
-            # Skip candidates below minimum score threshold
-            if combined < self.config.part_number.min_score:
-                log.debug(
-                    "[part_number] Skipping low-score candidate: text='%s' "
-                    "score=%.3f (below threshold %.3f)",
-                    block.text,
-                    combined,
-                    self.config.part_number.min_score,
-                )
-                continue
-
-            # Create candidate
-            result.add_candidate(
-                Candidate(
-                    bbox=block.bbox,
-                    label="part_number",
-                    score=combined,
-                    score_details=detail_score,
-                    source_blocks=[block],
-                ),
-            )
+    @property
+    def rules(self) -> list[Rule]:
+        config = self.config
+        return [
+            # Must be text
+            IsInstanceFilter(Text),
+            # Score based on text pattern and length distribution
+            PartNumberTextRule(
+                weight=config.part_count.text_weight,  # Reuse PartCount weights
+                name="text_score",
+                required=True,
+            ),
+            # Score based on font size hints
+            FontSizeMatch(
+                target_size=config.font_size_hints.catalog_element_id_size,
+                weight=config.part_count.font_size_weight,  # Reuse PartCount weights
+                name="font_size_score",
+            ),
+        ]
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> PartNumber:
         """Construct a PartNumber element from a single candidate."""
@@ -155,6 +72,10 @@ class PartNumberClassifier(LabelClassifier):
         assert len(candidate.source_blocks) == 1
         block = candidate.source_blocks[0]
         assert isinstance(block, Text)
+
+        # Get score details
+        score_details = candidate.score_details
+        assert isinstance(score_details, RuleScore)
 
         # Extract and validate element ID
         element_id = extract_element_id(block.text)

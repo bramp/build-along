@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from build_a_long.pdf_extract.classifier.config import (
     ArrowConfig,
+    BagNumberConfig,
     NewBagConfig,
     PageNumberConfig,
     PartCountConfig,
@@ -57,6 +58,10 @@ class ClassifierConfig(BaseModel):
     # Arrow classifier settings
     arrow: ArrowConfig = Field(default_factory=ArrowConfig)
     """Configuration for arrow (arrowhead) classification."""
+
+    # Bag number classifier settings
+    bag_number: BagNumberConfig = Field(default_factory=BagNumberConfig)
+    """Configuration for bag number classification."""
 
     # NewBag classifier settings (for numberless bag detection)
     new_bag: NewBagConfig = Field(default_factory=NewBagConfig)

@@ -17,11 +17,17 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.config import PartCountConfig
-from build_a_long.pdf_extract.classifier.label_classifier import (
-    LabelClassifier,
+from build_a_long.pdf_extract.classifier.rule_based_classifier import (
+    RuleBasedClassifier,
+    RuleScore,
 )
-from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.classifier.rules import (
+    FontSizeMatch,
+    IsInstanceFilter,
+    MaxScoreRule,
+    PartCountTextRule,
+    Rule,
+)
 from build_a_long.pdf_extract.classifier.text import (
     extract_part_count_value,
 )
@@ -33,120 +39,47 @@ from build_a_long.pdf_extract.extractor.page_blocks import Text
 log = logging.getLogger(__name__)
 
 
-class _PartCountScore(Score):
-    """Internal score representation for part count classification."""
-
-    text_score: float
-    """Score based on how well the text matches part count patterns (0.0-1.0)."""
-
-    font_size_score: float
-    """Score based on font size match to expected part count size (0.0-1.0)."""
-
-    config: PartCountConfig
-    """Part count configuration for dynamic score calculations."""
-
-    font_size_weight: float
-    """Weight to apply to font_size_score (may be 0.0 if no hints available)."""
-
-    matched_hint: Literal["part_count", "catalog_part_count"] | None = None
-    """Which font size hint matched best ('part_count' or 'catalog_part_count')."""
-
-    def score(self) -> Weight:
-        """Calculate final weighted score from components.
-
-        Combines text matching and font size matching with text weighted more heavily.
-        """
-        # Sum the weighted components
-        score = (
-            self.config.text_weight * self.text_score
-            + self.font_size_weight * self.font_size_score
-        )
-        # Normalize by the sum of weights to keep score in [0, 1]
-        total_weight = self.config.text_weight + self.font_size_weight
-        return score / total_weight if total_weight > 0 else 0.0
-
-
-class PartCountClassifier(LabelClassifier):
+class PartCountClassifier(RuleBasedClassifier):
     """Classifier for part counts."""
 
     output = "part_count"
     requires = frozenset()
 
-    def _score(self, result: ClassificationResult) -> None:
-        """Score text blocks and create candidates"""
-        page_data = result.page_data
-        if not page_data.blocks:
-            return
+    @property
+    def min_score(self) -> float:
+        return self.config.part_count.min_score
 
-        pc_config = self.config.part_count
-        # Determine font size weight based on whether hints are available
-        font_size_weight = pc_config.font_size_weight
-
-        # If neither instruction nor catalog hints are available, zero out weight
-        hints = self.config.font_size_hints
-        if hints.part_count_size is None and hints.catalog_part_count_size is None:
-            font_size_weight = 0.0
-
-        for block in page_data.blocks:
-            if not isinstance(block, Text):
-                continue
-
-            # Try matching against both instruction and catalog part count font sizes
-            text_score = self._score_part_count_text(block.text)
-
-            # Score against instruction part count size
-            instruction_font_score = self._score_font_size(
-                block, self.config.font_size_hints.part_count_size
-            )
-
-            # Score against catalog part count size
-            catalog_font_score = self._score_font_size(
-                block, self.config.font_size_hints.catalog_part_count_size
-            )
-
-            # Use the better matching font size
-            font_size_score = max(instruction_font_score, catalog_font_score)
-
-            # Determine which hint matched best
-            matched_hint = None
-            if font_size_score > 0:
-                if instruction_font_score > catalog_font_score:
-                    matched_hint = "part_count"
-                else:
-                    matched_hint = "catalog_part_count"
-
-            # Store detailed score object with matched_hint
-            detail_score = _PartCountScore(
-                text_score=text_score,
-                font_size_score=font_size_score,
-                config=pc_config,
-                font_size_weight=font_size_weight,
-                matched_hint=matched_hint,
-            )
-
-            combined = detail_score.score()
-
-            # Skip candidates below minimum score threshold
-            if combined < self.config.part_count.min_score:
-                log.debug(
-                    "[part_count] Skipping low-score candidate: text='%s' "
-                    "score=%.3f (below threshold %.3f)",
-                    block.text,
-                    combined,
-                    self.config.part_count.min_score,
-                )
-                continue
-
-            # Create candidate
-            result.add_candidate(
-                Candidate(
-                    bbox=block.bbox,
-                    label="part_count",
-                    score=combined,
-                    score_details=detail_score,
-                    source_blocks=[block],
-                ),
-            )
+    @property
+    def rules(self) -> list[Rule]:
+        config = self.config
+        return [
+            # Must be text
+            IsInstanceFilter(Text),
+            # Score based on text pattern (matches "2x" etc)
+            PartCountTextRule(
+                weight=config.part_count.text_weight,
+                name="text_score",
+                required=True,
+            ),
+            # Score based on matching EITHER instruction or catalog font size
+            # Takes the maximum score of the two
+            MaxScoreRule(
+                rules=[
+                    FontSizeMatch(
+                        target_size=config.font_size_hints.part_count_size,
+                        name="instruction_font_size",
+                        weight=1.0,  # Weight handled by MaxScoreRule
+                    ),
+                    FontSizeMatch(
+                        target_size=config.font_size_hints.catalog_part_count_size,
+                        name="catalog_font_size",
+                        weight=1.0,  # Weight handled by MaxScoreRule
+                    ),
+                ],
+                weight=config.part_count.font_size_weight,
+                name="font_size_score",
+            ),
+        ]
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> PartCount:
         """Construct a PartCount element from a single candidate."""
@@ -156,31 +89,43 @@ class PartCountClassifier(LabelClassifier):
         assert isinstance(block, Text)
 
         # Get score details
-        detail_score = candidate.score_details
-        assert isinstance(detail_score, _PartCountScore)
-
-        # Validate text score
-        if detail_score.text_score == 0.0:
-            raise ValueError(f"Text doesn't match part count pattern: '{block.text}'")
+        score_details = candidate.score_details
+        assert isinstance(score_details, RuleScore)
 
         # Parse the part count value
         value = extract_part_count_value(block.text)
         if value is None:
             raise ValueError(f"Could not parse part count from text: '{block.text}'")
 
+        # Determine matched hint
+        # This logic was previously in _score, but can be re-evaluated here
+        matched_hint: Literal["part_count", "catalog_part_count"] | None = None
+
+        # Re-calculate font matches to know which one won
+        # Note: This duplicates the calculation in MaxScoreRule but avoids
+        # complex plumbing to get metadata out of the rule engine.
+        # Given it's just a float comparison, it's cheap.
+
+        instruction_size = self.config.font_size_hints.part_count_size
+        catalog_size = self.config.font_size_hints.catalog_part_count_size
+
+        instruction_score = 0.0
+        if instruction_size is not None and block.font_size is not None:
+            # Use same logic as FontSizeMatch
+            diff = abs(block.font_size - instruction_size) / instruction_size
+            instruction_score = max(0.0, 1.0 - (diff * 2.0))
+
+        catalog_score = 0.0
+        if catalog_size is not None and block.font_size is not None:
+            diff = abs(block.font_size - catalog_size) / catalog_size
+            catalog_score = max(0.0, 1.0 - (diff * 2.0))
+
+        # Only set matched_hint if we had a decent match
+        if max(instruction_score, catalog_score) > 0:
+            if instruction_score > catalog_score:
+                matched_hint = "part_count"
+            else:
+                matched_hint = "catalog_part_count"
+
         # Successfully constructed
-        return PartCount(
-            count=value, bbox=block.bbox, matched_hint=detail_score.matched_hint
-        )
-
-    def _score_part_count_text(self, text: str) -> float:
-        """Score text based on how well it matches part count patterns.
-
-        Returns:
-            1.0 if text matches part count pattern, 0.0 otherwise
-        """
-        # Use the extraction function to validate format
-        if extract_part_count_value(text) is not None:
-            return 1.0
-
-        return 0.0
+        return PartCount(count=value, bbox=block.bbox, matched_hint=matched_hint)

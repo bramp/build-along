@@ -24,6 +24,7 @@ import logging
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
+    CandidateFailedError,
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
@@ -642,9 +643,18 @@ class StepClassifier(LabelClassifier):
                 candidate.score,
             )
             if overlaps:
-                arrow = result.build(candidate)
-                assert isinstance(arrow, Arrow)
-                arrows.append(arrow)
+                try:
+                    arrow = result.build(candidate)
+                    assert isinstance(arrow, Arrow)
+                    arrows.append(arrow)
+                except CandidateFailedError:
+                    # Arrow lost conflict to another arrow (they share source blocks)
+                    # This is expected when multiple arrows overlap - skip it
+                    log.debug(
+                        "[step]   Arrow candidate at %s failed (conflict), skipping",
+                        candidate.bbox,
+                    )
+                    continue
 
         log.debug(
             "[step] Found %d arrows for step %d",
