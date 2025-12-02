@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
-from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Text
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classification_result import (
@@ -26,15 +26,22 @@ logger = logging.getLogger(__name__)
 def filter_duplicate_blocks(
     blocks: Sequence[Blocks],
 ) -> tuple[list[Blocks], dict[Blocks, RemovalReason]]:
-    """Filter out duplicate/similar blocks, keeping the largest one from each group.
+    """Filter out duplicate blocks, keeping one from each group of true duplicates.
 
     Pages often contain multiple overlapping blocks at similar positions to create
-    visual effects like drop shadows. This function identifies groups of similar
-    blocks based on their IOU (Intersection over Union) and keeps only the largest
-    one from each group.
+    visual effects like drop shadows. This function identifies groups of blocks
+    that are both spatially similar (high IOU) AND have the same visual properties
+    (same text, same fill/stroke colors).
 
-    Two blocks are considered similar if they have high IOU (≥0.8), indicating
-    significant overlap.
+    Two blocks are considered duplicates if they:
+    1. Have high IOU (≥0.9), indicating significant overlap
+    2. Have the same visual content:
+       - For Text blocks: same text content
+       - For Drawing blocks: same fill and stroke colors
+
+    Blocks with different visual properties (e.g., a white-filled box vs a
+    black-bordered box at similar positions) are NOT considered duplicates
+    and both will be kept.
 
     Args:
         blocks: List of blocks to filter.
@@ -49,11 +56,34 @@ def filter_duplicate_blocks(
 
     IOU_THRESHOLD = 0.9
 
-    # Helper function to check if two blocks are similar based on IOU
-    def are_similar(block_i: Blocks, block_j: Blocks) -> bool:
-        return block_i.bbox.iou(block_j.bbox) >= IOU_THRESHOLD
+    def are_visually_same(block_i: Blocks, block_j: Blocks) -> bool:
+        """Check if two blocks have the same visual properties."""
+        # Must be the same type
+        if type(block_i) is not type(block_j):
+            return False
 
-    # Union-find data structure for grouping similar blocks
+        if isinstance(block_i, Text) and isinstance(block_j, Text):
+            # Text blocks: same text content
+            return block_i.text == block_j.text
+
+        if isinstance(block_i, Drawing) and isinstance(block_j, Drawing):
+            # Drawing blocks: same fill and stroke colors
+            return (
+                block_i.fill_color == block_j.fill_color
+                and block_i.stroke_color == block_j.stroke_color
+            )
+
+        # For other block types (e.g., Image), consider them the same
+        # if they're the same type (already checked above)
+        return True
+
+    def are_duplicates(block_i: Blocks, block_j: Blocks) -> bool:
+        """Check if two blocks are duplicates (similar bbox AND same visual content)."""
+        if block_i.bbox.iou(block_j.bbox) < IOU_THRESHOLD:
+            return False
+        return are_visually_same(block_i, block_j)
+
+    # Union-find data structure for grouping duplicate blocks
     n = len(blocks)
     parent = list(range(n))
 
@@ -71,7 +101,7 @@ def filter_duplicate_blocks(
     # Compare all pairs of blocks (O(n²))
     for i in range(n):
         for j in range(i + 1, n):
-            if are_similar(blocks[i], blocks[j]):
+            if are_duplicates(blocks[i], blocks[j]):
                 union(i, j)
 
     # Group blocks by their root parent
@@ -88,13 +118,13 @@ def filter_duplicate_blocks(
 
     for group_indices in groups.values():
         # Find the block with the largest area in this group
-        largest_idx = max(group_indices, key=lambda idx: blocks[idx].bbox.area)
-        result_indices.append(largest_idx)
+        best_idx = max(group_indices, key=lambda idx: blocks[idx].bbox.area)
+        result_indices.append(best_idx)
 
         # Map all other blocks in the group to the kept block
-        kept_block = blocks[largest_idx]
+        kept_block = blocks[best_idx]
         for idx in group_indices:
-            if idx != largest_idx:
+            if idx != best_idx:
                 removed_mapping[blocks[idx]] = RemovalReason(
                     reason_type="duplicate_bbox", target_block=kept_block
                 )

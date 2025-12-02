@@ -14,7 +14,7 @@ from build_a_long.pdf_extract.classifier.config import (
     RotationSymbolConfig,
     StepCountConfig,
     StepNumberConfig,
-    SubStepConfig,
+    SubAssemblyConfig,
 )
 from build_a_long.pdf_extract.classifier.pages.page_hint_collection import (
     PageHintCollection,
@@ -66,9 +66,9 @@ class ClassifierConfig(BaseModel):
     step_count: StepCountConfig = Field(default_factory=StepCountConfig)
     """Configuration for step count classification."""
 
-    # SubStep classifier settings
-    substep: SubStepConfig = Field(default_factory=SubStepConfig)
-    """Configuration for substep classification."""
+    # SubAssembly classifier settings
+    subassembly: SubAssemblyConfig = Field(default_factory=SubAssemblyConfig)
+    """Configuration for subassembly classification."""
 
     font_size_hints: FontSizeHints = Field(default_factory=FontSizeHints.empty)
     """Font size hints derived from analyzing all pages"""

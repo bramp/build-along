@@ -177,34 +177,47 @@ class TestFilterDuplicateBlocks:
         assert any(b.id == 3 for b in kept)
 
     def test_center_proximity_duplicates(self) -> None:
-        """Test blocks with similar centers and areas - keep largest."""
-        # Create blocks with very close centers and similar areas
-        # These use the center proximity + area similarity check
+        """Test blocks with similar centers and same text are duplicates."""
+        # Create blocks with very close centers, similar areas, and SAME text
+        # Only blocks with same visual content should be considered duplicates
         blocks: list[Text] = [
             # center (15, 15), area 100
             Text(id=1, bbox=BBox(10, 10, 20, 20), text="A"),
-            # center (15.06, 15.06), area 100 - very close center
-            Text(id=2, bbox=BBox(10.06, 10.06, 20.06, 20.06), text="B"),
-            # center (15.5, 15.5), area 121 (largest)
-            Text(id=3, bbox=BBox(10, 10, 21, 21), text="C"),
+            # center (15.06, 15.06), area 100 - very close center, same text
+            Text(id=2, bbox=BBox(10.06, 10.06, 20.06, 20.06), text="A"),
+            # center (15.5, 15.5), area 121 (largest), same text
+            Text(id=3, bbox=BBox(10, 10, 21, 21), text="A"),
         ]
         kept, removed = filter_duplicate_blocks(blocks)
-        # Should filter via center proximity since centers are very close
+        # Should filter because they have same text and high IOU
         assert len(kept) < len(blocks)
         # Largest should be kept
         assert any(b.id == 3 for b in kept)
 
+    def test_different_text_not_duplicates(self) -> None:
+        """Test blocks with similar positions but different text are NOT duplicates."""
+        # Blocks with overlapping positions but different text content
+        blocks: list[Text] = [
+            Text(id=1, bbox=BBox(10, 10, 20, 20), text="A"),
+            Text(id=2, bbox=BBox(10.06, 10.06, 20.06, 20.06), text="B"),
+            Text(id=3, bbox=BBox(10, 10, 21, 21), text="C"),
+        ]
+        kept, removed = filter_duplicate_blocks(blocks)
+        # All should be kept because they have different text
+        assert len(kept) == len(blocks)
+        assert len(removed) == 0
+
     def test_mixed_types_preserved(self) -> None:
-        """Test that different block types are handled correctly."""
+        """Test that different block types are not considered duplicates."""
         blocks = [
             Text(id=1, bbox=BBox(10, 10, 20, 20), text="A"),
-            Drawing(id=2, bbox=BBox(11, 11, 21, 21)),  # Similar to id=1
+            Drawing(id=2, bbox=BBox(11, 11, 21, 21)),  # Similar bbox to id=1
             Image(id=3, bbox=BBox(50, 50, 60, 60)),
         ]
         kept, removed = filter_duplicate_blocks(blocks)
-        # Text and Drawing can be similar and filtered
-        # Image should be preserved as it's not similar to others
-        assert any(b.id == 3 for b in kept)  # Image should be kept
+        # All should be kept - different types are not duplicates
+        assert len(kept) == 3
+        assert len(removed) == 0
 
     def test_drop_shadow_scenario(self) -> None:
         """Test realistic drop shadow scenario - multiple overlapping blocks."""

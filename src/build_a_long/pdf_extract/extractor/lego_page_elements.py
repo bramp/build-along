@@ -472,27 +472,16 @@ class Diagram(LegoPageElement):
 
     tag: Literal["Diagram"] = Field(default="Diagram", alias="__tag__", frozen=True)
 
-    # TODO Figure out where arrows fit in the hierarchy
-    arrows: list[Arrow] = Field(default_factory=list)
-    """Direction arrows indicating piece movement within the diagram."""
-
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        arrows_str = f", arrows={len(self.arrows)}" if self.arrows else ""
-        return f"Diagram(bbox={str(self.bbox)}{arrows_str})"
-
-    def iter_elements(self) -> Iterator[LegoPageElement]:
-        """Iterate over this Diagram and all child elements (arrows)."""
-        yield self
-        for arrow in self.arrows:
-            yield from arrow.iter_elements()
+        return f"Diagram(bbox={str(self.bbox)})"
 
 
-class SubStep(LegoPageElement):
-    """A sub-step within a main step, typically shown in a callout box.
+class SubAssembly(LegoPageElement):
+    """A sub-assembly within a main step, typically shown in a callout box.
 
-    Positional context: SubSteps appear as white/light-colored rectangular boxes
-    with arrows pointing from them to the main diagram. They show smaller
+    Positional context: SubAssemblies appear as white/light-colored rectangular
+    boxes with arrows pointing from them to the main diagram. They show smaller
     sub-assemblies that may need to be built multiple times (indicated by a count
     like "2x") before being attached to the main assembly.
 
@@ -501,13 +490,15 @@ class SubStep(LegoPageElement):
     - A diagram showing the sub-assembly
     - An optional count indicating how many times to build it (e.g., "2x")
 
-    Note: Arrows pointing from substeps to the main diagram are stored in the
-    parent Step element's arrows field.
+    Note: Arrows pointing from subassemblies to the main diagram are stored in
+    the parent Step element's arrows field.
 
     See layout diagram: lego_page_layout.png
     """
 
-    tag: Literal["SubStep"] = Field(default="SubStep", alias="__tag__", frozen=True)
+    tag: Literal["SubAssembly"] = Field(
+        default="SubAssembly", alias="__tag__", frozen=True
+    )
 
     diagram: Diagram | None = None
     """The diagram showing the sub-assembly."""
@@ -519,10 +510,10 @@ class SubStep(LegoPageElement):
         """Return a single-line string representation with key information."""
         count_str = f"count={self.count.count}x, " if self.count else ""
         diagram_str = "diagram" if self.diagram else "no diagram"
-        return f"SubStep({count_str}{diagram_str})"
+        return f"SubAssembly({count_str}{diagram_str})"
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
-        """Iterate over this SubStep and all child elements."""
+        """Iterate over this SubAssembly and all child elements."""
         yield self
         if self.count:
             yield from self.count.iter_elements()
@@ -553,18 +544,28 @@ class Step(LegoPageElement):
     arrows: list[Arrow] = Field(default_factory=list)
     """Arrows indicating direction or relationship between elements.
     
-    These typically point from substep callout boxes to the main diagram,
+    These typically point from subassembly callout boxes to the main diagram,
     or indicate direction of motion/insertion for parts.
+    """
+
+    subassemblies: list[SubAssembly] = Field(default_factory=list)
+    """Sub-assemblies shown in callout boxes within this step.
+    
+    SubAssemblies show smaller sub-assemblies that may need to be built
+    multiple times before being attached to the main assembly.
     """
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         rotation_str = ", rotation" if self.rotation_symbol else ""
         arrows_str = f", arrows={len(self.arrows)}" if self.arrows else ""
+        subassemblies_str = (
+            f", subassemblies={len(self.subassemblies)}" if self.subassemblies else ""
+        )
         parts_count = len(self.parts_list.parts) if self.parts_list else 0
         return (
             f"Step(number={self.step_number.value}, "
-            f"parts={parts_count}{rotation_str}{arrows_str})"
+            f"parts={parts_count}{rotation_str}{arrows_str}{subassemblies_str})"
         )
 
     @property
@@ -584,6 +585,8 @@ class Step(LegoPageElement):
             yield from self.rotation_symbol.iter_elements()
         for arrow in self.arrows:
             yield from arrow.iter_elements()
+        for subassembly in self.subassemblies:
+            yield from subassembly.iter_elements()
 
 
 class Page(LegoPageElement):
@@ -710,7 +713,7 @@ LegoPageElements = Annotated[
     | BagNumber
     | NewBag
     | Diagram
-    | SubStep
+    | SubAssembly
     | Step
     | Page,
     Discriminator("tag"),

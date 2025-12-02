@@ -1,9 +1,10 @@
 """
-SubStep classifier.
+SubAssembly classifier.
 
 Purpose
 -------
-Identify sub-step callout boxes on LEGO instruction pages. SubSteps typically:
+Identify sub-assembly callout boxes on LEGO instruction pages. SubAssemblies
+typically:
 - Are white/light-colored rectangular boxes
 - Contain a count label (e.g., "2x") indicating how many to build
 - Contain a small diagram/image of the sub-assembly
@@ -11,7 +12,7 @@ Identify sub-step callout boxes on LEGO instruction pages. SubSteps typically:
 
 Heuristic
 ---------
-1. Find Drawing blocks that form rectangular boxes (potential substep containers)
+1. Find Drawing blocks that form rectangular boxes (potential subassembly containers)
 2. Look for step_count candidates inside the boxes
 3. Look for diagram candidates inside the boxes
 4. Optionally find arrows near the boxes
@@ -33,22 +34,22 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.config import SubStepConfig
+from build_a_long.pdf_extract.classifier.config import SubAssemblyConfig
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
     StepCount,
-    SubStep,
+    SubAssembly,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 log = logging.getLogger(__name__)
 
 
-class _SubStepScore(Score):
-    """Internal score representation for substep classification."""
+class _SubAssemblyScore(Score):
+    """Internal score representation for subassembly classification."""
 
     box_score: float
     """Score based on box having white fill / black border (0.0-1.0)."""
@@ -66,9 +67,9 @@ class _SubStepScore(Score):
     """The diagram candidate found inside the box."""
 
     arrow_candidate: Candidate | None
-    """Arrow candidate pointing from/near this substep."""
+    """Arrow candidate pointing from/near this subassembly."""
 
-    config: SubStepConfig
+    config: SubAssemblyConfig
     """Configuration containing weights for score calculation."""
 
     def score(self) -> Weight:
@@ -80,16 +81,16 @@ class _SubStepScore(Score):
         )
 
 
-class SubStepClassifier(LabelClassifier):
-    """Classifier for substep callout boxes."""
+class SubAssemblyClassifier(LabelClassifier):
+    """Classifier for subassembly callout boxes."""
 
-    output: ClassVar[str] = "substep"
+    output: ClassVar[str] = "subassembly"
     requires: ClassVar[frozenset[str]] = frozenset({"arrow", "step_count", "diagram"})
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score Drawing blocks as potential substep boxes."""
+        """Score Drawing blocks as potential subassembly boxes."""
         page_data = result.page_data
-        substep_config = self.config.substep
+        subassembly_config = self.config.subassembly
 
         # Get step_count, diagram, and arrow candidates
         step_count_candidates = result.get_scored_candidates(
@@ -102,12 +103,33 @@ class SubStepClassifier(LabelClassifier):
             "arrow", valid_only=False, exclude_failed=True
         )
 
-        # Find rectangular drawing blocks that could be substep boxes
+        # Collect all potential candidates, then deduplicate by bbox
+        # Multiple Drawing blocks can have nearly identical bboxes (e.g.,
+        # white-filled box and black-bordered box for the same subassembly)
+        found_bboxes: list[BBox] = []
+
+        # Find rectangular drawing blocks that could be subassembly boxes
         for block in page_data.blocks:
             if not isinstance(block, Drawing):
                 continue
 
             bbox = block.bbox
+
+            # Skip boxes smaller than minimum subassembly size
+            # (subassemblies must be larger than individual parts)
+            if (
+                bbox.width < subassembly_config.min_subassembly_width
+                or bbox.height < subassembly_config.min_subassembly_height
+            ):
+                continue
+
+            # Skip if we've already found a similar bbox
+            if any(self._bboxes_similar(bbox, found, 2.0) for found in found_bboxes):
+                log.debug(
+                    "[subassembly] Skipping duplicate bbox at %s",
+                    bbox,
+                )
+                continue
 
             # Score the box colors (white fill, black border)
             box_score = self._score_box_colors(block)
@@ -125,39 +147,42 @@ class SubStepClassifier(LabelClassifier):
             diagram_score = 1.0 if diagram_candidate else 0.0
 
             # Find nearby arrow
-            arrow_candidate = self._find_arrow_for_substep(bbox, arrow_candidates)
+            arrow_candidate = self._find_arrow_for_subassembly(bbox, arrow_candidates)
 
             # We need at least a box - count and diagram are optional
-            score_details = _SubStepScore(
+            score_details = _SubAssemblyScore(
                 box_score=box_score,
                 count_score=count_score,
                 diagram_score=diagram_score,
                 step_count_candidate=step_count_candidate,
                 diagram_candidate=diagram_candidate,
                 arrow_candidate=arrow_candidate,
-                config=substep_config,
+                config=subassembly_config,
             )
 
-            if score_details.score() < substep_config.min_score:
+            if score_details.score() < subassembly_config.min_score:
                 log.debug(
-                    "[substep] Rejected box at %s: score=%.2f < min_score=%.2f",
+                    "[subassembly] Rejected box at %s: score=%.2f < min_score=%.2f",
                     bbox,
                     score_details.score(),
-                    substep_config.min_score,
+                    subassembly_config.min_score,
                 )
                 continue
+
+            # Track this bbox to avoid duplicates
+            found_bboxes.append(bbox)
 
             result.add_candidate(
                 Candidate(
                     bbox=bbox,
-                    label="substep",
+                    label="subassembly",
                     score=score_details.score(),
                     score_details=score_details,
                     source_blocks=[block],
                 )
             )
             log.debug(
-                "[substep] Candidate at %s: has_count=%s, has_diagram=%s, score=%.2f",
+                "[subassembly] Candidate at %s: has_count=%s, has_diagram=%s, score=%.2f",
                 bbox,
                 step_count_candidate is not None,
                 diagram_candidate is not None,
@@ -165,47 +190,46 @@ class SubStepClassifier(LabelClassifier):
             )
 
     def _score_box_colors(self, block: Drawing) -> float:
-        """Score a drawing block based on having white fill and/or black border.
+        """Score a drawing block based on having white fill.
 
-        Substep boxes typically have:
-        - White or light fill color
-        - Black or dark stroke/border color
+        SubAssembly boxes typically have a white or light fill color.
+        The outer black border boxes can be matched separately later.
 
         Args:
             block: The Drawing block to analyze
 
         Returns:
-            Score from 0.0 to 1.0 where 1.0 is white fill with black border
+            Score from 0.0 to 1.0 where 1.0 is white fill
         """
-        score = 0.0
-
         # Check fill color (white or light = good)
         if block.fill_color is not None:
             r, g, b = block.fill_color
             # Check if it's white or very light (all channels > 0.9)
             if r > 0.9 and g > 0.9 and b > 0.9:
-                score += 0.5
+                return 1.0
             # Light gray is also acceptable
-            elif r > 0.7 and g > 0.7 and b > 0.7:
-                score += 0.3
+            if r > 0.7 and g > 0.7 and b > 0.7:
+                return 0.6
 
-        # Check stroke color (black or dark = good)
-        if block.stroke_color is not None:
-            r, g, b = block.stroke_color
-            # Check if it's black or very dark (all channels < 0.2)
-            if r < 0.2 and g < 0.2 and b < 0.2:
-                score += 0.5
-            # Dark gray is also acceptable
-            elif r < 0.4 and g < 0.4 and b < 0.4:
-                score += 0.3
+        return 0.0
 
-        # If no fill but has black stroke, still decent
-        if block.fill_color is None and block.stroke_color is not None:
-            r, g, b = block.stroke_color
-            if r < 0.2 and g < 0.2 and b < 0.2:
-                score = 0.4
+    def _bboxes_similar(self, a: BBox, b: BBox, tolerance: float) -> bool:
+        """Check if two bboxes are nearly identical within tolerance.
 
-        return min(score, 1.0)
+        Args:
+            a: First bounding box
+            b: Second bounding box
+            tolerance: Maximum difference allowed for each coordinate
+
+        Returns:
+            True if bboxes are within tolerance of each other
+        """
+        return (
+            abs(a.x0 - b.x0) <= tolerance
+            and abs(a.y0 - b.y0) <= tolerance
+            and abs(a.x1 - b.x1) <= tolerance
+            and abs(a.y1 - b.y1) <= tolerance
+        )
 
     def _find_candidate_inside(
         self, bbox: BBox, candidates: list[Candidate]
@@ -213,7 +237,7 @@ class SubStepClassifier(LabelClassifier):
         """Find the best candidate that is fully inside the given box.
 
         Args:
-            bbox: The bounding box of the substep container
+            bbox: The bounding box of the subassembly container
             candidates: Candidates to search
 
         Returns:
@@ -235,7 +259,7 @@ class SubStepClassifier(LabelClassifier):
         """Find the best diagram candidate that overlaps with the box.
 
         Args:
-            bbox: The bounding box of the substep container
+            bbox: The bounding box of the subassembly container
             diagram_candidates: Diagram candidates to search
 
         Returns:
@@ -256,17 +280,17 @@ class SubStepClassifier(LabelClassifier):
 
         return best_candidate
 
-    def _find_arrow_for_substep(
+    def _find_arrow_for_subassembly(
         self, bbox: BBox, arrow_candidates: list[Candidate]
     ) -> Candidate | None:
-        """Find an arrow that points from/near this substep box.
+        """Find an arrow that points from/near this subassembly box.
 
         Looks for arrows that are either:
         - Inside the box
         - Adjacent to the box (within a small margin)
 
         Args:
-            bbox: The bounding box of the substep container
+            bbox: The bounding box of the subassembly container
             arrow_candidates: All arrow candidates on the page
 
         Returns:
@@ -293,10 +317,10 @@ class SubStepClassifier(LabelClassifier):
 
         return best_arrow
 
-    def build(self, candidate: Candidate, result: ClassificationResult) -> SubStep:
-        """Construct a SubStep element from a candidate."""
+    def build(self, candidate: Candidate, result: ClassificationResult) -> SubAssembly:
+        """Construct a SubAssembly element from a candidate."""
         score_details = candidate.score_details
-        assert isinstance(score_details, _SubStepScore)
+        assert isinstance(score_details, _SubAssemblyScore)
 
         # Build the step_count element if present
         count = None
@@ -312,10 +336,7 @@ class SubStepClassifier(LabelClassifier):
             assert isinstance(diagram_elem, Diagram)
             diagram = diagram_elem
 
-        # Note: Arrow is no longer stored in SubStep; it's stored in the parent Step
-        # The arrow_candidate in score_details can be used by StepClassifier if needed
-
-        return SubStep(
+        return SubAssembly(
             bbox=candidate.bbox,
             diagram=diagram,
             count=count,

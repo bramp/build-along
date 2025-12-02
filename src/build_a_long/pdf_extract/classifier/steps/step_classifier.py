@@ -44,6 +44,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     RotationSymbol,
     Step,
     StepNumber,
+    SubAssembly,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
@@ -119,7 +120,7 @@ class StepClassifier(LabelClassifier):
 
     output = "step"
     requires = frozenset(
-        {"step_number", "parts_list", "diagram", "rotation_symbol", "substep"}
+        {"step_number", "parts_list", "diagram", "rotation_symbol", "subassembly"}
     )
 
     def _score(self, result: ClassificationResult) -> None:
@@ -232,8 +233,11 @@ class StepClassifier(LabelClassifier):
         # Get rotation symbols near this step (if any)
         rotation_symbol = self._get_rotation_symbol_for_step(step_num, diagram, result)
 
-        # Get arrows for this step (from substeps and other sources)
+        # Get arrows for this step (from subassemblies and other sources)
         arrows = self._get_arrows_for_step(step_num, diagram, result)
+
+        # Get subassemblies for this step
+        subassemblies = self._get_subassemblies_for_step(step_num, diagram, result)
 
         # Build Step - clip bbox to page bounds
         page_bbox = result.page_data.bbox
@@ -244,6 +248,7 @@ class StepClassifier(LabelClassifier):
             diagram=diagram,
             rotation_symbol=rotation_symbol,
             arrows=arrows,
+            subassemblies=subassemblies,
         )
 
     def _find_replacement_diagram(
@@ -584,7 +589,7 @@ class StepClassifier(LabelClassifier):
         """Find arrows associated with this step.
 
         Looks for arrow candidates that are positioned near the step's diagram
-        or step number. Typically these are arrows pointing from substep
+        or step number. Typically these are arrows pointing from subassembly
         callout boxes to the main diagram.
 
         Args:
@@ -647,6 +652,88 @@ class StepClassifier(LabelClassifier):
             step_num.value,
         )
         return arrows
+
+    def _get_subassemblies_for_step(
+        self,
+        step_num: StepNumber,
+        diagram: Diagram | None,
+        result: ClassificationResult,
+    ) -> list[SubAssembly]:
+        """Find subassemblies associated with this step.
+
+        Looks for subassembly candidates that are positioned near the step's
+        diagram or step number. SubAssemblies are callout boxes showing
+        sub-assemblies.
+
+        Args:
+            step_num: The step number element
+            diagram: The diagram element (if any)
+            result: Classification result containing subassembly candidates
+
+        Returns:
+            List of SubAssembly elements for this step
+        """
+        subassembly_candidates = result.get_scored_candidates(
+            "subassembly", valid_only=False, exclude_failed=True
+        )
+
+        log.debug(
+            "[step] Looking for subassemblies for step %d, found %d candidates",
+            step_num.value,
+            len(subassembly_candidates),
+        )
+
+        if not subassembly_candidates:
+            return []
+
+        # Determine search region: prefer diagram area, fallback to step area
+        search_bbox = diagram.bbox if diagram else step_num.bbox
+
+        # Expand search region to catch subassemblies near the diagram
+        # Use a larger margin since subassemblies can be positioned further from
+        # the main diagram
+        search_region = BBox(
+            x0=search_bbox.x0 - 150,
+            y0=search_bbox.y0 - 150,
+            x1=search_bbox.x1 + 150,
+            y1=search_bbox.y1 + 150,
+        )
+
+        log.debug(
+            "[step] SubAssembly search region for step %d: %s",
+            step_num.value,
+            search_region,
+        )
+
+        # Find subassemblies within or overlapping the search region
+        subassemblies: list[SubAssembly] = []
+
+        for candidate in subassembly_candidates:
+            overlaps = candidate.bbox.overlaps(search_region)
+            log.debug(
+                "[step]   SubAssembly candidate at %s, overlaps=%s, score=%.2f",
+                candidate.bbox,
+                overlaps,
+                candidate.score,
+            )
+            if overlaps:
+                try:
+                    subassembly = result.build(candidate)
+                    assert isinstance(subassembly, SubAssembly)
+                    subassemblies.append(subassembly)
+                except Exception as e:
+                    log.debug(
+                        "[step]   Failed to build subassembly at %s: %s",
+                        candidate.bbox,
+                        e,
+                    )
+
+        log.debug(
+            "[step] Found %d subassemblies for step %d",
+            len(subassemblies),
+            step_num.value,
+        )
+        return subassemblies
 
     def _compute_step_bbox(
         self,

@@ -23,7 +23,9 @@ from build_a_long.pdf_extract.classifier.config.step_count_config import (
 from build_a_long.pdf_extract.classifier.config.step_number_config import (
     StepNumberConfig,
 )
-from build_a_long.pdf_extract.classifier.config.substep_config import SubStepConfig
+from build_a_long.pdf_extract.classifier.config.subassembly_config import (
+    SubAssemblyConfig,
+)
 
 __all__ = [
     "ArrowConfig",
@@ -35,5 +37,5 @@ __all__ = [
     "RotationSymbolConfig",
     "StepCountConfig",
     "StepNumberConfig",
-    "SubStepConfig",
+    "SubAssemblyConfig",
 ]

@@ -63,7 +63,7 @@ from build_a_long.pdf_extract.classifier.steps import (
     StepClassifier,
     StepCountClassifier,
     StepNumberClassifier,
-    SubStepClassifier,
+    SubAssemblyClassifier,
 )
 from build_a_long.pdf_extract.classifier.text import FontSizeHints, TextHistogram
 from build_a_long.pdf_extract.classifier.topological_sort import topological_sort
@@ -281,7 +281,7 @@ type Classifiers = (
     | NewBagClassifier
     | DiagramClassifier
     | ArrowClassifier
-    | SubStepClassifier
+    | SubAssemblyClassifier
     | StepClassifier
     | PageClassifier
 )
@@ -314,7 +314,7 @@ class Classifier:
                 PartsImageClassifier(config=config),
                 ShineClassifier(config=config),
                 NewBagClassifier(config=config),
-                SubStepClassifier(config=config),
+                SubAssemblyClassifier(config=config),
                 StepClassifier(config=config),
                 PageClassifier(config=config),
             ]
