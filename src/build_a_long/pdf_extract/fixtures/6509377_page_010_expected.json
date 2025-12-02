@@ -1,192 +1,192 @@
 {
+  "__tag__": "Page",
   "bbox": {
     "x0": 0.0,
     "y0": 0.0,
     "x1": 552.76,
     "y1": 496.06
   },
-  "__tag__": "Page",
   "pdf_page_number": 10,
   "categories": [
     "instruction"
   ],
   "page_number": {
+    "__tag__": "PageNumber",
     "bbox": {
       "x0": 14.17,
       "y0": 471.89,
       "x1": 23.88,
       "y1": 484.35
     },
-    "__tag__": "PageNumber",
     "value": 10
   },
   "progress_bar": {
+    "__tag__": "ProgressBar",
     "bbox": {
       "x0": 35.02,
       "y0": 474.1,
       "x1": 552.76,
       "y1": 482.59
     },
-    "__tag__": "ProgressBar",
     "progress": 0.01,
     "full_width": 517.74
   },
   "new_bags": [
     {
+      "__tag__": "NewBag",
       "bbox": {
         "x0": 14.17,
         "y0": 14.17,
         "x1": 254.17,
         "y1": 254.17
       },
-      "__tag__": "NewBag",
       "number": {
+        "__tag__": "BagNumber",
         "bbox": {
           "x0": 113.93,
           "y0": 104.82,
           "x1": 148.61,
           "y1": 169.89
         },
-        "__tag__": "BagNumber",
         "value": 1
       }
     }
   ],
   "steps": [
     {
+      "__tag__": "Step",
       "bbox": {
         "x0": 268.34,
         "y0": 14.67,
         "x1": 431.23,
         "y1": 213.15
       },
-      "__tag__": "Step",
       "step_number": {
+        "__tag__": "StepNumber",
         "bbox": {
           "x0": 268.34,
           "y0": 78.0,
           "x1": 277.96,
           "y1": 110.39
         },
-        "__tag__": "StepNumber",
         "value": 1
       },
       "parts_list": {
+        "__tag__": "PartsList",
         "bbox": {
           "x0": 268.84,
           "y0": 14.67,
           "x1": 420.91,
           "y1": 75.4
         },
-        "__tag__": "PartsList",
         "parts": [
           {
+            "__tag__": "Part",
             "bbox": {
               "x0": 315.72,
               "y0": 22.2,
               "x1": 374.04,
               "y1": 68.83
             },
-            "__tag__": "Part",
             "count": {
+              "__tag__": "PartCount",
               "bbox": {
                 "x0": 316.2,
                 "y0": 58.86,
                 "x1": 325.08,
                 "y1": 68.83
               },
-              "__tag__": "PartCount",
               "count": 2,
               "matched_hint": "part_count"
             },
             "diagram": {
+              "__tag__": "PartImage",
               "bbox": {
                 "x0": 315.72,
                 "y0": 22.2,
                 "x1": 374.04,
                 "y1": 59.87
-              },
-              "__tag__": "PartImage"
+              }
             }
           }
         ]
       },
       "diagram": {
+        "__tag__": "Diagram",
         "bbox": {
           "x0": 339.79,
           "y0": 94.83,
           "x1": 431.23,
           "y1": 213.15
-        },
-        "__tag__": "Diagram"
+        }
       }
     },
     {
+      "__tag__": "Step",
       "bbox": {
         "x0": 268.34,
         "y0": 234.09,
         "x1": 444.55,
         "y1": 441.93
       },
-      "__tag__": "Step",
       "step_number": {
+        "__tag__": "StepNumber",
         "bbox": {
           "x0": 268.34,
           "y0": 287.81,
           "x1": 282.62,
           "y1": 320.2
         },
-        "__tag__": "StepNumber",
         "value": 2
       },
       "parts_list": {
+        "__tag__": "PartsList",
         "bbox": {
           "x0": 268.84,
           "y0": 234.09,
           "x1": 420.91,
           "y1": 285.21
         },
-        "__tag__": "PartsList",
         "parts": [
           {
+            "__tag__": "Part",
             "bbox": {
               "x0": 321.48,
               "y0": 241.61,
               "x1": 368.28,
               "y1": 278.64
             },
-            "__tag__": "Part",
             "count": {
+              "__tag__": "PartCount",
               "bbox": {
                 "x0": 321.96,
                 "y0": 268.67,
                 "x1": 330.84,
                 "y1": 278.64
               },
-              "__tag__": "PartCount",
               "count": 2,
               "matched_hint": "part_count"
             },
             "diagram": {
+              "__tag__": "PartImage",
               "bbox": {
                 "x0": 321.48,
                 "y0": 241.61,
                 "x1": 368.28,
                 "y1": 269.69
-              },
-              "__tag__": "PartImage"
+              }
             }
           }
         ]
       },
       "diagram": {
+        "__tag__": "Diagram",
         "bbox": {
           "x0": 326.47,
           "y0": 368.26,
           "x1": 444.55,
           "y1": 441.93
-        },
-        "__tag__": "Diagram"
+        }
       }
     }
   ]

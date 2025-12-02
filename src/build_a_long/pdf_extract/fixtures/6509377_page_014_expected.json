@@ -1,142 +1,142 @@
 {
+  "__tag__": "Page",
   "bbox": {
     "x0": 0.0,
     "y0": 0.0,
     "x1": 552.76,
     "y1": 496.06
   },
-  "__tag__": "Page",
   "pdf_page_number": 14,
   "categories": [
     "instruction"
   ],
   "page_number": {
+    "__tag__": "PageNumber",
     "bbox": {
       "x0": 14.17,
       "y0": 471.89,
       "x1": 23.11,
       "y1": 484.35
     },
-    "__tag__": "PageNumber",
     "value": 14
   },
   "progress_bar": {
+    "__tag__": "ProgressBar",
     "bbox": {
       "x0": 35.02,
       "y0": 474.1,
       "x1": 552.76,
       "y1": 482.59
     },
-    "__tag__": "ProgressBar",
     "progress": 0.06,
     "full_width": 517.74
   },
   "steps": [
     {
+      "__tag__": "Step",
       "bbox": {
         "x0": 14.17,
         "y0": 14.67,
         "x1": 281.11,
         "y1": 210.96
       },
-      "__tag__": "Step",
       "step_number": {
+        "__tag__": "StepNumber",
         "bbox": {
           "x0": 14.17,
           "y0": 64.51,
           "x1": 33.91,
           "y1": 96.9
         },
-        "__tag__": "StepNumber",
         "value": 11
       },
       "parts_list": {
+        "__tag__": "PartsList",
         "bbox": {
           "x0": 14.67,
           "y0": 14.67,
           "x1": 166.74,
           "y1": 61.91
         },
-        "__tag__": "PartsList",
         "parts": [
           {
+            "__tag__": "Part",
             "bbox": {
               "x0": 52.78,
               "y0": 24.34,
               "x1": 77.01,
               "y1": 53.21
             },
-            "__tag__": "Part",
             "count": {
+              "__tag__": "PartCount",
               "bbox": {
                 "x0": 53.26,
                 "y0": 43.24,
                 "x1": 62.14,
                 "y1": 53.21
               },
-              "__tag__": "PartCount",
               "count": 2,
               "matched_hint": "part_count"
             },
             "diagram": {
+              "__tag__": "PartImage",
               "bbox": {
                 "x0": 52.78,
                 "y0": 24.34,
                 "x1": 77.01,
                 "y1": 44.25
-              },
-              "__tag__": "PartImage"
+              }
             }
           },
           {
+            "__tag__": "Part",
             "bbox": {
               "x0": 104.41,
               "y0": 27.7,
               "x1": 128.64,
               "y1": 53.21
             },
-            "__tag__": "Part",
             "count": {
+              "__tag__": "PartCount",
               "bbox": {
                 "x0": 104.88,
                 "y0": 43.24,
                 "x1": 113.76,
                 "y1": 53.21
               },
-              "__tag__": "PartCount",
               "count": 2,
               "matched_hint": "part_count"
             },
             "diagram": {
+              "__tag__": "PartImage",
               "bbox": {
                 "x0": 104.41,
                 "y0": 27.7,
                 "x1": 128.64,
                 "y1": 44.25
-              },
-              "__tag__": "PartImage"
+              }
             }
           }
         ]
       },
       "diagram": {
+        "__tag__": "Diagram",
         "bbox": {
           "x0": 90.15,
           "y0": 103.2,
           "x1": 281.11,
           "y1": 210.96
-        },
-        "__tag__": "Diagram"
+        }
       },
       "arrows": [
         {
+          "__tag__": "Arrow",
           "bbox": {
             "x0": 57.71,
             "y0": 171.18,
             "x1": 180.0,
             "y1": 208.08
           },
-          "__tag__": "Arrow",
           "direction": 0.0,
           "tip": [
             180.0,
@@ -150,263 +150,263 @@
       ],
       "subassemblies": [
         {
+          "__tag__": "SubAssembly",
           "bbox": {
             "x0": 14.92,
             "y0": 132.28,
             "x1": 90.78,
             "y1": 212.17
           },
-          "__tag__": "SubAssembly",
           "diagram": {
+            "__tag__": "Diagram",
             "bbox": {
               "x0": 90.15,
               "y0": 103.2,
               "x1": 281.11,
               "y1": 210.96
-            },
-            "__tag__": "Diagram"
+            }
           },
           "count": {
+            "__tag__": "StepCount",
             "bbox": {
               "x0": 64.81,
               "y0": 187.66,
               "x1": 82.29,
               "y1": 207.6
             },
-            "__tag__": "StepCount",
             "count": 2
           }
         }
       ]
     },
     {
+      "__tag__": "Step",
       "bbox": {
         "x0": 14.56,
         "y0": 248.53,
         "x1": 499.54,
         "y1": 449.56
       },
-      "__tag__": "Step",
       "step_number": {
+        "__tag__": "StepNumber",
         "bbox": {
           "x0": 14.56,
           "y0": 298.37,
           "x1": 39.07,
           "y1": 330.76
         },
-        "__tag__": "StepNumber",
         "value": 12
       },
       "parts_list": {
+        "__tag__": "PartsList",
         "bbox": {
           "x0": 15.06,
           "y0": 248.53,
           "x1": 167.13,
           "y1": 295.77
         },
-        "__tag__": "PartsList",
         "parts": [
           {
+            "__tag__": "Part",
             "bbox": {
               "x0": 80.78,
               "y0": 258.48,
               "x1": 102.23,
               "y1": 284.42
             },
-            "__tag__": "Part",
             "count": {
+              "__tag__": "PartCount",
               "bbox": {
                 "x0": 81.25,
                 "y0": 274.46,
                 "x1": 88.46,
                 "y1": 284.42
               },
-              "__tag__": "PartCount",
               "count": 1,
               "matched_hint": "part_count"
             },
             "diagram": {
+              "__tag__": "PartImage",
               "bbox": {
                 "x0": 80.78,
                 "y0": 258.48,
                 "x1": 102.23,
                 "y1": 275.46
               },
-              "__tag__": "PartImage",
               "shine": {
+                "__tag__": "Shine",
                 "bbox": {
                   "x0": 95.43,
                   "y0": 258.48,
                   "x1": 102.23,
                   "y1": 266.98
-                },
-                "__tag__": "Shine"
+                }
               }
             }
           }
         ]
       },
       "diagram": {
+        "__tag__": "Diagram",
         "bbox": {
           "x0": 351.46,
           "y0": 334.36,
           "x1": 499.54,
           "y1": 449.56
-        },
-        "__tag__": "Diagram"
+        }
       }
     },
     {
+      "__tag__": "Step",
       "bbox": {
         "x0": 315.09,
         "y0": 14.67,
         "x1": 499.54,
         "y1": 210.96
       },
-      "__tag__": "Step",
       "step_number": {
+        "__tag__": "StepNumber",
         "bbox": {
           "x0": 315.09,
           "y0": 78.0,
           "x1": 339.11,
           "y1": 110.39
         },
-        "__tag__": "StepNumber",
         "value": 13
       },
       "parts_list": {
+        "__tag__": "PartsList",
         "bbox": {
           "x0": 315.59,
           "y0": 14.67,
           "x1": 467.66,
           "y1": 75.4
         },
-        "__tag__": "PartsList",
         "parts": [
           {
+            "__tag__": "Part",
             "bbox": {
               "x0": 396.86,
               "y0": 22.2,
               "x1": 455.18,
               "y1": 68.83
             },
-            "__tag__": "Part",
             "count": {
+              "__tag__": "PartCount",
               "bbox": {
                 "x0": 397.34,
                 "y0": 58.86,
                 "x1": 404.55,
                 "y1": 68.83
               },
-              "__tag__": "PartCount",
               "count": 1,
               "matched_hint": "part_count"
             },
             "diagram": {
+              "__tag__": "PartImage",
               "bbox": {
                 "x0": 396.86,
                 "y0": 22.2,
                 "x1": 455.18,
                 "y1": 59.87
-              },
-              "__tag__": "PartImage"
+              }
             }
           },
           {
+            "__tag__": "Part",
             "bbox": {
               "x0": 328.07,
               "y0": 30.13,
               "x1": 385.66,
               "y1": 68.83
             },
-            "__tag__": "Part",
             "count": {
+              "__tag__": "PartCount",
               "bbox": {
                 "x0": 328.54,
                 "y0": 58.86,
                 "x1": 337.42,
                 "y1": 68.83
               },
-              "__tag__": "PartCount",
               "count": 2,
               "matched_hint": "part_count"
             },
             "diagram": {
+              "__tag__": "PartImage",
               "bbox": {
                 "x0": 328.07,
                 "y0": 30.13,
                 "x1": 385.66,
                 "y1": 59.87
-              },
-              "__tag__": "PartImage"
+              }
             }
           }
         ]
       },
       "diagram": {
+        "__tag__": "Diagram",
         "bbox": {
           "x0": 351.46,
           "y0": 95.77,
           "x1": 499.54,
           "y1": 210.96
-        },
-        "__tag__": "Diagram"
+        }
       }
     },
     {
+      "__tag__": "Step",
       "bbox": {
         "x0": 315.09,
         "y0": 248.53,
         "x1": 467.66,
         "y1": 330.76
       },
-      "__tag__": "Step",
       "step_number": {
+        "__tag__": "StepNumber",
         "bbox": {
           "x0": 315.09,
           "y0": 298.37,
           "x1": 339.24,
           "y1": 330.76
         },
-        "__tag__": "StepNumber",
         "value": 14
       },
       "parts_list": {
+        "__tag__": "PartsList",
         "bbox": {
           "x0": 315.59,
           "y0": 248.53,
           "x1": 467.66,
           "y1": 295.77
         },
-        "__tag__": "PartsList",
         "parts": [
           {
+            "__tag__": "Part",
             "bbox": {
               "x0": 381.43,
               "y0": 260.73,
               "x1": 401.82,
               "y1": 284.54
             },
-            "__tag__": "Part",
             "count": {
+              "__tag__": "PartCount",
               "bbox": {
                 "x0": 381.9,
                 "y0": 274.58,
                 "x1": 390.78,
                 "y1": 284.54
               },
-              "__tag__": "PartCount",
               "count": 2,
               "matched_hint": "part_count"
             },
             "diagram": {
+              "__tag__": "PartImage",
               "bbox": {
                 "x0": 381.43,
                 "y0": 260.73,
                 "x1": 401.82,
                 "y1": 275.58
-              },
-              "__tag__": "PartImage"
+              }
             }
           }
         ]

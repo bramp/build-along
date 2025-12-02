@@ -1,45 +1,45 @@
 {
+  "__tag__": "Page",
   "bbox": {
     "x0": 0.0,
     "y0": 0.0,
     "x1": 552.76,
     "y1": 496.06
   },
-  "__tag__": "Page",
   "pdf_page_number": 4,
   "categories": [
     "info"
   ],
   "page_number": {
+    "__tag__": "PageNumber",
     "bbox": {
       "x0": 14.17,
       "y0": 471.89,
       "x1": 19.79,
       "y1": 484.32
     },
-    "__tag__": "PageNumber",
     "value": 4
   },
   "progress_bar": {
+    "__tag__": "ProgressBar",
     "bbox": {
       "x0": 35.02,
       "y0": 474.1,
       "x1": 552.76,
       "y1": 482.59
     },
-    "__tag__": "ProgressBar",
     "progress": 0.01,
     "full_width": 517.74
   },
   "new_bags": [
     {
+      "__tag__": "NewBag",
       "bbox": {
         "x0": 15.0,
         "y0": 15.0,
         "x1": 254.0,
         "y1": 254.0
-      },
-      "__tag__": "NewBag"
+      }
     }
   ]
 }

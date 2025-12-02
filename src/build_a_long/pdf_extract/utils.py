@@ -45,6 +45,31 @@ def remove_empty_lists(obj: Any) -> Any:
     return obj
 
 
+def reorder_tag_first(obj: Any) -> Any:
+    """Recursively reorder dicts so __tag__ appears first if present.
+
+    This ensures consistent serialization where the type discriminator
+    appears at the beginning of each object for readability.
+
+    Args:
+        obj: Any Python object (dict, list, or other)
+
+    Returns:
+        The same structure with __tag__ as the first key in all dicts
+    """
+    if isinstance(obj, dict):
+        # Recursively process values first
+        processed = {k: reorder_tag_first(v) for k, v in obj.items()}
+        # If __tag__ exists, put it first
+        if "__tag__" in processed:
+            tag_value = processed.pop("__tag__")
+            return {"__tag__": tag_value, **processed}
+        return processed
+    elif isinstance(obj, list):
+        return [reorder_tag_first(item) for item in obj]
+    return obj
+
+
 class SerializationMixin:
     """Mixin providing consistent to_dict() and to_json() serialization.
 
@@ -67,13 +92,15 @@ class SerializationMixin:
     def to_dict(self, **kwargs: Any) -> dict:
         """Serialize to dict with proper defaults.
 
-        Uses by_alias=True, exclude_none=True, and rounds floats to 2 decimals.
+        Uses by_alias=True, exclude_none=True, rounds floats to 2 decimals,
+        and ensures __tag__ appears first in each dict for readability.
         Override by passing explicit kwargs if different behavior is needed.
         """
         defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
         defaults.update(kwargs)
         data = self.model_dump(**defaults)  # type: ignore[attr-defined]
-        return round_floats(data)
+        data = round_floats(data)
+        return reorder_tag_first(data)
 
     def to_json(self, *, indent: str | int | None = "\t", **kwargs: Any) -> str:
         """Serialize to JSON with proper defaults.
