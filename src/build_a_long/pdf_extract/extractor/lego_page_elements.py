@@ -476,6 +476,40 @@ class Diagram(LegoPageElement):
         return f"Diagram(bbox={str(self.bbox)})"
 
 
+class SubAssemblyStep(LegoPageElement):
+    """A single step within a sub-assembly callout box.
+
+    SubAssemblies can contain multiple mini-steps, each with its own step number
+    (typically starting at 1) and diagram showing that sub-step's construction.
+
+    Positional context: Within a SubAssembly box, steps are arranged horizontally
+    or in a grid, with step numbers positioned above or beside their corresponding
+    diagrams.
+    """
+
+    tag: Literal["SubAssemblyStep"] = Field(
+        default="SubAssemblyStep", alias="__tag__", frozen=True
+    )
+
+    step_number: StepNumber
+    """The step number for this sub-assembly step (typically 1, 2, 3, etc.)."""
+
+    diagram: Diagram | None = None
+    """The diagram showing this sub-step's construction."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        diagram_str = ", diagram" if self.diagram else ""
+        return f"SubAssemblyStep(number={self.step_number.value}{diagram_str})"
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over this SubAssemblyStep and all child elements."""
+        yield self
+        yield from self.step_number.iter_elements()
+        if self.diagram:
+            yield from self.diagram.iter_elements()
+
+
 class SubAssembly(LegoPageElement):
     """A sub-assembly within a main step, typically shown in a callout box.
 
@@ -486,7 +520,7 @@ class SubAssembly(LegoPageElement):
 
     Structure:
     - A white/light rectangular box (detected via Drawing blocks)
-    - A diagram showing the sub-assembly
+    - One or more steps, each with a step number and diagram
     - An optional count indicating how many times to build it (e.g., "2x")
 
     Note: Arrows pointing from subassemblies to the main diagram are stored in
@@ -499,8 +533,15 @@ class SubAssembly(LegoPageElement):
         default="SubAssembly", alias="__tag__", frozen=True
     )
 
+    steps: list[SubAssemblyStep] = Field(default_factory=list)
+    """The steps within this sub-assembly, each with a step number and diagram."""
+
     diagram: Diagram | None = None
-    """The diagram showing the sub-assembly."""
+    """The main/final diagram showing the completed sub-assembly.
+    
+    This is used for simple subassemblies without internal steps. When steps
+    are present, each step has its own diagram instead.
+    """
 
     count: StepCount | None = None
     """Optional count indicating how many times to build this sub-assembly."""
@@ -508,14 +549,21 @@ class SubAssembly(LegoPageElement):
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         count_str = f"count={self.count.count}x, " if self.count else ""
-        diagram_str = "diagram" if self.diagram else "no diagram"
-        return f"SubAssembly({count_str}{diagram_str})"
+        if self.steps:
+            steps_str = f"steps={len(self.steps)}"
+        elif self.diagram:
+            steps_str = "diagram"
+        else:
+            steps_str = "no diagram"
+        return f"SubAssembly({count_str}{steps_str})"
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this SubAssembly and all child elements."""
         yield self
         if self.count:
             yield from self.count.iter_elements()
+        for step in self.steps:
+            yield from step.iter_elements()
         if self.diagram:
             yield from self.diagram.iter_elements()
 
@@ -712,6 +760,7 @@ LegoPageElements = Annotated[
     | BagNumber
     | NewBag
     | Diagram
+    | SubAssemblyStep
     | SubAssembly
     | Step
     | Page,

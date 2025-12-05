@@ -109,6 +109,9 @@ class TestSubAssemblyScore:
             diagram_score=0.5,
             step_count_candidate=None,
             diagram_candidate=None,
+            step_number_candidates=[],
+            diagram_candidates=[],
+            images_inside=[],
             arrow_candidate=None,
             config=config,
         )
@@ -128,6 +131,9 @@ class TestSubAssemblyScore:
             diagram_score=1.0,
             step_count_candidate=None,
             diagram_candidate=None,
+            step_number_candidates=[],
+            diagram_candidates=[],
+            images_inside=[],
             arrow_candidate=None,
             config=config,
         )
@@ -142,9 +148,10 @@ class TestSubAssemblyClassifier:
         assert subassembly_classifier.output == "subassembly"
 
     def test_requires_dependencies(self, subassembly_classifier: SubAssemblyClassifier):
-        """Test classifier requires arrow, step_count, and diagram dependencies."""
+        """Test classifier requires arrow, step_count, step_number, and diagram dependencies."""
         assert "arrow" in subassembly_classifier.requires
         assert "step_count" in subassembly_classifier.requires
+        assert "step_number" in subassembly_classifier.requires
         assert "diagram" in subassembly_classifier.requires
 
     def test_score_finds_subassembly_box_with_step_count(
@@ -195,6 +202,9 @@ class TestSubAssemblyClassifier:
             diagram_score=0.0,
             step_count_candidate=None,
             diagram_candidate=None,
+            step_number_candidates=[],
+            diagram_candidates=[],
+            images_inside=[],
             arrow_candidate=None,
             config=config.subassembly,
         )

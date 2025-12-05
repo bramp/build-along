@@ -22,6 +22,9 @@ Set environment variables to aid investigation without code changes:
 
 import logging
 
+import numpy as np
+from scipy.optimize import linear_sum_assignment
+
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     CandidateFailedError,
@@ -376,131 +379,139 @@ class StepClassifier(LabelClassifier):
             source_blocks=[],
         )
 
-    def _find_best_diagram(
+    def _score_step_diagram_pair(
         self,
         step_bbox: BBox,
-        parts_list_bbox: BBox | None,
-        result: ClassificationResult,
-        used_diagrams: set[int],
-    ) -> tuple[Candidate | None, float]:
-        """Find the best diagram candidate for this step.
+        diagram_bbox: BBox,
+    ) -> float:
+        """Score how well a diagram matches a step.
 
-        Scores all diagram candidates based on:
-        - Position relative to step (prefers right and below, allows slight left offset)
-        - Distance from step (prefers closer)
-        - Avoids diagrams already used by other steps
+        Diagrams are typically positioned to the right of and/or below the step
+        number. This method scores based on:
+        - Horizontal position: prefer diagrams to the right, penalize left
+        - Vertical position: prefer diagrams below the step header
+        - Distance: closer is better
 
         Args:
-            step_bbox: The step number bbox
-            parts_list_bbox: The associated parts list bbox (if any)
-            result: Classification result containing diagram candidates
-            used_diagrams: Set of diagram candidate IDs already assigned to steps
+            step_bbox: The step number bounding box
+            diagram_bbox: The diagram bounding box to score
 
         Returns:
-            Tuple of (best matching diagram candidate, score) or (None, 0.0)
+            Score between 0.0 and 1.0 (higher is better match)
         """
-        # Get all diagram candidates
-        diagram_candidates = result.get_scored_candidates(
-            "diagram", valid_only=False, exclude_failed=True
-        )
-
-        if not diagram_candidates:
-            log.debug("[step] No diagram candidates available")
-            return None, 0.0
-
-        # Determine the reference point (bottom-right of step header)
-        ref_y = step_bbox.y1
+        # Reference point: bottom-right of step number
         ref_x = step_bbox.x1
-        if parts_list_bbox:
-            ref_y = max(ref_y, parts_list_bbox.y1)
-            ref_x = max(ref_x, parts_list_bbox.x1)
+        ref_y = step_bbox.y1
 
-        log.debug(
-            "[step] Finding diagram for step at (%s,%s) ref=(%s,%s)",
-            step_bbox.x0,
-            step_bbox.y0,
-            ref_x,
-            ref_y,
-        )
+        # TODO Move all these constants into config, or make them adaptive?
 
-        best_candidate = None
-        best_score = 0.0
+        # Horizontal score
+        # Diagrams to the right are preferred, but allow some overlap
+        x_offset = diagram_bbox.x0 - ref_x
 
-        # TODO There are a lot of magic numbers here that could be tuned / removed.
-
-        for candidate in diagram_candidates:
-            # Skip diagrams already used by other steps
-            if id(candidate) in used_diagrams:
-                continue
-
-            # Calculate position scores
-            diagram_bbox = candidate.bbox
-
-            # Horizontal position score
-            # Prefer diagrams to the right, but allow diagrams to the left as well
-            # Allow up to 200 points to the left (about half a page)
-            left_tolerance = 200.0
-            x_offset = diagram_bbox.x0 - ref_x
-
-            if x_offset >= -left_tolerance:
-                # Diagram starts to the right or within tolerance to the left
-                # Score decreases as we go further left
-                if x_offset >= 0:
-                    x_score = 1.0  # Perfect: to the right
-                else:
-                    # Linearly decrease from 1.0 to 0.5 as we go left
-                    x_score = 1.0 + (x_offset / left_tolerance) * 0.5
-            else:
-                # Too far to the left
-                x_score = 0.0
-
-            # Vertical position score
-            # Prefer diagrams below the step header
-            y_offset = diagram_bbox.y0 - ref_y
-
-            # Allow diagrams that start slightly above (overlapping header)
-            if y_offset >= -50.0:
-                # Below or slightly overlapping
-                # Score decreases with distance
-                # Penalize being above less than being far below
-                distance = abs(y_offset) if y_offset >= 0 else abs(y_offset) * 0.5
-                max_distance = 200.0  # Maximum reasonable distance
-                y_score = max(0.0, 1.0 - (distance / max_distance))
-            else:
-                # Diagram is too far above the step header - very bad
-                y_score = 0.0
-
-            # Combined score (both must be reasonable)
-            if x_score > 0.0 and y_score > 0.0:
-                # Weight vertical position more heavily (0.6) than horizontal (0.4)
-                score = 0.4 * x_score + 0.6 * y_score
-
-                log.debug(
-                    "[step]   Diagram at (%s,%s) x_offset=%s y_offset=%s "
-                    "x_score=%.2f y_score=%.2f score=%.2f",
-                    diagram_bbox.x0,
-                    diagram_bbox.y0,
-                    x_offset,
-                    y_offset,
-                    x_score,
-                    y_score,
-                    score,
-                )
-
-                if score > best_score:
-                    best_score = score
-                    best_candidate = candidate
-
-        if best_candidate:
-            log.debug(
-                "[step] Best diagram at %s with score %.2f",
-                best_candidate.bbox,
-                best_score,
-            )
+        if x_offset >= -50:
+            # Diagram starts to the right or slightly overlapping - good
+            # Score decreases slightly with distance to the right
+            x_score = max(0.5, 1.0 - abs(x_offset) / 400.0)
+        elif x_offset >= -200:
+            # Diagram is moderately to the left - acceptable
+            x_score = 0.3 + 0.2 * (1.0 + x_offset / 200.0)
         else:
-            log.debug("[step] No suitable diagram found")
+            # Diagram is far to the left - poor match
+            x_score = max(0.1, 0.3 + x_offset / 400.0)
 
-        return best_candidate, best_score
+        # Vertical score
+        # Diagrams below the step header are preferred
+        y_offset = diagram_bbox.y0 - ref_y
+
+        if y_offset >= -30:
+            # Diagram starts below or slightly overlapping - good
+            # Score decreases with vertical distance
+            y_score = max(0.3, 1.0 - abs(y_offset) / 300.0)
+        elif y_offset >= -100:
+            # Diagram is moderately above - less good but acceptable
+            y_score = 0.2 + 0.3 * (1.0 + y_offset / 100.0)
+        else:
+            # Diagram is far above - poor match
+            y_score = max(0.05, 0.2 + y_offset / 300.0)
+
+        # Combined score - weight both dimensions equally
+        score = 0.5 * x_score + 0.5 * y_score
+
+        return score
+
+    def _assign_diagrams_hungarian(
+        self,
+        step_candidates: list[Candidate],
+        diagram_candidates: list[Candidate],
+    ) -> dict[int, tuple[Candidate, float]]:
+        """Optimally assign diagrams to steps using the Hungarian algorithm.
+
+        This finds the assignment that maximizes the total score across all
+        step-diagram pairs, ensuring each step gets at most one diagram and
+        each diagram is assigned to at most one step.
+
+        Args:
+            step_candidates: List of step candidates (with step_number info)
+            diagram_candidates: List of diagram candidates
+
+        Returns:
+            Dict mapping step candidate index to (diagram_candidate, score)
+        """
+        if not step_candidates or not diagram_candidates:
+            return {}
+
+        n_diagrams = len(diagram_candidates)
+
+        # Build cost matrix (we'll use negative scores since Hungarian minimizes)
+        # Rows = steps, Columns = diagrams
+        cost_matrix: list[list[float]] = []
+
+        for step_cand in step_candidates:
+            assert isinstance(step_cand.score_details, _StepScore)
+            step_score = step_cand.score_details
+            step_bbox = step_score.step_number_candidate.bbox
+
+            row: list[float] = []
+            for diag_cand in diagram_candidates:
+                score = self._score_step_diagram_pair(step_bbox, diag_cand.bbox)
+                # Convert to cost (negative score) for minimization
+                row.append(-score)
+            cost_matrix.append(row)
+
+        # Run Hungarian algorithm
+        row_assignments, col_assignments = self._hungarian_algorithm(cost_matrix)
+
+        # Build result mapping
+        result: dict[int, tuple[Candidate, float]] = {}
+        for step_idx, diag_idx in zip(row_assignments, col_assignments, strict=True):
+            if diag_idx < n_diagrams:  # Valid assignment (not a dummy)
+                score = -cost_matrix[step_idx][diag_idx]
+                result[step_idx] = (diagram_candidates[diag_idx], score)
+
+        return result
+
+    def _hungarian_algorithm(
+        self, cost_matrix: list[list[float]]
+    ) -> tuple[list[int], list[int]]:
+        """Use scipy's Hungarian algorithm implementation.
+
+        Args:
+            cost_matrix: 2D cost matrix (rows=steps, cols=diagrams)
+
+        Returns:
+            Tuple of (row_indices, col_indices) for optimal assignment
+        """
+        if not cost_matrix or not cost_matrix[0]:
+            return [], []
+
+        # Convert to numpy array for scipy
+        cost_array = np.array(cost_matrix)
+
+        # scipy's linear_sum_assignment finds the optimal assignment
+        row_indices, col_indices = linear_sum_assignment(cost_array)
+
+        return list(row_indices), list(col_indices)
 
     def _get_rotation_symbol_for_step(
         self,
@@ -778,11 +789,11 @@ class StepClassifier(LabelClassifier):
     def _deduplicate_and_assign_diagrams(
         self, candidates: list[Candidate], result: ClassificationResult
     ) -> list[Candidate]:
-        """Greedily select the best Step candidates and assign diagrams.
+        """Select the best Step candidates and optimally assign diagrams.
 
-        For each selected step, finds the best available diagram and updates
-        the candidate's score. Ensures each StepNumber value, PartsList, and
-        Diagram is used at most once.
+        Uses the Hungarian algorithm to find the optimal assignment between
+        steps and diagrams that maximizes total matching score. Ensures each
+        StepNumber value, PartsList, and Diagram is used at most once.
 
         Args:
             candidates: All possible Step candidates (without diagrams)
@@ -791,33 +802,23 @@ class StepClassifier(LabelClassifier):
         Returns:
             Deduplicated list of Step candidates with diagrams assigned
         """
-        # Sort candidates by parts_list score initially
-        # (we'll resort after assigning diagrams)
-        sorted_candidates = sorted(
-            candidates,
-            key=lambda c: (
-                c.score_details.sort_key()
-                if isinstance(c.score_details, _StepScore)
-                else (0.0, 0)
-            ),
+        # Get subassembly bboxes to exclude step numbers inside subassemblies
+        # from diagram assignment (they have their own embedded diagrams)
+        subassembly_candidates = result.get_scored_candidates(
+            "subassembly", valid_only=False, exclude_failed=True
         )
+        subassembly_bboxes = [c.bbox for c in subassembly_candidates]
 
-        # Track which elements have been used
-        used_step_values: set[int] = set()
-        used_parts_list_ids: set[int] = set()
-        used_diagrams: set[int] = set()
-        selected: list[Candidate] = []
+        # First, deduplicate candidates by step number value
+        # Pick the best candidate for each unique step number
+        best_by_step_value: dict[int, Candidate] = {}
 
-        # Greedily select winners
-        for candidate in sorted_candidates:
-            # Get step info from score_details (candidates not yet constructed)
+        for candidate in candidates:
             assert isinstance(candidate.score_details, _StepScore)
             score = candidate.score_details
 
-            # Extract step number value from parent candidate source block
+            # Extract step number value
             step_num_candidate = score.step_number_candidate
-
-            # Extract step value from text block
             if not step_num_candidate.source_blocks:
                 continue
             text_block = step_num_candidate.source_blocks[0]
@@ -828,20 +829,131 @@ class StepClassifier(LabelClassifier):
             if step_value is None:
                 continue
 
-            # Extract parts list from parent candidate (if present)
-            parts_list_candidate = score.parts_list_candidate
+            # Keep the best candidate for each step value
+            if step_value not in best_by_step_value:
+                best_by_step_value[step_value] = candidate
+            else:
+                existing = best_by_step_value[step_value]
+                if candidate.score > existing.score:
+                    best_by_step_value[step_value] = candidate
 
-            # Skip if this step number value is already used
-            if step_value in used_step_values:
+        # Get unique step candidates
+        unique_step_candidates = list(best_by_step_value.values())
+
+        if not unique_step_candidates:
+            return []
+
+        # Separate steps into main steps and subassembly steps
+        # Steps inside subassemblies shouldn't compete for page-level diagrams
+        main_step_candidates: list[Candidate] = []
+        subassembly_step_indices: set[int] = set()
+
+        for i, candidate in enumerate(unique_step_candidates):
+            assert isinstance(candidate.score_details, _StepScore)
+            score = candidate.score_details
+            step_bbox = score.step_number_candidate.bbox
+
+            # Check if this step is inside any subassembly
+            # Use the step number's center point for containment check
+            step_center_x, step_center_y = step_bbox.center
+            is_inside_subassembly = any(
+                sub_bbox.x0 <= step_center_x <= sub_bbox.x1
+                and sub_bbox.y0 <= step_center_y <= sub_bbox.y1
+                for sub_bbox in subassembly_bboxes
+            )
+
+            if is_inside_subassembly:
+                subassembly_step_indices.add(i)
                 log.debug(
-                    "[step] Skipping candidate for step %d - value already used",
-                    step_value,
+                    "[step] Step at (%s,%s) is inside a subassembly, "
+                    "excluding from diagram assignment",
+                    step_bbox.x0,
+                    step_bbox.y0,
                 )
-                continue
+            else:
+                main_step_candidates.append(candidate)
 
-            # Skip if this parts_list is already used (if it has parts)
+        # Get all diagram candidates
+        diagram_candidates = result.get_scored_candidates(
+            "diagram", valid_only=False, exclude_failed=True
+        )
+
+        log.debug(
+            "[step] Assigning %d diagrams to %d main steps "
+            "(excluding %d subassembly steps) using Hungarian algorithm",
+            len(diagram_candidates),
+            len(main_step_candidates),
+            len(subassembly_step_indices),
+        )
+
+        # Use Hungarian algorithm for optimal assignment (main steps only)
+        diagram_assignments = self._assign_diagrams_hungarian(
+            main_step_candidates, diagram_candidates
+        )
+
+        # Create a mapping from main_step_candidates index to diagram assignment
+        # We need to map this back to unique_step_candidates indices
+        main_to_unique_idx: dict[int, int] = {}
+        main_idx = 0
+        for i, candidate in enumerate(unique_step_candidates):
+            if i not in subassembly_step_indices:
+                main_to_unique_idx[main_idx] = i
+                main_idx += 1
+
+        # Remap diagram assignments to unique_step_candidates indices
+        unique_diagram_assignments: dict[int, tuple[Candidate, float]] = {}
+        for main_idx, (diag_cand, diag_score) in diagram_assignments.items():
+            unique_idx = main_to_unique_idx[main_idx]
+            unique_diagram_assignments[unique_idx] = (diag_cand, diag_score)
+
+        # Log the assignment matrix for debugging
+        for i, step_cand in enumerate(unique_step_candidates):
+            assert isinstance(step_cand.score_details, _StepScore)
+            step_score = step_cand.score_details
+            step_bbox = step_score.step_number_candidate.bbox
+
+            # Get step value for logging
+            text_block = step_score.step_number_candidate.source_blocks[0]
+            assert isinstance(text_block, Text)
+            step_value = extract_step_number_value(text_block.text)
+
+            if i in subassembly_step_indices:
+                log.debug(
+                    "[step] Step %s at (%s,%s) -> (inside subassembly, no diagram)",
+                    step_value,
+                    step_bbox.x0,
+                    step_bbox.y0,
+                )
+            elif i in unique_diagram_assignments:
+                diag_cand, diag_score = unique_diagram_assignments[i]
+                log.debug(
+                    "[step] Step %s at (%s,%s) -> Diagram at (%s,%s) score=%.2f",
+                    step_value,
+                    step_bbox.x0,
+                    step_bbox.y0,
+                    diag_cand.bbox.x0,
+                    diag_cand.bbox.y0,
+                    diag_score,
+                )
+            else:
+                log.debug(
+                    "[step] Step %s at (%s,%s) -> No diagram assigned",
+                    step_value,
+                    step_bbox.x0,
+                    step_bbox.y0,
+                )
+
+        # Build final candidates with diagram assignments
+        selected: list[Candidate] = []
+        used_parts_list_ids: set[int] = set()
+
+        for i, candidate in enumerate(unique_step_candidates):
+            assert isinstance(candidate.score_details, _StepScore)
+            score = candidate.score_details
+
+            # Check parts list uniqueness
+            parts_list_candidate = score.parts_list_candidate
             if parts_list_candidate is not None:
-                # Check if parts list has parts (look at its score details)
                 has_parts = False
                 if isinstance(parts_list_candidate.score_details, _PartsListScore):
                     has_parts = (
@@ -851,29 +963,22 @@ class StepClassifier(LabelClassifier):
                 if has_parts:
                     parts_list_id = id(parts_list_candidate)
                     if parts_list_id in used_parts_list_ids:
-                        log.debug(
-                            "[step] Skipping candidate for step %d - "
-                            "PartsList candidate already used",
-                            step_value,
-                        )
-                        continue
-                    # Claim this parts_list
-                    used_parts_list_ids.add(parts_list_id)
+                        # Use None for parts list if already used
+                        parts_list_candidate = None
+                    else:
+                        used_parts_list_ids.add(parts_list_id)
 
-            # Find and assign the best available diagram for this step
-            step_bbox = step_num_candidate.bbox
-            parts_list_bbox = (
-                parts_list_candidate.bbox if parts_list_candidate else None
-            )
-            diagram_candidate, diagram_score = self._find_best_diagram(
-                step_bbox, parts_list_bbox, result, used_diagrams
-            )
+            # Get diagram assignment (only for main steps, not subassembly steps)
+            diagram_candidate = None
+            diagram_score = 0.0
+            if i in unique_diagram_assignments:
+                diagram_candidate, diagram_score = unique_diagram_assignments[i]
 
             # Update the score with the diagram assignment
             updated_score = _StepScore(
                 step_number_candidate=score.step_number_candidate,
-                parts_list_candidate=score.parts_list_candidate,
-                has_parts_list=score.has_parts_list,
+                parts_list_candidate=parts_list_candidate,
+                has_parts_list=parts_list_candidate is not None,
                 step_proximity_score=score.step_proximity_score,
                 step_alignment_score=score.step_alignment_score,
                 diagram_candidate=diagram_candidate,
@@ -894,17 +999,15 @@ class StepClassifier(LabelClassifier):
                 source_blocks=candidate.source_blocks,
             )
 
-            # Select this candidate
             selected.append(updated_candidate)
-            used_step_values.add(step_value)
 
-            # Mark the diagram as used
-            if diagram_candidate:
-                used_diagrams.add(id(diagram_candidate))
-
+            # Log selection
+            text_block = score.step_number_candidate.source_blocks[0]
+            assert isinstance(text_block, Text)
+            step_value = extract_step_number_value(text_block.text)
             log.debug(
                 "[step] Selected step %d (parts_list=%s, diagram=%s, score=%.2f)",
-                step_value,
+                step_value or 0,
                 "yes" if parts_list_candidate is not None else "no",
                 "yes" if diagram_candidate is not None else "no",
                 updated_score.overall_score(),
