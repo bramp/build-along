@@ -54,6 +54,25 @@ def test_adjacent():
     assert not bbox1.adjacent(bbox6)
 
 
+def test_similar():
+    bbox1 = BBox(0, 0, 10, 10)
+    bbox2 = BBox(0.5, 0.5, 10.5, 10.5)  # Within default tolerance of 1.0
+    bbox3 = BBox(2, 2, 12, 12)  # Outside default tolerance
+    bbox4 = BBox(0, 0, 10, 10)  # Exact same bbox
+
+    # Default tolerance (1.0)
+    assert bbox1.similar(bbox4)
+    assert bbox1.similar(bbox2)
+    assert not bbox1.similar(bbox3)
+
+    # Custom tolerance
+    assert bbox1.similar(bbox3, tolerance=2.0)
+    assert not bbox1.similar(bbox2, tolerance=0.1)
+
+    # Similar is symmetric
+    assert bbox1.similar(bbox2) == bbox2.similar(bbox1)
+
+
 def test_union():
     bbox1 = BBox(0, 0, 10, 10)
     bbox2 = BBox(5, 5, 15, 15)

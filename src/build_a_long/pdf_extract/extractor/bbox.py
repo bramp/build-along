@@ -71,6 +71,24 @@ class BBox(BaseModel):
             and self.y1 == other.y1
         )
 
+    def similar(self, other: BBox, tolerance: float = 1.0) -> bool:
+        """
+        Checks if this bounding box is nearly identical to another within tolerance.
+
+        Args:
+            other: The other bounding box to compare.
+            tolerance: Maximum difference allowed for each coordinate.
+
+        Returns:
+            True if all coordinates differ by at most the tolerance.
+        """
+        return (
+            abs(self.x0 - other.x0) <= tolerance
+            and abs(self.y0 - other.y0) <= tolerance
+            and abs(self.x1 - other.x1) <= tolerance
+            and abs(self.y1 - other.y1) <= tolerance
+        )
+
     def overlaps(self, other: BBox) -> bool:
         """
         Checks if this bounding box overlaps with another bounding box.
