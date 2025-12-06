@@ -40,11 +40,12 @@ from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 log = logging.getLogger(__name__)
 
 
+# TODO: Let's update the scoring to:
+# 1) Higher score with more valid parts inside
+# 2) Penalize overly large drawings (e.g. >50% of page area) OR ensure the Part
+#    to size ratio is reasonable.
 class _PartsListScore(Score):
     """Internal score representation for parts list classification."""
-
-    box_score: float = 1.0
-    """Score for the bounding box (1.0 if valid box)."""
 
     part_candidates: list[Candidate] = []
     """List of part candidates inside this parts list."""
@@ -52,7 +53,7 @@ class _PartsListScore(Score):
     def score(self) -> Weight:
         """Return the score."""
         # If we have a valid box and parts inside, it's a good candidate
-        if self.box_score > 0 and self.part_candidates:
+        if self.part_candidates:
             return 1.0
         return 0.0
 
@@ -112,17 +113,6 @@ class PartsListClassifier(LabelClassifier):
         # Process each drawing in score order
         for drawing, score in drawing_scores:
             combined = score.score()
-
-            # Skip candidates below minimum score threshold
-            if combined < self.config.parts_list.min_score:
-                log.debug(
-                    "[parts_list] Skipping low-score candidate: drawing=%d "
-                    "score=%.3f (below threshold %.3f)",
-                    drawing.id,
-                    combined,
-                    self.config.parts_list.min_score,
-                )
-                continue
 
             # Determine failure reason if any
             failure_reason = None
