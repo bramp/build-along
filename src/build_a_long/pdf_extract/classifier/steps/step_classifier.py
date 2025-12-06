@@ -22,9 +22,6 @@ Set environment variables to aid investigation without code changes:
 
 import logging
 
-import numpy as np
-from scipy.optimize import linear_sum_assignment
-
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     CandidateFailedError,
@@ -75,27 +72,25 @@ class _StepScore(Score):
     """Score based on left-edge alignment with PartsList above (0.0-1.0).
     1.0 is perfect alignment, 0.0 is very misaligned. 0.0 if no parts list."""
 
-    diagram_candidate: Candidate | None
-    """The diagram candidate paired with this step (if any)."""
-
-    diagram_score: float
-    """Score for the diagram pairing (0.0-1.0). 0.0 if no diagram."""
-
     def score(self) -> Weight:
         """Return the overall pairing score."""
         return self.overall_score()
 
     def overall_score(self) -> float:
-        """Calculate overall quality score combining parts list and diagram."""
-        parts_list_score = 0.0
+        """Calculate overall quality score based on parts list pairing.
+
+        Steps with a parts_list are given a bonus to prefer them over
+        steps without parts_list. Diagrams are found at build time, not
+        during scoring, to allow rotation symbols to claim small images first.
+        """
         if self.has_parts_list:
-            parts_list_score = (
+            # Base score for having parts_list + proximity/alignment bonus
+            parts_list_bonus = 0.5
+            pairing_score = (
                 self.step_proximity_score + self.step_alignment_score
             ) / 2.0
-
-        # Combine parts list score (weight 0.4) and diagram score (weight 0.6)
-        # Diagram is more important for step identification
-        return 0.4 * parts_list_score + 0.6 * self.diagram_score
+            return parts_list_bonus + 0.5 * pairing_score
+        return 0.3  # Lower base score for steps without parts list
 
     def sort_key(self) -> tuple[float, int]:
         """Return a tuple for sorting candidates.
@@ -205,37 +200,15 @@ class StepClassifier(LabelClassifier):
             assert isinstance(parts_list_elem, PartsList)
             parts_list = parts_list_elem
 
-        # Get the diagram from the diagram candidate
-        # If the original diagram candidate is failed, try to find a replacement
-        diagram = None
-        diagram_candidate = score.diagram_candidate
-        if diagram_candidate:
-            if diagram_candidate.failure_reason:
-                # Original diagram candidate was replaced (e.g., due to conflict)
-                # Try to find a suitable replacement
-                replacement = self._find_replacement_diagram(diagram_candidate, result)
-                if replacement:
-                    log.debug(
-                        "[step] Using replacement diagram for step %d: %s -> %s",
-                        step_num.value,
-                        diagram_candidate.bbox,
-                        replacement.bbox,
-                    )
-                    diagram_candidate = replacement
-                else:
-                    log.debug(
-                        "[step] No replacement diagram found for step %d",
-                        step_num.value,
-                    )
-                    diagram_candidate = None
+        # Build rotation symbol BEFORE diagram so it can claim small images
+        # that might otherwise be clustered into the diagram.
+        # At this point we don't have a diagram yet, so use step bbox for search.
+        rotation_symbol = self._get_rotation_symbol_for_step(step_num, None, result)
 
-            if diagram_candidate:
-                diagram_elem = result.build(diagram_candidate)
-                assert isinstance(diagram_elem, Diagram)
-                diagram = diagram_elem
-
-        # Get rotation symbols near this step (if any)
-        rotation_symbol = self._get_rotation_symbol_for_step(step_num, diagram, result)
+        # Now find and build the best diagram for this step
+        # This happens after rotation symbols are built, so they've already
+        # claimed any small images they need
+        diagram = self._find_and_build_diagram_for_step(step_num, parts_list, result)
 
         # Get arrows for this step (from subassemblies and other sources)
         arrows = self._get_arrows_for_step(step_num, diagram, result)
@@ -255,55 +228,86 @@ class StepClassifier(LabelClassifier):
             subassemblies=subassemblies,
         )
 
-    def _find_replacement_diagram(
+    def _find_and_build_diagram_for_step(
         self,
-        original: Candidate,
+        step_num: StepNumber,
+        parts_list: PartsList | None,
         result: ClassificationResult,
-    ) -> Candidate | None:
-        """Find a replacement for a failed diagram candidate.
+    ) -> Diagram | None:
+        """Find and build the best diagram for this step.
 
-        When a diagram candidate fails due to conflict (e.g., blocks consumed
-        by arrows), a reduced replacement candidate may have been created.
-        This method finds the best replacement that overlaps with the original.
+        This is called at build time, after rotation symbols have been built,
+        so they've already claimed any small images they need. This ensures
+        the diagram doesn't incorrectly cluster rotation symbol images.
 
         Args:
-            original: The original (failed) diagram candidate
-            result: Classification result with all candidates
+            step_num: The built step number element
+            parts_list: The built parts list element (if any)
+            result: Classification result containing diagram candidates
 
         Returns:
-            A suitable replacement candidate, or None if none found
+            The built Diagram element, or None if no suitable diagram found
         """
-        # Get all non-failed diagram candidates
+        # Get all non-failed, non-constructed diagram candidates
         diagram_candidates = result.get_scored_candidates(
             "diagram", valid_only=False, exclude_failed=True
         )
 
-        # Find candidates that significantly overlap with the original
-        # (reduced candidates should have similar bbox)
-        OVERLAP_THRESHOLD = 0.8  # Require 80% overlap
+        # Filter to only candidates that haven't been built yet
+        available_candidates = [c for c in diagram_candidates if c.constructed is None]
 
+        if not available_candidates:
+            log.debug(
+                "[step] No diagram candidates available for step %d",
+                step_num.value,
+            )
+            return None
+
+        # Score each candidate based on position relative to step
+        step_bbox = step_num.bbox
         best_candidate = None
-        best_overlap = 0.0
+        best_score = -float("inf")
 
-        for candidate in diagram_candidates:
-            # Check overlap ratio using intersection_area
-            intersection_area = original.bbox.intersection_area(candidate.bbox)
-            if intersection_area > 0:
-                # Calculate overlap as percentage of the smaller bbox
-                original_area = original.bbox.area
-                candidate_area = candidate.bbox.area
-                min_area = min(original_area, candidate_area)
+        for candidate in available_candidates:
+            score = self._score_step_diagram_pair(step_bbox, candidate.bbox)
 
-                if min_area > 0:
-                    overlap_ratio = intersection_area / min_area
-                    if (
-                        overlap_ratio >= OVERLAP_THRESHOLD
-                        and overlap_ratio > best_overlap
-                    ):
-                        best_overlap = overlap_ratio
-                        best_candidate = candidate
+            log.debug(
+                "[step] Diagram candidate at %s for step %d: score=%.2f",
+                candidate.bbox,
+                step_num.value,
+                score,
+            )
 
-        return best_candidate
+            if score > best_score:
+                best_score = score
+                best_candidate = candidate
+
+        if best_candidate is None or best_score < 0.2:
+            log.debug(
+                "[step] No suitable diagram found for step %d (best_score=%.2f)",
+                step_num.value,
+                best_score,
+            )
+            return None
+
+        # Build the diagram
+        try:
+            diagram_elem = result.build(best_candidate)
+            assert isinstance(diagram_elem, Diagram)
+            log.debug(
+                "[step] Built diagram at %s for step %d (score=%.2f)",
+                diagram_elem.bbox,
+                step_num.value,
+                best_score,
+            )
+            return diagram_elem
+        except CandidateFailedError as e:
+            log.debug(
+                "[step] Failed to build diagram for step %d: %s",
+                step_num.value,
+                e,
+            )
+            return None
 
     def _create_step_candidate(
         self,
@@ -313,8 +317,8 @@ class StepClassifier(LabelClassifier):
     ) -> Candidate | None:
         """Create a Step candidate (without diagram assignment).
 
-        Diagrams will be assigned later during greedy selection to ensure
-        each diagram is matched with the best step.
+        Diagrams are found at build time, not during scoring, to allow
+        rotation symbols to claim small images first.
 
         Args:
             step_candidate: The StepNumber candidate for this step
@@ -353,19 +357,17 @@ class StepClassifier(LabelClassifier):
             if max_alignment_diff > 0:
                 alignment_score = max(0.0, 1.0 - (left_diff / max_alignment_diff))
 
-        # Diagram will be assigned later during greedy selection
-        # Create score object with candidate references (no diagram yet)
+        # Create score object with candidate references
+        # Diagrams are found at build time, not during scoring
         score = _StepScore(
             step_number_candidate=step_candidate,
             parts_list_candidate=parts_list_candidate,
             has_parts_list=parts_list_candidate is not None,
             step_proximity_score=proximity_score,
             step_alignment_score=alignment_score,
-            diagram_candidate=None,
-            diagram_score=0.0,
         )
 
-        # Calculate combined bbox for the candidate (without diagram for now)
+        # Calculate combined bbox for the candidate (without diagram)
         combined_bbox = step_bbox
         if parts_list_bbox:
             combined_bbox = BBox.union(combined_bbox, parts_list_bbox)
@@ -440,83 +442,10 @@ class StepClassifier(LabelClassifier):
 
         return score
 
-    def _assign_diagrams_hungarian(
-        self,
-        step_candidates: list[Candidate],
-        diagram_candidates: list[Candidate],
-    ) -> dict[int, tuple[Candidate, float]]:
-        """Optimally assign diagrams to steps using the Hungarian algorithm.
-
-        This finds the assignment that maximizes the total score across all
-        step-diagram pairs, ensuring each step gets at most one diagram and
-        each diagram is assigned to at most one step.
-
-        Args:
-            step_candidates: List of step candidates (with step_number info)
-            diagram_candidates: List of diagram candidates
-
-        Returns:
-            Dict mapping step candidate index to (diagram_candidate, score)
-        """
-        if not step_candidates or not diagram_candidates:
-            return {}
-
-        n_diagrams = len(diagram_candidates)
-
-        # Build cost matrix (we'll use negative scores since Hungarian minimizes)
-        # Rows = steps, Columns = diagrams
-        cost_matrix: list[list[float]] = []
-
-        for step_cand in step_candidates:
-            assert isinstance(step_cand.score_details, _StepScore)
-            step_score = step_cand.score_details
-            step_bbox = step_score.step_number_candidate.bbox
-
-            row: list[float] = []
-            for diag_cand in diagram_candidates:
-                score = self._score_step_diagram_pair(step_bbox, diag_cand.bbox)
-                # Convert to cost (negative score) for minimization
-                row.append(-score)
-            cost_matrix.append(row)
-
-        # Run Hungarian algorithm
-        row_assignments, col_assignments = self._hungarian_algorithm(cost_matrix)
-
-        # Build result mapping
-        result: dict[int, tuple[Candidate, float]] = {}
-        for step_idx, diag_idx in zip(row_assignments, col_assignments, strict=True):
-            if diag_idx < n_diagrams:  # Valid assignment (not a dummy)
-                score = -cost_matrix[step_idx][diag_idx]
-                result[step_idx] = (diagram_candidates[diag_idx], score)
-
-        return result
-
-    def _hungarian_algorithm(
-        self, cost_matrix: list[list[float]]
-    ) -> tuple[list[int], list[int]]:
-        """Use scipy's Hungarian algorithm implementation.
-
-        Args:
-            cost_matrix: 2D cost matrix (rows=steps, cols=diagrams)
-
-        Returns:
-            Tuple of (row_indices, col_indices) for optimal assignment
-        """
-        if not cost_matrix or not cost_matrix[0]:
-            return [], []
-
-        # Convert to numpy array for scipy
-        cost_array = np.array(cost_matrix)
-
-        # scipy's linear_sum_assignment finds the optimal assignment
-        row_indices, col_indices = linear_sum_assignment(cost_array)
-
-        return list(row_indices), list(col_indices)
-
     def _get_rotation_symbol_for_step(
         self,
         step_num: StepNumber,
-        diagram: Diagram | None,
+        diagram_or_candidate: Diagram | Candidate | None,
         result: ClassificationResult,
     ) -> RotationSymbol | None:
         """Find rotation symbol associated with this step.
@@ -527,7 +456,8 @@ class StepClassifier(LabelClassifier):
 
         Args:
             step_num: The step number element
-            diagram: The diagram element (if any)
+            diagram_or_candidate: The diagram element or candidate (if any).
+                Can be either a built Diagram or an unbuilt Candidate with a bbox.
             result: Classification result containing rotation symbol candidates
 
         Returns:
@@ -547,7 +477,11 @@ class StepClassifier(LabelClassifier):
             return None
 
         # Determine search region: prefer diagram area, fallback to step area
-        search_bbox = diagram.bbox if diagram else step_num.bbox
+        # Accept both Diagram elements and Candidate objects (both have .bbox)
+        if diagram_or_candidate is not None:
+            search_bbox = diagram_or_candidate.bbox
+        else:
+            search_bbox = step_num.bbox
 
         # Expand search region to catch nearby symbols
         search_region = BBox(
@@ -789,26 +723,18 @@ class StepClassifier(LabelClassifier):
     def _deduplicate_and_assign_diagrams(
         self, candidates: list[Candidate], result: ClassificationResult
     ) -> list[Candidate]:
-        """Select the best Step candidates and optimally assign diagrams.
+        """Select the best Step candidates, ensuring each step number is unique.
 
-        Uses the Hungarian algorithm to find the optimal assignment between
-        steps and diagrams that maximizes total matching score. Ensures each
-        StepNumber value, PartsList, and Diagram is used at most once.
+        Diagrams are found at build time, not during scoring, to allow
+        rotation symbols to claim small images first.
 
         Args:
-            candidates: All possible Step candidates (without diagrams)
-            result: Classification result containing diagram candidates
+            candidates: All possible Step candidates
+            result: Classification result (unused, kept for API compatibility)
 
         Returns:
-            Deduplicated list of Step candidates with diagrams assigned
+            Deduplicated list of Step candidates (one per step number value)
         """
-        # Get subassembly bboxes to exclude step numbers inside subassemblies
-        # from diagram assignment (they have their own embedded diagrams)
-        subassembly_candidates = result.get_scored_candidates(
-            "subassembly", valid_only=False, exclude_failed=True
-        )
-        subassembly_bboxes = [c.bbox for c in subassembly_candidates]
-
         # First, deduplicate candidates by step number value
         # Pick the best candidate for each unique step number
         best_by_step_value: dict[int, Candidate] = {}
@@ -843,111 +769,11 @@ class StepClassifier(LabelClassifier):
         if not unique_step_candidates:
             return []
 
-        # Separate steps into main steps and subassembly steps
-        # Steps inside subassemblies shouldn't compete for page-level diagrams
-        main_step_candidates: list[Candidate] = []
-        subassembly_step_indices: set[int] = set()
-
-        for i, candidate in enumerate(unique_step_candidates):
-            assert isinstance(candidate.score_details, _StepScore)
-            score = candidate.score_details
-            step_bbox = score.step_number_candidate.bbox
-
-            # Check if this step is inside any subassembly
-            # Use the step number's center point for containment check
-            step_center_x, step_center_y = step_bbox.center
-            is_inside_subassembly = any(
-                sub_bbox.x0 <= step_center_x <= sub_bbox.x1
-                and sub_bbox.y0 <= step_center_y <= sub_bbox.y1
-                for sub_bbox in subassembly_bboxes
-            )
-
-            if is_inside_subassembly:
-                subassembly_step_indices.add(i)
-                log.debug(
-                    "[step] Step at (%s,%s) is inside a subassembly, "
-                    "excluding from diagram assignment",
-                    step_bbox.x0,
-                    step_bbox.y0,
-                )
-            else:
-                main_step_candidates.append(candidate)
-
-        # Get all diagram candidates
-        diagram_candidates = result.get_scored_candidates(
-            "diagram", valid_only=False, exclude_failed=True
-        )
-
-        log.debug(
-            "[step] Assigning %d diagrams to %d main steps "
-            "(excluding %d subassembly steps) using Hungarian algorithm",
-            len(diagram_candidates),
-            len(main_step_candidates),
-            len(subassembly_step_indices),
-        )
-
-        # Use Hungarian algorithm for optimal assignment (main steps only)
-        diagram_assignments = self._assign_diagrams_hungarian(
-            main_step_candidates, diagram_candidates
-        )
-
-        # Create a mapping from main_step_candidates index to diagram assignment
-        # We need to map this back to unique_step_candidates indices
-        main_to_unique_idx: dict[int, int] = {}
-        main_idx = 0
-        for i, candidate in enumerate(unique_step_candidates):
-            if i not in subassembly_step_indices:
-                main_to_unique_idx[main_idx] = i
-                main_idx += 1
-
-        # Remap diagram assignments to unique_step_candidates indices
-        unique_diagram_assignments: dict[int, tuple[Candidate, float]] = {}
-        for main_idx, (diag_cand, diag_score) in diagram_assignments.items():
-            unique_idx = main_to_unique_idx[main_idx]
-            unique_diagram_assignments[unique_idx] = (diag_cand, diag_score)
-
-        # Log the assignment matrix for debugging
-        for i, step_cand in enumerate(unique_step_candidates):
-            assert isinstance(step_cand.score_details, _StepScore)
-            step_score = step_cand.score_details
-            step_bbox = step_score.step_number_candidate.bbox
-
-            # Get step value for logging
-            text_block = step_score.step_number_candidate.source_blocks[0]
-            assert isinstance(text_block, Text)
-            step_value = extract_step_number_value(text_block.text)
-
-            if i in subassembly_step_indices:
-                log.debug(
-                    "[step] Step %s at (%s,%s) -> (inside subassembly, no diagram)",
-                    step_value,
-                    step_bbox.x0,
-                    step_bbox.y0,
-                )
-            elif i in unique_diagram_assignments:
-                diag_cand, diag_score = unique_diagram_assignments[i]
-                log.debug(
-                    "[step] Step %s at (%s,%s) -> Diagram at (%s,%s) score=%.2f",
-                    step_value,
-                    step_bbox.x0,
-                    step_bbox.y0,
-                    diag_cand.bbox.x0,
-                    diag_cand.bbox.y0,
-                    diag_score,
-                )
-            else:
-                log.debug(
-                    "[step] Step %s at (%s,%s) -> No diagram assigned",
-                    step_value,
-                    step_bbox.x0,
-                    step_bbox.y0,
-                )
-
-        # Build final candidates with diagram assignments
+        # Build final candidates ensuring parts list uniqueness
         selected: list[Candidate] = []
         used_parts_list_ids: set[int] = set()
 
-        for i, candidate in enumerate(unique_step_candidates):
+        for candidate in unique_step_candidates:
             assert isinstance(candidate.score_details, _StepScore)
             score = candidate.score_details
 
@@ -968,49 +794,34 @@ class StepClassifier(LabelClassifier):
                     else:
                         used_parts_list_ids.add(parts_list_id)
 
-            # Get diagram assignment (only for main steps, not subassembly steps)
-            diagram_candidate = None
-            diagram_score = 0.0
-            if i in unique_diagram_assignments:
-                diagram_candidate, diagram_score = unique_diagram_assignments[i]
+            # Create updated score if parts_list changed
+            if parts_list_candidate != score.parts_list_candidate:
+                updated_score = _StepScore(
+                    step_number_candidate=score.step_number_candidate,
+                    parts_list_candidate=parts_list_candidate,
+                    has_parts_list=parts_list_candidate is not None,
+                    step_proximity_score=score.step_proximity_score,
+                    step_alignment_score=score.step_alignment_score,
+                )
+                candidate = Candidate(
+                    bbox=candidate.bbox,
+                    label=candidate.label,
+                    score=updated_score.overall_score(),
+                    score_details=updated_score,
+                    source_blocks=candidate.source_blocks,
+                )
 
-            # Update the score with the diagram assignment
-            updated_score = _StepScore(
-                step_number_candidate=score.step_number_candidate,
-                parts_list_candidate=parts_list_candidate,
-                has_parts_list=parts_list_candidate is not None,
-                step_proximity_score=score.step_proximity_score,
-                step_alignment_score=score.step_alignment_score,
-                diagram_candidate=diagram_candidate,
-                diagram_score=diagram_score,
-            )
-
-            # Update the candidate's bbox to include the diagram
-            updated_bbox = candidate.bbox
-            if diagram_candidate:
-                updated_bbox = BBox.union(updated_bbox, diagram_candidate.bbox)
-
-            # Create updated candidate with diagram
-            updated_candidate = Candidate(
-                bbox=updated_bbox,
-                label=candidate.label,
-                score=updated_score.overall_score(),
-                score_details=updated_score,
-                source_blocks=candidate.source_blocks,
-            )
-
-            selected.append(updated_candidate)
+            selected.append(candidate)
 
             # Log selection
             text_block = score.step_number_candidate.source_blocks[0]
             assert isinstance(text_block, Text)
             step_value = extract_step_number_value(text_block.text)
             log.debug(
-                "[step] Selected step %d (parts_list=%s, diagram=%s, score=%.2f)",
+                "[step] Selected step %d (parts_list=%s, score=%.2f)",
                 step_value or 0,
                 "yes" if parts_list_candidate is not None else "no",
-                "yes" if diagram_candidate is not None else "no",
-                updated_score.overall_score(),
+                candidate.score,
             )
 
         return selected
