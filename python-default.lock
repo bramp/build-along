@@ -15,7 +15,7 @@
 //     "annotated-types~=0.7.0",
 //     "beautifulsoup4~=4.14.3",
 //     "httpx~=0.28.1",
-//     "json5~=0.10.0",
+//     "json5~=0.12.1",
 //     "limits~=5.6.0",
 //     "numpy~=2.3.5",
 //     "pydantic~=2.12.5",
@@ -401,28 +401,31 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "19b23410220a7271e8377f81ba8aacba2fdd56947fbb137ee5977cbe1f5e8dfa",
-              "url": "https://files.pythonhosted.org/packages/aa/42/797895b952b682c3dafe23b1834507ee7f02f4d6299b65aaa61425763278/json5-0.10.0-py3-none-any.whl"
+              "hash": "d9c9b3bc34a5f54d43c35e11ef7cb87d8bdd098c6ace87117a7b7e83e705c1d5",
+              "url": "https://files.pythonhosted.org/packages/85/e2/05328bd2621be49a6fed9e3030b1e51a2d04537d3f816d211b9cc53c5262/json5-0.12.1-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "e66941c8f0a02026943c52c2eb34ebeb2a6f819a0be05920a6f5243cd30fd559",
-              "url": "https://files.pythonhosted.org/packages/85/3d/bbe62f3d0c05a689c711cff57b2e3ac3d3e526380adb7c781989f075115c/json5-0.10.0.tar.gz"
+              "hash": "b2743e77b3242f8d03c143dd975a6ec7c52e2f2afe76ed934e53503dd4ad4990",
+              "url": "https://files.pythonhosted.org/packages/12/ae/929aee9619e9eba9015207a9d2c1c54db18311da7eb4dcf6d41ad6f0eb67/json5-0.12.1.tar.gz"
             }
           ],
           "project_name": "json5",
           "requires_dists": [
             "build==1.2.2.post1; extra == \"dev\"",
-            "coverage==7.5.3; extra == \"dev\"",
-            "mypy==1.13.0; extra == \"dev\"",
-            "pip==24.3.1; extra == \"dev\"",
-            "pylint==3.2.3; extra == \"dev\"",
-            "ruff==0.7.3; extra == \"dev\"",
-            "twine==5.1.1; extra == \"dev\"",
-            "uv==0.5.1; extra == \"dev\""
+            "coverage==7.5.4; python_version < \"3.9\" and extra == \"dev\"",
+            "coverage==7.8.0; python_version >= \"3.9\" and extra == \"dev\"",
+            "mypy==1.14.1; python_version < \"3.9\" and extra == \"dev\"",
+            "mypy==1.15.0; python_version >= \"3.9\" and extra == \"dev\"",
+            "pip==25.0.1; extra == \"dev\"",
+            "pylint==3.2.7; python_version < \"3.9\" and extra == \"dev\"",
+            "pylint==3.3.6; python_version >= \"3.9\" and extra == \"dev\"",
+            "ruff==0.11.2; extra == \"dev\"",
+            "twine==6.1.0; extra == \"dev\"",
+            "uv==0.6.11; extra == \"dev\""
           ],
           "requires_python": ">=3.8.0",
-          "version": "0.10.0"
+          "version": "0.12.1"
         },
         {
           "artifacts": [
@@ -1992,7 +1995,7 @@
     "annotated-types~=0.7.0",
     "beautifulsoup4~=4.14.3",
     "httpx~=0.28.1",
-    "json5~=0.10.0",
+    "json5~=0.12.1",
     "limits~=5.6.0",
     "numpy~=2.3.5",
     "pydantic~=2.12.5",
