@@ -48,6 +48,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
+    Image,
 )
 
 log = logging.getLogger(__name__)
@@ -175,10 +176,111 @@ class RotationSymbolClassifier(LabelClassifier):
     def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> RotationSymbol:
-        """Construct a RotationSymbol element from a candidate."""
-        return RotationSymbol(
-            bbox=candidate.bbox,
+        """Construct a RotationSymbol element from a candidate.
+
+        Also finds and claims small images that overlap or are very close to
+        the rotation symbol (e.g., dropshadows or reference diagrams that are
+        visually part of the rotation symbol).
+        """
+        # Find small images that should be claimed as part of the rotation symbol
+        claimed_images = self._find_rotation_symbol_images(candidate, result)
+
+        if claimed_images:
+            # Update the candidate's bbox to include the claimed images
+            all_bboxes = [candidate.bbox] + [img.bbox for img in claimed_images]
+            expanded_bbox = BBox.union_all(all_bboxes)
+
+            # Add claimed images to source_blocks so they're marked as consumed
+            candidate.source_blocks.extend(claimed_images)
+
+            log.debug(
+                "[rotation_symbol] Claimed %d additional images for rotation symbol "
+                "at %s, expanded bbox to %s, source_blocks=%s",
+                len(claimed_images),
+                candidate.bbox,
+                expanded_bbox,
+                [b.id for b in candidate.source_blocks],
+            )
+
+            candidate.bbox = expanded_bbox
+
+        return RotationSymbol(bbox=candidate.bbox)
+
+    def _find_rotation_symbol_images(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> list[Image]:
+        """Find small images that are part of the rotation symbol.
+
+        These are typically dropshadows or small reference diagrams that visually
+        belong to the rotation symbol but are stored as separate Image blocks.
+
+        An image is claimed if:
+        1. It overlaps with or is very close to the rotation symbol bbox
+        2. It's small enough to plausibly be part of the symbol (not a main diagram)
+        3. It hasn't already been consumed by another classifier
+
+        Args:
+            candidate: The rotation symbol candidate
+            result: Classification result containing page data and consumed blocks
+
+        Returns:
+            List of Image blocks that should be claimed as part of the rotation symbol
+        """
+        page_data = result.page_data
+        rs_bbox = candidate.bbox
+
+        # Maximum size for an image to be considered part of the rotation symbol.
+        # Images larger than 2x the rotation symbol size are likely main diagrams.
+        max_image_dimension = rs_bbox.width * 2.0
+
+        # How close an image must be to be claimed (allow small gap for positioning)
+        proximity_threshold = 10.0
+
+        # Expand the rotation symbol bbox slightly for overlap detection
+        search_bbox = BBox(
+            x0=rs_bbox.x0 - proximity_threshold,
+            y0=rs_bbox.y0 - proximity_threshold,
+            x1=rs_bbox.x1 + proximity_threshold,
+            y1=rs_bbox.y1 + proximity_threshold,
         )
+
+        claimed: list[Image] = []
+        for block in page_data.blocks:
+            if not isinstance(block, Image):
+                continue
+
+            # Skip if already consumed
+            if block.id in result._consumed_blocks:
+                continue
+
+            # Check if image overlaps with expanded search area
+            if not block.bbox.overlaps(search_bbox):
+                continue
+
+            # Skip if image is too large (likely a main diagram)
+            if (
+                block.bbox.width > max_image_dimension
+                or block.bbox.height > max_image_dimension
+            ):
+                log.debug(
+                    "[rotation_symbol] Skipping large image at %s "
+                    "(size %.1fx%.1f > max %.1f)",
+                    block.bbox,
+                    block.bbox.width,
+                    block.bbox.height,
+                    max_image_dimension,
+                )
+                continue
+
+            claimed.append(block)
+            log.debug(
+                "[rotation_symbol] Found rotation symbol image at %s (size %.1fx%.1f)",
+                block.bbox,
+                block.bbox.width,
+                block.bbox.height,
+            )
+
+        return claimed
 
     def _score_bbox(
         self,
