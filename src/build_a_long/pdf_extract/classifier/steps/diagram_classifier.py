@@ -6,16 +6,23 @@ Purpose
 Identify diagram regions on instruction pages. Diagrams are any images or
 drawings on the page, distinct from PartImages (which are single LEGO pieces).
 Sometimes a diagram is split into multiple smaller images that are positioned
-next to each other, so we cluster them together (similar to how NewBagClassifier
-clusters bag graphics).
+next to each other, so we cluster them together.
 
 Heuristic
 ---------
-- Look for Drawing/Image elements on the page
-- Filter out very small images (< 3% of page area)
+- Look for Image elements on the page
 - Filter out full-page images (> 90% of page area, likely backgrounds or borders)
-- Cluster adjacent/overlapping images into single diagrams
-- Each cluster becomes a diagram candidate
+- Each Image becomes a diagram candidate (no clustering during scoring)
+- During build(), expand to include adjacent unclaimed images (lazy clustering)
+
+Lazy Clustering
+---------------
+Clustering is deferred to build() time. This allows other classifiers (like
+SubAssemblyClassifier) to claim images first. When build() is called:
+1. Start with the candidate's source image
+2. Find all adjacent/overlapping unclaimed images
+3. Cluster them together into a single Diagram
+4. Mark all clustered images as consumed
 
 Re-scoring
 ----------
@@ -50,8 +57,6 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
-    Blocks,
-    Drawing,
     Image,
 )
 
@@ -86,16 +91,17 @@ class DiagramClassifier(LabelClassifier):
     )
 
     # TODO Convert to configurable parameters
-    # Area filtering thresholds (as ratio of page area)
-    MIN_AREA_RATIO: ClassVar[float] = (
-        0.03  # Filter out images < 3% of page (decorative elements)
-    )
+    # Area filtering threshold (as ratio of page area)
     MAX_AREA_RATIO: ClassVar[float] = (
         0.95  # Filter out images > 95% of page (backgrounds/borders)
     )
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score Drawing/Image clusters and create candidates."""
+        """Score Image blocks and create one candidate per image.
+
+        Clustering is deferred to build() time to allow other classifiers
+        to claim images first.
+        """
         page_data = result.page_data
         page_bbox = page_data.bbox
         assert page_bbox is not None
@@ -104,10 +110,10 @@ class DiagramClassifier(LabelClassifier):
             "arrow", valid_only=False, exclude_failed=True
         )
 
-        # Get all image/drawing blocks, filtering out full-page images
-        image_blocks: list[Drawing | Image] = []
+        # Get all image blocks, filtering out full-page images
+        image_blocks: list[Image] = []
         for block in page_data.blocks:
-            # Only consider Drawing and Image elements
+            # Only consider Image elements
             if not isinstance(block, Image):
                 continue
 
@@ -129,7 +135,7 @@ class DiagramClassifier(LabelClassifier):
 
         if not image_blocks:
             log.debug(
-                "[diagram] No image/drawing blocks found on page %s",
+                "[diagram] No image blocks found on page %s",
                 page_data.page_number,
             )
             return
@@ -140,22 +146,23 @@ class DiagramClassifier(LabelClassifier):
             len(image_blocks),
         )
 
-        # Build clusters of connected images
-        clusters = build_all_connected_clusters(image_blocks)
-
-        log.debug(
-            "[diagram] Found %d diagram clusters",
-            len(clusters),
-        )
-
-        # Create a candidate for each cluster (with no exclusions)
-        for cluster in clusters:
-            candidate = self._create_candidate_from_blocks(
-                list(cluster), excluded_block_ids=set(), result=result
+        # Create one candidate per image (no clustering during scoring)
+        for block in image_blocks:
+            score_details = _DiagramScore(
+                cluster_bbox=block.bbox,
+                num_images=1,
             )
-            if candidate:
-                result.add_candidate(candidate)
 
+            candidate = Candidate(
+                bbox=block.bbox,
+                label="diagram",
+                score=score_details.score(),
+                score_details=score_details,
+                source_blocks=[block],
+            )
+            result.add_candidate(candidate)
+
+    # TODO Can we delete this
     def rescore_without_blocks(
         self,
         candidate: Candidate,
@@ -164,132 +171,108 @@ class DiagramClassifier(LabelClassifier):
     ) -> Candidate | None:
         """Create a new diagram candidate excluding specified blocks.
 
+        Since each candidate now represents a single image, if that image
+        is excluded, the candidate is no longer valid.
+
         Args:
             candidate: The original candidate to re-score
             excluded_block_ids: Set of block IDs to exclude
             result: The classification result context
 
         Returns:
-            A new candidate without the excluded blocks, or None if the
-            candidate is no longer valid without those blocks.
+            The same candidate if the image is not excluded, None otherwise.
         """
-        # Filter out excluded blocks
-        remaining_blocks = [
-            b for b in candidate.source_blocks if b.id not in excluded_block_ids
-        ]
-
-        if not remaining_blocks:
+        # With single-image candidates, if the block is excluded, return None
+        if (
+            candidate.source_blocks
+            and candidate.source_blocks[0].id in excluded_block_ids
+        ):
             return None
+        return candidate
 
-        return self._create_candidate_from_blocks(
-            remaining_blocks, excluded_block_ids, result
-        )
+    def build(self, candidate: Candidate, result: ClassificationResult) -> Diagram:
+        """Construct a Diagram element with lazy clustering.
 
-    def _create_candidate_from_blocks(
-        self,
-        blocks: list[Blocks],
-        excluded_block_ids: set[int],
-        result: ClassificationResult,
-    ) -> Candidate | None:
-        """Create a diagram candidate from a list of blocks.
-
-        Args:
-            blocks: The blocks to include in the diagram
-            excluded_block_ids: Block IDs that were excluded (for logging)
-            result: The classification result context
-
-        Returns:
-            A Candidate if the blocks form a valid diagram, None otherwise
+        Starting from the candidate's source image, expands to include all
+        adjacent/overlapping unclaimed images, clustering them into a single
+        Diagram.
         """
-        if not blocks:
-            return None
-
         page_bbox = result.page_data.bbox
         assert page_bbox is not None
 
-        cluster_bbox = self._calculate_cluster_bbox(blocks)
+        # Start with the candidate's source block
+        assert len(candidate.source_blocks) == 1
+        seed_block = candidate.source_blocks[0]
+        assert isinstance(seed_block, Image)
 
-        # Filter based on area relative to page
-        area_ratio = cluster_bbox.area / page_bbox.area
+        # Find all unclaimed images that can be clustered with this one
+        clustered_blocks = self._expand_cluster(seed_block, result)
 
-        # Skip very small images (< 3% of page area)
-        # These are likely decorative elements or noise
-        if area_ratio < self.MIN_AREA_RATIO:
-            if excluded_block_ids:
-                log.debug(
-                    "[diagram] Reduced diagram too small after excluding blocks: "
-                    "area_ratio=%.3f < %.3f",
-                    area_ratio,
-                    self.MIN_AREA_RATIO,
-                )
-            return None
+        # Calculate the combined bbox
+        cluster_bbox = BBox.union_all([b.bbox for b in clustered_blocks])
 
-        # Skip full-page images (> 90% of page area)
-        # These are likely borders/backgrounds
-        if area_ratio > self.MAX_AREA_RATIO:
-            return None
+        # Clip diagram bbox to page bounds
+        diagram_bbox = cluster_bbox.clip_to(page_bbox)
 
-        score_details = _DiagramScore(
-            cluster_bbox=cluster_bbox,
-            num_images=len(blocks),
-        )
+        # Update the candidate's source_blocks to include all clustered blocks
+        # This ensures they all get marked as consumed
+        candidate.source_blocks = list(clustered_blocks)
 
         log.debug(
-            "[diagram] %s images=%d bbox=%s",
-            "Reduced cluster" if excluded_block_ids else "cluster",
-            len(blocks),
-            cluster_bbox,
+            "[diagram] Building diagram at %s (clustered %d images)",
+            diagram_bbox,
+            len(clustered_blocks),
         )
-
-        return Candidate(
-            bbox=cluster_bbox,
-            label="diagram",
-            score=score_details.score(),
-            score_details=score_details,
-            source_blocks=list(blocks),
-        )
-
-    def build(self, candidate: Candidate, result: ClassificationResult) -> Diagram:
-        """Construct a Diagram element from a single candidate."""
-        # Get the cluster bbox from score details
-        score_details = candidate.score_details
-        assert isinstance(score_details, _DiagramScore)
-
-        # Clip diagram bbox to page bounds (arrows may extend slightly off-page)
-        page_bbox = result.page_data.bbox
-        diagram_bbox = score_details.cluster_bbox.clip_to(page_bbox)
-
-        log.debug("[diagram] Building diagram at %s", diagram_bbox)
 
         return Diagram(bbox=diagram_bbox)
 
-    def _get_progress_bar_bbox(self, result: ClassificationResult) -> BBox | None:
-        """Get the bounding box of the progress bar if present.
+    def _expand_cluster(
+        self, seed_block: Image, result: ClassificationResult
+    ) -> list[Image]:
+        """Expand from a seed image to include all adjacent unclaimed images.
 
-        Returns:
-            BBox of the progress bar, or None if not found.
-        """
-        progress_bar_candidates = result.get_scored_candidates(
-            "progress_bar", valid_only=False, exclude_failed=True
-        )
-
-        # Return the first progress bar candidate's bbox
-        if progress_bar_candidates:
-            return progress_bar_candidates[0].bbox
-
-        return None
-
-    def _calculate_cluster_bbox(self, cluster: list[Blocks]) -> BBox:
-        """Calculate the bounding box encompassing all images in the cluster.
+        Uses flood-fill to find all images that are adjacent/overlapping
+        and not yet consumed by another classifier.
 
         Args:
-            cluster: List of images in the cluster
+            seed_block: The starting image block
+            result: Classification result to check consumed blocks
 
         Returns:
-            Bounding box covering the entire cluster
+            List of all images in the cluster (including seed)
         """
-        if not cluster:
-            raise ValueError("Cannot calculate bbox for empty cluster")
+        # Get all unclaimed image blocks on the page
+        log.debug(
+            "[diagram] _expand_cluster: seed=%d at %s, consumed_blocks=%s",
+            seed_block.id,
+            seed_block.bbox,
+            sorted(result._consumed_blocks),
+        )
+        unclaimed_images: list[Image] = []
+        for block in result.page_data.blocks:
+            if not isinstance(block, Image):
+                continue
+            # Skip if already consumed
+            if block.id in result._consumed_blocks:
+                log.debug(
+                    "[diagram] Skipping consumed image id=%d at %s",
+                    block.id,
+                    block.bbox,
+                )
+                continue
+            unclaimed_images.append(block)
 
-        bboxes = [img.bbox for img in cluster]
-        return BBox.union_all(bboxes)
+        if seed_block not in unclaimed_images:
+            # Seed was already consumed (shouldn't happen, but be safe)
+            return [seed_block]
+
+        # Build clusters from unclaimed images
+        clusters = build_all_connected_clusters(unclaimed_images)
+
+        # Find the cluster containing our seed block
+        for cluster in clusters:
+            if seed_block in cluster:
+                return list(cluster)
+
+        # Fallback: just return the seed block
+        return [seed_block]

@@ -11,7 +11,8 @@ from build_a_long.pdf_extract.classifier.steps.diagram_classifier import (
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image
+from build_a_long.pdf_extract.extractor.lego_page_elements import Diagram
+from build_a_long.pdf_extract.extractor.page_blocks import Image
 
 
 @pytest.fixture
@@ -19,13 +20,12 @@ def classifier() -> DiagramClassifier:
     return DiagramClassifier(config=ClassifierConfig())
 
 
-class TestDiagramClassification:
-    """Tests for diagram detection and clustering."""
+class TestDiagramScoring:
+    """Tests for diagram scoring (one candidate per image)."""
 
     def test_single_image_creates_diagram(self, classifier: DiagramClassifier) -> None:
         """Test that a single image creates a diagram candidate."""
         page_bbox = BBox(0, 0, 200, 300)
-        # Medium-sized image (25% of page area)
         img = Image(id=1, bbox=BBox(50, 100, 150, 200))
 
         page_data = PageData(
@@ -41,15 +41,15 @@ class TestDiagramClassification:
         assert len(candidates) == 1
         assert candidates[0].bbox == img.bbox
 
-    def test_clustered_images_create_single_diagram(
+    def test_multiple_images_create_multiple_candidates(
         self, classifier: DiagramClassifier
     ) -> None:
-        """Test that overlapping images are clustered into a single diagram."""
+        """Test that multiple images create multiple candidates (no clustering during score)."""
         page_bbox = BBox(0, 0, 200, 300)
-        # Three overlapping images that should cluster together
+        # Three overlapping images - each becomes a candidate
         img1 = Image(id=1, bbox=BBox(50, 100, 100, 150))
-        img2 = Image(id=2, bbox=BBox(90, 120, 140, 170))  # Overlaps img1
-        img3 = Image(id=3, bbox=BBox(130, 140, 180, 190))  # Overlaps img2
+        img2 = Image(id=2, bbox=BBox(90, 120, 140, 170))
+        img3 = Image(id=3, bbox=BBox(130, 140, 180, 190))
 
         page_data = PageData(
             page_number=1,
@@ -61,36 +61,8 @@ class TestDiagramClassification:
         classifier.score(result)
 
         candidates = result.get_candidates("diagram")
-        # Should create a single diagram cluster
-        assert len(candidates) == 1
-        # Cluster bbox should encompass all three images
-        cluster_bbox = candidates[0].bbox
-        assert cluster_bbox.x0 == 50
-        assert cluster_bbox.y0 == 100
-        assert cluster_bbox.x1 == 180
-        assert cluster_bbox.y1 == 190
-
-    def test_separate_images_create_multiple_diagrams(
-        self, classifier: DiagramClassifier
-    ) -> None:
-        """Test that non-overlapping images create separate diagram candidates."""
-        page_bbox = BBox(0, 0, 400, 300)  # 120,000 area
-        # Two separate images that don't overlap (both > 3% = 3,600 area)
-        img1 = Image(id=1, bbox=BBox(50, 100, 120, 200))  # 7,000 area
-        img2 = Image(id=2, bbox=BBox(250, 100, 320, 200))  # 7,000 area
-
-        page_data = PageData(
-            page_number=1,
-            blocks=[img1, img2],
-            bbox=page_bbox,
-        )
-
-        result = ClassificationResult(page_data=page_data)
-        classifier.score(result)
-
-        candidates = result.get_candidates("diagram")
-        # Should create two separate diagrams
-        assert len(candidates) == 2
+        # Each image creates a separate candidate
+        assert len(candidates) == 3
 
     def test_filters_out_full_page_images(self, classifier: DiagramClassifier) -> None:
         """Test that full-page images (>95% of page) are filtered out."""
@@ -114,17 +86,18 @@ class TestDiagramClassification:
         assert len(candidates) == 1
         assert candidates[0].bbox == normal_img.bbox
 
-    def test_filters_out_small_images(self, classifier: DiagramClassifier) -> None:
-        """Test that very small images (<3% of page) are filtered out."""
-        page_bbox = BBox(0, 0, 200, 300)  # 60,000 area
-        # Tiny image (< 3% = 1,800 area)
-        tiny_img = Image(id=1, bbox=BBox(50, 100, 60, 150))  # 500 area
-        # Normal image (> 3%)
-        normal_img = Image(id=2, bbox=BBox(100, 100, 150, 200))  # 5,000 area
+
+class TestDiagramBuilding:
+    """Tests for diagram building (lazy clustering)."""
+
+    def test_build_single_image(self, classifier: DiagramClassifier) -> None:
+        """Test building a diagram from a single isolated image."""
+        page_bbox = BBox(0, 0, 200, 300)
+        img = Image(id=1, bbox=BBox(50, 100, 150, 200))
 
         page_data = PageData(
             page_number=1,
-            blocks=[tiny_img, normal_img],
+            blocks=[img],
             bbox=page_bbox,
         )
 
@@ -132,51 +105,109 @@ class TestDiagramClassification:
         classifier.score(result)
 
         candidates = result.get_candidates("diagram")
-        # Should only have the normal image
         assert len(candidates) == 1
-        assert candidates[0].bbox == normal_img.bbox
 
-    def test_filters_out_progress_bar_overlap(
+        # Build the diagram
+        diagram = result.build(candidates[0])
+        assert isinstance(diagram, Diagram)
+        assert diagram.bbox == img.bbox
+
+    def test_build_clusters_adjacent_images(
         self, classifier: DiagramClassifier
     ) -> None:
-        """Test that images overlapping the progress bar are filtered out."""
+        """Test that build() clusters adjacent/overlapping unclaimed images."""
         page_bbox = BBox(0, 0, 200, 300)
-        # Image that would overlap with progress bar
-        img_near_bar = Image(id=1, bbox=BBox(50, 280, 100, 295))
-        # Normal image away from progress bar
-        normal_img = Image(id=2, bbox=BBox(50, 100, 100, 150))
-        # Mock progress bar drawing
-        progress_bar_drawing = Drawing(id=99, bbox=BBox(0, 285, 200, 300))
+        # Three overlapping images that should cluster together
+        img1 = Image(id=1, bbox=BBox(50, 100, 100, 150))
+        img2 = Image(id=2, bbox=BBox(90, 120, 140, 170))  # Overlaps img1
+        img3 = Image(id=3, bbox=BBox(130, 140, 180, 190))  # Overlaps img2
 
         page_data = PageData(
             page_number=1,
-            blocks=[img_near_bar, normal_img, progress_bar_drawing],
+            blocks=[img1, img2, img3],
             bbox=page_bbox,
         )
 
         result = ClassificationResult(page_data=page_data)
-
-        # Mock a progress bar candidate
-        from build_a_long.pdf_extract.classifier.candidate import Candidate
-        from build_a_long.pdf_extract.classifier.score import Score
-
-        class _MockScore(Score):
-            def score(self):
-                return 1.0
-
-        result.add_candidate(
-            Candidate(
-                bbox=progress_bar_drawing.bbox,
-                label="progress_bar",
-                score=1.0,
-                score_details=_MockScore(),
-                source_blocks=[progress_bar_drawing],
-            )
-        )
-
         classifier.score(result)
 
         candidates = result.get_candidates("diagram")
-        # Should only have the normal image (img_near_bar filtered out)
-        assert len(candidates) == 1
-        assert candidates[0].bbox == normal_img.bbox
+        assert len(candidates) == 3  # Three candidates during scoring
+
+        # Build the first candidate - should cluster all three
+        diagram = result.build(candidates[0])
+        assert isinstance(diagram, Diagram)
+
+        # Cluster bbox should encompass all three images
+        assert diagram.bbox.x0 == 50
+        assert diagram.bbox.y0 == 100
+        assert diagram.bbox.x1 == 180
+        assert diagram.bbox.y1 == 190
+
+        # All three images should now be consumed
+        assert img1.id in result._consumed_blocks
+        assert img2.id in result._consumed_blocks
+        assert img3.id in result._consumed_blocks
+
+    def test_build_respects_consumed_blocks(
+        self, classifier: DiagramClassifier
+    ) -> None:
+        """Test that build() doesn't include images already consumed by other classifiers."""
+        page_bbox = BBox(0, 0, 200, 300)
+        # Three overlapping images
+        img1 = Image(id=1, bbox=BBox(50, 100, 100, 150))
+        img2 = Image(id=2, bbox=BBox(90, 120, 140, 170))  # Overlaps img1
+        img3 = Image(id=3, bbox=BBox(130, 140, 180, 190))  # Overlaps img2
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[img1, img2, img3],
+            bbox=page_bbox,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        classifier.score(result)
+
+        # Simulate another classifier consuming img2
+        result._consumed_blocks.add(img2.id)
+
+        candidates = result.get_candidates("diagram")
+
+        # Build diagram from img1 - should only cluster with unclaimed images
+        # Since img2 is consumed, img1 and img3 are not connected
+        img1_candidate = next(c for c in candidates if img1 in c.source_blocks)
+        diagram = result.build(img1_candidate)
+
+        assert isinstance(diagram, Diagram)
+        # Should only contain img1 (img2 is consumed, so img3 is not reachable)
+        assert diagram.bbox == img1.bbox
+
+    def test_separate_images_build_separately(
+        self, classifier: DiagramClassifier
+    ) -> None:
+        """Test that non-overlapping images build as separate diagrams."""
+        page_bbox = BBox(0, 0, 400, 300)
+        # Two separate images that don't overlap
+        img1 = Image(id=1, bbox=BBox(50, 100, 120, 200))
+        img2 = Image(id=2, bbox=BBox(250, 100, 320, 200))
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[img1, img2],
+            bbox=page_bbox,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        classifier.score(result)
+
+        candidates = result.get_candidates("diagram")
+        assert len(candidates) == 2
+
+        # Build both diagrams
+        diagram1 = result.build(candidates[0])
+        diagram2 = result.build(candidates[1])
+
+        # Each should only contain its own image
+        assert diagram1.bbox == img1.bbox or diagram1.bbox == img2.bbox
+        assert diagram2.bbox == img1.bbox or diagram2.bbox == img2.bbox
+        assert diagram1.bbox != diagram2.bbox
