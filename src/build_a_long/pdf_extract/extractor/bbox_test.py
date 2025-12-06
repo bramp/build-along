@@ -6,6 +6,8 @@ from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
     build_all_connected_clusters,
     build_connected_cluster,
+    filter_contained,
+    filter_overlapping,
 )
 
 
@@ -397,3 +399,80 @@ def test_build_all_connected_clusters_multiple_groups():
     # Check group sizes
     sizes = sorted(len(c) for c in result)
     assert sizes == [1, 2, 2]
+
+
+def test_filter_contained():
+    """Test filtering items contained in a bbox."""
+    container = BBox(0, 0, 20, 20)
+
+    item1 = MockItem(1, BBox(5, 5, 15, 15))  # Contained
+    item2 = MockItem(2, BBox(0, 0, 20, 20))  # Contained (exact match)
+    item3 = MockItem(3, BBox(15, 15, 25, 25))  # Overlapping but not contained
+    item4 = MockItem(4, BBox(30, 30, 40, 40))  # Outside
+
+    items = [item1, item2, item3, item4]
+    result = filter_contained(items, container)
+
+    assert len(result) == 2
+    assert item1 in result
+    assert item2 in result
+
+
+def test_filter_overlapping():
+    """Test filtering items overlapping with a bbox."""
+    target = BBox(10, 10, 20, 20)
+
+    item1 = MockItem(1, BBox(12, 12, 18, 18))  # Fully inside (overlaps)
+    item2 = MockItem(2, BBox(5, 5, 15, 15))  # Partial overlap
+    item3 = MockItem(3, BBox(20, 20, 30, 30))  # Touching corner (not overlapping)
+    item4 = MockItem(4, BBox(30, 30, 40, 40))  # No overlap
+
+    items = [item1, item2, item3, item4]
+    result = filter_overlapping(items, target)
+
+    assert len(result) == 2
+    assert item1 in result
+    assert item2 in result
+
+
+def test_expand_positive():
+    """Test expanding bbox with positive margin."""
+    bbox = BBox(10, 10, 20, 20)
+    expanded = bbox.expand(5)
+
+    assert expanded.x0 == 5
+    assert expanded.y0 == 5
+    assert expanded.x1 == 25
+    assert expanded.y1 == 25
+    assert expanded.width == 20
+    assert expanded.height == 20
+
+
+def test_expand_negative_valid():
+    """Test shrinking bbox with negative margin (valid result)."""
+    bbox = BBox(10, 10, 30, 30)
+    shrunk = bbox.expand(-5)
+
+    assert shrunk.x0 == 15
+    assert shrunk.y0 == 15
+    assert shrunk.x1 == 25
+    assert shrunk.y1 == 25
+    assert shrunk.width == 10
+    assert shrunk.height == 10
+
+
+def test_expand_negative_invalid():
+    """Test shrinking bbox with negative margin resulting in invalid bbox."""
+    bbox = BBox(10, 10, 20, 20)
+
+    # Shrink by more than half the width/height
+    with pytest.raises(ValueError, match="Cannot expand bbox by -6"):
+        bbox.expand(-6)
+
+
+def test_expand_zero():
+    """Test expanding bbox with zero margin."""
+    bbox = BBox(10, 10, 20, 20)
+    expanded = bbox.expand(0)
+
+    assert expanded == bbox

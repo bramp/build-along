@@ -307,6 +307,32 @@ class BBox(BaseModel):
 
         return BBox(x0=x0, y0=y0, x1=x1, y1=y1)
 
+    def expand(self, margin: float) -> BBox:
+        """Return a new BBox expanded by the given margin on all sides.
+
+        Args:
+            margin: The amount to expand the bbox by. Can be negative to shrink.
+
+        Returns:
+            A new BBox expanded by the margin.
+
+        Raises:
+            ValueError: If a negative margin would result in an invalid bbox
+                (width or height < 0).
+        """
+        x0 = self.x0 - margin
+        y0 = self.y0 - margin
+        x1 = self.x1 + margin
+        y1 = self.y1 + margin
+
+        if x0 > x1 or y0 > y1:
+            raise ValueError(
+                f"Cannot expand bbox by {margin}: result would be invalid "
+                f"(width={x1 - x0}, height={y1 - y0})"
+            )
+
+        return BBox(x0=x0, y0=y0, x1=x1, y1=y1)
+
 
 class HasBBox(Protocol):
     """Protocol for objects that have a bbox attribute."""
@@ -424,3 +450,29 @@ def build_all_connected_clusters[T: HasBBox](items: list[T]) -> list[list[T]]:
         clusters.append(cluster)
 
     return clusters
+
+
+def filter_contained(items: list[T], container: BBox) -> list[T]:
+    """Filter items to keep only those fully contained within the container bbox.
+
+    Args:
+        items: List of items with bbox property
+        container: The bounding box to check containment against
+
+    Returns:
+        List of items fully contained in the container
+    """
+    return [item for item in items if container.contains(item.bbox)]
+
+
+def filter_overlapping(items: list[T], target: BBox) -> list[T]:
+    """Filter items to keep only those overlapping with the target bbox.
+
+    Args:
+        items: List of items with bbox property
+        target: The bounding box to check overlap against
+
+    Returns:
+        List of items overlapping with the target
+    """
+    return [item for item in items if target.overlaps(item.bbox)]

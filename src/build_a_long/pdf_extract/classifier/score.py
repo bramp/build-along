@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Annotated
+from typing import Annotated, Protocol, TypeVar
 
 from annotated_types import Ge, Le
 from pydantic import BaseModel, ConfigDict
@@ -43,3 +43,27 @@ class Score(BaseModel):
                 lowest confidence and 1.0 is the highest confidence.
         """
         ...
+
+
+class HasScore(Protocol):
+    """Protocol for objects that have a score attribute."""
+
+    @property
+    def score(self) -> float: ...
+
+
+S = TypeVar("S", bound=HasScore)
+
+
+def find_best_scoring(items: list[S]) -> S | None:
+    """Find the item with the highest score in the list.
+
+    Args:
+        items: List of items with a score property.
+
+    Returns:
+        The item with the highest score, or None if the list is empty.
+    """
+    if not items:
+        return None
+    return max(items, key=lambda x: x.score)
