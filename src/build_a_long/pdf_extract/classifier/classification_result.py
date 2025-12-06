@@ -200,6 +200,13 @@ class ClassificationResult(BaseModel):
             candidate.constructed = element
 
             # Mark blocks as consumed
+            log.debug(
+                "[build] Marking %d blocks as consumed for '%s' at %s: %s",
+                len(candidate.source_blocks),
+                candidate.label,
+                candidate.bbox,
+                [b.id for b in candidate.source_blocks],
+            )
             for block in candidate.source_blocks:
                 self._consumed_blocks.add(block.id)
 
