@@ -53,7 +53,11 @@ log = logging.getLogger(__name__)
 
 
 class _NewBagScore(Score):
-    """Internal score representation for new bag classification."""
+    """Internal score representation for new bag classification.
+
+    Scores based on intrinsic cluster properties (size, aspect ratio, position).
+    Bag number discovery is deferred to build time.
+    """
 
     size_score: float
     """Score based on cluster size (0.0-1.0)."""
@@ -65,10 +69,7 @@ class _NewBagScore(Score):
     """Score based on position in top-left area (0.0-1.0)."""
 
     has_bag_number: bool
-    """Whether a BagNumber candidate was found inside the cluster."""
-
-    bag_number_candidate: Candidate | None
-    """The bag number candidate for this new bag, or None for numberless bags."""
+    """Whether a BagNumber candidate was found inside the cluster (affects score)."""
 
     cluster_bbox: BBox
     """Bounding box encompassing the entire bag cluster."""
@@ -149,11 +150,6 @@ class NewBagClassifier(LabelClassifier):
 
             if score_details is None:
                 continue
-
-            assert (
-                score_details.bag_number_candidate is None
-                or score_details.bag_number_candidate.source_blocks not in cluster
-            ), "NewBag Cluster source blocks should not include the NewBagNumber blocks"
 
             combined = score_details.score()
 
@@ -243,8 +239,8 @@ class NewBagClassifier(LabelClassifier):
         y_ratio = cluster_bbox.y0 / page_bbox.height if page_bbox.height else 1.0
         position_score = 1.0 - (x_ratio + y_ratio) / 2.0
 
-        # Check for bag number inside cluster
-        bag_number_candidate = self._find_bag_number_in_cluster(
+        # Check if bag number exists inside cluster (for scoring bonus)
+        has_bag_number = self._has_bag_number_in_cluster(
             cluster_bbox, bag_number_candidates
         )
 
@@ -252,36 +248,59 @@ class NewBagClassifier(LabelClassifier):
             size_score=size_score,
             aspect_score=aspect_score,
             position_score=position_score,
-            has_bag_number=bag_number_candidate is not None,
-            bag_number_candidate=bag_number_candidate,
+            has_bag_number=has_bag_number,
             cluster_bbox=cluster_bbox,
         )
 
-    def _find_bag_number_in_cluster(
+    def _has_bag_number_in_cluster(
         self, cluster_bbox: BBox, bag_number_candidates: list[Candidate]
-    ) -> Candidate | None:
-        """Find a bag number candidate that is inside the cluster bbox.
+    ) -> bool:
+        """Check if a bag number candidate exists inside the cluster bbox.
 
         Args:
             cluster_bbox: Bounding box of the cluster.
             bag_number_candidates: All bag number candidates on the page.
 
         Returns:
-            The best bag number candidate inside the cluster, or None.
+            True if a bag number candidate is inside the cluster.
         """
-        contained = filter_contained(bag_number_candidates, cluster_bbox)
-        return find_best_scoring(contained)
+        return any(filter_contained(bag_number_candidates, cluster_bbox))
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> NewBag:
-        """Construct a NewBag element from a single candidate."""
+        """Construct a NewBag element from a single candidate.
+
+        Discovers and builds the bag number at build time by finding
+        the best-scoring bag number candidate inside the cluster.
+        """
         detail_score = candidate.score_details
         assert isinstance(detail_score, _NewBagScore)
 
-        # Construct bag number if present
-        bag_number: BagNumber | None = None
-        if detail_score.bag_number_candidate is not None:
-            bag_number_elem = result.build(detail_score.bag_number_candidate)
-            assert isinstance(bag_number_elem, BagNumber)
-            bag_number = bag_number_elem
+        # Find and construct bag number at build time
+        bag_number = self._find_and_build_bag_number(detail_score.cluster_bbox, result)
 
         return NewBag(bbox=detail_score.cluster_bbox, number=bag_number)
+
+    def _find_and_build_bag_number(
+        self, cluster_bbox: BBox, result: ClassificationResult
+    ) -> BagNumber | None:
+        """Find and build the bag number inside the cluster.
+
+        Args:
+            cluster_bbox: Bounding box of the cluster.
+            result: Classification result for accessing candidates.
+
+        Returns:
+            Built BagNumber element, or None if not found.
+        """
+        bag_number_candidates = result.get_scored_candidates(
+            "bag_number", valid_only=False, exclude_failed=True
+        )
+        contained = filter_contained(bag_number_candidates, cluster_bbox)
+        best_candidate = find_best_scoring(contained)
+
+        if best_candidate is None:
+            return None
+
+        bag_number_elem = result.build(best_candidate)
+        assert isinstance(bag_number_elem, BagNumber)
+        return bag_number_elem

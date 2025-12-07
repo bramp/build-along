@@ -36,11 +36,15 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.parts.parts_list_classifier import (
     _PartsListScore,
 )
-from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.classifier.score import (
+    Score,
+    Weight,
+    find_best_scoring,
+)
 from build_a_long.pdf_extract.classifier.text import (
     extract_step_number_value,
 )
-from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.bbox import BBox, filter_overlapping
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Arrow,
     Diagram,
@@ -477,22 +481,11 @@ class StepClassifier(LabelClassifier):
         if not rotation_symbol_candidates:
             return None
 
-        # Find rotation symbols within or overlapping the step's bbox
-        # Keep track of best candidate by score
-        best_candidate = None
-        best_score = 0.0
-        for candidate in rotation_symbol_candidates:
-            overlaps = candidate.bbox.overlaps(step_bbox)
-            log.debug(
-                "[step]   Candidate at %s, overlaps=%s, score=%.2f, constructed=%s",
-                candidate.bbox,
-                overlaps,
-                candidate.score,
-                candidate.constructed is not None,
-            )
-            if overlaps and candidate.score > best_score:
-                best_candidate = candidate
-                best_score = candidate.score
+        # Find best-scoring rotation symbol overlapping the step's bbox
+        overlapping_candidates = filter_overlapping(
+            rotation_symbol_candidates, step_bbox
+        )
+        best_candidate = find_best_scoring(overlapping_candidates)
 
         if best_candidate and best_candidate.constructed is not None:
             rotation_symbol = best_candidate.constructed
@@ -500,7 +493,7 @@ class StepClassifier(LabelClassifier):
             log.debug(
                 "[step] Found rotation symbol at %s (score=%.2f)",
                 rotation_symbol.bbox,
-                best_score,
+                best_candidate.score,
             )
             return rotation_symbol
 
@@ -545,12 +538,7 @@ class StepClassifier(LabelClassifier):
 
         # Expand search region to catch arrows near the diagram
         # Use a larger margin than rotation symbols since arrows can extend further
-        search_region = BBox(
-            x0=search_bbox.x0 - 100,
-            y0=search_bbox.y0 - 100,
-            x1=search_bbox.x1 + 100,
-            y1=search_bbox.y1 + 100,
-        )
+        search_region = search_bbox.expand(100.0)
 
         log.debug(
             "[step] Arrow search region for step %d: %s",
@@ -560,27 +548,26 @@ class StepClassifier(LabelClassifier):
 
         # Find arrows within or overlapping the search region
         arrows: list[Arrow] = []
-        for candidate in arrow_candidates:
-            overlaps = candidate.bbox.overlaps(search_region)
+        overlapping_candidates = filter_overlapping(arrow_candidates, search_region)
+
+        for candidate in overlapping_candidates:
             log.debug(
-                "[step]   Arrow candidate at %s, overlaps=%s, score=%.2f",
+                "[step]   Arrow candidate at %s, overlaps=True, score=%.2f",
                 candidate.bbox,
-                overlaps,
                 candidate.score,
             )
-            if overlaps:
-                try:
-                    arrow = result.build(candidate)
-                    assert isinstance(arrow, Arrow)
-                    arrows.append(arrow)
-                except CandidateFailedError:
-                    # Arrow lost conflict to another arrow (they share source blocks)
-                    # This is expected when multiple arrows overlap - skip it
-                    log.debug(
-                        "[step]   Arrow candidate at %s failed (conflict), skipping",
-                        candidate.bbox,
-                    )
-                    continue
+            try:
+                arrow = result.build(candidate)
+                assert isinstance(arrow, Arrow)
+                arrows.append(arrow)
+            except CandidateFailedError:
+                # Arrow lost conflict to another arrow (they share source blocks)
+                # This is expected when multiple arrows overlap - skip it
+                log.debug(
+                    "[step]   Arrow candidate at %s failed (conflict), skipping",
+                    candidate.bbox,
+                )
+                continue
 
         log.debug(
             "[step] Found %d arrows for step %d",
@@ -628,12 +615,7 @@ class StepClassifier(LabelClassifier):
         # Expand search region to catch subassemblies near the diagram
         # Use a larger margin since subassemblies can be positioned further from
         # the main diagram
-        search_region = BBox(
-            x0=search_bbox.x0 - 150,
-            y0=search_bbox.y0 - 150,
-            x1=search_bbox.x1 + 150,
-            y1=search_bbox.y1 + 150,
-        )
+        search_region = search_bbox.expand(150.0)
 
         log.debug(
             "[step] SubAssembly search region for step %d: %s",
@@ -643,26 +625,26 @@ class StepClassifier(LabelClassifier):
 
         # Find subassemblies within or overlapping the search region
         subassemblies: list[SubAssembly] = []
+        overlapping_candidates = filter_overlapping(
+            subassembly_candidates, search_region
+        )
 
-        for candidate in subassembly_candidates:
-            overlaps = candidate.bbox.overlaps(search_region)
+        for candidate in overlapping_candidates:
             log.debug(
-                "[step]   SubAssembly candidate at %s, overlaps=%s, score=%.2f",
+                "[step]   SubAssembly candidate at %s, overlaps=True, score=%.2f",
                 candidate.bbox,
-                overlaps,
                 candidate.score,
             )
-            if overlaps:
-                try:
-                    subassembly = result.build(candidate)
-                    assert isinstance(subassembly, SubAssembly)
-                    subassemblies.append(subassembly)
-                except Exception as e:
-                    log.debug(
-                        "[step]   Failed to build subassembly at %s: %s",
-                        candidate.bbox,
-                        e,
-                    )
+            try:
+                subassembly = result.build(candidate)
+                assert isinstance(subassembly, SubAssembly)
+                subassemblies.append(subassembly)
+            except Exception as e:
+                log.debug(
+                    "[step]   Failed to build subassembly at %s: %s",
+                    candidate.bbox,
+                    e,
+                )
 
         log.debug(
             "[step] Found %d subassemblies for step %d",

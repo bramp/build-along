@@ -31,6 +31,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.extractor.bbox import filter_contained
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartsList,
@@ -97,7 +98,7 @@ class PartsListClassifier(LabelClassifier):
         drawing_scores: list[tuple[Drawing, _PartsListScore]] = []
         for drawing in drawings:
             # Find all part candidates contained in this drawing
-            contained = self._find_containing_part_candidates(drawing, part_candidates)
+            contained = filter_contained(part_candidates, drawing.bbox)
 
             # Create score with Candidate references
             score = _PartsListScore(part_candidates=contained)
@@ -192,21 +193,3 @@ class PartsListClassifier(LabelClassifier):
             bbox=candidate.bbox,
             parts=parts,
         )
-
-    def _find_containing_part_candidates(
-        self, drawing: Drawing, part_candidates: list[Candidate]
-    ) -> list[Candidate]:
-        """Find all part candidates that are contained within a drawing.
-
-        Args:
-            drawing: The drawing element to check
-            part_candidates: List of all Part candidates on the page
-
-        Returns:
-            List of Candidate objects whose bboxes are fully inside the drawing
-        """
-        return [
-            candidate
-            for candidate in part_candidates
-            if drawing.bbox.contains(candidate.bbox)
-        ]
