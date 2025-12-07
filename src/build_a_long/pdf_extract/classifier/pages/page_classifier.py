@@ -26,16 +26,12 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score
-from build_a_long.pdf_extract.classifier.steps.step_classifier import (
-    assign_rotation_symbols_to_steps,
-)
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     NewBag,
     Page,
     PageNumber,
     Part,
     ProgressBar,
-    RotationSymbol,
     Step,
 )
 
@@ -153,58 +149,22 @@ class PageClassifier(LabelClassifier):
                     e,
                 )
 
-        # Build all rotation symbols BEFORE steps.
-        # This allows rotation symbols to claim their Drawing blocks first,
-        # preventing them from being incorrectly clustered into diagrams.
-        # Steps will then find already-built rotation symbols.
-        for rs_candidate in result.get_scored_candidates(
-            "rotation_symbol", valid_only=False, exclude_failed=True
-        ):
-            try:
-                result.build(rs_candidate)
-                log.debug(
-                    "[page] Built rotation symbol at %s (score=%.2f)",
-                    rs_candidate.bbox,
-                    rs_candidate.score,
-                )
-            except Exception as e:
-                log.debug(
-                    "Failed to construct rotation_symbol candidate at %s: %s",
-                    rs_candidate.bbox,
-                    e,
-                )
+        # Build all steps using the StepClassifier's coordinated build_all.
+        # This handles:
+        # 1. Building rotation symbols first (so they claim Drawing blocks)
+        # 2. Building all Step candidates
+        # 3. Hungarian matching to assign rotation symbols to steps
+        result.build_all_for_label("step")
 
-        # Get steps from candidates
-        # TODO Consider pre-filtering based on runs of step numbers
+        # Collect the built steps
         steps: list[Step] = []
-        for step_candidate in result.get_scored_candidates(
-            "step", valid_only=False, exclude_failed=True
-        ):
-            try:
-                elem = result.build(step_candidate)
-                assert isinstance(elem, Step)
-                steps.append(elem)
-            except Exception as e:
-                log.debug(
-                    "Failed to construct step candidate at %s: %s",
-                    step_candidate.bbox,
-                    e,
-                )
+        for step_candidate in result.get_scored_candidates("step", valid_only=True):
+            assert step_candidate.constructed is not None
+            assert isinstance(step_candidate.constructed, Step)
+            steps.append(step_candidate.constructed)
 
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
-
-        # Assign rotation symbols to steps using Hungarian matching
-        # Collect built rotation symbols
-        rotation_symbols: list[RotationSymbol] = []
-        for rs_candidate in result.get_scored_candidates(
-            "rotation_symbol", valid_only=True
-        ):
-            assert rs_candidate.constructed is not None
-            assert isinstance(rs_candidate.constructed, RotationSymbol)
-            rotation_symbols.append(rs_candidate.constructed)
-
-        assign_rotation_symbols_to_steps(steps, rotation_symbols)
 
         # Collect parts that are already used in steps (to exclude from catalog)
         parts_in_steps: set[int] = set()

@@ -187,6 +187,76 @@ class StepClassifier(LabelClassifier):
             len(all_candidates),
         )
 
+    def build_all(self, result: ClassificationResult) -> None:
+        """Build all Step elements with coordinated rotation symbol assignment.
+
+        This method:
+        1. Builds all rotation symbols first (so they claim their Drawing blocks)
+        2. Builds all Step candidates
+        3. Uses Hungarian matching to optimally assign rotation symbols to steps
+
+        This coordination ensures:
+        - Rotation symbols are built before diagrams, preventing incorrect clustering
+        - Each rotation symbol is assigned to at most one step
+        - Assignment is globally optimal based on distance to step diagrams
+        """
+        # Phase 1: Build all rotation symbols BEFORE steps.
+        # This allows rotation symbols to claim their Drawing blocks first,
+        # preventing them from being incorrectly clustered into diagrams.
+        for rs_candidate in result.get_scored_candidates(
+            "rotation_symbol", valid_only=False, exclude_failed=True
+        ):
+            try:
+                result.build(rs_candidate)
+                log.debug(
+                    "[step] Built rotation symbol at %s (score=%.2f)",
+                    rs_candidate.bbox,
+                    rs_candidate.score,
+                )
+            except Exception as e:
+                log.debug(
+                    "[step] Failed to construct rotation_symbol candidate at %s: %s",
+                    rs_candidate.bbox,
+                    e,
+                )
+
+        # Phase 2: Build all Step candidates
+        steps: list[Step] = []
+        for step_candidate in result.get_scored_candidates(
+            "step", valid_only=False, exclude_failed=True
+        ):
+            try:
+                elem = result.build(step_candidate)
+                assert isinstance(elem, Step)
+                steps.append(elem)
+            except Exception as e:
+                log.debug(
+                    "[step] Failed to construct step candidate at %s: %s",
+                    step_candidate.bbox,
+                    e,
+                )
+
+        # Sort steps by their step_number value
+        steps.sort(key=lambda step: step.step_number.value)
+
+        # Phase 3: Assign rotation symbols to steps using Hungarian matching
+        # Collect built rotation symbols
+        rotation_symbols: list[RotationSymbol] = []
+        for rs_candidate in result.get_scored_candidates(
+            "rotation_symbol", valid_only=True
+        ):
+            assert rs_candidate.constructed is not None
+            assert isinstance(rs_candidate.constructed, RotationSymbol)
+            rotation_symbols.append(rs_candidate.constructed)
+
+        assign_rotation_symbols_to_steps(steps, rotation_symbols)
+
+        log.debug(
+            "[step] build_all complete: %d steps, %d rotation symbols assigned",
+            len(steps),
+            sum(1 for s in steps if s.rotation_symbol is not None),
+        )
+
     def build(self, candidate: Candidate, result: ClassificationResult) -> Step:
         """Construct a Step element from a single candidate."""
         score = candidate.score_details

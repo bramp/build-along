@@ -150,6 +150,25 @@ class ClassificationResult(BaseModel):
         """
         self._classifiers[label] = classifier
 
+    def build_all_for_label(self, label: str) -> None:
+        """Build all candidates for a label using the registered classifier's build_all.
+
+        This delegates to the classifier's build_all() method, allowing classifiers
+        to implement custom coordination logic (e.g., Hungarian matching) before
+        building individual candidates.
+
+        Args:
+            label: The label to build all candidates for
+
+        Raises:
+            ValueError: If no classifier is registered for the label
+        """
+        classifier = self._classifiers.get(label)
+        if not classifier:
+            raise ValueError(f"No classifier registered for label '{label}'")
+
+        classifier.build_all(self)
+
     def build(self, candidate: Candidate) -> LegoPageElements:
         """Construct a candidate using the registered classifier.
 
