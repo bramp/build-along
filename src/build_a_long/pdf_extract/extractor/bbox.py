@@ -468,3 +468,51 @@ def filter_overlapping[T: HasBBox](items: list[T], target: BBox) -> list[T]:
         List of items overlapping with the target
     """
     return [item for item in items if target.overlaps(item.bbox)]
+
+
+def group_by_similar_bbox[T: HasBBox](
+    items: list[T],
+    tolerance: float = 2.0,
+) -> list[list[T]]:
+    """Group items by similar bounding boxes.
+
+    Items with nearly identical bboxes (within tolerance) are grouped together.
+    This is useful for grouping duplicate elements like overlapping drawing
+    borders or fill regions that represent the same logical element.
+
+    Uses greedy grouping: each item is added to the first group with a similar
+    bbox, or starts a new group if no match is found. Similarity is checked
+    against the first item in each group.
+
+    Args:
+        items: List of items with bbox property
+        tolerance: Maximum coordinate difference to consider bboxes similar
+            (default 2.0 points)
+
+    Returns:
+        List of groups, where each group contains items with similar bboxes.
+        Groups preserve insertion order.
+
+    Example:
+        >>> # Group drawings that represent the same parts list border
+        >>> groups = group_by_similar_bbox(drawings, tolerance=2.0)
+        >>> for group in groups:
+        ...     bbox = BBox.union_all([d.bbox for d in group])
+        ...     print(f"Group of {len(group)} drawings at {bbox}")
+    """
+    if not items:
+        return []
+
+    groups: list[list[T]] = []
+    for item in items:
+        # Try to find an existing group with similar bbox
+        found_group = False
+        for group in groups:
+            if item.bbox.similar(group[0].bbox, tolerance=tolerance):
+                group.append(item)
+                found_group = True
+                break
+        if not found_group:
+            groups.append([item])
+
+    return groups

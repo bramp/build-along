@@ -31,7 +31,11 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import BBox, filter_contained
+from build_a_long.pdf_extract.extractor.bbox import (
+    BBox,
+    filter_contained,
+    group_by_similar_bbox,
+)
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartsList,
@@ -100,17 +104,7 @@ class PartsListClassifier(LabelClassifier):
 
         # Group drawings with similar bboxes together
         # Each group represents a single potential parts list
-        groups: list[list[Drawing]] = []
-        for drawing in drawings:
-            # Try to find an existing group with similar bbox
-            found_group = False
-            for group in groups:
-                if drawing.bbox.similar(group[0].bbox, tolerance=2.0):
-                    group.append(drawing)
-                    found_group = True
-                    break
-            if not found_group:
-                groups.append([drawing])
+        groups = group_by_similar_bbox(drawings, tolerance=2.0)
 
         log.debug(
             "[parts_list] Grouped %d drawings into %d unique bbox regions",

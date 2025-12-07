@@ -46,6 +46,7 @@ from build_a_long.pdf_extract.classifier.text import extract_step_number_value
 from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
     filter_contained,
+    group_by_similar_bbox,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
@@ -117,12 +118,12 @@ class SubAssemblyClassifier(LabelClassifier):
             "diagram", valid_only=False, exclude_failed=True
         )
 
-        # Collect all potential candidates, then deduplicate by bbox
-        # Multiple Drawing blocks can have nearly identical bboxes (e.g.,
-        # white-filled box and black-bordered box for the same subassembly)
-        found_bboxes: list[BBox] = []
-
         # Find rectangular drawing blocks that could be subassembly boxes
+        # Filter by size constraints first
+        max_width = page_data.bbox.width * subassembly_config.max_page_width_ratio
+        max_height = page_data.bbox.height * subassembly_config.max_page_height_ratio
+
+        valid_drawings: list[Drawing] = []
         for block in page_data.blocks:
             if not isinstance(block, Drawing):
                 continue
@@ -130,7 +131,6 @@ class SubAssemblyClassifier(LabelClassifier):
             bbox = block.bbox
 
             # Skip boxes smaller than minimum subassembly size
-            # (subassemblies must be larger than individual parts)
             if (
                 bbox.width < subassembly_config.min_subassembly_width
                 or bbox.height < subassembly_config.min_subassembly_height
@@ -138,11 +138,6 @@ class SubAssemblyClassifier(LabelClassifier):
                 continue
 
             # Skip boxes larger than maximum subassembly size
-            # (subassemblies are callout boxes, not page-sized elements)
-            max_width = page_data.bbox.width * subassembly_config.max_page_width_ratio
-            max_height = (
-                page_data.bbox.height * subassembly_config.max_page_height_ratio
-            )
             if bbox.width > max_width or bbox.height > max_height:
                 log.debug(
                     "[subassembly] Skipping oversized box at %s "
@@ -155,17 +150,20 @@ class SubAssemblyClassifier(LabelClassifier):
                 )
                 continue
 
-            # Skip if we've already found a similar bbox
-            if any(bbox.similar(found, tolerance=2.0) for found in found_bboxes):
-                log.debug(
-                    "[subassembly] Skipping duplicate bbox at %s",
-                    bbox,
-                )
-                continue
+            valid_drawings.append(block)
 
-            # Score the box colors (white fill, black border)
-            box_score = self._score_box_colors(block)
-            if box_score < 0.3:
+        # Group drawings with similar bboxes (e.g., white-filled box and
+        # black-bordered box for the same subassembly)
+        groups = group_by_similar_bbox(valid_drawings, tolerance=2.0)
+
+        # Process each group - create one candidate per unique bbox region
+        for group in groups:
+            # Use union of all grouped drawings' bboxes
+            bbox = BBox.union_all([d.bbox for d in group])
+
+            # Score each drawing's colors and pick the best
+            best_box_score = max(self._score_box_colors(d) for d in group)
+            if best_box_score < 0.3:
                 continue
 
             # Check for child elements inside the box (for scoring only)
@@ -182,7 +180,7 @@ class SubAssemblyClassifier(LabelClassifier):
 
             # We need at least a box - count and diagram are optional
             score_details = _SubAssemblyScore(
-                box_score=box_score,
+                box_score=best_box_score,
                 has_step_count=has_step_count,
                 has_diagram_or_images=has_diagram_or_images,
                 has_step_numbers=has_step_numbers,
@@ -198,16 +196,13 @@ class SubAssemblyClassifier(LabelClassifier):
                 )
                 continue
 
-            # Track this bbox to avoid duplicates
-            found_bboxes.append(bbox)
-
             result.add_candidate(
                 Candidate(
                     bbox=bbox,
                     label="subassembly",
                     score=score_details.score(),
                     score_details=score_details,
-                    source_blocks=[block],
+                    source_blocks=list(group),
                 )
             )
             log.debug(

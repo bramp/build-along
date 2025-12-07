@@ -8,6 +8,7 @@ from build_a_long.pdf_extract.extractor.bbox import (
     build_connected_cluster,
     filter_contained,
     filter_overlapping,
+    group_by_similar_bbox,
 )
 
 
@@ -480,3 +481,108 @@ def test_expand_zero():
     expanded = bbox.expand(0)
 
     assert expanded == bbox
+
+
+class TestGroupBySimilarBbox:
+    """Tests for group_by_similar_bbox function."""
+
+    def test_empty_list(self):
+        """Empty list returns empty list."""
+        result = group_by_similar_bbox([])
+        assert result == []
+
+    def test_single_item(self):
+        """Single item returns one group with that item."""
+        item = MockItem(1, BBox(10, 10, 20, 20))
+        result = group_by_similar_bbox([item])
+        assert len(result) == 1
+        assert result[0] == [item]
+
+    def test_identical_bboxes(self):
+        """Items with identical bboxes are grouped together."""
+        item1 = MockItem(1, BBox(10, 10, 20, 20))
+        item2 = MockItem(2, BBox(10, 10, 20, 20))
+        item3 = MockItem(3, BBox(10, 10, 20, 20))
+
+        result = group_by_similar_bbox([item1, item2, item3])
+        assert len(result) == 1
+        assert len(result[0]) == 3
+        assert item1 in result[0]
+        assert item2 in result[0]
+        assert item3 in result[0]
+
+    def test_similar_bboxes_within_tolerance(self):
+        """Items with bboxes within tolerance are grouped together."""
+        item1 = MockItem(1, BBox(10.0, 10.0, 20.0, 20.0))
+        item2 = MockItem(2, BBox(10.5, 10.5, 20.5, 20.5))  # Within tolerance=2.0
+        item3 = MockItem(3, BBox(11.0, 11.0, 21.0, 21.0))  # Within tolerance=2.0
+
+        result = group_by_similar_bbox([item1, item2, item3], tolerance=2.0)
+        assert len(result) == 1
+        assert len(result[0]) == 3
+
+    def test_different_bboxes_separate_groups(self):
+        """Items with different bboxes are in separate groups."""
+        item1 = MockItem(1, BBox(10, 10, 20, 20))
+        item2 = MockItem(2, BBox(100, 100, 110, 110))
+        item3 = MockItem(3, BBox(200, 200, 210, 210))
+
+        result = group_by_similar_bbox([item1, item2, item3])
+        assert len(result) == 3
+        assert [item1] in result
+        assert [item2] in result
+        assert [item3] in result
+
+    def test_mixed_similar_and_different(self):
+        """Mix of similar and different bboxes."""
+        # Group 1: similar bboxes
+        item1 = MockItem(1, BBox(10, 10, 20, 20))
+        item2 = MockItem(2, BBox(10.5, 10.5, 20.5, 20.5))
+        # Group 2: different bbox
+        item3 = MockItem(3, BBox(100, 100, 110, 110))
+        # Group 3: similar to group 2
+        item4 = MockItem(4, BBox(100.5, 100.5, 110.5, 110.5))
+
+        result = group_by_similar_bbox([item1, item2, item3, item4], tolerance=2.0)
+        assert len(result) == 2
+
+        # Find group containing item1
+        group1 = next(g for g in result if item1 in g)
+        assert item2 in group1
+        assert len(group1) == 2
+
+        # Find group containing item3
+        group2 = next(g for g in result if item3 in g)
+        assert item4 in group2
+        assert len(group2) == 2
+
+    def test_custom_tolerance(self):
+        """Custom tolerance affects grouping."""
+        item1 = MockItem(1, BBox(10, 10, 20, 20))
+        item2 = MockItem(2, BBox(15, 15, 25, 25))  # 5 points difference
+
+        # With default tolerance=2.0, these are separate groups
+        result = group_by_similar_bbox([item1, item2], tolerance=2.0)
+        assert len(result) == 2
+
+        # With tolerance=10.0, they're in the same group
+        result = group_by_similar_bbox([item1, item2], tolerance=10.0)
+        assert len(result) == 1
+        assert len(result[0]) == 2
+
+    def test_preserves_insertion_order(self):
+        """Groups and items within groups preserve insertion order."""
+        item1 = MockItem(1, BBox(10, 10, 20, 20))
+        item2 = MockItem(2, BBox(100, 100, 110, 110))
+        item3 = MockItem(3, BBox(10.5, 10.5, 20.5, 20.5))  # Similar to item1
+        item4 = MockItem(4, BBox(100.5, 100.5, 110.5, 110.5))  # Similar to item2
+
+        result = group_by_similar_bbox([item1, item2, item3, item4], tolerance=2.0)
+
+        # First group should be item1's group (first encountered)
+        assert result[0][0] == item1
+        assert result[0][1] == item3
+
+        # Second group should be item2's group
+        assert result[1][0] == item2
+        assert result[1][1] == item4
