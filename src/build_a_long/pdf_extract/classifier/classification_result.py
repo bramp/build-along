@@ -199,6 +199,17 @@ class ClassificationResult(BaseModel):
             element = classifier.build(candidate, self)
             candidate.constructed = element
 
+            # Sync candidate bbox with constructed element's bbox.
+            # The constructed element may have a different bbox (e.g., Step's
+            # bbox includes diagram which is only determined at build time).
+            if candidate.bbox != element.bbox:
+                log.debug(
+                    "[build] Updating candidate bbox from %s to %s - This indicate the bbox changed between score and build, and may indicate a classification bug",
+                    candidate.bbox,
+                    element.bbox,
+                )
+            candidate.bbox = element.bbox
+
             # Mark blocks as consumed
             log.debug(
                 "[build] Marking %d blocks as consumed for '%s' at %s: %s",

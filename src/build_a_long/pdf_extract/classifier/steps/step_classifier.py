@@ -22,6 +22,9 @@ Set environment variables to aid investigation without code changes:
 
 import logging
 
+import numpy as np
+from scipy.optimize import linear_sum_assignment
+
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     CandidateFailedError,
@@ -200,15 +203,12 @@ class StepClassifier(LabelClassifier):
             assert isinstance(parts_list_elem, PartsList)
             parts_list = parts_list_elem
 
-        # Build rotation symbol BEFORE diagram so it can claim small images
-        # that might otherwise be clustered into the diagram.
-        # At this point we don't have a diagram yet, so use step bbox for search.
-        rotation_symbol = self._get_rotation_symbol_for_step(step_num, None, result)
-
-        # Now find and build the best diagram for this step
-        # This happens after rotation symbols are built, so they've already
-        # claimed any small images they need
+        # Find and build the diagram for this step first
         diagram = self._find_and_build_diagram_for_step(step_num, parts_list, result)
+
+        # Compute the step's bbox (step_num + parts_list + diagram)
+        page_bbox = result.page_data.bbox
+        step_bbox = self._compute_step_bbox(step_num, parts_list, diagram, page_bbox)
 
         # Get arrows for this step (from subassemblies and other sources)
         arrows = self._get_arrows_for_step(step_num, diagram, result)
@@ -216,14 +216,13 @@ class StepClassifier(LabelClassifier):
         # Get subassemblies for this step
         subassemblies = self._get_subassemblies_for_step(step_num, diagram, result)
 
-        # Build Step - clip bbox to page bounds
-        page_bbox = result.page_data.bbox
+        # Build Step (rotation_symbol will be assigned later)
         return Step(
-            bbox=self._compute_step_bbox(step_num, parts_list, diagram, page_bbox),
+            bbox=step_bbox,
             step_number=step_num,
             parts_list=parts_list,
             diagram=diagram,
-            rotation_symbol=rotation_symbol,
+            rotation_symbol=None,
             arrows=arrows,
             subassemblies=subassemblies,
         )
@@ -444,86 +443,68 @@ class StepClassifier(LabelClassifier):
 
     def _get_rotation_symbol_for_step(
         self,
-        step_num: StepNumber,
-        diagram_or_candidate: Diagram | Candidate | None,
+        step_bbox: BBox,
         result: ClassificationResult,
     ) -> RotationSymbol | None:
-        """Find rotation symbol associated with this step.
+        """Find an already-built rotation symbol within this step's area.
 
-        Looks for rotation symbol candidates that are positioned near the
-        step's diagram or step number. Returns the highest-scored candidate
-        if multiple are found.
+        Rotation symbols are built by PageClassifier before steps are processed.
+        This method finds the already-built rotation symbol that falls within
+        the step's bounding box.
 
         Args:
-            step_num: The step number element
-            diagram_or_candidate: The diagram element or candidate (if any).
-                Can be either a built Diagram or an unbuilt Candidate with a bbox.
+            step_bbox: The step's bounding box (including step_num, parts_list,
+                and diagram)
             result: Classification result containing rotation symbol candidates
 
         Returns:
             Single RotationSymbol element for this step, or None if not found
         """
+        # Get rotation_symbol candidates - they should already be built
+        # by PageClassifier. Use valid_only=True to only get successfully
+        # constructed rotation symbols.
         rotation_symbol_candidates = result.get_scored_candidates(
-            "rotation_symbol", valid_only=False, exclude_failed=True
+            "rotation_symbol", valid_only=True
         )
 
         log.debug(
-            "[step] Looking for rotation symbols for step %d, found %d candidates",
-            step_num.value,
+            "[step] Looking for rotation symbols in step bbox %s, "
+            "found %d built candidates",
+            step_bbox,
             len(rotation_symbol_candidates),
         )
 
         if not rotation_symbol_candidates:
             return None
 
-        # Determine search region: prefer diagram area, fallback to step area
-        # Accept both Diagram elements and Candidate objects (both have .bbox)
-        if diagram_or_candidate is not None:
-            search_bbox = diagram_or_candidate.bbox
-        else:
-            search_bbox = step_num.bbox
-
-        # Expand search region to catch nearby symbols
-        search_region = BBox(
-            x0=search_bbox.x0 - 50,
-            y0=search_bbox.y0 - 50,
-            x1=search_bbox.x1 + 50,
-            y1=search_bbox.y1 + 50,
-        )
-
-        log.debug(
-            "[step] Search region for step %d: %s",
-            step_num.value,
-            search_region,
-        )
-
-        # Find rotation symbols within or overlapping the search region
+        # Find rotation symbols within or overlapping the step's bbox
         # Keep track of best candidate by score
         best_candidate = None
         best_score = 0.0
         for candidate in rotation_symbol_candidates:
-            overlaps = candidate.bbox.overlaps(search_region)
+            overlaps = candidate.bbox.overlaps(step_bbox)
             log.debug(
-                "[step]   Candidate at %s, overlaps=%s, score=%.2f",
+                "[step]   Candidate at %s, overlaps=%s, score=%.2f, constructed=%s",
                 candidate.bbox,
                 overlaps,
                 candidate.score,
+                candidate.constructed is not None,
             )
             if overlaps and candidate.score > best_score:
                 best_candidate = candidate
                 best_score = candidate.score
 
-        if best_candidate:
-            rotation_symbol = result.build(best_candidate)
+        if best_candidate and best_candidate.constructed is not None:
+            rotation_symbol = best_candidate.constructed
             assert isinstance(rotation_symbol, RotationSymbol)
             log.debug(
-                "[step] Found rotation symbol for step %d (score=%.2f)",
-                step_num.value,
+                "[step] Found rotation symbol at %s (score=%.2f)",
+                rotation_symbol.bbox,
                 best_score,
             )
             return rotation_symbol
 
-        log.debug("[step] No rotation symbol found for step %d", step_num.value)
+        log.debug("[step] No rotation symbol found in step bbox %s", step_bbox)
         return None
 
     def _get_arrows_for_step(
@@ -825,3 +806,108 @@ class StepClassifier(LabelClassifier):
             )
 
         return selected
+
+
+def assign_rotation_symbols_to_steps(
+    steps: list[Step],
+    rotation_symbols: list[RotationSymbol],
+    max_distance: float = 300.0,
+) -> None:
+    """Assign rotation symbols to steps using Hungarian algorithm.
+
+    Uses optimal bipartite matching to pair rotation symbols with steps based on
+    minimum distance from the rotation symbol to the step's diagram (or step bbox
+    center if no diagram).
+
+    This function mutates the Step objects in place, setting their rotation_symbol
+    attribute.
+
+    Args:
+        steps: List of Step objects to assign rotation symbols to
+        rotation_symbols: List of RotationSymbol objects to assign
+        max_distance: Maximum distance for a valid assignment. Pairs with distance
+            greater than this will not be matched.
+    """
+    if not steps or not rotation_symbols:
+        log.debug(
+            "[step] No rotation symbol assignment needed: "
+            "steps=%d, rotation_symbols=%d",
+            len(steps),
+            len(rotation_symbols),
+        )
+        return
+
+    n_steps = len(steps)
+    n_symbols = len(rotation_symbols)
+
+    log.debug(
+        "[step] Running Hungarian matching: %d steps, %d rotation symbols",
+        n_steps,
+        n_symbols,
+    )
+
+    # Build cost matrix: rows = rotation symbols, cols = steps
+    # Cost = distance from rotation symbol center to step's diagram center
+    # (or step bbox center if no diagram)
+    cost_matrix = np.zeros((n_symbols, n_steps))
+
+    for i, rs in enumerate(rotation_symbols):
+        rs_center = rs.bbox.center
+        for j, step in enumerate(steps):
+            # Use diagram center if available, otherwise step bbox center
+            if step.diagram:
+                target_center = step.diagram.bbox.center
+            else:
+                target_center = step.bbox.center
+
+            # Euclidean distance
+            distance = (
+                (rs_center[0] - target_center[0]) ** 2
+                + (rs_center[1] - target_center[1]) ** 2
+            ) ** 0.5
+
+            cost_matrix[i, j] = distance
+            log.debug(
+                "[step]   Distance from rotation_symbol[%d] at %s to step[%d]: %.1f",
+                i,
+                rs.bbox,
+                step.step_number.value,
+                distance,
+            )
+
+    # Apply max_distance threshold by setting costs above threshold to a high value
+    # This prevents assignments that are too far apart
+    high_cost = max_distance * 10  # Arbitrary large value
+    cost_matrix_thresholded = np.where(
+        cost_matrix > max_distance, high_cost, cost_matrix
+    )
+
+    # Run Hungarian algorithm
+    row_indices, col_indices = linear_sum_assignment(cost_matrix_thresholded)
+
+    # Assign rotation symbols to steps based on the matching
+    for row_idx, col_idx in zip(row_indices, col_indices, strict=True):
+        # Check if this assignment is within the max_distance threshold
+        if cost_matrix[row_idx, col_idx] <= max_distance:
+            rs = rotation_symbols[row_idx]
+            step = steps[col_idx]
+            step.rotation_symbol = rs
+            # Expand step bbox to include the rotation symbol
+            step.bbox = step.bbox.union(rs.bbox)
+            log.debug(
+                "[step] Assigned rotation symbol at %s to step %d "
+                "(distance=%.1f, new step bbox=%s)",
+                rs.bbox,
+                step.step_number.value,
+                cost_matrix[row_idx, col_idx],
+                step.bbox,
+            )
+        else:
+            log.debug(
+                "[step] Skipped assignment: rotation_symbol[%d] to step[%d] "
+                "distance=%.1f > max_distance=%.1f",
+                row_idx,
+                col_indices[row_idx] if row_idx < len(col_indices) else -1,
+                cost_matrix[row_idx, col_idx],
+                max_distance,
+            )

@@ -120,8 +120,13 @@ class LabelClassifier(BaseModel, ABC):
         Iterates through all candidates for this classifier's output label
         and calls build() on each, storing the result or failure reason.
 
-        This is the entry point called by the classification pipeline to trigger
-        construction for a specific classifier.
+        NOTE: Currently only PageClassifier.build_all() is called directly by
+        the classification pipeline. Other classifiers' build() methods are
+        invoked via result.build(candidate) during the top-down construction
+        initiated by PageClassifier.build().
+
+        Subclasses may override this to perform pre-build setup (e.g., building
+        dependencies that must be resolved before individual candidates are built).
 
         Args:
             result: The classification result containing candidates to build

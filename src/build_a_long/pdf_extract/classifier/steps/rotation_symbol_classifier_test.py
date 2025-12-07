@@ -78,6 +78,10 @@ class TestRotationSymbolClassifier:
         assert candidates[0].bbox.y0 == 10.0
         assert candidates[0].bbox.x1 == 56.0
         assert candidates[0].bbox.y1 == 56.0
+        # Verify source_blocks contains the cluster drawings
+        assert len(candidates[0].source_blocks) == 8
+        source_ids = {b.id for b in candidates[0].source_blocks}
+        assert source_ids == {1, 2, 3, 4, 5, 6, 7, 8}
 
     def test_rejects_too_large_cluster(self):
         """Test that large drawing clusters are not classified as rotation symbols."""
@@ -213,21 +217,29 @@ class TestRotationSymbolClassifier:
 
     def test_builds_rotation_symbol_element(self):
         """Test building a RotationSymbol element from a candidate."""
-        classifier = RotationSymbolClassifier(config=ClassifierConfig())
+        config = ClassifierConfig()
+        classifier = RotationSymbolClassifier(config=config)
         bbox = BBox(100, 100, 146, 146)
+        # Create source drawings that make up the rotation symbol
+        source_drawings: list[Blocks] = [
+            Drawing(id=1, bbox=BBox(100, 100, 123, 123)),
+            Drawing(id=2, bbox=BBox(123, 100, 146, 123)),
+            Drawing(id=3, bbox=BBox(100, 123, 123, 146)),
+            Drawing(id=4, bbox=BBox(123, 123, 146, 146)),
+        ]
         score_details = _RotationSymbolScore(
             size_score=1.0,
             aspect_score=1.0,
-            proximity_to_diagram=1.0,
+            config=config.rotation_symbol,
         )
         candidate = Candidate(
             bbox=bbox,
             label="rotation_symbol",
             score=1.0,
             score_details=score_details,
-            source_blocks=[],
+            source_blocks=source_drawings,
         )
-        result = ClassificationResult(page_data=make_page_data([]))
+        result = ClassificationResult(page_data=make_page_data(source_drawings))
 
         elem = classifier.build(candidate, result)
 

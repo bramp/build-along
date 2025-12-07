@@ -34,8 +34,12 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
-from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import BBox, build_connected_cluster
+from build_a_long.pdf_extract.classifier.score import Score, Weight, find_best_scoring
+from build_a_long.pdf_extract.extractor.bbox import (
+    BBox,
+    build_connected_cluster,
+    filter_contained,
+)
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     BagNumber,
     NewBag,
@@ -265,16 +269,8 @@ class NewBagClassifier(LabelClassifier):
         Returns:
             The best bag number candidate inside the cluster, or None.
         """
-        best_candidate = None
-        best_score = 0.0
-
-        for candidate in bag_number_candidates:
-            # Check if the bag number is inside the cluster
-            if cluster_bbox.contains(candidate.bbox) and candidate.score > best_score:
-                best_candidate = candidate
-                best_score = candidate.score
-
-        return best_candidate
+        contained = filter_contained(bag_number_candidates, cluster_bbox)
+        return find_best_scoring(contained)
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> NewBag:
         """Construct a NewBag element from a single candidate."""

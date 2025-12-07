@@ -72,7 +72,6 @@ class Candidate(BaseModel):
             "page",
             "step",
             "part",
-            "rotation_symbol",  # Can coexist with diagrams (overlapping blocks)
         }
 
         # Non-composite labels are those that correspond to LegoPageElements

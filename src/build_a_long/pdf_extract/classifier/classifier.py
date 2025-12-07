@@ -68,6 +68,7 @@ from build_a_long.pdf_extract.classifier.steps import (
 from build_a_long.pdf_extract.classifier.text import FontSizeHints, TextHistogram
 from build_a_long.pdf_extract.classifier.topological_sort import topological_sort
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.bbox import filter_contained
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PageNumber,
     PartCount,
@@ -367,7 +368,7 @@ class Classifier:
         part_counts = result.get_winners_by_score("part_count", PartCount)
 
         for pl in parts_lists:
-            inside_counts = [t for t in part_counts if pl.bbox.contains(t.bbox)]
+            inside_counts = filter_contained(part_counts, pl.bbox)
             if not inside_counts:
                 warnings.append(
                     f"Page {page_data.page_number}: parts list at {pl.bbox} "

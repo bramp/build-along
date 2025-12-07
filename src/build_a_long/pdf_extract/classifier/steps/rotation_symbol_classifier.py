@@ -12,10 +12,11 @@ Heuristic
 1. Collect all Drawing blocks on the page
 2. Build connected components (clusters) using bbox overlap
 3. For each cluster, compute the union bbox
-4. Score clusters that are:
+4. Score clusters based on intrinsic properties:
    - Square-ish (aspect ratio ~0.95-1.05)
    - Small (~41-51 pixels per side, ±10% of ideal 46px)
-   - Near a Diagram element
+   - Black and white colors only (no colored drawings)
+
 
 The key insight is that rotation symbols are vector drawings that are ISOLATED -
 they don't overlap with nearby diagram elements. Images are excluded because
@@ -35,6 +36,7 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.classifier.config import RotationSymbolConfig
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
@@ -42,6 +44,7 @@ from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
     build_all_connected_clusters,
+    filter_overlapping,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     RotationSymbol,
@@ -63,20 +66,14 @@ class _RotationSymbolScore(Score):
     aspect_score: float
     """Score based on aspect ratio being square-ish (0.0-1.0)."""
 
-    proximity_to_diagram: float
-    """Score based on proximity to a diagram (0.0-1.0)."""
-
-    # Store weights for score calculation
-    size_weight: float = 0.5
-    aspect_weight: float = 0.3
-    proximity_weight: float = 0.2
+    config: RotationSymbolConfig
+    """Configuration containing weights for score calculation."""
 
     def score(self) -> Weight:
         """Calculate final weighted score from components."""
         return (
-            self.size_score * self.size_weight
-            + self.aspect_score * self.aspect_weight
-            + self.proximity_to_diagram * self.proximity_weight
+            self.size_score * self.config.size_weight
+            + self.aspect_score * self.config.aspect_weight
         )
 
 
@@ -84,7 +81,7 @@ class RotationSymbolClassifier(LabelClassifier):
     """Classifier for rotation symbol elements."""
 
     output = "rotation_symbol"
-    requires = frozenset({"diagram"})
+    requires = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:
         """Score connected clusters of Drawing blocks as rotation symbols."""
@@ -92,11 +89,6 @@ class RotationSymbolClassifier(LabelClassifier):
         config = self.config
         page_bbox = page_data.bbox
         assert page_bbox is not None
-
-        # Get diagram candidates to check proximity
-        diagram_candidates = result.get_scored_candidates(
-            "diagram", valid_only=False, exclude_failed=True
-        )
 
         # Filter out page-spanning drawings (>90% of page width or height).
         # These are typically background/border elements that would connect
@@ -127,7 +119,17 @@ class RotationSymbolClassifier(LabelClassifier):
         for cluster in clusters:
             cluster_bbox = BBox.union_all([block.bbox for block in cluster])
 
-            score_details = self._score_bbox(cluster_bbox, diagram_candidates)
+            # Check that all drawings in the cluster are black/white
+            if not self._is_black_and_white_cluster(cluster):
+                log.debug(
+                    "[rotation_symbol] Rejected cluster at %s "
+                    "(%d blocks) - contains non-black/white colors",
+                    cluster_bbox,
+                    len(cluster),
+                )
+                continue
+
+            score_details = self._score_bbox(cluster_bbox)
             if score_details is None:
                 log.debug(
                     "[rotation_symbol] Rejected cluster at %s "
@@ -156,21 +158,18 @@ class RotationSymbolClassifier(LabelClassifier):
                     label="rotation_symbol",
                     score=score_details.score(),
                     score_details=score_details,
-                    # Don't claim source_blocks - rotation symbols
-                    # can coexist with diagrams and part images
-                    source_blocks=[],
+                    # Claim the Drawing blocks that make up this rotation symbol
+                    source_blocks=list(cluster),
                 )
             )
             log.debug(
                 "[rotation_symbol] Cluster candidate at %s "
-                "(%d blocks) score=%.2f "
-                "(size=%.2f aspect=%.2f proximity=%.2f)",
+                "(%d blocks) score=%.2f (size=%.2f aspect=%.2f)",
                 cluster_bbox,
                 len(cluster),
                 score_details.score(),
                 score_details.size_score,
                 score_details.aspect_score,
-                score_details.proximity_to_diagram,
             )
 
     def build(
@@ -237,26 +236,21 @@ class RotationSymbolClassifier(LabelClassifier):
         proximity_threshold = 10.0
 
         # Expand the rotation symbol bbox slightly for overlap detection
-        search_bbox = BBox(
-            x0=rs_bbox.x0 - proximity_threshold,
-            y0=rs_bbox.y0 - proximity_threshold,
-            x1=rs_bbox.x1 + proximity_threshold,
-            y1=rs_bbox.y1 + proximity_threshold,
-        )
+        search_bbox = rs_bbox.expand(proximity_threshold)
+
+        # Filter for available images first
+        available_images = [
+            block
+            for block in page_data.blocks
+            if isinstance(block, Image) and block.id not in result._consumed_blocks
+        ]
+
+        # TODO Maybe this should be "contains" not "overlaps"?
+        # Find images that overlap with the expanded search area
+        potential_images = filter_overlapping(available_images, search_bbox)
 
         claimed: list[Image] = []
-        for block in page_data.blocks:
-            if not isinstance(block, Image):
-                continue
-
-            # Skip if already consumed
-            if block.id in result._consumed_blocks:
-                continue
-
-            # Check if image overlaps with expanded search area
-            if not block.bbox.overlaps(search_bbox):
-                continue
-
+        for block in potential_images:
             # Skip if image is too large (likely a main diagram)
             if (
                 block.bbox.width > max_image_dimension
@@ -282,16 +276,59 @@ class RotationSymbolClassifier(LabelClassifier):
 
         return claimed
 
+    def _is_black_and_white_cluster(self, cluster: list[Drawing]) -> bool:
+        """Check if all drawings in a cluster are black or white.
+
+        Rotation symbols are typically black drawings on transparent/white
+        background. This filter rejects clusters with colored drawings.
+
+        Args:
+            cluster: List of Drawing blocks in the cluster
+
+        Returns:
+            True if all drawings are black or white, False otherwise
+        """
+        for drawing in cluster:
+            if not self._is_black_or_white_color(drawing.fill_color):
+                return False
+            if not self._is_black_or_white_color(drawing.stroke_color):
+                return False
+        return True
+
+    def _is_black_or_white_color(
+        self, color: tuple[float, ...] | None, tolerance: float = 0.15
+    ) -> bool:
+        """Check if a color is black, white, or absent (None).
+
+        Args:
+            color: RGB color tuple (values 0.0-1.0), or None for no color
+            tolerance: How far from pure black (0,0,0) or white (1,1,1) is allowed
+
+        Returns:
+            True if color is None, black, or white within tolerance
+        """
+        if color is None:
+            return True
+
+        # Handle RGB (3 values) or CMYK (4 values)
+        if len(color) < 3:
+            return True  # Unknown format, allow it
+
+        r, g, b = color[0], color[1], color[2]
+
+        # Check if grayscale (R ≈ G ≈ B) - black, white, or gray are all acceptable
+        return abs(r - g) <= tolerance and abs(g - b) <= tolerance
+
     def _score_bbox(
         self,
         bbox: BBox,
-        diagram_candidates: list[Candidate],
     ) -> _RotationSymbolScore | None:
         """Score a bounding box as a potential rotation symbol.
 
+        Scoring is based purely on intrinsic properties (size and aspect ratio).
+
         Args:
             bbox: Bounding box to score
-            diagram_candidates: List of diagram candidates for proximity scoring
 
         Returns:
             Score details if this could be a rotation symbol, None otherwise
@@ -324,54 +361,8 @@ class RotationSymbolClassifier(LabelClassifier):
         aspect_tolerance = rs_config.max_aspect - 1.0
         aspect_score = max(0.0, 1.0 - (aspect_diff / aspect_tolerance))
 
-        # Score proximity to diagrams
-        proximity_score = self._calculate_proximity_to_diagrams(
-            bbox, diagram_candidates
-        )
-
         return _RotationSymbolScore(
             size_score=size_score,
             aspect_score=aspect_score,
-            proximity_to_diagram=proximity_score,
-            size_weight=rs_config.size_weight,
-            aspect_weight=rs_config.aspect_weight,
-            proximity_weight=rs_config.proximity_weight,
+            config=rs_config,
         )
-
-    def _calculate_proximity_to_diagrams(
-        self, bbox: BBox, diagram_candidates: list[Candidate]
-    ) -> float:
-        """Calculate proximity score based on distance to nearest diagram.
-
-        Rotation symbols are typically positioned near diagrams.
-
-        Args:
-            bbox: Bounding box of the potential rotation symbol
-            diagram_candidates: List of diagram candidates
-
-        Returns:
-            Score from 0.0 (far from diagrams) to 1.0 (very close to diagram)
-        """
-        rs_config = self.config.rotation_symbol
-        close_distance = rs_config.proximity_close_distance
-        far_distance = rs_config.proximity_far_distance
-
-        if not diagram_candidates:
-            # No diagrams on page, give neutral score
-            return 0.5
-
-        # Find minimum edge-to-edge distance to any diagram
-        min_distance = min(
-            bbox.min_distance(diagram_cand.bbox) for diagram_cand in diagram_candidates
-        )
-
-        # Score based on distance (closer = better)
-        # min_distance returns 0.0 for overlapping bboxes
-        if min_distance < close_distance:
-            return 1.0
-        elif min_distance > far_distance:
-            return 0.0
-        else:
-            return 1.0 - (
-                (min_distance - close_distance) / (far_distance - close_distance)
-            )

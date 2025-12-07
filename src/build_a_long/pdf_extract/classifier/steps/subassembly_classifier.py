@@ -36,9 +36,17 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.classifier.config import SubAssemblyConfig
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
-from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.classifier.score import (
+    Score,
+    Weight,
+    find_best_scoring,
+)
 from build_a_long.pdf_extract.classifier.text import extract_step_number_value
-from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.bbox import (
+    BBox,
+    filter_contained,
+    filter_overlapping,
+)
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
     StepCount,
@@ -262,15 +270,7 @@ class SubAssemblyClassifier(LabelClassifier):
         Returns:
             The best candidate inside the box, or None
         """
-        best_candidate = None
-        best_score = 0.0
-
-        for candidate in candidates:
-            if bbox.contains(candidate.bbox) and candidate.score > best_score:
-                best_candidate = candidate
-                best_score = candidate.score
-
-        return best_candidate
+        return find_best_scoring(filter_contained(candidates, bbox))
 
     def _find_all_candidates_inside(
         self, bbox: BBox, candidates: list[Candidate]
@@ -284,11 +284,7 @@ class SubAssemblyClassifier(LabelClassifier):
         Returns:
             List of candidates inside the box, sorted by score (highest first)
         """
-        inside: list[Candidate] = []
-
-        for candidate in candidates:
-            if bbox.contains(candidate.bbox):
-                inside.append(candidate)
+        inside = filter_contained(candidates, bbox)
 
         # Sort by score (highest first)
         inside.sort(key=lambda c: c.score, reverse=True)
@@ -363,16 +359,12 @@ class SubAssemblyClassifier(LabelClassifier):
         Returns:
             List of Image blocks fully inside the box, sorted by area (largest first)
         """
-        images: list[Image] = []
         min_area = 100.0  # Skip very small images (decorative elements)
 
-        for block in blocks:
-            if not isinstance(block, Image):
-                continue
-            if block.bbox.area < min_area:
-                continue
-            if bbox.contains(block.bbox):
-                images.append(block)
+        potential_images = [
+            b for b in blocks if isinstance(b, Image) and b.bbox.area >= min_area
+        ]
+        images = filter_contained(potential_images, bbox)
 
         # Sort by area (largest first) - larger images are more likely to be diagrams
         images.sort(key=lambda img: img.bbox.area, reverse=True)
@@ -395,25 +387,9 @@ class SubAssemblyClassifier(LabelClassifier):
             The best matching arrow candidate, or None
         """
         margin = 20.0  # Points of margin around the box
-        expanded_bbox = BBox(
-            x0=bbox.x0 - margin,
-            y0=bbox.y0 - margin,
-            x1=bbox.x1 + margin,
-            y1=bbox.y1 + margin,
-        )
-
-        best_arrow = None
-        best_score = 0.0
-
-        for arrow_candidate in arrow_candidates:
-            if (
-                expanded_bbox.overlaps(arrow_candidate.bbox)
-                and arrow_candidate.score > best_score
-            ):
-                best_arrow = arrow_candidate
-                best_score = arrow_candidate.score
-
-        return best_arrow
+        expanded_bbox = bbox.expand(margin)
+        overlapping = filter_overlapping(arrow_candidates, expanded_bbox)
+        return find_best_scoring(overlapping)
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> SubAssembly:
         """Construct a SubAssembly element from a candidate."""
