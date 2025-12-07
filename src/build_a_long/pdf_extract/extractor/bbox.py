@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Protocol, TypeVar
+from typing import Annotated, Protocol
 
 from annotated_types import Ge
 from pydantic import BaseModel, ConfigDict
@@ -341,10 +341,7 @@ class HasBBox(Protocol):
     def bbox(self) -> BBox: ...
 
 
-T = TypeVar("T", bound=HasBBox)
-
-
-def build_connected_cluster(
+def build_connected_cluster[T: HasBBox](
     seed_items: list[T],
     candidate_items: list[T],
 ) -> list[T]:
@@ -452,7 +449,7 @@ def build_all_connected_clusters[T: HasBBox](items: list[T]) -> list[list[T]]:
     return clusters
 
 
-def filter_contained(items: list[T], container: BBox) -> list[T]:
+def filter_contained[T: HasBBox](items: list[T], container: BBox) -> list[T]:
     """Filter items to keep only those fully contained within the container bbox.
 
     Args:
@@ -465,7 +462,7 @@ def filter_contained(items: list[T], container: BBox) -> list[T]:
     return [item for item in items if container.contains(item.bbox)]
 
 
-def filter_overlapping(items: list[T], target: BBox) -> list[T]:
+def filter_overlapping[T: HasBBox](items: list[T], target: BBox) -> list[T]:
     """Filter items to keep only those overlapping with the target bbox.
 
     Args:
