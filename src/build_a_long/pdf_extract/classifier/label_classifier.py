@@ -114,7 +114,7 @@ class LabelClassifier(BaseModel, ABC):
         """
         pass
 
-    def build_all(self, result: ClassificationResult) -> None:
+    def build_all(self, result: ClassificationResult) -> list[LegoPageElements]:
         """Build LegoPageElements from all candidates for this classifier's label.
 
         Iterates through all candidates for this classifier's output label
@@ -130,14 +130,20 @@ class LabelClassifier(BaseModel, ABC):
 
         Args:
             result: The classification result containing candidates to build
+
+        Returns:
+            List of successfully constructed LegoPageElements
         """
+        elements: list[LegoPageElements] = []
         candidates = result.get_candidates(self.output)
         for candidate in candidates:
             try:
                 elem = result.build(candidate)
                 candidate.constructed = elem
+                elements.append(elem)
             except Exception as e:
                 candidate.failure_reason = str(e)
+        return elements
 
     @abstractmethod
     def build(

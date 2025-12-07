@@ -45,6 +45,7 @@ from build_a_long.pdf_extract.extractor.bbox import BBox, filter_overlapping
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Arrow,
     Diagram,
+    LegoPageElements,
     PartsList,
     RotationSymbol,
     Step,
@@ -170,7 +171,7 @@ class StepClassifier(LabelClassifier):
             len(all_candidates),
         )
 
-    def build_all(self, result: ClassificationResult) -> None:
+    def build_all(self, result: ClassificationResult) -> list[LegoPageElements]:
         """Build all Step elements with coordinated rotation symbol assignment.
 
         This method:
@@ -186,6 +187,9 @@ class StepClassifier(LabelClassifier):
         - Rotation symbols are built before diagrams, preventing incorrect clustering
         - Each rotation symbol is assigned to at most one step
         - Assignment is globally optimal based on distance to step diagrams
+
+        Returns:
+            List of successfully constructed Step elements, sorted by step number
         """
         # Phase 1: Build all rotation symbols BEFORE steps.
         # This allows rotation symbols to claim their Drawing blocks first,
@@ -300,6 +304,9 @@ class StepClassifier(LabelClassifier):
             len(steps),
             sum(1 for s in steps if s.rotation_symbol is not None),
         )
+
+        # Cast for type compatibility with base class return type
+        return list[LegoPageElements](steps)
 
     def _filter_page_level_step_candidates(
         self, candidates: list[Candidate]

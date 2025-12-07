@@ -115,14 +115,9 @@ class PageClassifier(LabelClassifier):
             assert isinstance(progress_bar, ProgressBar)
 
         # Build all dividers
-        result.build_all_for_label("divider")
-        dividers: list[Divider] = []
-        for divider_candidate in result.get_scored_candidates(
-            "divider", valid_only=True
-        ):
-            assert divider_candidate.constructed is not None
-            assert isinstance(divider_candidate.constructed, Divider)
-            dividers.append(divider_candidate.constructed)
+        dividers = result.build_all_for_label("divider")
+        assert all(isinstance(d, Divider) for d in dividers)
+        dividers = [d for d in dividers if isinstance(d, Divider)]  # type narrow
 
         # Get new bags from candidates
         new_bags: list[NewBag] = []
@@ -166,14 +161,9 @@ class PageClassifier(LabelClassifier):
         # 1. Building rotation symbols first (so they claim Drawing blocks)
         # 2. Building all Step candidates
         # 3. Hungarian matching to assign rotation symbols to steps
-        result.build_all_for_label("step")
-
-        # Collect the built steps
-        steps: list[Step] = []
-        for step_candidate in result.get_scored_candidates("step", valid_only=True):
-            assert step_candidate.constructed is not None
-            assert isinstance(step_candidate.constructed, Step)
-            steps.append(step_candidate.constructed)
+        steps = result.build_all_for_label("step")
+        assert all(isinstance(s, Step) for s in steps)
+        steps = [s for s in steps if isinstance(s, Step)]  # type narrow
 
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
