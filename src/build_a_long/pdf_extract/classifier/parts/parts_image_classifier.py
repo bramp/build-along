@@ -6,8 +6,9 @@ Purpose
 Creates PartImage candidates from Image blocks on the page.
 These candidates are then paired with part counts by PartsClassifier.
 
-This classifier simply wraps each Image as a potential part image candidate,
-without filtering or dependencies on other classifiers.
+This classifier scores images based on their size (part images are typically
+small-medium sized, around 1/20 to 1/5 of page dimensions). Shine elements
+are discovered and attached at build time.
 
 Debugging
 ---------
@@ -31,7 +32,6 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Shine,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
-    Blocks,
     Image,
 )
 
@@ -41,26 +41,31 @@ log = logging.getLogger(__name__)
 class _PartImageScore(Score):
     """Score details for a part image candidate.
 
+    Scores based on intrinsic size properties - part images are typically
+    small to medium sized (1/20 to 1/5 of page dimensions).
+
     Attributes:
         image: The source Image block being scored as a potential part image
-        shine_candidate: Optional shine candidate associated with this image
+        size_score: Score based on image dimensions relative to page (0.0-1.0)
     """
 
     image: Image
-    shine_candidate: Candidate | None = None
+    size_score: float
 
     def score(self) -> Weight:
-        """Return the score value (always 1.0 for part images)."""
-        return 1.0
+        """Return the overall score based on size."""
+        return self.size_score
 
 
 # TODO Should this be called PartImageClassifier instead?
 class PartsImageClassifier(LabelClassifier):
     """Classifier for part images based on size heuristics.
 
-    Filters images to find those that could be part diagrams based on their
-    size relative to the page. Typically part images are around 1/10 of the
-    page width/height.
+    Scores images based on their size relative to the page. Part images are
+    typically small to medium sized (around 1/20 to 1/5 of page dimensions).
+
+    Shine elements are discovered and attached at build time by looking for
+    overlapping shine candidates in the top-right area of the image.
 
     Does NOT pair images with part counts - that's done by PartsClassifier.
     """
@@ -69,12 +74,14 @@ class PartsImageClassifier(LabelClassifier):
     requires = frozenset({"shine"})
 
     def _score(self, result: ClassificationResult) -> None:
-        """Create PartImage candidates from all Image blocks.
+        """Create PartImage candidates from Image blocks with size-based scoring.
 
-        Simply wraps each Image block as a PartImage candidate.
-        PartsClassifier will handle pairing with part counts.
+        Scores images based on their dimensions relative to the page.
+        Shine discovery is deferred to build time.
         """
         page_data = result.page_data
+        page_width = page_data.bbox.width
+        page_height = page_data.bbox.height
 
         # Get all images from the page
         images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
@@ -86,34 +93,19 @@ class PartsImageClassifier(LabelClassifier):
             )
             return
 
-        # Get shine candidates
-        shine_candidates = result.get_scored_candidates(
-            "shine",
-            valid_only=False,
-            exclude_failed=True,
-        )
-
-        # Create a PartImage candidate for each Image
+        # Create a PartImage candidate for each Image with size-based score
         for img in images:
-            # Find best matching shine
-            shine_cand = self._find_matching_shine(img, shine_candidates)
+            size_score = self._compute_size_score(img, page_width, page_height)
 
-            score_details = _PartImageScore(image=img, shine_candidate=shine_cand)
-
-            # If we found a shine, include it in source blocks and expand bbox
-            source_blocks: list[Blocks] = [img]
-            bbox = img.bbox
-            if shine_cand:
-                source_blocks.extend(shine_cand.source_blocks)
-                bbox = bbox.union(shine_cand.bbox)
+            score_details = _PartImageScore(image=img, size_score=size_score)
 
             result.add_candidate(
                 Candidate(
-                    bbox=bbox,
+                    bbox=img.bbox,
                     label="part_image",
-                    score=1.0,
+                    score=size_score,
                     score_details=score_details,
-                    source_blocks=source_blocks,
+                    source_blocks=[img],
                 ),
             )
 
@@ -124,8 +116,62 @@ class PartsImageClassifier(LabelClassifier):
                 page_data.page_number,
             )
 
+    def _compute_size_score(
+        self, img: Image, page_width: float, page_height: float
+    ) -> float:
+        """Compute a score based on image size relative to page.
+
+        Part images are typically small to medium sized:
+        - Width: ~1/20 to ~1/5 of page width (25-100 pixels on a 500px page)
+        - Height: ~1/20 to ~1/5 of page height
+
+        Very small images (icons) and very large images (diagrams) score lower.
+
+        Args:
+            img: The image to score
+            page_width: Width of the page
+            page_height: Height of the page
+
+        Returns:
+            Score from 0.0 to 1.0
+        """
+        img_width = img.bbox.width
+        img_height = img.bbox.height
+
+        # Calculate size ratios
+        width_ratio = img_width / page_width if page_width > 0 else 0
+        height_ratio = img_height / page_height if page_height > 0 else 0
+
+        # Ideal range: 5% to 20% of page dimension
+        # Score peaks at ~10% (typical part image size)
+        def ratio_score(ratio: float) -> float:
+            if ratio < 0.02:
+                # Too small (icons, dots)
+                return ratio / 0.02 * 0.3
+            elif ratio < 0.05:
+                # Small but acceptable
+                return 0.3 + (ratio - 0.02) / 0.03 * 0.4
+            elif ratio <= 0.20:
+                # Ideal range
+                return 0.7 + (1.0 - abs(ratio - 0.10) / 0.10) * 0.3
+            elif ratio <= 0.40:
+                # Large but could still be a part
+                return 0.7 - (ratio - 0.20) / 0.20 * 0.4
+            else:
+                # Too large (likely a diagram)
+                return max(0.1, 0.3 - (ratio - 0.40) / 0.60 * 0.3)
+
+        width_score = ratio_score(width_ratio)
+        height_score = ratio_score(height_ratio)
+
+        # Average the two dimensions
+        return (width_score + height_score) / 2
+
     def build(self, candidate: Candidate, result: ClassificationResult) -> PartImage:
         """Construct a PartImage element from a single part_image candidate.
+
+        Discovers and attaches any shine element that overlaps with the image
+        in the top-right corner area.
 
         Args:
             candidate: The part_image candidate to construct
@@ -137,57 +183,86 @@ class PartsImageClassifier(LabelClassifier):
         assert isinstance(candidate.score_details, _PartImageScore)
         ps = candidate.score_details
 
-        shine: Shine | None = None
-        if ps.shine_candidate:
-            try:
-                shine_elem = result.build(ps.shine_candidate)
-                assert isinstance(shine_elem, Shine)
-                shine = shine_elem
-            except Exception as e:
-                log.warning(
-                    "Failed to construct optional shine at %s: %s",
-                    ps.shine_candidate.bbox,
-                    e,
-                )
+        # Find and build shine at build time (not pre-assigned during scoring)
+        shine = self._find_and_build_shine(ps.image, result)
 
-        # Simply create a PartImage with the candidate's bbox
-        # Note: candidate.bbox might be larger than ps.image.bbox if it includes shine
-        return PartImage(bbox=candidate.bbox, shine=shine)
+        # Compute final bbox - expand to include shine if found
+        bbox = candidate.bbox
+        if shine:
+            bbox = bbox.union(shine.bbox)
 
-    def _find_matching_shine(
-        self, image: Image, shine_candidates: list[Candidate]
-    ) -> Candidate | None:
-        """Find a shine candidate that matches this image.
+        return PartImage(bbox=bbox, shine=shine)
 
-        Shines are small stars typically in the top-right corner of the image.
-        The shine must overlap with the image - shines below or outside the image
-        are not considered matches.
+    def _find_and_build_shine(
+        self, image: Image, result: ClassificationResult
+    ) -> Shine | None:
+        """Find and build a shine element for this image.
+
+        Looks for shine candidates that overlap with the image, preferring
+        those closer to the top-right corner (where shines typically appear).
+
+        Args:
+            image: The image to find a shine for
+            result: Classification result containing shine candidates
+
+        Returns:
+            Built Shine element, or None if no matching shine found
         """
-        best_shine = None
+        # Get available (not yet built) shine candidates
+        shine_candidates = result.get_scored_candidates(
+            "shine",
+            valid_only=False,
+            exclude_failed=True,
+        )
+
+        best_shine_candidate: Candidate | None = None
         best_dist = float("inf")
 
-        for shine in shine_candidates:
+        for shine_cand in shine_candidates:
+            # Skip if already built (consumed by another part image)
+            if shine_cand.constructed is not None:
+                continue
+
             # Shine must overlap with the image to be considered a match.
-            # Shines that are merely "near" but below or outside the image
-            # are likely other elements (e.g., decorations under count text).
-            if not shine.bbox.overlaps(image.bbox):
+            # Shines that are merely "near" but outside the image are likely
+            # other elements (e.g., decorations).
+            if not shine_cand.bbox.overlaps(image.bbox):
                 continue
 
             # Prefer shines closer to top-right corner of the image
-            # Image TR corner: (x1, y0) where y0 is top in this coordinate system
+            # Image TR corner: (x1, y0) where y0 is top in PDF coordinates
             tr_x = image.bbox.x1
             tr_y = image.bbox.y0
 
-            shine_center_x = (shine.bbox.x0 + shine.bbox.x1) / 2
-            shine_center_y = (shine.bbox.y0 + shine.bbox.y1) / 2
+            shine_center = shine_cand.bbox.center
 
             # Distance from shine center to Image TR corner
-            dx = shine_center_x - tr_x
-            dy = shine_center_y - tr_y
+            dx = shine_center[0] - tr_x
+            dy = shine_center[1] - tr_y
             corner_dist = (dx * dx + dy * dy) ** 0.5
 
             if corner_dist < best_dist:
                 best_dist = corner_dist
-                best_shine = shine
+                best_shine_candidate = shine_cand
 
-        return best_shine
+        if best_shine_candidate is None:
+            return None
+
+        # Build the shine
+        try:
+            shine_elem = result.build(best_shine_candidate)
+            assert isinstance(shine_elem, Shine)
+            log.debug(
+                "[part_image] Found shine at %s for image at %s (dist=%.1f)",
+                shine_elem.bbox,
+                image.bbox,
+                best_dist,
+            )
+            return shine_elem
+        except Exception as e:
+            log.debug(
+                "[part_image] Failed to build shine at %s: %s",
+                best_shine_candidate.bbox,
+                e,
+            )
+            return None

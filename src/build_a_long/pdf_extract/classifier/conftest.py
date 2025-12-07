@@ -124,7 +124,7 @@ class CandidateFactory:
             bbox=image_block.bbox,
             label="part_image",
             score=1.0,
-            score_details=_PartImageScore(image=image_block),
+            score_details=_PartImageScore(image=image_block, size_score=1.0),
             source_blocks=[image_block],
         )
         self.result.add_candidate(part_image_candidate)

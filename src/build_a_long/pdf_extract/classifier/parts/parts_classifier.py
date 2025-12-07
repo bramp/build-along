@@ -34,6 +34,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.extractor.bbox import filter_overlapping
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartCount,
@@ -291,8 +292,16 @@ class PartsClassifier(LabelClassifier):
                     e,
                 )
 
+        # Compute bbox from built children (not candidates) to include any
+        # expansions like PartImage shine.
+        bbox = part_count.bbox.union(part_image.bbox)
+        if part_number:
+            bbox = bbox.union(part_number.bbox)
+        if piece_length:
+            bbox = bbox.union(piece_length.bbox)
+
         return Part(
-            bbox=candidate.bbox,
+            bbox=bbox,
             count=part_count,
             number=part_number,
             length=piece_length,
@@ -388,11 +397,15 @@ class PartsClassifier(LabelClassifier):
 
         image_bbox = part_image_candidate.bbox
 
-        for pl_cand in piece_length_candidates:
+        # Filter candidates that are close to the image
+        search_region = image_bbox.expand(MAX_DISTANCE)
+        candidates = filter_overlapping(piece_length_candidates, search_region)
+
+        for pl_cand in candidates:
             # Calculate minimum distance between piece length and image
             distance = image_bbox.min_distance(pl_cand.bbox)
 
-            # Skip if too far away
+            # Skip if too far away (redundant with filter_overlapping but precise)
             if distance > MAX_DISTANCE:
                 continue
 
