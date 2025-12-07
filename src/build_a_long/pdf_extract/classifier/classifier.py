@@ -39,6 +39,9 @@ from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConf
 from build_a_long.pdf_extract.classifier.pages import (
     PageHintCollection,
 )
+from build_a_long.pdf_extract.classifier.pages.divider_classifier import (
+    DividerClassifier,
+)
 from build_a_long.pdf_extract.classifier.pages.page_classifier import PageClassifier
 from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
     PageNumberClassifier,
@@ -269,6 +272,7 @@ def classify_pages(
 type Classifiers = (
     PageNumberClassifier
     | ProgressBarClassifier
+    | DividerClassifier
     | BagNumberClassifier
     | PartCountClassifier
     | PartNumberClassifier
@@ -301,6 +305,7 @@ class Classifier:
             [
                 PageNumberClassifier(config=config),
                 ProgressBarClassifier(config=config),
+                DividerClassifier(config=config),
                 BagNumberClassifier(config=config),
                 PartCountClassifier(config=config),
                 PartNumberClassifier(config=config),

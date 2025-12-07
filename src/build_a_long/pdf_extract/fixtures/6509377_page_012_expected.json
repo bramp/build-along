@@ -31,6 +31,18 @@
     "progress": 0.04,
     "full_width": 517.74
   },
+  "dividers": [
+    {
+      "__tag__": "Divider",
+      "bbox": {
+        "x0": 266.46,
+        "y0": 14.17,
+        "x1": 266.46,
+        "y1": 481.89
+      },
+      "orientation": "vertical"
+    }
+  ],
   "steps": [
     {
       "__tag__": "Step",

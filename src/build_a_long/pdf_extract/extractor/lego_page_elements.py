@@ -281,6 +281,37 @@ class ProgressBar(LegoPageElement):
         return f"ProgressBar(bbox={str(self.bbox)}{progress_str})"
 
 
+class Divider(LegoPageElement):
+    """A visual divider line separating sections of the page.
+
+    Dividers are thin lines (typically white strokes) that run vertically or
+    horizontally across a significant portion of the page (>40% of page
+    height/width). They visually separate different instruction steps or
+    sections on a page.
+
+    Positional context: Can appear anywhere on the page, typically:
+    - Vertical dividers separate left/right columns of steps
+    - Horizontal dividers separate top/bottom sections
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    class Orientation(str, Enum):
+        """Orientation of the divider line."""
+
+        VERTICAL = "vertical"
+        HORIZONTAL = "horizontal"
+
+    tag: Literal["Divider"] = Field(default="Divider", alias="__tag__", frozen=True)
+
+    orientation: Orientation
+    """Whether the divider runs vertically or horizontally."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"Divider(bbox={str(self.bbox)}, {self.orientation.value})"
+
+
 class RotationSymbol(LegoPageElement):
     """A symbol indicating the builder should rotate the assembled model.
 
@@ -681,6 +712,8 @@ class Page(LegoPageElement):
 
     page_number: PageNumber | None = None
     progress_bar: ProgressBar | None = None
+    dividers: list[Divider] = Field(default_factory=list)
+    """List of divider lines on the page separating sections."""
 
     new_bags: list[NewBag] = Field(default_factory=list)
     steps: list[Step] = Field(default_factory=list)
@@ -733,6 +766,9 @@ class Page(LegoPageElement):
         if self.progress_bar:
             yield from self.progress_bar.iter_elements()
 
+        for divider in self.dividers:
+            yield from divider.iter_elements()
+
         for new_bag in self.new_bags:
             yield from new_bag.iter_elements()
 
@@ -753,6 +789,7 @@ LegoPageElements = Annotated[
     | PartImage
     | Shine
     | ProgressBar
+    | Divider
     | RotationSymbol
     | Arrow
     | Part

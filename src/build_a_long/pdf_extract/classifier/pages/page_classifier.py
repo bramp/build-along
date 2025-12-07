@@ -27,6 +27,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.classifier.score import Score
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    Divider,
     NewBag,
     Page,
     PageNumber,
@@ -56,6 +57,7 @@ class PageClassifier(LabelClassifier):
     output = "page"
     requires = frozenset(
         {
+            "divider",
             "page_number",
             "progress_bar",
             "new_bag",
@@ -111,6 +113,16 @@ class PageClassifier(LabelClassifier):
             best_cand = progress_bar_candidates[0]
             progress_bar = result.build(best_cand)
             assert isinstance(progress_bar, ProgressBar)
+
+        # Build all dividers
+        result.build_all_for_label("divider")
+        dividers: list[Divider] = []
+        for divider_candidate in result.get_scored_candidates(
+            "divider", valid_only=True
+        ):
+            assert divider_candidate.constructed is not None
+            assert isinstance(divider_candidate.constructed, Divider)
+            dividers.append(divider_candidate.constructed)
 
         # Get new bags from candidates
         new_bags: list[NewBag] = []
@@ -201,11 +213,12 @@ class PageClassifier(LabelClassifier):
 
         log.debug(
             "[page] page=%s categories=%s page_number=%s progress_bar=%s "
-            "new_bags=%d steps=%d catalog=%s",
+            "dividers=%d new_bags=%d steps=%d catalog=%s",
             page_data.page_number,
             [c.name for c in categories],
             page_number.value if page_number else None,
             progress_bar is not None,
+            len(dividers),
             len(new_bags),
             len(steps),
             f"{len(catalog_parts)} parts" if catalog_parts else None,
@@ -217,6 +230,7 @@ class PageClassifier(LabelClassifier):
             categories=categories,
             page_number=page_number,
             progress_bar=progress_bar,
+            dividers=dividers,
             new_bags=new_bags,
             steps=steps,
             catalog=catalog_parts,

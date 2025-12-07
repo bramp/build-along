@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from build_a_long.pdf_extract.classifier.config import (
     ArrowConfig,
     BagNumberConfig,
+    DividerConfig,
     NewBagConfig,
     PageNumberConfig,
     PartCountConfig,
@@ -62,6 +63,10 @@ class ClassifierConfig(BaseModel):
     # Bag number classifier settings
     bag_number: BagNumberConfig = Field(default_factory=BagNumberConfig)
     """Configuration for bag number classification."""
+
+    # Divider classifier settings
+    divider: DividerConfig = Field(default_factory=DividerConfig)
+    """Configuration for divider classification."""
 
     # NewBag classifier settings (for numberless bag detection)
     new_bag: NewBagConfig = Field(default_factory=NewBagConfig)
