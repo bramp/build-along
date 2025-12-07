@@ -12,6 +12,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
+from build_a_long.pdf_extract.extractor.bbox import filter_contained
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Text
 
 if TYPE_CHECKING:
@@ -204,14 +205,16 @@ def remove_child_bboxes(
 
     target_bbox = target.bbox
 
-    for ele in result.page_data.blocks:
-        if ele is target or id(ele) in keep_ids:
-            continue
-        b = ele.bbox
-        if target_bbox.contains(b):
-            result.mark_removed(
-                ele, RemovalReason(reason_type="child_bbox", target_block=target)
-            )
+    candidates = [
+        ele
+        for ele in result.page_data.blocks
+        if ele is not target and id(ele) not in keep_ids
+    ]
+
+    for ele in filter_contained(candidates, target_bbox):
+        result.mark_removed(
+            ele, RemovalReason(reason_type="child_bbox", target_block=target)
+        )
 
 
 def remove_similar_bboxes(

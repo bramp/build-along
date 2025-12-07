@@ -34,7 +34,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import filter_overlapping
+from build_a_long.pdf_extract.extractor.bbox import BBox, filter_overlapping
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartCount,
@@ -324,7 +324,21 @@ class PartsClassifier(LabelClassifier):
         edges: list[_PartPairScore] = []
         for pc_cand in part_count_candidates:
             cb = pc_cand.bbox
-            for img_cand in part_image_candidates:
+
+            # Define search region above the count
+            # Top of page is y=0
+            # Width includes alignment tolerance
+            search_bbox = BBox(
+                x0=cb.x0 - ALIGN_EPS,
+                y0=0,
+                x1=cb.x1 + ALIGN_EPS,
+                y1=cb.y0 + VERT_EPS,
+            )
+
+            # Filter images roughly in the region
+            potential_images = filter_overlapping(part_image_candidates, search_bbox)
+
+            for img_cand in potential_images:
                 ib = img_cand.bbox
                 # Image should be above the count and left-aligned
                 if ib.y1 <= cb.y0 + VERT_EPS and abs(ib.x0 - cb.x0) <= ALIGN_EPS:
