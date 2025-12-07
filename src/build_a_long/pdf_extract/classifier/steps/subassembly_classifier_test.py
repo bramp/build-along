@@ -105,18 +105,13 @@ class TestSubAssemblyScore:
         )
         score = _SubAssemblyScore(
             box_score=0.8,
-            count_score=1.0,
-            diagram_score=0.5,
-            step_count_candidate=None,
-            diagram_candidate=None,
-            step_number_candidates=[],
-            diagram_candidates=[],
-            images_inside=[],
-            arrow_candidate=None,
+            has_step_count=True,
+            has_diagram_or_images=True,
+            has_step_numbers=False,
             config=config,
         )
-        # 0.8 * 0.4 + 1.0 * 0.3 + 0.5 * 0.3 = 0.32 + 0.3 + 0.15 = 0.77
-        assert score.score() == pytest.approx(0.77)
+        # 0.8 * 0.4 + 1.0 * 0.3 + 1.0 * 0.3 = 0.32 + 0.3 + 0.3 = 0.92
+        assert score.score() == pytest.approx(0.92)
 
     def test_score_with_all_perfect(self):
         """Test score with all perfect scores."""
@@ -127,17 +122,29 @@ class TestSubAssemblyScore:
         )
         score = _SubAssemblyScore(
             box_score=1.0,
-            count_score=1.0,
-            diagram_score=1.0,
-            step_count_candidate=None,
-            diagram_candidate=None,
-            step_number_candidates=[],
-            diagram_candidates=[],
-            images_inside=[],
-            arrow_candidate=None,
+            has_step_count=True,
+            has_diagram_or_images=True,
+            has_step_numbers=False,
             config=config,
         )
         assert score.score() == pytest.approx(1.0)
+
+    def test_score_with_no_children(self):
+        """Test score with only box score (no children found)."""
+        config = SubAssemblyConfig(
+            box_shape_weight=0.4,
+            count_weight=0.3,
+            diagram_weight=0.3,
+        )
+        score = _SubAssemblyScore(
+            box_score=0.8,
+            has_step_count=False,
+            has_diagram_or_images=False,
+            has_step_numbers=False,
+            config=config,
+        )
+        # 0.8 * 0.4 + 0.0 * 0.3 + 0.0 * 0.3 = 0.32
+        assert score.score() == pytest.approx(0.32)
 
 
 class TestSubAssemblyClassifier:
@@ -148,11 +155,12 @@ class TestSubAssemblyClassifier:
         assert subassembly_classifier.output == "subassembly"
 
     def test_requires_dependencies(self, subassembly_classifier: SubAssemblyClassifier):
-        """Test classifier requires arrow, step_count, step_number, and diagram dependencies."""
-        assert "arrow" in subassembly_classifier.requires
+        """Test classifier requires step_count, step_number, and diagram."""
         assert "step_count" in subassembly_classifier.requires
         assert "step_number" in subassembly_classifier.requires
         assert "diagram" in subassembly_classifier.requires
+        # Arrow is no longer required (removed from scoring)
+        assert "arrow" not in subassembly_classifier.requires
 
     def test_score_finds_subassembly_box_with_step_count(
         self,
@@ -195,17 +203,14 @@ class TestSubAssemblyClassifier:
         """Test building a SubAssembly element from a candidate."""
         box_bbox = BBox(x0=100.0, y0=100.0, x1=200.0, y1=160.0)
         box_drawing = make_drawing(box_bbox, id=1)
+        # Add an image inside the box to serve as the diagram
+        diagram_image = make_image(BBox(x0=120.0, y0=110.0, x1=180.0, y1=150.0), id=2)
 
         score_details = _SubAssemblyScore(
             box_score=0.9,
-            count_score=0.0,
-            diagram_score=0.0,
-            step_count_candidate=None,
-            diagram_candidate=None,
-            step_number_candidates=[],
-            diagram_candidates=[],
-            images_inside=[],
-            arrow_candidate=None,
+            has_step_count=False,
+            has_diagram_or_images=True,  # Now has an image inside
+            has_step_numbers=False,
             config=config.subassembly,
         )
         candidate = Candidate(
@@ -216,7 +221,7 @@ class TestSubAssemblyClassifier:
             source_blocks=[box_drawing],
         )
 
-        page_data = make_page_data([box_drawing])
+        page_data = make_page_data([box_drawing, diagram_image])
         result = ClassificationResult(page_data=page_data)
 
         subassembly = subassembly_classifier.build(candidate, result)
@@ -224,7 +229,8 @@ class TestSubAssemblyClassifier:
         assert isinstance(subassembly, SubAssembly)
         assert subassembly.bbox == box_bbox
         assert subassembly.count is None  # No step_count candidate
-        assert subassembly.diagram is None  # No diagram candidate
+        # Should have a diagram built from the image inside
+        assert subassembly.diagram is not None
 
 
 class TestFindCandidateInside:

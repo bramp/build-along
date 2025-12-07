@@ -30,6 +30,12 @@ class SubAssemblyConfig(BaseModel):
     min_size_multiplier: float = 1.5
     """SubAssembly must be at least this many times larger than the minimum Part size."""
 
+    max_page_width_ratio: float = 0.5
+    """Maximum width of a SubAssembly as a ratio of the page width."""
+
+    max_page_height_ratio: float = 0.5
+    """Maximum height of a SubAssembly as a ratio of the page height."""
+
     # Score weights
     box_shape_weight: Weight = 0.3
     """Weight for box shape score (rectangular quality)."""

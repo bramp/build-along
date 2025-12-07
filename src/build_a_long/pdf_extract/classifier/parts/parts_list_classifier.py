@@ -36,7 +36,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartsList,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing
 
 log = logging.getLogger(__name__)
 
@@ -112,8 +112,14 @@ class PartsListClassifier(LabelClassifier):
         accepted_candidates: list[Candidate] = []
 
         # Process each drawing in score order
+        min_score = self.config.parts_list.min_score
         for drawing, score in drawing_scores:
             combined = score.score()
+
+            # Skip candidates below min_score threshold entirely
+            # (don't even create them as failed candidates)
+            if combined < min_score:
+                continue
 
             # Determine failure reason if any
             failure_reason = None
@@ -150,13 +156,29 @@ class PartsListClassifier(LabelClassifier):
                         )
                         break
 
+            # Find all drawings with similar bboxes to claim as source blocks.
+            # Parts lists often have multiple overlapping Drawing blocks
+            # (e.g., outer border and inner fill with nearly identical bboxes).
+            source_blocks: list[Blocks] = [drawing]
+            for other_drawing in drawings:
+                if other_drawing.id == drawing.id:
+                    continue
+                # Check if this drawing has a similar bbox
+                if drawing.bbox.similar(other_drawing.bbox, tolerance=2.0):
+                    source_blocks.append(other_drawing)
+                    log.debug(
+                        "[parts_list] Drawing %d claiming similar drawing %d",
+                        drawing.id,
+                        other_drawing.id,
+                    )
+
             # Create candidate
             candidate = Candidate(
                 bbox=drawing.bbox,
                 label="parts_list",
                 score=score.score(),
                 score_details=score,
-                source_blocks=[drawing],
+                source_blocks=source_blocks,
                 failure_reason=failure_reason,
             )
 

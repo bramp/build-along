@@ -5,17 +5,18 @@ Purpose
 -------
 Identify sub-assembly callout boxes on LEGO instruction pages. SubAssemblies
 typically:
-- Are white/light-colored rectangular boxes
-- Contain a count label (e.g., "2x") indicating how many to build
-- Contain a small diagram/image of the sub-assembly
-- Have an arrow pointing from them to the main diagram
+- Are white/light-colored rectangular boxes with black borders
+- Are larger than individual parts (to contain a small build diagram)
+- May contain a count label (e.g., "2x") indicating how many to build
+- May contain step numbers for multi-step subassemblies
+- May have an arrow pointing from them to the main diagram
 
-Heuristic
----------
-1. Find Drawing blocks that form rectangular boxes (potential subassembly containers)
-2. Look for step_count candidates inside the boxes
-3. Look for diagram candidates inside the boxes
-4. Optionally find arrows near the boxes
+Scoring is based on intrinsic properties of the box:
+- Fill color (white/light)
+- Size (larger than minimum threshold)
+
+Child element discovery (step_count, step_numbers, diagrams, arrows) is
+deferred to build time per DESIGN.md principles.
 
 Debugging
 ---------
@@ -45,7 +46,6 @@ from build_a_long.pdf_extract.classifier.text import extract_step_number_value
 from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
     filter_contained,
-    filter_overlapping,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
@@ -60,44 +60,36 @@ log = logging.getLogger(__name__)
 
 
 class _SubAssemblyScore(Score):
-    """Internal score representation for subassembly classification."""
+    """Internal score representation for subassembly classification.
+
+    Scores based on intrinsic box properties only. Child element discovery
+    (step_count, step_numbers, diagrams, arrows) is deferred to build time.
+    """
 
     box_score: float
-    """Score based on box having white fill / black border (0.0-1.0)."""
+    """Score based on box having white/light fill (0.0-1.0)."""
 
-    count_score: float
-    """Score for having a valid step_count candidate inside (0.0-1.0)."""
+    has_step_count: bool
+    """Whether a step_count candidate exists inside (for scoring bonus)."""
 
-    diagram_score: float
-    """Score for having a diagram candidate inside (0.0-1.0)."""
+    has_diagram_or_images: bool
+    """Whether diagram candidates or images exist inside (for scoring bonus)."""
 
-    step_count_candidate: Candidate | None
-    """The step_count candidate found inside the box."""
-
-    diagram_candidate: Candidate | None
-    """The diagram candidate found inside the box."""
-
-    step_number_candidates: list[Candidate]
-    """Step number candidates found inside the box (for multi-step subassemblies)."""
-
-    diagram_candidates: list[Candidate]
-    """All diagram candidates inside the box (for multi-step subassemblies)."""
-
-    images_inside: list[Image]
-    """Image blocks found directly inside the subassembly box (not from clustering)."""
-
-    arrow_candidate: Candidate | None
-    """Arrow candidate pointing from/near this subassembly."""
+    has_step_numbers: bool
+    """Whether step_number candidates exist inside (for multi-step subassemblies)."""
 
     config: SubAssemblyConfig
     """Configuration containing weights for score calculation."""
 
     def score(self) -> Weight:
         """Calculate final weighted score from components."""
+        count_score = 1.0 if self.has_step_count else 0.0
+        diagram_score = 1.0 if self.has_diagram_or_images else 0.0
+
         return (
             self.box_score * self.config.box_shape_weight
-            + self.count_score * self.config.count_weight
-            + self.diagram_score * self.config.diagram_weight
+            + count_score * self.config.count_weight
+            + diagram_score * self.config.diagram_weight
         )
 
 
@@ -106,7 +98,7 @@ class SubAssemblyClassifier(LabelClassifier):
 
     output: ClassVar[str] = "subassembly"
     requires: ClassVar[frozenset[str]] = frozenset(
-        {"arrow", "step_count", "step_number", "diagram"}
+        {"step_count", "step_number", "diagram"}
     )
 
     def _score(self, result: ClassificationResult) -> None:
@@ -114,7 +106,7 @@ class SubAssemblyClassifier(LabelClassifier):
         page_data = result.page_data
         subassembly_config = self.config.subassembly
 
-        # Get step_count, step_number, diagram, and arrow candidates
+        # Get step_count, step_number, and diagram candidates
         step_count_candidates = result.get_scored_candidates(
             "step_count", valid_only=False, exclude_failed=True
         )
@@ -123,9 +115,6 @@ class SubAssemblyClassifier(LabelClassifier):
         )
         diagram_candidates = result.get_scored_candidates(
             "diagram", valid_only=False, exclude_failed=True
-        )
-        arrow_candidates = result.get_scored_candidates(
-            "arrow", valid_only=False, exclude_failed=True
         )
 
         # Collect all potential candidates, then deduplicate by bbox
@@ -148,6 +137,24 @@ class SubAssemblyClassifier(LabelClassifier):
             ):
                 continue
 
+            # Skip boxes larger than maximum subassembly size
+            # (subassemblies are callout boxes, not page-sized elements)
+            max_width = page_data.bbox.width * subassembly_config.max_page_width_ratio
+            max_height = (
+                page_data.bbox.height * subassembly_config.max_page_height_ratio
+            )
+            if bbox.width > max_width or bbox.height > max_height:
+                log.debug(
+                    "[subassembly] Skipping oversized box at %s "
+                    "(%.1f x %.1f > max %.1f x %.1f)",
+                    bbox,
+                    bbox.width,
+                    bbox.height,
+                    max_width,
+                    max_height,
+                )
+                continue
+
             # Skip if we've already found a similar bbox
             if any(bbox.similar(found, tolerance=2.0) for found in found_bboxes):
                 log.debug(
@@ -161,44 +168,24 @@ class SubAssemblyClassifier(LabelClassifier):
             if box_score < 0.3:
                 continue
 
-            # Find step_count candidate inside the box
-            step_count_candidate = self._find_candidate_inside(
-                bbox, step_count_candidates
+            # Check for child elements inside the box (for scoring only)
+            # Actual candidate discovery happens at build time
+            has_step_count = bool(
+                self._find_candidate_inside(bbox, step_count_candidates)
             )
-            count_score = 1.0 if step_count_candidate else 0.0
-
-            # Find all step_number candidates inside the box
-            step_nums_inside = self._find_all_candidates_inside(
-                bbox, step_number_candidates
+            has_step_numbers = bool(
+                self._find_all_candidates_inside(bbox, step_number_candidates)
             )
-
-            # Find all diagram candidates inside/overlapping the box
             diagrams_inside = self._find_all_diagrams_inside(bbox, diagram_candidates)
-
-            # Find Image blocks directly inside the box (not from clustering)
-            # This catches images that were absorbed into larger diagram clusters
             images_inside = self._find_images_inside(bbox, page_data.blocks)
-
-            # For scoring, use the best/primary diagram
-            diagram_candidate = diagrams_inside[0] if diagrams_inside else None
-            # If we have images but no diagram candidates, still give credit
-            has_diagram_or_images = bool(diagram_candidate or images_inside)
-            diagram_score = 1.0 if has_diagram_or_images else 0.0
-
-            # Find nearby arrow
-            arrow_candidate = self._find_arrow_for_subassembly(bbox, arrow_candidates)
+            has_diagram_or_images = bool(diagrams_inside or images_inside)
 
             # We need at least a box - count and diagram are optional
             score_details = _SubAssemblyScore(
                 box_score=box_score,
-                count_score=count_score,
-                diagram_score=diagram_score,
-                step_count_candidate=step_count_candidate,
-                diagram_candidate=diagram_candidate,
-                step_number_candidates=step_nums_inside,
-                diagram_candidates=diagrams_inside,
-                images_inside=images_inside,
-                arrow_candidate=arrow_candidate,
+                has_step_count=has_step_count,
+                has_diagram_or_images=has_diagram_or_images,
+                has_step_numbers=has_step_numbers,
                 config=subassembly_config,
             )
 
@@ -225,12 +212,11 @@ class SubAssemblyClassifier(LabelClassifier):
             )
             log.debug(
                 "[subassembly] Candidate at %s: has_count=%s, "
-                "has_steps=%d, has_diagrams=%d, has_images=%d, score=%.2f",
+                "has_steps=%s, has_diagrams_or_images=%s, score=%.2f",
                 bbox,
-                step_count_candidate is not None,
-                len(step_nums_inside),
-                len(diagrams_inside),
-                len(images_inside),
+                has_step_count,
+                has_step_numbers,
+                has_diagram_or_images,
                 score_details.score(),
             )
 
@@ -320,30 +306,19 @@ class SubAssemblyClassifier(LabelClassifier):
     def _find_all_diagrams_inside(
         self, bbox: BBox, diagram_candidates: list[Candidate]
     ) -> list[Candidate]:
-        """Find all diagram candidates that overlap significantly with the box.
+        """Find all diagram candidates that are fully inside the box.
 
         Args:
             bbox: The bounding box of the subassembly container
             diagram_candidates: Diagram candidates to search
 
         Returns:
-            List of diagram candidates overlapping the box, sorted by overlap area
+            List of diagram candidates inside the box, sorted by area (largest first)
         """
-        diagrams: list[tuple[float, Candidate]] = []
-
-        for candidate in diagram_candidates:
-            if bbox.overlaps(candidate.bbox):
-                # Calculate overlap area
-                overlap = bbox.intersect(candidate.bbox)
-                overlap_area = overlap.width * overlap.height
-                # Only include if significant overlap (at least 50% inside the box)
-                candidate_area = candidate.bbox.area
-                if candidate_area > 0 and overlap_area / candidate_area >= 0.5:
-                    diagrams.append((overlap_area, candidate))
-
-        # Sort by overlap area (largest first)
-        diagrams.sort(key=lambda x: x[0], reverse=True)
-        return [c for _, c in diagrams]
+        diagrams = filter_contained(diagram_candidates, bbox)
+        # Sort by area (largest first)
+        diagrams.sort(key=lambda c: c.bbox.area, reverse=True)
+        return diagrams
 
     def _find_images_inside(self, bbox: BBox, blocks: list[Blocks]) -> list[Image]:
         """Find Image blocks that are fully inside the given box.
@@ -370,59 +345,79 @@ class SubAssemblyClassifier(LabelClassifier):
         images.sort(key=lambda img: img.bbox.area, reverse=True)
         return images
 
-    def _find_arrow_for_subassembly(
-        self, bbox: BBox, arrow_candidates: list[Candidate]
-    ) -> Candidate | None:
-        """Find an arrow that points from/near this subassembly box.
-
-        Looks for arrows that are either:
-        - Inside the box
-        - Adjacent to the box (within a small margin)
-
-        Args:
-            bbox: The bounding box of the subassembly container
-            arrow_candidates: All arrow candidates on the page
-
-        Returns:
-            The best matching arrow candidate, or None
-        """
-        margin = 20.0  # Points of margin around the box
-        expanded_bbox = bbox.expand(margin)
-        overlapping = filter_overlapping(arrow_candidates, expanded_bbox)
-        return find_best_scoring(overlapping)
-
     def build(self, candidate: Candidate, result: ClassificationResult) -> SubAssembly:
-        """Construct a SubAssembly element from a candidate."""
-        score_details = candidate.score_details
-        assert isinstance(score_details, _SubAssemblyScore)
+        """Construct a SubAssembly element from a candidate.
 
-        # Build the step_count element if present
+        Child element discovery happens here at build time:
+        - Find step_count inside the box
+        - Find step_numbers inside the box
+        - Find diagrams and images inside the box
+        - Match step_numbers with diagrams/images
+        """
+        bbox = candidate.bbox
+        page_data = result.page_data
+
+        # Get candidates for child element discovery
+        step_count_candidates = result.get_scored_candidates(
+            "step_count", valid_only=False, exclude_failed=True
+        )
+        step_number_candidates = result.get_scored_candidates(
+            "step_number", valid_only=False, exclude_failed=True
+        )
+        diagram_candidates = result.get_scored_candidates(
+            "diagram", valid_only=False, exclude_failed=True
+        )
+
+        # Find step_count inside the box and build it
         count = None
-        if score_details.step_count_candidate:
-            count_elem = result.build(score_details.step_count_candidate)
+        step_count_candidate = self._find_candidate_inside(bbox, step_count_candidates)
+        if step_count_candidate:
+            count_elem = result.build(step_count_candidate)
             assert isinstance(count_elem, StepCount)
             count = count_elem
 
+        # Find step_numbers inside the box
+        step_nums_inside = self._find_all_candidates_inside(
+            bbox, step_number_candidates
+        )
+
+        # Find diagrams and images inside the box
+        diagrams_inside = self._find_all_diagrams_inside(bbox, diagram_candidates)
+        images_inside = self._find_images_inside(bbox, page_data.blocks)
+
         # Build steps if we have step numbers inside
         steps: list[SubAssemblyStep] = []
-        if score_details.step_number_candidates:
+        if step_nums_inside:
             # Build step numbers and match them with diagrams or images
             steps = self._build_subassembly_steps(
-                score_details.step_number_candidates,
-                score_details.diagram_candidates,
-                score_details.images_inside,
+                step_nums_inside,
+                diagrams_inside,
+                images_inside,
                 result,
             )
 
         # Build a single diagram if present and no steps were built
         diagram = None
-        if not steps and score_details.diagram_candidate:
-            diagram_elem = result.build(score_details.diagram_candidate)
-            assert isinstance(diagram_elem, Diagram)
-            diagram = diagram_elem
+        if not steps:
+            if diagrams_inside:
+                diagram_elem = result.build(diagrams_inside[0])
+                assert isinstance(diagram_elem, Diagram)
+                diagram = diagram_elem
+            elif images_inside:
+                # Fall back to using an Image directly as the diagram
+                diagram = Diagram(bbox=images_inside[0].bbox)
+
+        # Subassemblies must contain at least one diagram
+        # (either in steps or standalone)
+        has_diagram = diagram is not None or any(s.diagram is not None for s in steps)
+        if not has_diagram:
+            raise ValueError(
+                f"SubAssembly at {bbox} has no diagram - "
+                "subassemblies must contain at least one diagram"
+            )
 
         return SubAssembly(
-            bbox=candidate.bbox,
+            bbox=bbox,
             steps=steps,
             diagram=diagram,
             count=count,
