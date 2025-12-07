@@ -18,6 +18,7 @@ from .rules import (
     validate_step_sequence,
     validate_steps_have_parts,
     validate_steps_no_significant_overlap,
+    validate_unassigned_blocks,
 )
 from .types import ValidationResult
 
@@ -63,6 +64,9 @@ def validate_results(
         if result.skipped_reason:
             skipped_pages.append((pdf_page, result.skipped_reason))
             continue  # Don't collect other data for skipped pages
+
+        # Check for unassigned blocks
+        validate_unassigned_blocks(validation, result)
 
         # Check for invalid pages (no Page object but also not skipped)
         if page is None:

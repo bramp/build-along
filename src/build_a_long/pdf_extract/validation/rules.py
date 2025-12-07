@@ -1,5 +1,6 @@
 """Individual validation rules for classification results."""
 
+from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 
@@ -583,3 +584,48 @@ def validate_content_no_metadata_overlap(
                         details=f"{content_elem.bbox} intersects {meta_elem.bbox}",  # type: ignore[union-attr]
                     )
                 )
+
+
+def validate_unassigned_blocks(
+    validation: ValidationResult,
+    result: ClassificationResult,
+) -> None:
+    """Validate that all source blocks are assigned to a built candidate or removed.
+
+    Args:
+        validation: ValidationResult to add issues to
+        result: The ClassificationResult for a page
+    """
+    if result.skipped_reason:
+        return
+
+    unassigned_blocks = []
+    for block in result.page_data.blocks:
+        # Check if block is assigned to a constructed candidate
+        best_candidate = result.get_best_candidate(block)
+        if best_candidate:
+            continue
+
+        # Check if block was explicitly removed
+        if result.is_removed(block):
+            continue
+
+        # Block is unassigned and not removed
+        unassigned_blocks.append(block)
+
+    if unassigned_blocks:
+        block_details = ", ".join(
+            f"#{b.id} ({type(b).__name__})" for b in unassigned_blocks[:10]
+        )
+        if len(unassigned_blocks) > 10:
+            block_details += f" ... ({len(unassigned_blocks)} total)"
+
+        validation.add(
+            ValidationIssue(
+                severity=ValidationSeverity.WARNING,
+                rule="unassigned_block",
+                message=f"{len(unassigned_blocks)} unassigned blocks on page",
+                pages=[result.page_data.page_number],
+                details=f"Blocks: {block_details}",
+            )
+        )
