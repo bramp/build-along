@@ -276,16 +276,9 @@ class PieceLengthClassifier(LabelClassifier):
 
         for drawing in drawings:
             # Check if text bbox is fully contained in drawing bbox
-            if (
-                drawing.bbox.x0 <= text.bbox.x0
-                and text.bbox.x1 <= drawing.bbox.x1
-                and drawing.bbox.y0 <= text.bbox.y0
-                and text.bbox.y1 <= drawing.bbox.y1
-            ):
+            if drawing.bbox.contains(text.bbox):
                 # Calculate drawing area
-                drawing_area = (drawing.bbox.x1 - drawing.bbox.x0) * (
-                    drawing.bbox.y1 - drawing.bbox.y0
-                )
+                drawing_area = drawing.bbox.area
 
                 # Skip drawings that are way too large (page backgrounds)
                 if text_area > 0 and drawing_area / text_area > MAX_AREA_RATIO:

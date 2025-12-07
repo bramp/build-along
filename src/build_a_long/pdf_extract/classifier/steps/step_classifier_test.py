@@ -10,6 +10,7 @@ from build_a_long.pdf_extract.classifier.conftest import CandidateFactory
 from build_a_long.pdf_extract.classifier.steps.step_classifier import (
     StepClassifier,
     _StepScore,
+    filter_subassembly_values,
 )
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
@@ -66,11 +67,17 @@ class TestStepClassification:
 
         classifier.score(result)
 
-        # Construct the Step
-        step_candidates = result.get_candidates("step")
-        assert len(step_candidates) == 1
-        constructed_step = result.build(step_candidates[0])
-        assert isinstance(constructed_step, Step)
+        # Build steps using build_all (handles deduplication)
+        classifier.build_all(result)
+
+        # Get constructed steps
+        steps = [
+            c.constructed
+            for c in result.get_candidates("step")
+            if isinstance(c.constructed, Step)
+        ]
+        assert len(steps) == 1
+        constructed_step = steps[0]
 
         assert constructed_step.step_number.value == 10
         assert constructed_step.parts_list is not None
@@ -104,11 +111,17 @@ class TestStepClassification:
 
         classifier.score(result)
 
-        # Construct the Step
-        step_candidates = result.get_candidates("step")
-        assert len(step_candidates) == 1
-        constructed_step = result.build(step_candidates[0])
-        assert isinstance(constructed_step, Step)
+        # Build steps using build_all (handles deduplication)
+        classifier.build_all(result)
+
+        # Get constructed steps
+        steps = [
+            c.constructed
+            for c in result.get_candidates("step")
+            if isinstance(c.constructed, Step)
+        ]
+        assert len(steps) == 1
+        constructed_step = steps[0]
 
         assert constructed_step.step_number.value == 5
         assert constructed_step.parts_list is None  # No parts list candidate
@@ -162,13 +175,15 @@ class TestStepClassification:
 
         classifier.score(result)
 
-        # Construct the Steps
-        steps: list[Step] = []
-        for step_candidate in result.get_candidates("step"):
-            constructed_step = result.build(step_candidate)
-            assert isinstance(constructed_step, Step)
-            steps.append(constructed_step)
+        # Build steps using build_all (handles deduplication)
+        classifier.build_all(result)
 
+        # Get constructed steps
+        steps = [
+            c.constructed
+            for c in result.get_candidates("step")
+            if isinstance(c.constructed, Step)
+        ]
         assert len(steps) == 2
 
         # Check that steps are in order by value
@@ -288,13 +303,119 @@ class TestStepClassification:
 
         classifier.score(result)
 
-        # Construct the Steps
-        steps: list[Step] = []
-        for step_candidate in result.get_candidates("step"):
-            constructed_step = result.build(step_candidate)
-            assert isinstance(constructed_step, Step)
-            steps.append(constructed_step)
+        # Build steps using build_all (handles deduplication)
+        classifier.build_all(result)
+
+        # Get constructed steps
+        steps = [
+            c.constructed
+            for c in result.get_candidates("step")
+            if isinstance(c.constructed, Step)
+        ]
 
         # Only ONE step should be created (uniqueness enforced at Step level)
         assert len(steps) == 1
         assert steps[0].step_number.value == 1
+
+
+class TestFilterSubassemblyValues:
+    """Tests for filter_subassembly_values function.
+
+    This function filters out items with values likely to be subassembly steps
+    (e.g., 1, 2) when the list also contains higher-numbered page-level values
+    (e.g., 15, 16).
+    """
+
+    def test_empty_list_returns_empty(self) -> None:
+        """An empty list should return empty."""
+        assert filter_subassembly_values([]) == []
+
+    def test_single_item_returns_unchanged(self) -> None:
+        """A single item should be returned unchanged."""
+        items = [(5, "a")]
+        assert filter_subassembly_values(items) == items
+
+    def test_consecutive_values_no_gap_returns_unchanged(self) -> None:
+        """Values with no significant gap (e.g., 15, 16, 17) return unchanged."""
+        items = [(15, "a"), (16, "b"), (17, "c")]
+        assert filter_subassembly_values(items) == items
+
+    def test_gap_exactly_3_does_not_filter(self) -> None:
+        """A gap of exactly 3 (not > 3) should not filter."""
+        # Gap of 3: 1 -> 4 (4 - 1 = 3, not > 3)
+        items = [(1, "a"), (4, "b")]
+        assert filter_subassembly_values(items) == items
+
+    def test_gap_exactly_4_filters(self) -> None:
+        """A gap of exactly 4 (> 3) should filter when min_value <= 3."""
+        # Gap of 4: 1 -> 5 (5 - 1 = 4, which is > 3)
+        items = [(1, "a"), (5, "b")]
+        assert filter_subassembly_values(items) == [(5, "b")]
+
+    def test_gap_but_min_value_greater_than_3_no_filter(self) -> None:
+        """Gap > 3 but min_value > 3 should not filter (e.g., 5, 6, 15, 16)."""
+        # Gap of 9 (15 - 6 = 9) but min is 5 (> 3)
+        items = [(5, "a"), (6, "b"), (15, "c"), (16, "d")]
+        assert filter_subassembly_values(items) == items
+
+    def test_min_value_exactly_3_filters(self) -> None:
+        """Gap > 3 and min_value == 3 should filter (3 <= 3)."""
+        # Gap of 12 (15 - 3 = 12) and min is 3 (<= 3)
+        items = [(3, "a"), (15, "b"), (16, "c")]
+        result = filter_subassembly_values(items)
+        assert result == [(15, "b"), (16, "c")]
+
+    def test_min_value_exactly_4_no_filter(self) -> None:
+        """Gap > 3 but min_value == 4 should NOT filter (4 > 3)."""
+        # Gap of 11 (15 - 4 = 11) but min is 4 (> 3)
+        items = [(4, "a"), (15, "b"), (16, "c")]
+        assert filter_subassembly_values(items) == items
+
+    def test_typical_subassembly_case(self) -> None:
+        """Typical case: steps 1, 2 (subassembly) + 15, 16 (page-level)."""
+        items = [(1, "a"), (2, "b"), (15, "c"), (16, "d")]
+        result = filter_subassembly_values(items)
+        assert result == [(15, "c"), (16, "d")]
+
+    def test_multiple_gaps_uses_largest(self) -> None:
+        """When there are multiple gaps, the largest one determines filtering."""
+        # Values: 1, 2, 5, 20, 21
+        # Gaps: 2->5 = 3, 5->20 = 15 (largest)
+        items = [(1, "a"), (2, "b"), (5, "c"), (20, "d"), (21, "e")]
+        result = filter_subassembly_values(items)
+        # Largest gap is 5->20, threshold = 20
+        assert result == [(20, "d"), (21, "e")]
+
+    def test_unordered_input_handled_correctly(self) -> None:
+        """Items passed in non-sorted order should be handled correctly."""
+        # Pass in non-sorted order
+        items = [(16, "d"), (1, "a"), (15, "c"), (2, "b")]
+        result = filter_subassembly_values(items)
+        # Should filter and return sorted
+        assert result == [(15, "c"), (16, "d")]
+
+    def test_preserves_associated_data(self) -> None:
+        """The associated data (second element of tuple) should be preserved."""
+        items = [
+            (1, {"name": "step1"}),
+            (2, {"name": "step2"}),
+            (15, {"name": "step15"}),
+        ]
+        result = filter_subassembly_values(items)
+        assert result == [(15, {"name": "step15"})]
+
+    def test_custom_min_gap_parameter(self) -> None:
+        """Custom min_gap parameter should be respected."""
+        items = [(1, "a"), (3, "b")]  # Gap of 2
+        # Default min_gap=3, so gap of 2 doesn't filter
+        assert filter_subassembly_values(items) == items
+        # With min_gap=1, gap of 2 > 1 should filter
+        assert filter_subassembly_values(items, min_gap=1) == [(3, "b")]
+
+    def test_custom_max_subassembly_start_parameter(self) -> None:
+        """Custom max_subassembly_start parameter should be respected."""
+        items = [(4, "a"), (15, "b")]  # Gap of 11, min=4
+        # Default max_subassembly_start=3, so min=4 doesn't filter
+        assert filter_subassembly_values(items) == items
+        # With max_subassembly_start=4, min=4 should filter
+        assert filter_subassembly_values(items, max_subassembly_start=4) == [(15, "b")]

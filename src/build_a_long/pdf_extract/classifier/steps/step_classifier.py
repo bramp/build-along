@@ -33,9 +33,6 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
-from build_a_long.pdf_extract.classifier.parts.parts_list_classifier import (
-    _PartsListScore,
-)
 from build_a_long.pdf_extract.classifier.score import (
     Score,
     Weight,
@@ -61,6 +58,9 @@ log = logging.getLogger(__name__)
 
 class _StepScore(Score):
     """Internal score representation for step classification."""
+
+    step_value: int
+    """The parsed step number value (e.g., 1, 2, 3)."""
 
     step_number_candidate: Candidate
     """The step number candidate this step is associated with."""
@@ -106,19 +106,7 @@ class _StepScore(Score):
         1. Higher overall scores (better StepNumber-PartsList-Diagram match)
         2. Lower step number values (to break ties and maintain order)
         """
-        # Extract step number value from candidate's source block
-        step_num_candidate = self.step_number_candidate
-
-        # Assume single source block for step number
-        if step_num_candidate.source_blocks and isinstance(
-            step_num_candidate.source_blocks[0], Text
-        ):
-            text_block = step_num_candidate.source_blocks[0]
-            step_value = extract_step_number_value(text_block.text)
-            if step_value is not None:
-                return (-self.overall_score(), step_value)
-
-        return (-self.overall_score(), 0)  # Fallback if value cannot be extracted
+        return (-self.overall_score(), self.step_value)
 
 
 class StepClassifier(LabelClassifier):
@@ -156,6 +144,8 @@ class StepClassifier(LabelClassifier):
         )
 
         # Create all possible Step candidates for pairings (without diagrams initially)
+        # Deduplication happens at build time, not scoring time, so that
+        # diagram assignment can be re-evaluated as blocks get claimed.
         all_candidates: list[Candidate] = []
         for step_candidate in step_number_candidates:
             # Create candidates for this StepNumber paired with each PartsList
@@ -171,19 +161,12 @@ class StepClassifier(LabelClassifier):
             if candidate:
                 all_candidates.append(candidate)
 
-        # Greedily select the best candidates (deduplication)
-        # This will assign diagrams as part of the selection process
-        deduplicated_candidates = self._deduplicate_and_assign_diagrams(
-            all_candidates, result
-        )
-
-        # Add the deduplicated candidates to the result
-        for candidate in deduplicated_candidates:
+        # Add all candidates to result (deduplication happens at build time)
+        for candidate in all_candidates:
             result.add_candidate(candidate)
 
         log.debug(
-            "[step] Created %d deduplicated step candidates (from %d possibilities)",
-            len(deduplicated_candidates),
+            "[step] Created %d step candidates",
             len(all_candidates),
         )
 
@@ -192,8 +175,12 @@ class StepClassifier(LabelClassifier):
 
         This method:
         1. Builds all rotation symbols first (so they claim their Drawing blocks)
-        2. Builds all Step candidates
-        3. Uses Hungarian matching to optimally assign rotation symbols to steps
+        2. Builds all parts lists (so they claim their blocks)
+        3. Builds Step candidates, deduplicating by step value at build time
+        4. Uses Hungarian matching to optimally assign rotation symbols to steps
+
+        Deduplication happens at build time (not scoring time) so that diagram
+        assignment can be re-evaluated as blocks get claimed by other elements.
 
         This coordination ensures:
         - Rotation symbols are built before diagrams, preventing incorrect clustering
@@ -220,19 +207,76 @@ class StepClassifier(LabelClassifier):
                     e,
                 )
 
-        # Phase 2: Build all Step candidates
-        steps: list[Step] = []
-        for step_candidate in result.get_scored_candidates(
-            "step", valid_only=False, exclude_failed=True
+        # Phase 2: Build all parts lists BEFORE steps.
+        # This allows parts lists to claim their Drawing blocks first,
+        # preventing them from being claimed by subassemblies.
+        for pl_candidate in result.get_scored_candidates(
+            "parts_list", valid_only=False, exclude_failed=True
         ):
+            try:
+                result.build(pl_candidate)
+                log.debug(
+                    "[step] Built parts_list at %s (score=%.2f)",
+                    pl_candidate.bbox,
+                    pl_candidate.score,
+                )
+            except Exception as e:
+                log.debug(
+                    "[step] Failed to construct parts_list candidate at %s: %s",
+                    pl_candidate.bbox,
+                    e,
+                )
+
+        # Phase 3: Build Step candidates with deduplication by step value
+        # Filter out subassembly steps, then build in score order, skipping
+        # step values that have already been built.
+        all_step_candidates = result.get_scored_candidates(
+            "step", valid_only=False, exclude_failed=True
+        )
+        page_level_step_candidates = self._filter_page_level_step_candidates(
+            all_step_candidates
+        )
+
+        # Sort by score (highest first) so best candidates get built first
+        sorted_candidates = sorted(
+            page_level_step_candidates,
+            key=lambda c: c.score,
+            reverse=True,
+        )
+
+        steps: list[Step] = []
+        built_step_values: set[int] = set()
+
+        for step_candidate in sorted_candidates:
+            # Get step value from score
+            score = step_candidate.score_details
+            if not isinstance(score, _StepScore):
+                continue
+
+            # Skip if we've already built a step with this value
+            if score.step_value in built_step_values:
+                log.debug(
+                    "[step] Skipping duplicate step %d candidate (score=%.2f)",
+                    score.step_value,
+                    step_candidate.score,
+                )
+                continue
+
             try:
                 elem = result.build(step_candidate)
                 assert isinstance(elem, Step)
                 steps.append(elem)
+                built_step_values.add(score.step_value)
+                log.debug(
+                    "[step] Built step %d (parts_list=%s, score=%.2f)",
+                    score.step_value,
+                    "yes" if score.parts_list_candidate is not None else "no",
+                    step_candidate.score,
+                )
             except Exception as e:
                 log.debug(
-                    "[step] Failed to construct step candidate at %s: %s",
-                    step_candidate.bbox,
+                    "[step] Failed to construct step %d candidate: %s",
+                    score.step_value,
                     e,
                 )
 
@@ -256,6 +300,44 @@ class StepClassifier(LabelClassifier):
             len(steps),
             sum(1 for s in steps if s.rotation_symbol is not None),
         )
+
+    def _filter_page_level_step_candidates(
+        self, candidates: list[Candidate]
+    ) -> list[Candidate]:
+        """Filter step candidates to exclude likely subassembly steps.
+
+        Extracts step number values from candidates and uses the generic
+        filter_subassembly_values function to filter out subassembly steps.
+
+        Args:
+            candidates: All step candidates to filter
+
+        Returns:
+            Filtered list of candidates likely to be page-level steps
+        """
+        # Extract step number values from candidates
+        items_with_values: list[tuple[int, Candidate]] = []
+        for candidate in candidates:
+            score = candidate.score_details
+            if not isinstance(score, _StepScore):
+                continue
+            items_with_values.append((score.step_value, candidate))
+
+        # Use generic filtering function
+        filtered_items = filter_subassembly_values(items_with_values)
+
+        # If filtering occurred, return only the filtered candidates
+        if len(filtered_items) != len(items_with_values):
+            filtered_values = [v for v, _ in filtered_items]
+            log.debug(
+                "[step] Filtered out likely subassembly steps, keeping values: %s",
+                sorted(filtered_values),
+            )
+            return [item for _, item in filtered_items]
+
+        # No filtering occurred, return original candidates
+        # (includes any candidates that couldn't have their value extracted)
+        return candidates
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> Step:
         """Construct a Step element from a single candidate."""
@@ -399,11 +481,22 @@ class StepClassifier(LabelClassifier):
             result: Classification result
 
         Returns:
-            The created Candidate with score but no construction
+            The created Candidate with score but no construction, or None if
+            the step number value cannot be extracted.
         """
         ABOVE_EPS = 2.0  # Small epsilon for "above" check
         ALIGNMENT_THRESHOLD_MULTIPLIER = 1.0  # Max horizontal offset
         DISTANCE_THRESHOLD_MULTIPLIER = 1.0  # Max vertical distance
+
+        # Extract step number value from the candidate
+        if not step_candidate.source_blocks:
+            return None
+        source_block = step_candidate.source_blocks[0]
+        if not isinstance(source_block, Text):
+            return None
+        step_value = extract_step_number_value(source_block.text)
+        if step_value is None:
+            return None
 
         step_bbox = step_candidate.bbox
         parts_list_bbox = parts_list_candidate.bbox if parts_list_candidate else None
@@ -433,6 +526,7 @@ class StepClassifier(LabelClassifier):
         # Create score object with candidate references
         # Diagrams are found at build time, not during scoring
         score = _StepScore(
+            step_value=step_value,
             step_number_candidate=step_candidate,
             parts_list_candidate=parts_list_candidate,
             has_parts_list=parts_list_candidate is not None,
@@ -753,112 +847,6 @@ class StepClassifier(LabelClassifier):
 
         return BBox.union_all(bboxes).clip_to(page_bbox)
 
-    def _deduplicate_and_assign_diagrams(
-        self, candidates: list[Candidate], result: ClassificationResult
-    ) -> list[Candidate]:
-        """Select the best Step candidates, ensuring each step number is unique.
-
-        Diagrams are found at build time, not during scoring, to allow
-        rotation symbols to claim small images first.
-
-        Args:
-            candidates: All possible Step candidates
-            result: Classification result (unused, kept for API compatibility)
-
-        Returns:
-            Deduplicated list of Step candidates (one per step number value)
-        """
-        # First, deduplicate candidates by step number value
-        # Pick the best candidate for each unique step number
-        best_by_step_value: dict[int, Candidate] = {}
-
-        for candidate in candidates:
-            assert isinstance(candidate.score_details, _StepScore)
-            score = candidate.score_details
-
-            # Extract step number value
-            step_num_candidate = score.step_number_candidate
-            if not step_num_candidate.source_blocks:
-                continue
-            text_block = step_num_candidate.source_blocks[0]
-            if not isinstance(text_block, Text):
-                continue
-
-            step_value = extract_step_number_value(text_block.text)
-            if step_value is None:
-                continue
-
-            # Keep the best candidate for each step value
-            if step_value not in best_by_step_value:
-                best_by_step_value[step_value] = candidate
-            else:
-                existing = best_by_step_value[step_value]
-                if candidate.score > existing.score:
-                    best_by_step_value[step_value] = candidate
-
-        # Get unique step candidates
-        unique_step_candidates = list(best_by_step_value.values())
-
-        if not unique_step_candidates:
-            return []
-
-        # Build final candidates ensuring parts list uniqueness
-        selected: list[Candidate] = []
-        used_parts_list_ids: set[int] = set()
-
-        for candidate in unique_step_candidates:
-            assert isinstance(candidate.score_details, _StepScore)
-            score = candidate.score_details
-
-            # Check parts list uniqueness
-            parts_list_candidate = score.parts_list_candidate
-            if parts_list_candidate is not None:
-                has_parts = False
-                if isinstance(parts_list_candidate.score_details, _PartsListScore):
-                    has_parts = (
-                        len(parts_list_candidate.score_details.part_candidates) > 0
-                    )
-
-                if has_parts:
-                    parts_list_id = id(parts_list_candidate)
-                    if parts_list_id in used_parts_list_ids:
-                        # Use None for parts list if already used
-                        parts_list_candidate = None
-                    else:
-                        used_parts_list_ids.add(parts_list_id)
-
-            # Create updated score if parts_list changed
-            if parts_list_candidate != score.parts_list_candidate:
-                updated_score = _StepScore(
-                    step_number_candidate=score.step_number_candidate,
-                    parts_list_candidate=parts_list_candidate,
-                    has_parts_list=parts_list_candidate is not None,
-                    step_proximity_score=score.step_proximity_score,
-                    step_alignment_score=score.step_alignment_score,
-                )
-                candidate = Candidate(
-                    bbox=candidate.bbox,
-                    label=candidate.label,
-                    score=updated_score.overall_score(),
-                    score_details=updated_score,
-                    source_blocks=candidate.source_blocks,
-                )
-
-            selected.append(candidate)
-
-            # Log selection
-            text_block = score.step_number_candidate.source_blocks[0]
-            assert isinstance(text_block, Text)
-            step_value = extract_step_number_value(text_block.text)
-            log.debug(
-                "[step] Selected step %d (parts_list=%s, score=%.2f)",
-                step_value or 0,
-                "yes" if parts_list_candidate is not None else "no",
-                candidate.score,
-            )
-
-        return selected
-
 
 def assign_rotation_symbols_to_steps(
     steps: list[Step],
@@ -963,3 +951,66 @@ def assign_rotation_symbols_to_steps(
                 cost_matrix[row_idx, col_idx],
                 max_distance,
             )
+
+
+def filter_subassembly_values[T](
+    items: list[tuple[int, T]],
+    *,
+    min_gap: int = 3,
+    max_subassembly_start: int = 3,
+) -> list[tuple[int, T]]:
+    """Filter items to exclude likely subassembly values.
+
+    Subassembly steps (e.g., step 1, 2 inside a subassembly box) often appear
+    alongside higher-numbered page-level steps (e.g., 15, 16). This creates
+    sequences like [1, 2, 15, 16] which cannot all be page-level steps.
+
+    This function identifies such cases by detecting a significant gap in values
+    and filtering out the lower-numbered items that are likely subassembly steps.
+
+    Args:
+        items: List of (value, item) tuples where value is the step number
+            and item is any associated data (e.g., a Candidate).
+        min_gap: Minimum gap size to trigger filtering (exclusive).
+            Default is 3, so gaps > 3 trigger filtering.
+        max_subassembly_start: Maximum starting value for subassembly detection.
+            If min value is <= this, filtering is applied. Default is 3.
+
+    Returns:
+        Filtered list of (value, item) tuples, keeping only the higher values
+        if a subassembly pattern is detected. Returns original list if no
+        filtering is needed.
+
+    Examples:
+        >>> filter_subassembly_values([(1, "a"), (2, "b"), (15, "c"), (16, "d")])
+        [(15, "c"), (16, "d")]
+
+        >>> filter_subassembly_values([(5, "a"), (6, "b"), (15, "c")])
+        [(5, "a"), (6, "b"), (15, "c")]  # min=5 > 3, no filtering
+    """
+    if len(items) <= 1:
+        return items
+
+    # Sort by value
+    sorted_items = sorted(items, key=lambda x: x[0])
+    values = [v for v, _ in sorted_items]
+
+    # Find the largest gap between consecutive values
+    max_gap_size = 0
+    max_gap_index = -1
+    for i in range(len(values) - 1):
+        gap = values[i + 1] - values[i]
+        if gap > max_gap_size:
+            max_gap_size = gap
+            max_gap_index = i
+
+    # Check if filtering should occur:
+    # 1. Gap must be larger than min_gap
+    # 2. The minimum value must be <= max_subassembly_start
+    if max_gap_size > min_gap and max_gap_index >= 0:
+        min_value = values[0]
+        if min_value <= max_subassembly_start:
+            threshold = values[max_gap_index + 1]
+            return [(v, item) for v, item in sorted_items if v >= threshold]
+
+    return items
