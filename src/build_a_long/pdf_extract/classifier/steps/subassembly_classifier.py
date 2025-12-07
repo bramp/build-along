@@ -46,6 +46,7 @@ from build_a_long.pdf_extract.classifier.text import extract_step_number_value
 from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
     filter_contained,
+    filter_overlapping,
     group_by_similar_bbox,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
@@ -286,15 +287,17 @@ class SubAssemblyClassifier(LabelClassifier):
         best_candidate = None
         best_overlap = 0.0
 
-        for candidate in diagram_candidates:
-            if bbox.overlaps(candidate.bbox):
-                # Calculate overlap area
-                # TODO Should this use bbox.intersection_area(candidate.bbox)?
-                overlap = bbox.intersect(candidate.bbox)
-                overlap_area = overlap.width * overlap.height
-                if overlap_area > best_overlap:
-                    best_candidate = candidate
-                    best_overlap = overlap_area
+        # Use filter_overlapping to narrow down candidates
+        overlapping_candidates = filter_overlapping(diagram_candidates, bbox)
+
+        for candidate in overlapping_candidates:
+            # Calculate overlap area
+            # TODO Should this use bbox.intersection_area(candidate.bbox)?
+            overlap = bbox.intersect(candidate.bbox)
+            overlap_area = overlap.width * overlap.height
+            if overlap_area > best_overlap:
+                best_candidate = candidate
+                best_overlap = overlap_area
 
         return best_candidate
 
