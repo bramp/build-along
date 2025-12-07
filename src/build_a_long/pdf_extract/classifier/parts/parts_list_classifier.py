@@ -31,12 +31,12 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import filter_contained
+from build_a_long.pdf_extract.extractor.bbox import BBox, filter_contained
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     PartsList,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 log = logging.getLogger(__name__)
 
@@ -70,6 +70,11 @@ class PartsListClassifier(LabelClassifier):
 
         Creates candidates with score details containing the Part candidates,
         but does not construct the PartsList yet.
+
+        Drawings with similar bboxes are grouped into a single candidate
+        (parts lists often have multiple overlapping Drawing blocks for
+        border/fill). Overlap resolution between different parts lists
+        happens at build time based on candidate scores.
         """
         # Get part candidates (not constructed elements)
         part_candidates = result.get_scored_candidates(
@@ -93,101 +98,81 @@ class PartsListClassifier(LabelClassifier):
             len(part_candidates),
         )
 
-        # Pre-score all drawings to sort them by quality
-        # The drawing is the rectangle around the parts list
-        drawing_scores: list[tuple[Drawing, _PartsListScore]] = []
+        # Group drawings with similar bboxes together
+        # Each group represents a single potential parts list
+        groups: list[list[Drawing]] = []
         for drawing in drawings:
-            # Find all part candidates contained in this drawing
-            contained = filter_contained(part_candidates, drawing.bbox)
+            # Try to find an existing group with similar bbox
+            found_group = False
+            for group in groups:
+                if drawing.bbox.similar(group[0].bbox, tolerance=2.0):
+                    group.append(drawing)
+                    found_group = True
+                    break
+            if not found_group:
+                groups.append([drawing])
 
-            # Create score with Candidate references
-            score = _PartsListScore(part_candidates=contained)
-            drawing_scores.append((drawing, score))
+        log.debug(
+            "[parts_list] Grouped %d drawings into %d unique bbox regions",
+            len(drawings),
+            len(groups),
+        )
 
-        # Sort by score (highest first), then by drawing ID for determinism
-        drawing_scores.sort(key=lambda x: (x[1].score(), -x[0].id), reverse=True)
-
-        # Track accepted candidates to check for overlaps
-        IOU_THRESHOLD = 0.9
-        accepted_candidates: list[Candidate] = []
-
-        # Process each drawing in score order
+        # Create one candidate per group
         min_score = self.config.parts_list.min_score
-        for drawing, score in drawing_scores:
-            combined = score.score()
+        for group in groups:
+            # Use union of all drawings' bboxes as the candidate bbox
+            bbox = BBox.union_all([d.bbox for d in group])
 
-            # Skip candidates below min_score threshold entirely
-            # (don't even create them as failed candidates)
-            if combined < min_score:
+            # Find all part candidates contained in this bbox
+            contained = filter_contained(part_candidates, bbox)
+            score = _PartsListScore(part_candidates=contained)
+
+            # Skip candidates below min_score threshold
+            if score.score() < min_score:
                 continue
 
             # Determine failure reason if any
             failure_reason = None
 
-            if not len(score.part_candidates) > 0:
+            if len(contained) == 0:
                 failure_reason = "Drawing contains no parts"
 
             # Check if drawing is suspiciously large
             if failure_reason is None and page_data.bbox:
                 page_area = page_data.bbox.area
-                drawing_area = drawing.bbox.area
+                drawing_area = bbox.area
                 max_ratio = self.config.parts_list.max_area_ratio
                 if page_area > 0 and drawing_area / page_area > max_ratio:
                     pct = drawing_area / page_area * 100
                     failure_reason = f"Drawing too large ({pct:.1f}% of page area)"
                     log.debug(
                         "[parts_list] Drawing %d rejected: %s",
-                        drawing.id,
+                        group[0].id,
                         failure_reason,
                     )
 
-            # Check for overlap with already-accepted candidates
-            if failure_reason is None and accepted_candidates:
-                for accepted in accepted_candidates:
-                    overlap = drawing.bbox.iou(accepted.bbox)
-                    if overlap > IOU_THRESHOLD:
-                        failure_reason = (
-                            f"Overlaps with {accepted.bbox} (IOU={overlap:.2f})"
-                        )
-                        log.debug(
-                            "[parts_list] Drawing %d rejected: %s",
-                            drawing.id,
-                            failure_reason,
-                        )
-                        break
-
-            # Find all drawings with similar bboxes to claim as source blocks.
-            # Parts lists often have multiple overlapping Drawing blocks
-            # (e.g., outer border and inner fill with nearly identical bboxes).
-            source_blocks: list[Blocks] = [drawing]
-            for other_drawing in drawings:
-                if other_drawing.id == drawing.id:
-                    continue
-                # Check if this drawing has a similar bbox
-                if drawing.bbox.similar(other_drawing.bbox, tolerance=2.0):
-                    source_blocks.append(other_drawing)
-                    log.debug(
-                        "[parts_list] Drawing %d claiming similar drawing %d",
-                        drawing.id,
-                        other_drawing.id,
-                    )
-
-            # Create candidate
+            # Create candidate with all grouped drawings as source blocks
             candidate = Candidate(
-                bbox=drawing.bbox,
+                bbox=bbox,
                 label="parts_list",
                 score=score.score(),
                 score_details=score,
-                source_blocks=source_blocks,
+                source_blocks=list(group),
                 failure_reason=failure_reason,
             )
 
-            # Track accepted candidates for overlap checking
-            if failure_reason is None:
-                accepted_candidates.append(candidate)
-
-            # Add candidate to result
             result.add_candidate(candidate)
+
+            if len(group) > 1:
+                log.debug(
+                    "[parts_list] Created candidate at %s from %d drawings "
+                    "(score=%.2f, parts=%d)",
+                    bbox,
+                    len(group),
+                    score.score(),
+                    len(contained),
+                )
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> PartsList:
         """Construct a PartsList from a single candidate's score details.
