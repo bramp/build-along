@@ -51,7 +51,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
-    build_all_connected_clusters,
+    build_connected_cluster,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
@@ -266,13 +266,5 @@ class DiagramClassifier(LabelClassifier):
             # Seed was already consumed (shouldn't happen, but be safe)
             return [seed_block]
 
-        # Build clusters from unclaimed images
-        clusters = build_all_connected_clusters(unclaimed_images)
-
-        # Find the cluster containing our seed block
-        for cluster in clusters:
-            if seed_block in cluster:
-                return list(cluster)
-
-        # Fallback: just return the seed block
-        return [seed_block]
+        # Build cluster from unclaimed images starting at seed
+        return build_connected_cluster([seed_block], unclaimed_images)

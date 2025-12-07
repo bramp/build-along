@@ -38,6 +38,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.extractor.bbox import BBox, filter_overlapping
 from build_a_long.pdf_extract.extractor.lego_page_elements import Arrow
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing
 
@@ -292,12 +293,17 @@ class ArrowClassifier(LabelClassifier):
             Tuple of (shaft Drawing block, tail point) if found, None otherwise
         """
         # Try to find a simple rectangular shaft first
-        result = self._find_simple_shaft(arrowhead, score_details, all_drawings)
+        # Optimization: Filter to drawings near the arrowhead
+        # Shaft must connect to arrowhead, so it must overlap a slightly expanded bbox
+        search_bbox = arrowhead.bbox.expand(20.0)  # generous margin
+        nearby_drawings = filter_overlapping(all_drawings, search_bbox)
+
+        result = self._find_simple_shaft(arrowhead, score_details, nearby_drawings)
         if result is not None:
             return result
 
         # Try to find an L-shaped (cornered) shaft
-        return self._find_cornered_shaft(arrowhead, score_details, all_drawings)
+        return self._find_cornered_shaft(arrowhead, score_details, nearby_drawings)
 
     def _find_simple_shaft(
         self,
