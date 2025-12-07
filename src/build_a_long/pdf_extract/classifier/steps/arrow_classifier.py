@@ -38,7 +38,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import BBox, filter_overlapping
+from build_a_long.pdf_extract.extractor.bbox import filter_overlapping
 from build_a_long.pdf_extract.extractor.lego_page_elements import Arrow
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing
 

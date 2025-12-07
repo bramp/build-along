@@ -267,4 +267,4 @@ class DiagramClassifier(LabelClassifier):
             return [seed_block]
 
         # Build cluster from unclaimed images starting at seed
-        return build_connected_cluster([seed_block], unclaimed_images)
+        return build_connected_cluster(seed_block, unclaimed_images)

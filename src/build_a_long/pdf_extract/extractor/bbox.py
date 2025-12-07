@@ -342,43 +342,38 @@ class HasBBox(Protocol):
 
 
 def build_connected_cluster[T: HasBBox](
-    seed_items: list[T],
+    seed_item: T,
     candidate_items: list[T],
 ) -> list[T]:
     """Build a connected cluster of items based on bbox overlap.
 
-    Starts with seed items and recursively adds candidates that overlap
+    Starts with a seed item and recursively adds candidates that overlap
     with any item already in the cluster.
 
     Args:
-        seed_items: Initial items to start the cluster
+        seed_item: Initial item to start the cluster
         candidate_items: Items to consider adding to the cluster
 
     Returns:
-        List of items in the connected cluster (includes seed items)
+        List of items in the connected cluster (includes seed item)
 
     Example:
         >>> # Find images that form a connected cluster with a bag number
-        >>> bag_images = [img for img in images if img.bbox.overlaps(bag_bbox)]
-        >>> cluster = build_connected_cluster(bag_images, images)
+        >>> cluster = build_connected_cluster(bag_image, images)
     """
-    if not seed_items:
-        return []
-
     # Build index mapping for quick lookup
     candidate_set = set(range(len(candidate_items)))
     cluster_indices: set[int] = set()
     to_process: list[int] = []
 
-    # Add seed items to cluster
-    for seed in seed_items:
-        for idx, candidate in enumerate(candidate_items):
-            if candidate is seed or candidate.bbox.equals(seed.bbox):
-                if idx in candidate_set:
-                    cluster_indices.add(idx)
-                    to_process.append(idx)
-                    candidate_set.discard(idx)
-                break
+    # Add seed item to cluster
+    for idx, candidate in enumerate(candidate_items):
+        if candidate is seed_item or candidate.bbox.equals(seed_item.bbox):
+            if idx in candidate_set:
+                cluster_indices.add(idx)
+                to_process.append(idx)
+                candidate_set.discard(idx)
+            break
 
     # Expand cluster by finding overlapping items
     processed: set[int] = set()
@@ -434,7 +429,7 @@ def build_all_connected_clusters[T: HasBBox](items: list[T]) -> list[list[T]]:
         remaining.remove(seed_idx)
 
         # Build a cluster starting from this seed
-        cluster = build_connected_cluster([seed_item], items)
+        cluster = build_connected_cluster(seed_item, items)
 
         # Remove clustered items from remaining set
         for item in cluster:

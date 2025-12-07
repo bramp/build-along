@@ -250,13 +250,6 @@ class MockItem:
     bbox: BBox
 
 
-def test_build_connected_cluster_empty():
-    """Test clustering with empty seed items."""
-    items = [MockItem(1, BBox(0, 0, 10, 10))]
-    result = build_connected_cluster([], items)
-    assert result == []
-
-
 def test_build_connected_cluster_single_seed():
     """Test clustering with a single seed item."""
     item1 = MockItem(1, BBox(0, 0, 10, 10))
@@ -264,7 +257,7 @@ def test_build_connected_cluster_single_seed():
     item3 = MockItem(3, BBox(20, 20, 30, 30))  # No overlap
 
     items = [item1, item2, item3]
-    result = build_connected_cluster([item1], items)
+    result = build_connected_cluster(item1, items)
 
     assert len(result) == 2
     assert item1 in result
@@ -281,7 +274,7 @@ def test_build_connected_cluster_chain():
     item5 = MockItem(5, BBox(50, 50, 60, 60))  # Isolated
 
     items = [item1, item2, item3, item4, item5]
-    result = build_connected_cluster([item1], items)
+    result = build_connected_cluster(item1, items)
 
     # All items except isolated item5 should be in cluster
     assert len(result) == 4
@@ -292,19 +285,30 @@ def test_build_connected_cluster_chain():
     assert item5 not in result
 
 
-def test_build_connected_cluster_multiple_seeds():
-    """Test clustering with multiple seed items."""
+def test_build_connected_cluster_disjoint_seeds():
+    """Test that clustering with disjoint seeds requires separate calls."""
     item1 = MockItem(1, BBox(0, 0, 10, 10))
     item2 = MockItem(2, BBox(5, 5, 15, 15))  # Overlaps with item1
     item3 = MockItem(3, BBox(50, 50, 60, 60))  # Isolated
     item4 = MockItem(4, BBox(55, 55, 65, 65))  # Overlaps with item3
 
     items = [item1, item2, item3, item4]
-    result = build_connected_cluster([item1, item3], items)
 
-    # Should create two separate clusters
-    assert len(result) == 4
-    assert all(item in result for item in items)
+    # Cluster starting from item1
+    result1 = build_connected_cluster(item1, items)
+    assert len(result1) == 2
+    assert item1 in result1
+    assert item2 in result1
+    assert item3 not in result1
+    assert item4 not in result1
+
+    # Cluster starting from item3
+    result2 = build_connected_cluster(item3, items)
+    assert len(result2) == 2
+    assert item3 in result2
+    assert item4 in result2
+    assert item1 not in result2
+    assert item2 not in result2
 
 
 def test_build_connected_cluster_all_overlapping():
@@ -315,7 +319,7 @@ def test_build_connected_cluster_all_overlapping():
     item4 = MockItem(4, BBox(15, 15, 30, 30))  # Overlaps with item3
 
     items = [item1, item2, item3, item4]
-    result = build_connected_cluster([item1], items)
+    result = build_connected_cluster(item1, items)
 
     assert len(result) == 4
     assert all(item in result for item in items)
@@ -329,7 +333,7 @@ def test_build_connected_cluster_preserves_order():
     item4 = MockItem(4, BBox(7, 7, 12, 12))  # Overlaps item2
 
     items = [item1, item2, item3, item4]
-    result = build_connected_cluster([item1], items)
+    result = build_connected_cluster(item1, items)
 
     # Result should be in same order as original list
     assert result == [item1, item2, item4]

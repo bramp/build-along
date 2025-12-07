@@ -134,7 +134,7 @@ class NewBagClassifier(LabelClassifier):
                 continue
 
             # Build a connected cluster starting from this image
-            cluster = build_connected_cluster([seed_block], image_blocks)
+            cluster = build_connected_cluster(seed_block, image_blocks)
 
             # Mark all images in this cluster as processed
             for img in cluster:
