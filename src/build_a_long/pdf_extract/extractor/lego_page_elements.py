@@ -13,6 +13,7 @@ from pydantic import (
     Discriminator,
     Field,
     PlainSerializer,
+    field_serializer,
     model_validator,
 )
 
@@ -235,8 +236,23 @@ class PartImage(LegoPageElement):
     shine: Shine | None = None
     """Optional shine effect indicating a metallic part."""
 
+    # TODO: image_id, digest, and xref are temporary identifiers used for classification,
+    # deduplication, and validation. They should eventually be removed in favor of
+    # directly linking matching PartImage objects or using a centralized AssetManager.
     image_id: str | None = Field(default=None, exclude=True)
     """Optional image ID from the source Image block (e.g., 'image_123')."""
+
+    digest: bytes | None = Field(default=None, exclude=True)
+    """MD5 digest of the image data (for deduplication)."""
+
+    xref: int | None = Field(default=None, exclude=True)
+    """PDF cross-reference ID (for deduplication within a PDF)."""
+
+    @field_serializer("digest")
+    @classmethod
+    def _serialize_digest(cls, v: bytes | None) -> str | None:
+        """Serialize digest bytes to hex string for JSON output."""
+        return v.hex() if v is not None else None
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
