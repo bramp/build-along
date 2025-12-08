@@ -33,6 +33,7 @@ from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
+    CandidateFailedError,
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.config import SubAssemblyConfig
@@ -387,18 +388,32 @@ class SubAssemblyClassifier(LabelClassifier):
         steps: list[SubAssemblyStep] = []
         if step_nums_inside:
             # Build step numbers and match them with diagrams or images
+            # Pass a slightly inset bbox to constrain diagram clustering.
+            # The inset avoids capturing the white border of the subassembly
+            # box.
+            # TODO Turn the -3 into a config
+            inset_bbox = bbox.expand(-3.0)  # Shrink by 3 points on all sides
             steps = self._build_subassembly_steps(
                 step_nums_inside,
                 diagrams_inside,
                 images_inside,
                 result,
+                constraint_bbox=inset_bbox,
             )
 
         # Build a single diagram if present and no steps were built
+        # Pass a slightly inset bbox as a constraint to prevent diagram
+        # clustering from expanding beyond the subassembly bounds.
+        # The inset avoids capturing the white border of the subassembly box.
+        # TODO Turn the -3 into a config
         diagram = None
         if not steps:
+            # TODO Check all diagrams are built inside the box
             if diagrams_inside:
-                diagram_elem = result.build(diagrams_inside[0])
+                inset_bbox = bbox.expand(-3.0)  # Shrink by 3 points on all sides
+                diagram_elem = result.build(
+                    diagrams_inside[0], constraint_bbox=inset_bbox
+                )
                 assert isinstance(diagram_elem, Diagram)
                 diagram = diagram_elem
             elif images_inside:
@@ -427,6 +442,7 @@ class SubAssemblyClassifier(LabelClassifier):
         diagram_candidates: list[Candidate],
         images_inside: list[Image],
         result: ClassificationResult,
+        constraint_bbox: BBox,
     ) -> list[SubAssemblyStep]:
         """Build SubAssemblyStep elements by matching step numbers with diagrams.
 
@@ -440,6 +456,7 @@ class SubAssemblyClassifier(LabelClassifier):
             diagram_candidates: Diagram candidates inside the subassembly
             images_inside: Image blocks found directly inside the subassembly
             result: Classification result for building elements
+            constraint_bbox: Bounding box to constrain diagram clustering
 
         Returns:
             List of SubAssemblyStep elements, sorted by step number value
@@ -470,17 +487,32 @@ class SubAssemblyClassifier(LabelClassifier):
                 if diagram_id in used_diagram_ids:
                     continue
 
+                # Skip candidates that are already failed (e.g., from a previous
+                # diagram build that clustered and claimed shared images)
+                if diagram_candidate.failure_reason:
+                    continue
+
                 # Score this diagram for this step
                 score = self._score_step_diagram_match(
                     step_num_candidate.bbox, diagram_candidate.bbox
                 )
                 if score > best_score:
-                    best_score = score
-                    best_diagram_id = diagram_id
-                    # Build the diagram
-                    diagram_elem = result.build(diagram_candidate)
-                    assert isinstance(diagram_elem, Diagram)
-                    best_diagram = diagram_elem
+                    # Build the diagram with constraint to prevent clustering
+                    # beyond the subassembly bounds
+                    # TODO maybe pass images_inside to constrain diagram clustering?
+                    try:
+                        diagram_elem = result.build(
+                            diagram_candidate, constraint_bbox=constraint_bbox
+                        )
+
+                        assert isinstance(diagram_elem, Diagram)
+                        best_score = score
+                        best_diagram_id = diagram_id
+                        best_diagram = diagram_elem
+                    except CandidateFailedError:
+                        # This candidate was claimed by another diagram during
+                        # clustering - skip it and try the next one
+                        continue
 
             # If no diagram candidate found, try Image blocks directly
             if best_diagram is None:
