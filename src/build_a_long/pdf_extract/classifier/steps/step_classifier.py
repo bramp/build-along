@@ -45,6 +45,7 @@ from build_a_long.pdf_extract.extractor.bbox import BBox, filter_overlapping
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Arrow,
     Diagram,
+    Divider,
     LegoPageElements,
     PartsList,
     RotationSymbol,
@@ -231,9 +232,31 @@ class StepClassifier(LabelClassifier):
                     e,
                 )
 
-        # Phase 3: Build Step candidates with deduplication by step value
+        # Phase 3: Build all subassemblies BEFORE steps.
+        # This allows us to exclude diagrams inside subassemblies from being
+        # selected as the main step diagram.
+        for sa_candidate in result.get_scored_candidates(
+            "subassembly", valid_only=False, exclude_failed=True
+        ):
+            try:
+                result.build(sa_candidate)
+                log.debug(
+                    "[step] Built subassembly at %s (score=%.2f)",
+                    sa_candidate.bbox,
+                    sa_candidate.score,
+                )
+            except Exception as e:
+                log.debug(
+                    "[step] Failed to construct subassembly candidate at %s: %s",
+                    sa_candidate.bbox,
+                    e,
+                )
+
+        # Phase 4: Build Step candidates with deduplication by step value
         # Filter out subassembly steps, then build in score order, skipping
         # step values that have already been built.
+        # Steps are built as "partial" - just step_number + parts_list.
+        # Diagrams and subassemblies are assigned later via Hungarian matching.
         all_step_candidates = result.get_scored_candidates(
             "step", valid_only=False, exclude_failed=True
         )
@@ -272,7 +295,7 @@ class StepClassifier(LabelClassifier):
                 steps.append(elem)
                 built_step_values.add(score.step_value)
                 log.debug(
-                    "[step] Built step %d (parts_list=%s, score=%.2f)",
+                    "[step] Built partial step %d (parts_list=%s, score=%.2f)",
                     score.step_value,
                     "yes" if score.parts_list_candidate is not None else "no",
                     step_candidate.score,
@@ -287,7 +310,85 @@ class StepClassifier(LabelClassifier):
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
 
-        # Phase 3: Assign rotation symbols to steps using Hungarian matching
+        # Phase 5: Assign diagrams to steps using Hungarian matching
+        # Collect available diagram candidates (not yet claimed by subassemblies)
+        available_diagrams: list[Diagram] = []
+        for diag_candidate in result.get_scored_candidates(
+            "diagram", valid_only=False, exclude_failed=True
+        ):
+            if diag_candidate.constructed is None:
+                # Build the diagram
+                try:
+                    diag_elem = result.build(diag_candidate)
+                    assert isinstance(diag_elem, Diagram)
+                    available_diagrams.append(diag_elem)
+                except Exception as e:
+                    log.debug(
+                        "[step] Failed to build diagram at %s: %s",
+                        diag_candidate.bbox,
+                        e,
+                    )
+            elif isinstance(diag_candidate.constructed, Diagram):
+                # Already built (claimed by subassembly) - skip
+                pass
+
+        log.debug(
+            "[step] Available diagrams for step assignment: %d",
+            len(available_diagrams),
+        )
+
+        # Assign diagrams to steps using Hungarian matching
+        assign_diagrams_to_steps(steps, available_diagrams)
+
+        # Phase 6: Assign subassemblies to steps using Hungarian matching
+        # Collect built subassemblies
+        subassemblies: list[SubAssembly] = []
+        for sa_candidate in result.get_scored_candidates(
+            "subassembly", valid_only=True
+        ):
+            assert sa_candidate.constructed is not None
+            assert isinstance(sa_candidate.constructed, SubAssembly)
+            subassemblies.append(sa_candidate.constructed)
+
+        # Collect built dividers for obstruction checking
+        dividers: list[Divider] = []
+        for div_candidate in result.get_scored_candidates("divider", valid_only=True):
+            assert div_candidate.constructed is not None
+            assert isinstance(div_candidate.constructed, Divider)
+            dividers.append(div_candidate.constructed)
+
+        log.debug(
+            "[step] Assigning %d subassemblies to %d steps (%d dividers for "
+            "obstruction checking)",
+            len(subassemblies),
+            len(steps),
+            len(dividers),
+        )
+
+        # Assign subassemblies to steps using Hungarian matching
+        assign_subassemblies_to_steps(steps, subassemblies, dividers)
+
+        # Phase 7: Finalize steps - compute arrows and final bboxes
+        page_bbox = result.page_data.bbox
+        for step in steps:
+            # Get arrows for this step
+            arrows = self._get_arrows_for_step(step.step_number, step.diagram, result)
+
+            # Compute final bbox including all components
+            final_bbox = self._compute_step_bbox(
+                step.step_number,
+                step.parts_list,
+                step.diagram,
+                step.subassemblies,
+                page_bbox,
+            )
+
+            # Update the step (Step is a Pydantic model, so we need to reassign)
+            # We mutate in place by directly setting attributes
+            object.__setattr__(step, "arrows", arrows)
+            object.__setattr__(step, "bbox", final_bbox)
+
+        # Phase 8: Assign rotation symbols to steps using Hungarian matching
         # Collect built rotation symbols
         rotation_symbols: list[RotationSymbol] = []
         for rs_candidate in result.get_scored_candidates(
@@ -347,7 +448,12 @@ class StepClassifier(LabelClassifier):
         return candidates
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> Step:
-        """Construct a Step element from a single candidate."""
+        """Construct a partial Step element from a single candidate.
+
+        This creates a Step with just step_number and parts_list. The diagram,
+        subassemblies, and arrows are assigned later in build_all() using
+        Hungarian matching for optimal global assignment.
+        """
         score = candidate.score_details
         assert isinstance(score, _StepScore)
 
@@ -366,28 +472,19 @@ class StepClassifier(LabelClassifier):
             assert isinstance(parts_list_elem, PartsList)
             parts_list = parts_list_elem
 
-        # Find and build the diagram for this step first
-        diagram = self._find_and_build_diagram_for_step(step_num, parts_list, result)
+        # Create partial step - diagram, subassemblies, arrows assigned later
+        initial_bbox = step_num.bbox
+        if parts_list:
+            initial_bbox = initial_bbox.union(parts_list.bbox)
 
-        # Compute the step's bbox (step_num + parts_list + diagram)
-        page_bbox = result.page_data.bbox
-        step_bbox = self._compute_step_bbox(step_num, parts_list, diagram, page_bbox)
-
-        # Get arrows for this step (from subassemblies and other sources)
-        arrows = self._get_arrows_for_step(step_num, diagram, result)
-
-        # Get subassemblies for this step
-        subassemblies = self._get_subassemblies_for_step(step_num, diagram, result)
-
-        # Build Step (rotation_symbol will be assigned later)
         return Step(
-            bbox=step_bbox,
+            bbox=initial_bbox,
             step_number=step_num,
             parts_list=parts_list,
-            diagram=diagram,
+            diagram=None,
             rotation_symbol=None,
-            arrows=arrows,
-            subassemblies=subassemblies,
+            arrows=[],
+            subassemblies=[],
         )
 
     def _find_and_build_diagram_for_step(
@@ -398,9 +495,10 @@ class StepClassifier(LabelClassifier):
     ) -> Diagram | None:
         """Find and build the best diagram for this step.
 
-        This is called at build time, after rotation symbols have been built,
-        so they've already claimed any small images they need. This ensures
-        the diagram doesn't incorrectly cluster rotation symbol images.
+        This is called at build time, after rotation symbols and subassemblies
+        have been built (in build_all Phases 1 and 3), so they've already
+        claimed any images/diagrams they need. We filter to only consider
+        diagram candidates that haven't been constructed yet.
 
         Args:
             step_num: The built step number element
@@ -416,6 +514,7 @@ class StepClassifier(LabelClassifier):
         )
 
         # Filter to only candidates that haven't been built yet
+        # (subassemblies and rotation symbols built earlier may have claimed some)
         available_candidates = [c for c in diagram_candidates if c.constructed is None]
 
         if not available_candidates:
@@ -753,11 +852,11 @@ class StepClassifier(LabelClassifier):
         diagram: Diagram | None,
         result: ClassificationResult,
     ) -> list[SubAssembly]:
-        """Find subassemblies associated with this step.
+        """Get already-built subassemblies that belong to this step.
 
-        Looks for subassembly candidates that are positioned near the step's
-        diagram or step number. SubAssemblies are callout boxes showing
-        sub-assemblies.
+        Subassemblies are built in build_all() before steps. This method finds
+        subassemblies that are positioned near this step's diagram and haven't
+        been claimed by another step yet.
 
         Args:
             step_num: The step number element
@@ -767,26 +866,39 @@ class StepClassifier(LabelClassifier):
         Returns:
             List of SubAssembly elements for this step
         """
-        subassembly_candidates = result.get_scored_candidates(
-            "subassembly", valid_only=False, exclude_failed=True
-        )
+        # Get all built subassemblies
+        all_subassemblies: list[SubAssembly] = []
+        for sa_candidate in result.get_scored_candidates(
+            "subassembly", valid_only=True
+        ):
+            assert sa_candidate.constructed is not None
+            assert isinstance(sa_candidate.constructed, SubAssembly)
+            all_subassemblies.append(sa_candidate.constructed)
 
         log.debug(
-            "[step] Looking for subassemblies for step %d, found %d candidates",
+            "[step] Looking for subassemblies for step %d, found %d built",
             step_num.value,
-            len(subassembly_candidates),
+            len(all_subassemblies),
         )
 
-        if not subassembly_candidates:
+        if not all_subassemblies:
             return []
 
-        # Determine search region: prefer diagram area, fallback to step area
-        search_bbox = diagram.bbox if diagram else step_num.bbox
+        # Determine search region based on step_number and diagram
+        reference_bbox = diagram.bbox.union(step_num.bbox) if diagram else step_num.bbox
 
-        # Expand search region to catch subassemblies near the diagram
-        # Use a larger margin since subassemblies can be positioned further from
-        # the main diagram
-        search_region = search_bbox.expand(150.0)
+        page_bbox = result.page_data.bbox
+
+        # Expand search region around the reference area
+        # Horizontally: search the full page width
+        # Vertically: search a region around the reference bbox
+        vertical_margin = reference_bbox.height
+        search_region = BBox(
+            x0=page_bbox.x0,
+            y0=max(page_bbox.y0, reference_bbox.y0 - vertical_margin),
+            x1=page_bbox.x1,
+            y1=min(page_bbox.y1, reference_bbox.y1 + vertical_margin),
+        )
 
         log.debug(
             "[step] SubAssembly search region for step %d: %s",
@@ -794,28 +906,15 @@ class StepClassifier(LabelClassifier):
             search_region,
         )
 
-        # Find subassemblies within or overlapping the search region
+        # Find subassemblies that overlap the search region
         subassemblies: list[SubAssembly] = []
-        overlapping_candidates = filter_overlapping(
-            subassembly_candidates, search_region
-        )
-
-        for candidate in overlapping_candidates:
-            log.debug(
-                "[step]   SubAssembly candidate at %s, overlaps=True, score=%.2f",
-                candidate.bbox,
-                candidate.score,
-            )
-            try:
-                subassembly = result.build(candidate)
-                assert isinstance(subassembly, SubAssembly)
-                subassemblies.append(subassembly)
-            except Exception as e:
+        for subassembly in all_subassemblies:
+            if subassembly.bbox.overlaps(search_region):
                 log.debug(
-                    "[step]   Failed to build subassembly at %s: %s",
-                    candidate.bbox,
-                    e,
+                    "[step]   SubAssembly at %s overlaps search region",
+                    subassembly.bbox,
                 )
+                subassemblies.append(subassembly)
 
         log.debug(
             "[step] Found %d subassemblies for step %d",
@@ -829,11 +928,13 @@ class StepClassifier(LabelClassifier):
         step_num: StepNumber,
         parts_list: PartsList | None,
         diagram: Diagram | None,
+        subassemblies: list[SubAssembly],
         page_bbox: BBox,
     ) -> BBox:
         """Compute the overall bounding box for the Step.
 
-        This encompasses the step number, parts list (if any), and diagram (if any).
+        This encompasses the step number, parts list (if any), diagram (if any),
+        and all subassemblies.
         The result is clipped to the page bounds to handle elements that extend
         slightly off-page (e.g., arrows in diagrams).
 
@@ -841,6 +942,7 @@ class StepClassifier(LabelClassifier):
             step_num: The step number element
             parts_list: The parts list (if any)
             diagram: The diagram element (if any)
+            subassemblies: List of subassemblies for this step
             page_bbox: The page bounding box to clip to
 
         Returns:
@@ -851,8 +953,300 @@ class StepClassifier(LabelClassifier):
             bboxes.append(parts_list.bbox)
         if diagram:
             bboxes.append(diagram.bbox)
+        for sa in subassemblies:
+            bboxes.append(sa.bbox)
 
         return BBox.union_all(bboxes).clip_to(page_bbox)
+
+
+def assign_diagrams_to_steps(
+    steps: list[Step],
+    diagrams: list[Diagram],
+    max_distance: float = 500.0,
+) -> None:
+    """Assign diagrams to steps using Hungarian algorithm.
+
+    Uses optimal bipartite matching to pair diagrams with steps based on
+    a scoring function that considers:
+    - Distance from step_number to diagram (closer is better)
+    - Relative position (diagram typically below/right of step_number)
+
+    This function mutates the Step objects in place, setting their diagram
+    attribute.
+
+    Args:
+        steps: List of Step objects to assign diagrams to
+        diagrams: List of Diagram objects to assign
+        max_distance: Maximum distance for a valid assignment. Pairs with distance
+            greater than this will not be matched.
+    """
+    if not steps or not diagrams:
+        log.debug(
+            "[step] No diagram assignment needed: steps=%d, diagrams=%d",
+            len(steps),
+            len(diagrams),
+        )
+        return
+
+    n_steps = len(steps)
+    n_diagrams = len(diagrams)
+
+    log.debug(
+        "[step] Running Hungarian matching for diagrams: %d steps, %d diagrams",
+        n_steps,
+        n_diagrams,
+    )
+
+    # Build cost matrix: rows = diagrams, cols = steps
+    # Lower cost = better match
+    cost_matrix = np.zeros((n_diagrams, n_steps))
+
+    for i, diag in enumerate(diagrams):
+        diag_center = diag.bbox.center
+        for j, step in enumerate(steps):
+            step_num_center = step.step_number.bbox.center
+
+            # Base cost is distance from step_number to diagram center
+            distance = (
+                (step_num_center[0] - diag_center[0]) ** 2
+                + (step_num_center[1] - diag_center[1]) ** 2
+            ) ** 0.5
+
+            # Apply position penalty: prefer diagrams that are below or to the
+            # right of the step_number (typical LEGO instruction layout)
+            # If diagram is above the step_number, add penalty
+            if diag_center[1] < step_num_center[1] - 50:  # Diagram above step
+                distance *= 1.5  # Penalty for being above
+
+            cost_matrix[i, j] = distance
+            log.debug(
+                "[step]   Cost diagram[%d] at %s to step[%d]: %.1f",
+                i,
+                diag.bbox,
+                step.step_number.value,
+                distance,
+            )
+
+    # Apply max_distance threshold
+    high_cost = max_distance * 10
+    cost_matrix_thresholded = np.where(
+        cost_matrix > max_distance, high_cost, cost_matrix
+    )
+
+    # Run Hungarian algorithm
+    row_indices, col_indices = linear_sum_assignment(cost_matrix_thresholded)
+
+    # Assign diagrams to steps based on the matching
+    for row_idx, col_idx in zip(row_indices, col_indices, strict=True):
+        if cost_matrix[row_idx, col_idx] <= max_distance:
+            diag = diagrams[row_idx]
+            step = steps[col_idx]
+            # Use object.__setattr__ because Step is a frozen Pydantic model
+            object.__setattr__(step, "diagram", diag)
+            log.debug(
+                "[step] Assigned diagram at %s to step %d (cost=%.1f)",
+                diag.bbox,
+                step.step_number.value,
+                cost_matrix[row_idx, col_idx],
+            )
+        else:
+            log.debug(
+                "[step] Skipped diagram assignment: diagram[%d] to step[%d] "
+                "cost=%.1f > max_distance=%.1f",
+                row_idx,
+                col_idx,
+                cost_matrix[row_idx, col_idx],
+                max_distance,
+            )
+
+
+def _has_divider_between(
+    bbox1: BBox,
+    bbox2: BBox,
+    dividers: list[Divider],
+) -> bool:
+    """Check if there is a divider line between two bboxes.
+
+    A divider is considered "between" if it crosses the line connecting
+    the centers of the two bboxes.
+
+    Args:
+        bbox1: First bounding box
+        bbox2: Second bounding box
+        dividers: List of dividers to check
+
+    Returns:
+        True if a divider is between the two bboxes
+    """
+    center1 = bbox1.center
+    center2 = bbox2.center
+
+    for divider in dividers:
+        div_bbox = divider.bbox
+
+        # Check if divider is vertical (separates left/right)
+        if div_bbox.width < div_bbox.height * 0.2:  # Vertical line
+            # Check if divider x is between the two centers
+            min_x = min(center1[0], center2[0])
+            max_x = max(center1[0], center2[0])
+            div_x = div_bbox.center[0]
+            if min_x < div_x < max_x:
+                # Check if divider spans the y range
+                min_y = min(center1[1], center2[1])
+                max_y = max(center1[1], center2[1])
+                if div_bbox.y0 <= max_y and div_bbox.y1 >= min_y:
+                    return True
+
+        # Check if divider is horizontal (separates top/bottom)
+        elif div_bbox.height < div_bbox.width * 0.2:  # Horizontal line
+            # Check if divider y is between the two centers
+            min_y = min(center1[1], center2[1])
+            max_y = max(center1[1], center2[1])
+            div_y = div_bbox.center[1]
+            if min_y < div_y < max_y:
+                # Check if divider spans the x range
+                min_x = min(center1[0], center2[0])
+                max_x = max(center1[0], center2[0])
+                if div_bbox.x0 <= max_x and div_bbox.x1 >= min_x:
+                    return True
+
+    return False
+
+
+def assign_subassemblies_to_steps(
+    steps: list[Step],
+    subassemblies: list[SubAssembly],
+    dividers: list[Divider],
+    max_distance: float = 400.0,
+) -> None:
+    """Assign subassemblies to steps using Hungarian algorithm.
+
+    Uses optimal bipartite matching to pair subassemblies with steps based on:
+    - Distance from step's diagram to subassembly (closer is better)
+    - No divider between the subassembly and the step's diagram
+
+    This function mutates the Step objects in place, adding to their
+    subassemblies list.
+
+    Args:
+        steps: List of Step objects to assign subassemblies to
+        subassemblies: List of SubAssembly objects to assign
+        dividers: List of Divider objects for obstruction checking
+        max_distance: Maximum distance for a valid assignment
+    """
+    if not steps or not subassemblies:
+        log.debug(
+            "[step] No subassembly assignment needed: steps=%d, subassemblies=%d",
+            len(steps),
+            len(subassemblies),
+        )
+        return
+
+    n_steps = len(steps)
+    n_subassemblies = len(subassemblies)
+
+    log.debug(
+        "[step] Running Hungarian matching for subassemblies: "
+        "%d steps, %d subassemblies",
+        n_steps,
+        n_subassemblies,
+    )
+
+    # Build cost matrix: rows = subassemblies, cols = steps
+    cost_matrix = np.zeros((n_subassemblies, n_steps))
+    high_cost = max_distance * 10
+
+    for i, sa in enumerate(subassemblies):
+        sa_center = sa.bbox.center
+        for j, step in enumerate(steps):
+            # Use diagram center if available, otherwise step bbox center
+            if step.diagram:
+                target_bbox = step.diagram.bbox
+                target_center = target_bbox.center
+            else:
+                target_bbox = step.bbox
+                target_center = step.step_number.bbox.center
+
+            # Base cost is distance from diagram/step to subassembly center
+            distance = (
+                (target_center[0] - sa_center[0]) ** 2
+                + (target_center[1] - sa_center[1]) ** 2
+            ) ** 0.5
+
+            # Check for divider between subassembly and step's diagram
+            if _has_divider_between(sa.bbox, target_bbox, dividers):
+                # High cost if there's a divider between
+                distance = high_cost
+                log.debug(
+                    "[step]   Divider between subassembly[%d] at %s and step[%d]",
+                    i,
+                    sa.bbox,
+                    step.step_number.value,
+                )
+
+            cost_matrix[i, j] = distance
+            log.debug(
+                "[step]   Cost subassembly[%d] at %s to step[%d]: %.1f",
+                i,
+                sa.bbox,
+                step.step_number.value,
+                distance,
+            )
+
+    # Apply max_distance threshold
+    cost_matrix_thresholded = np.where(
+        cost_matrix > max_distance, high_cost, cost_matrix
+    )
+
+    # Run Hungarian algorithm
+    row_indices, col_indices = linear_sum_assignment(cost_matrix_thresholded)
+
+    # Assign subassemblies to steps based on the matching
+    # Note: Unlike diagrams, multiple subassemblies can be assigned to one step
+    # The Hungarian algorithm gives us the best 1:1 matching, but we may want
+    # to assign additional nearby subassemblies too
+
+    # First, do the 1:1 optimal assignment
+    assigned_subassemblies: set[int] = set()
+    for row_idx, col_idx in zip(row_indices, col_indices, strict=True):
+        if cost_matrix[row_idx, col_idx] <= max_distance:
+            sa = subassemblies[row_idx]
+            step = steps[col_idx]
+            # Add to step's subassemblies list
+            new_subassemblies = list(step.subassemblies) + [sa]
+            object.__setattr__(step, "subassemblies", new_subassemblies)
+            assigned_subassemblies.add(row_idx)
+            log.debug(
+                "[step] Assigned subassembly at %s to step %d (cost=%.1f)",
+                sa.bbox,
+                step.step_number.value,
+                cost_matrix[row_idx, col_idx],
+            )
+
+    # Then, try to assign remaining unassigned subassemblies to their nearest step
+    # (if within max_distance and no divider between)
+    for i, sa in enumerate(subassemblies):
+        if i in assigned_subassemblies:
+            continue
+
+        # Find the step with lowest cost for this subassembly
+        best_step_idx = None
+        best_cost = high_cost
+        for j in range(len(steps)):
+            if cost_matrix[i, j] < best_cost:
+                best_cost = cost_matrix[i, j]
+                best_step_idx = j
+
+        if best_step_idx is not None and best_cost <= max_distance:
+            step = steps[best_step_idx]
+            new_subassemblies = list(step.subassemblies) + [sa]
+            object.__setattr__(step, "subassemblies", new_subassemblies)
+            log.debug(
+                "[step] Assigned extra subassembly at %s to step %d (cost=%.1f)",
+                sa.bbox,
+                step.step_number.value,
+                best_cost,
+            )
 
 
 def assign_rotation_symbols_to_steps(
