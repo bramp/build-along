@@ -750,8 +750,11 @@ class Page(LegoPageElement):
     """The background element for the page, if detected."""
 
     page_number: PageNumber | None = None
+    """The detected page number element on the page (not the PDF page number)."""
 
     progress_bar: ProgressBar | None = None
+    """The detected progress bar element on the page, if present."""
+
 
     dividers: list[Divider] = Field(default_factory=list)
     """List of divider lines on the page separating sections."""
