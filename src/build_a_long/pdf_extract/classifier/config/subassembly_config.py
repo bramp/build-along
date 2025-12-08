@@ -27,7 +27,7 @@ class SubAssemblyConfig(BaseModel):
     min_part_height: float = 15.0
     """Minimum height of a Part element in points."""
 
-    min_size_multiplier: float = 1.5
+    min_size_part_multiplier: float = 1.5
     """SubAssembly must be at least this many times larger than the minimum Part size."""
 
     max_page_width_ratio: float = 0.5
@@ -49,9 +49,9 @@ class SubAssemblyConfig(BaseModel):
     @property
     def min_subassembly_width(self) -> float:
         """Minimum width for a SubAssembly box."""
-        return self.min_part_width * self.min_size_multiplier
+        return self.min_part_width * self.min_size_part_multiplier
 
     @property
     def min_subassembly_height(self) -> float:
         """Minimum height for a SubAssembly box."""
-        return self.min_part_height * self.min_size_multiplier
+        return self.min_part_height * self.min_size_part_multiplier
