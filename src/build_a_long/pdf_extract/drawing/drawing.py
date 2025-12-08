@@ -95,10 +95,22 @@ def _create_drawable_items(
                 label_suffix = "" if is_winner else " [NOT WINNER]"
                 label = f"[{candidate.label}]{label_suffix}"
 
+                # TODO I wonder if we should draw a dashed box for the original
+                # box if the constructed element bbox is different?
+
+                # Use constructed element's bbox if available (it may have been
+                # updated after construction, e.g., Step bbox includes diagram)
+                # Otherwise fall back to candidate bbox
+                bbox = (
+                    candidate.constructed.bbox
+                    if candidate.constructed
+                    else candidate.bbox
+                )
+
                 # Element without source block (e.g., Step, Page)
                 items.append(
                     DrawableItem(
-                        bbox=candidate.bbox,
+                        bbox=bbox,
                         label=label,
                         is_element=True,
                         is_winner=is_winner,
