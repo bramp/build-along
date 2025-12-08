@@ -5,9 +5,12 @@ import statistics
 from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    Background,
+    Divider,
     Manual,
     Page,
     Part,
+    ProgressBar,
 )
 
 from .types import ValidationIssue, ValidationResult, ValidationSeverity
@@ -801,3 +804,47 @@ def validate_unassigned_blocks(
                 details=f"Blocks: {block_details}",
             )
         )
+
+
+def validate_no_divider_intersection(
+    validation: ValidationResult,
+    page: Page,
+    page_data: PageData,
+) -> None:
+    """Validate that content elements do not intersect with dividers.
+
+    Domain Invariant: Dividers separate content sections. Elements like steps,
+    parts, diagrams, etc. should not cross or touch divider lines.
+    Background and ProgressBar are exceptions as they span the page.
+
+    Args:
+        validation: ValidationResult to add issues to
+        page: The classified Page object
+        page_data: The raw PageData for context
+    """
+    if not page.dividers:
+        return
+
+    # Elements to exclude from checking
+    excluded_types = (Page, Background, ProgressBar, Divider)
+
+    for element in page.iter_elements():
+        if isinstance(element, excluded_types):
+            continue
+
+        for divider in page.dividers:
+            # Use overlaps() which returns intersection area (float).
+            # > 0 means they overlap.
+            # This is faster than intersect() which creates a new BBox.
+            overlap_area = element.bbox.overlaps(divider.bbox)
+            if overlap_area > 0.0:
+                validation.add(
+                    ValidationIssue(
+                        severity=ValidationSeverity.WARNING,
+                        rule="divider_intersection",
+                        message=f"{type(element).__name__} intersects with divider",
+                        pages=[page_data.page_number],
+                        details=f"{type(element).__name__} {element.bbox} intersects "
+                        f"Divider {divider.bbox} (overlap area: {overlap_area:.2f})",
+                    )
+                )

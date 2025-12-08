@@ -1,5 +1,7 @@
 """Tests for validation module."""
 
+from typing import Any
+
 from build_a_long.pdf_extract.classifier import (
     BatchClassificationResult,
     Candidate,
@@ -27,6 +29,7 @@ from .rules import (
     validate_elements_within_page,
     validate_first_page_number,
     validate_missing_page_numbers,
+    validate_no_divider_intersection,
     validate_page_number_sequence,
     validate_parts_list_has_parts,
     validate_parts_lists_no_overlap,
@@ -859,3 +862,110 @@ class TestValidateElementsWithinPage:
         validate_elements_within_page(validation, page, page_data)
         assert validation.error_count >= 1
         assert any(i.rule == "element_outside_page" for i in validation.issues)
+
+
+class TestValidateNoDividerIntersection:
+    """Tests for validate_no_divider_intersection rule."""
+
+    def _make_page_with_divider(
+        self,
+        divider_bbox: BBox,
+        element_bbox: BBox,
+        element_type: str = "Step",
+    ) -> tuple[Page, PageData]:
+        """Create a page with a divider and one other element."""
+        from build_a_long.pdf_extract.extractor.lego_page_elements import (
+            Background,
+            Divider,
+            Page,
+            ProgressBar,
+            Step,
+            StepNumber,
+        )
+
+        page_bbox = BBox(0, 0, 100, 100)
+        page_data = PageData(page_number=1, bbox=page_bbox, blocks=[])
+
+        divider = Divider(bbox=divider_bbox, orientation=Divider.Orientation.VERTICAL)
+
+        element: Any
+        if element_type == "Step":
+            element = Step(
+                bbox=element_bbox,
+                step_number=StepNumber(bbox=element_bbox, value=1),
+            )
+            steps = [element]
+            background = None
+            progress_bar = None
+        elif element_type == "Background":
+            element = Background(bbox=element_bbox)
+            steps = []
+            background = element
+            progress_bar = None
+        elif element_type == "ProgressBar":
+            element = ProgressBar(bbox=element_bbox, full_width=100)
+            steps = []
+            background = None
+            progress_bar = element
+        else:
+            raise ValueError(f"Unknown element type: {element_type}")
+
+        page = Page(
+            bbox=page_bbox,
+            pdf_page_number=1,
+            dividers=[divider],
+            steps=steps,
+            background=background,
+            progress_bar=progress_bar,
+        )
+
+        return page, page_data
+
+    def test_no_dividers(self) -> None:
+        """Test checking a page with no dividers."""
+        page, page_data = _make_page_with_steps([(1, BBox(0, 0, 10, 10), None)])
+        validation = ValidationResult()
+        validate_no_divider_intersection(validation, page, page_data)
+        assert not validation.has_issues()
+
+    def test_no_intersection(self) -> None:
+        """Test element not intersecting divider."""
+        page, page_data = self._make_page_with_divider(
+            divider_bbox=BBox(50, 0, 51, 100),  # Vertical line at x=50
+            element_bbox=BBox(0, 0, 40, 40),  # Left side
+        )
+        validation = ValidationResult()
+        validate_no_divider_intersection(validation, page, page_data)
+        assert not validation.has_issues()
+
+    def test_intersection(self) -> None:
+        """Test element intersecting divider."""
+        page, page_data = self._make_page_with_divider(
+            divider_bbox=BBox(50, 0, 51, 100),  # Vertical line at x=50
+            element_bbox=BBox(40, 0, 60, 40),  # Crosses x=50
+        )
+        validation = ValidationResult()
+        validate_no_divider_intersection(validation, page, page_data)
+        assert validation.warning_count >= 1
+        assert any(i.rule == "divider_intersection" for i in validation.issues)
+
+    def test_excluded_elements_ignored(self) -> None:
+        """Test that excluded elements (Background, ProgressBar) are ignored."""
+        # Test Background intersection
+        page, page_data = self._make_page_with_divider(
+            divider_bbox=BBox(50, 0, 51, 100),
+            element_bbox=BBox(0, 0, 100, 100),  # Full page background
+            element_type="Background",
+        )
+        validation = ValidationResult()
+        validate_no_divider_intersection(validation, page, page_data)
+        assert not validation.has_issues()
+
+        # Test ProgressBar intersection
+        page, page_data = self._make_page_with_divider(
+            divider_bbox=BBox(50, 0, 51, 100),
+            element_bbox=BBox(0, 90, 100, 100),  # Bottom bar crossing divider
+            element_type="ProgressBar",
+        )
+        validate_no_divider_intersection(validation, page, page_data)
+        assert not validation.has_issues()

@@ -11,6 +11,7 @@ from .rules import (
     validate_first_page_number,
     validate_invalid_pages,
     validate_missing_page_numbers,
+    validate_no_divider_intersection,
     validate_page_number_sequence,
     validate_part_contains_children,
     validate_parts_list_has_parts,
@@ -182,5 +183,8 @@ def validate_page(
 
     # Rule 6: Content should not overlap metadata
     validate_content_no_metadata_overlap(validation, page, page_data)
+
+    # Rule 7: Content should not overlap dividers
+    validate_no_divider_intersection(validation, page, page_data)
 
     return validation
