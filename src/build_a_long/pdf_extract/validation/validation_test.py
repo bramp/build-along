@@ -26,6 +26,7 @@ from .rules import (
     validate_page_number_sequence,
     validate_parts_list_has_parts,
     validate_parts_lists_no_overlap,
+    validate_progress_bar_sequence,
     validate_step_sequence,
     validate_steps_have_parts,
     validate_steps_no_significant_overlap,
@@ -276,6 +277,70 @@ class TestValidatePageNumberSequence:
         validation = ValidationResult()
         validate_page_number_sequence(validation, [1, 2, 4, 5])  # Gap: 2->4
         assert any(i.rule == "page_gaps" for i in validation.issues)
+
+
+class TestValidateProgressBarSequence:
+    """Tests for validate_progress_bar_sequence rule."""
+
+    def test_empty_progress_bars(self) -> None:
+        """Test empty progress bar list."""
+        validation = ValidationResult()
+        validate_progress_bar_sequence(validation, [])
+        assert not validation.has_issues()
+
+    def test_valid_sequence(self) -> None:
+        """Test valid monotonically increasing sequence."""
+        validation = ValidationResult()
+        # (page, value) tuples
+        validate_progress_bar_sequence(
+            validation, [(1, 0.1), (2, 0.2), (3, 0.3), (4, 0.4)]
+        )
+        assert not validation.has_issues()
+
+    def test_decreasing_sequence(self) -> None:
+        """Test decreasing progress bar values."""
+        validation = ValidationResult()
+        validate_progress_bar_sequence(
+            validation,
+            [(1, 0.5), (2, 0.4), (3, 0.6)],  # Decreases at p.2
+        )
+        assert validation.warning_count == 1
+        assert validation.issues[0].rule == "progress_bar_decrease"
+
+    def test_consistent_increments(self) -> None:
+        """Test consistent progress increments (steady rate)."""
+        validation = ValidationResult()
+        # Constant 0.1 increment
+        validate_progress_bar_sequence(
+            validation,
+            [(1, 0.1), (2, 0.2), (3, 0.3), (4, 0.4), (5, 0.5), (6, 0.6)],
+        )
+        assert not validation.has_issues()
+
+    def test_inconsistent_increments(self) -> None:
+        """Test inconsistent progress increments (high variance)."""
+        validation = ValidationResult()
+        # Increments vary wildly: 0.01, 0.4, 0.01, 0.01, 0.01
+        validate_progress_bar_sequence(
+            validation,
+            [(1, 0.1), (2, 0.11), (3, 0.51), (4, 0.52), (5, 0.53), (6, 0.54)],
+        )
+        assert any(i.rule == "progress_bar_inconsistent" for i in validation.issues)
+        issue = next(
+            i for i in validation.issues if i.rule == "progress_bar_inconsistent"
+        )
+        assert issue.severity == ValidationSeverity.INFO
+
+    def test_not_enough_samples(self) -> None:
+        """Test that consistency check is skipped for few samples."""
+        validation = ValidationResult()
+        # Highly inconsistent, but only 5 samples (needs >5)
+        validate_progress_bar_sequence(
+            validation,
+            [(1, 0.1), (2, 0.11), (3, 0.51), (4, 0.52), (5, 0.53)],
+        )
+        # Should pass because consistency check requires >5 samples
+        assert not validation.has_issues()
 
 
 class TestValidateStepsHaveParts:

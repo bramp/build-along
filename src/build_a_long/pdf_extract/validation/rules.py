@@ -1,5 +1,7 @@
 """Individual validation rules for classification results."""
 
+import statistics
+
 from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
@@ -307,6 +309,83 @@ def validate_invalid_pages(
             pages=invalid_pages,
         )
     )
+
+
+def validate_progress_bar_sequence(
+    validation: ValidationResult,
+    progress_bars: list[tuple[int, float]],
+) -> None:
+    """Validate progress bar values form a reasonable sequence.
+
+    Checks for:
+    - Monotonicity: Progress should generally increase (or stay same)
+    - Consistency: Progress increments should be relatively steady (linear)
+
+    Args:
+        validation: ValidationResult to add issues to
+        progress_bars: List of (pdf_page, progress_value) tuples, sorted by page
+    """
+    if len(progress_bars) < 2:
+        return
+
+    # Check 1: Monotonicity (non-decreasing)
+    decreases: list[tuple[int, float, float]] = []  # (page, prev_val, curr_val)
+    for i in range(1, len(progress_bars)):
+        curr_page, curr_val = progress_bars[i]
+        _, prev_val = progress_bars[i - 1]
+
+        # Allow small tolerance for float imprecision or minor jitter
+        if curr_val < prev_val - 0.001:
+            decreases.append((curr_page, prev_val, curr_val))
+
+    if decreases:
+        details = ", ".join(
+            f"p.{p}: {prev:.1%} -> {curr:.1%}" for p, prev, curr in decreases[:5]
+        )
+        validation.add(
+            ValidationIssue(
+                severity=ValidationSeverity.WARNING,
+                rule="progress_bar_decrease",
+                message=f"Progress bar value decreases {len(decreases)} time(s)",
+                pages=[p for p, _, _ in decreases],
+                details=f"Decreases: {details}"
+                + (" ..." if len(decreases) > 5 else ""),
+            )
+        )
+
+    # Check 2: Consistency (steady rate)
+    # Only check if we have enough samples to be statistically meaningful
+    if len(progress_bars) > 5:
+        increments = []
+        for i in range(1, len(progress_bars)):
+            curr_val = progress_bars[i][1]
+            prev_val = progress_bars[i - 1][1]
+            diff = curr_val - prev_val
+            # Only consider positive progress for rate check
+            if diff >= 0:
+                increments.append(diff)
+
+        if len(increments) > 2:
+            mean_inc = statistics.mean(increments)
+            try:
+                stdev_inc = statistics.stdev(increments)
+                cv = stdev_inc / mean_inc if mean_inc > 0 else 0.0
+
+                # Coefficient of variation > 1.0 indicates very high variance relative to mean.
+                # This suggests progress is not steady (e.g. big jumps vs tiny steps).
+                # We flag this as INFO since it's not necessarily an error, but worth noting.
+                if cv > 1.0:
+                    validation.add(
+                        ValidationIssue(
+                            severity=ValidationSeverity.INFO,
+                            rule="progress_bar_inconsistent",
+                            message="Progress bar increments are highly inconsistent",
+                            details=f"Mean increment: {mean_inc:.1%}, "
+                            f"StdDev: {stdev_inc:.1%} (CV={cv:.1f})",
+                        )
+                    )
+            except statistics.StatisticsError:
+                pass  # Ignore calculation errors for edge cases
 
 
 def format_ranges(numbers: list[int]) -> str:

@@ -14,6 +14,7 @@ from .rules import (
     validate_part_contains_children,
     validate_parts_list_has_parts,
     validate_parts_lists_no_overlap,
+    validate_progress_bar_sequence,
     validate_skipped_pages,
     validate_step_sequence,
     validate_steps_have_parts,
@@ -55,6 +56,7 @@ def validate_results(
     lego_page_numbers: list[int] = []  # Detected LEGO page numbers
     skipped_pages: list[tuple[int, str]] = []  # (pdf_page, reason)
     invalid_pages: list[int] = []  # Pages where classification produced no Page
+    progress_bars: list[tuple[int, float]] = []  # (pdf_page, progress_value)
 
     for page_data, result in zip(pages, results, strict=True):
         page = result.page
@@ -78,6 +80,10 @@ def validate_results(
             lego_page_numbers.append(page.page_number.value)
         else:
             missing_page_numbers.append(pdf_page)
+
+        # Collect progress bar value
+        if page.progress_bar and page.progress_bar.progress is not None:
+            progress_bars.append((pdf_page, page.progress_bar.progress))
 
         # Collect step numbers
         if page:
@@ -110,6 +116,9 @@ def validate_results(
 
     # Rule 6: Page number sequence validation
     validate_page_number_sequence(validation, lego_page_numbers)
+
+    # Rule 7: Progress bar sequence validation
+    validate_progress_bar_sequence(validation, progress_bars)
 
     return validation
 
