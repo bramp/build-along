@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
@@ -172,7 +172,7 @@ class ClassificationResult(BaseModel):
 
         return classifier.build_all(self)
 
-    def build(self, candidate: Candidate) -> LegoPageElements:
+    def build(self, candidate: Candidate, **kwargs: Any) -> LegoPageElements:
         """Construct a candidate using the registered classifier.
 
         This is the entry point for top-down construction. If the build fails,
@@ -181,6 +181,12 @@ class ClassificationResult(BaseModel):
 
         If a nested candidate fails due to conflicts, this method will attempt
         to create replacement candidates and retry the build.
+
+        Args:
+            candidate: The candidate to construct
+            **kwargs: Additional keyword arguments passed to the classifier's
+                build method. For example, DiagramClassifier accepts
+                constraint_bbox to limit clustering.
         """
         if candidate.constructed:
             return candidate.constructed
@@ -218,7 +224,7 @@ class ClassificationResult(BaseModel):
         snapshot = self._take_snapshot()
 
         try:
-            element = classifier.build(candidate, self)
+            element = classifier.build(candidate, self, **kwargs)
             candidate.constructed = element
 
             # Sync candidate bbox with constructed element's bbox.
@@ -338,8 +344,12 @@ class ClassificationResult(BaseModel):
                         continue
 
                 # Fall back to failing the candidate
+                candidate_block_ids = [b.id for b in candidate.source_blocks]
                 candidate.failure_reason = (
-                    f"Lost conflict to '{winner.label}' (score={winner.score:.3f})"
+                    f"Lost conflict to '{winner.label}' at {winner.bbox} "
+                    f"(winner_blocks={sorted(winner_block_ids)}, "
+                    f"candidate_blocks={candidate_block_ids}, "
+                    f"conflicting={sorted(conflicting_block_ids)})"
                 )
 
     def _validate_block_in_page_data(
