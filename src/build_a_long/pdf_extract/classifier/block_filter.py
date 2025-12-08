@@ -374,3 +374,44 @@ def filter_overlapping_text_blocks(
     result = [b for i, b in enumerate(blocks) if i not in removed_text_indices]
 
     return result, removed_mapping
+
+
+def find_text_outline_effects(
+    text_block: Text,
+    all_blocks: Sequence[Blocks],
+    *,
+    margin: float = 5.0,
+) -> list[Drawing]:
+    """Find Drawing blocks that are text effects (outlines, shadows, etc.).
+
+    LEGO PDFs often render text with visual effects like outlines or drop shadows,
+    which appear as Drawing elements near/within the text bbox. Any Drawing whose
+    bbox is fully contained within the text bbox (plus a small margin) is likely
+    such an effect.
+
+    This function identifies such effects so they can be included as source blocks
+    when the Text is classified, preventing them from appearing as unassigned.
+
+    Args:
+        text_block: The Text block to find effects for.
+        all_blocks: All blocks on the page to search through.
+        margin: Margin to expand the text bbox by when checking containment.
+            Default 5.0 points.
+
+    Returns:
+        List of Drawing blocks that appear to be effects for the text.
+    """
+    outline_effects: list[Drawing] = []
+
+    # Expand text bbox by margin
+    expanded_bbox = text_block.bbox.expand(margin)
+
+    for block in all_blocks:
+        if not isinstance(block, Drawing):
+            continue
+
+        # Check if Drawing is fully contained within expanded text bbox
+        if expanded_bbox.contains(block.bbox):
+            outline_effects.append(block)
+
+    return outline_effects

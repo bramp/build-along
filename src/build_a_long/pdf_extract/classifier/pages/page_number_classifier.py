@@ -75,9 +75,13 @@ class PageNumberClassifier(RuleBasedClassifier):
         ]
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> PageNumber:
-        """Construct a PageNumber element from a single candidate."""
-        # Get the source text block
-        assert len(candidate.source_blocks) == 1
+        """Construct a PageNumber element from a candidate.
+
+        The candidate may include additional source blocks (e.g., text outline
+        effects) beyond the primary Text block.
+        """
+        # Get the primary text block (first in source_blocks)
+        assert len(candidate.source_blocks) >= 1
         block = candidate.source_blocks[0]
         assert isinstance(block, Text)
 

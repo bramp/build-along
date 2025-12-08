@@ -7,6 +7,9 @@ from __future__ import annotations
 import logging
 from abc import abstractmethod
 
+from build_a_long.pdf_extract.classifier.block_filter import (
+    find_text_outline_effects,
+)
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
@@ -16,6 +19,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.classifier.rules import Rule, RuleContext
 from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 log = logging.getLogger(__name__)
 
@@ -90,13 +94,21 @@ class RuleBasedClassifier(LabelClassifier):
             if not self._should_accept(final_score):
                 continue
 
+            # Build source blocks list, including text outline effects for Text blocks
+            source_blocks: list = [block]
+            if isinstance(block, Text):
+                outline_effects = find_text_outline_effects(
+                    block, result.page_data.blocks
+                )
+                source_blocks.extend(outline_effects)
+
             # Create candidate
             candidate = Candidate(
                 bbox=block.bbox,
                 label=self.output,
                 score=final_score,
                 score_details=RuleScore(components=components, total_score=final_score),
-                source_blocks=[block],
+                source_blocks=source_blocks,
             )
             result.add_candidate(candidate)
 
