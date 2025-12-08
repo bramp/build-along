@@ -10,6 +10,20 @@
   "categories": [
     "info"
   ],
+  "background": {
+    "__tag__": "Background",
+    "bbox": {
+      "x0": 0.0,
+      "y0": 0.0,
+      "x1": 552.76,
+      "y1": 496.06
+    },
+    "fill_color": [
+      0.83,
+      0.93,
+      0.99
+    ]
+  },
   "page_number": {
     "__tag__": "PageNumber",
     "bbox": {

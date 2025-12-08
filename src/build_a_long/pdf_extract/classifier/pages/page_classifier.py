@@ -27,6 +27,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.classifier.score import Score
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    Background,
     Divider,
     NewBag,
     Page,
@@ -57,6 +58,7 @@ class PageClassifier(LabelClassifier):
     output = "page"
     requires = frozenset(
         {
+            "background",
             "divider",
             "page_number",
             "progress_bar",
@@ -113,6 +115,16 @@ class PageClassifier(LabelClassifier):
             best_cand = progress_bar_candidates[0]
             progress_bar = result.build(best_cand)
             assert isinstance(progress_bar, ProgressBar)
+
+        # Build the background (if any) - only one per page
+        background = None
+        background_candidates = result.get_scored_candidates(
+            "background", valid_only=False, exclude_failed=True
+        )
+        if background_candidates:
+            best_cand = background_candidates[0]
+            background = result.build(best_cand)
+            assert isinstance(background, Background)
 
         # Build all dividers
         dividers = result.build_all_for_label("divider")
@@ -203,11 +215,12 @@ class PageClassifier(LabelClassifier):
 
         log.debug(
             "[page] page=%s categories=%s page_number=%s progress_bar=%s "
-            "dividers=%d new_bags=%d steps=%d catalog=%s",
+            "background=%s dividers=%d new_bags=%d steps=%d catalog=%s",
             page_data.page_number,
             [c.name for c in categories],
             page_number.value if page_number else None,
             progress_bar is not None,
+            background is not None,
             len(dividers),
             len(new_bags),
             len(steps),
@@ -220,6 +233,7 @@ class PageClassifier(LabelClassifier):
             categories=categories,
             page_number=page_number,
             progress_bar=progress_bar,
+            background=background,
             dividers=dividers,
             new_bags=new_bags,
             steps=steps,

@@ -10,6 +10,20 @@
   "categories": [
     "instruction"
   ],
+  "background": {
+    "__tag__": "Background",
+    "bbox": {
+      "x0": 0.0,
+      "y0": 0.0,
+      "x1": 552.76,
+      "y1": 496.06
+    },
+    "fill_color": [
+      0.54,
+      0.56,
+      0.58
+    ]
+  },
   "page_number": {
     "__tag__": "PageNumber",
     "bbox": {

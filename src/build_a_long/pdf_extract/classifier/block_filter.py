@@ -7,6 +7,7 @@ created for visual effects like drop shadows in PDF rendering.
 from __future__ import annotations
 
 import logging
+import warnings
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
@@ -142,7 +143,12 @@ def filter_background_blocks(
 ) -> tuple[list[Blocks], dict[Blocks, RemovalReason]]:
     """Filter out background blocks that cover most of the page.
 
-    Removes blocks that have width >= 99% of page width AND height >= 99% of page height.
+    .. deprecated::
+        Use :class:`BackgroundClassifier` instead, which properly scores and
+        constructs Background elements rather than simply filtering them out.
+
+    Removes blocks that have width >= 99% of page width AND
+    height >= 99% of page height.
     These are typically background images or full-page rectangles.
 
     Args:
@@ -157,6 +163,12 @@ def filter_background_blocks(
     """
     if not blocks:
         return [], {}
+
+    warnings.warn(
+        "filter_background_blocks is deprecated. Use BackgroundClassifier instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     SIZE_THRESHOLD = 0.99
     min_width = page_width * SIZE_THRESHOLD

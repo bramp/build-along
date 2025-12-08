@@ -1,6 +1,9 @@
 """Configuration classes for classifiers."""
 
 from build_a_long.pdf_extract.classifier.config.arrow_config import ArrowConfig
+from build_a_long.pdf_extract.classifier.config.background_config import (
+    BackgroundConfig,
+)
 from build_a_long.pdf_extract.classifier.config.bag_number_config import (
     BagNumberConfig,
 )
@@ -33,6 +36,7 @@ from build_a_long.pdf_extract.classifier.config.subassembly_config import (
 
 __all__ = [
     "ArrowConfig",
+    "BackgroundConfig",
     "BagNumberConfig",
     "DividerConfig",
     "NewBagConfig",

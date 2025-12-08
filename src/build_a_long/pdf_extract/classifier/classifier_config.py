@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from build_a_long.pdf_extract.classifier.config import (
     ArrowConfig,
+    BackgroundConfig,
     BagNumberConfig,
     DividerConfig,
     NewBagConfig,
@@ -63,6 +64,10 @@ class ClassifierConfig(BaseModel):
     # Bag number classifier settings
     bag_number: BagNumberConfig = Field(default_factory=BagNumberConfig)
     """Configuration for bag number classification."""
+
+    # Background classifier settings
+    background: BackgroundConfig = Field(default_factory=BackgroundConfig)
+    """Configuration for background classification."""
 
     # Divider classifier settings
     divider: DividerConfig = Field(default_factory=DividerConfig)

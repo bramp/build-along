@@ -28,7 +28,6 @@ from build_a_long.pdf_extract.classifier.batch_classification_result import (
     BatchClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.block_filter import (
-    filter_background_blocks,
     filter_duplicate_blocks,
     filter_overlapping_text_blocks,
 )
@@ -38,6 +37,9 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.classifier.pages import (
     PageHintCollection,
+)
+from build_a_long.pdf_extract.classifier.pages.background_classifier import (
+    BackgroundClassifier,
 )
 from build_a_long.pdf_extract.classifier.pages.divider_classifier import (
     DividerClassifier,
@@ -159,11 +161,6 @@ def classify_pages(
 
         kept_blocks = page_data.blocks
 
-        # Filter background blocks (full page blocks like background images)
-        kept_blocks, background_removed = filter_background_blocks(
-            kept_blocks, page_data.bbox.width, page_data.bbox.height
-        )
-
         # Filter overlapping text blocks (e.g., "4" and "43" at same origin)
         kept_blocks, text_removed = filter_overlapping_text_blocks(kept_blocks)
 
@@ -174,14 +171,12 @@ def classify_pages(
         combined_removed_mapping = {
             **text_removed,
             **bbox_removed,
-            **background_removed,
         }
 
         logger.debug(
             f"Page {page_data.page_number}: "
             f"filtered {len(text_removed)} overlapping text, "
-            f"{len(bbox_removed)} duplicate bbox blocks, "
-            f"{len(background_removed)} background blocks"
+            f"{len(bbox_removed)} duplicate bbox blocks"
         )
 
         removed_blocks_per_page.append(combined_removed_mapping)
@@ -199,9 +194,6 @@ def classify_pages(
         # TODO We are re-filtering duplicates here; optimize by changing the API
         # to accept one list of PageData, and seperate by page_numbers.
         kept_blocks = page_data.blocks
-        kept_blocks, _ = filter_background_blocks(
-            kept_blocks, page_data.bbox.width, page_data.bbox.height
-        )
         kept_blocks, _ = filter_overlapping_text_blocks(kept_blocks)
         kept_blocks, _ = filter_duplicate_blocks(kept_blocks)
 
@@ -272,6 +264,7 @@ def classify_pages(
 type Classifiers = (
     PageNumberClassifier
     | ProgressBarClassifier
+    | BackgroundClassifier
     | DividerClassifier
     | BagNumberClassifier
     | PartCountClassifier
@@ -305,6 +298,7 @@ class Classifier:
             [
                 PageNumberClassifier(config=config),
                 ProgressBarClassifier(config=config),
+                BackgroundClassifier(config=config),
                 DividerClassifier(config=config),
                 BagNumberClassifier(config=config),
                 PartCountClassifier(config=config),

@@ -312,6 +312,38 @@ class Divider(LegoPageElement):
         return f"Divider(bbox={str(self.bbox)}, {self.orientation.value})"
 
 
+class Background(LegoPageElement):
+    """The full-page background element, typically a colored rectangle.
+
+    Background elements are large Drawing or Image blocks that cover most or all
+    of the page. They are typically gray rectangles that form the visual
+    backdrop for the instruction content.
+
+    There should be at most one Background per page. This element collects
+    all background-related blocks (full-page fills, page-edge lines) into
+    a single logical element.
+
+    Positional context: Covers the entire page or nearly the entire page.
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["Background"] = Field(
+        default="Background", alias="__tag__", frozen=True
+    )
+
+    fill_color: tuple[float, float, float] | None = None
+    """RGB fill color of the background (0.0-1.0 per channel), if any."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        color_str = ""
+        if self.fill_color:
+            r, g, b = self.fill_color
+            color_str = f", fill=[{r:.2f},{g:.2f},{b:.2f}]"
+        return f"Background(bbox={str(self.bbox)}{color_str})"
+
+
 class RotationSymbol(LegoPageElement):
     """A symbol indicating the builder should rotate the assembled model.
 
@@ -710,8 +742,13 @@ class Page(LegoPageElement):
     Note: Serialized as a sorted list for deterministic JSON output.
     """
 
+    background: Background | None = None
+    """The background element for the page, if detected."""
+
     page_number: PageNumber | None = None
+
     progress_bar: ProgressBar | None = None
+
     dividers: list[Divider] = Field(default_factory=list)
     """List of divider lines on the page separating sections."""
 
@@ -789,6 +826,7 @@ LegoPageElements = Annotated[
     | PartImage
     | Shine
     | ProgressBar
+    | Background
     | Divider
     | RotationSymbol
     | Arrow
