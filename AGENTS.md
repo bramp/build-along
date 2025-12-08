@@ -44,3 +44,4 @@ These guidelines are for the AI agent interacting with this repository:
 - **File Deprecation**: When deprecating files, the agent must first read their content and migrate any necessary code or functionality before deleting them to prevent data loss.
 - **Commit Frequency**: The agent should aim for small, regular git commits.
 - **Running Tests and Checks**: The agent must use `pants test ::` to run tests and `pants check ::` for linting and formatting checks.
+- **Terminal Command Length**: Long inline Python scripts or commands can break the terminal/PTY host. Instead of running long inline scripts with `python3 -c "..."`, write the script to a file first (e.g., in `scripts/`) and execute it from there. Keep terminal commands short and simple.
