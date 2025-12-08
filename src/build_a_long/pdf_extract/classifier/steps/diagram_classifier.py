@@ -190,12 +190,26 @@ class DiagramClassifier(LabelClassifier):
             return None
         return candidate
 
-    def build(self, candidate: Candidate, result: ClassificationResult) -> Diagram:
+    def build(
+        self,
+        candidate: Candidate,
+        result: ClassificationResult,
+        constraint_bbox: BBox | None = None,
+    ) -> Diagram:
         """Construct a Diagram element with lazy clustering.
 
         Starting from the candidate's source image, expands to include all
         adjacent/overlapping unclaimed images, clustering them into a single
         Diagram.
+
+        Args:
+            candidate: The diagram candidate to build
+            result: The classification result context
+            constraint_bbox: Optional bounding box to constrain clustering.
+                If provided, only images fully contained within this bbox
+                will be included in the cluster. This is useful when building
+                diagrams for subassemblies to prevent clustering beyond the
+                subassembly bounds.
         """
         page_bbox = result.page_data.bbox
         assert page_bbox is not None
@@ -206,28 +220,35 @@ class DiagramClassifier(LabelClassifier):
         assert isinstance(seed_block, Image)
 
         # Find all unclaimed images that can be clustered with this one
-        clustered_blocks = self._expand_cluster(seed_block, result)
+        clustered_blocks = self._expand_cluster(seed_block, result, constraint_bbox)
 
         # Calculate the combined bbox
         cluster_bbox = BBox.union_all([b.bbox for b in clustered_blocks])
 
-        # Clip diagram bbox to page bounds
+        # Clip diagram bbox to page bounds (and constraint if provided)
         diagram_bbox = cluster_bbox.clip_to(page_bbox)
+        if constraint_bbox:
+            # TODO Do we need this? this would indicate a problem in clustering
+            diagram_bbox = diagram_bbox.clip_to(constraint_bbox)
 
         # Update the candidate's source_blocks to include all clustered blocks
         # This ensures they all get marked as consumed
         candidate.source_blocks = list(clustered_blocks)
 
         log.debug(
-            "[diagram] Building diagram at %s (clustered %d images)",
+            "[diagram] Building diagram at %s (clustered %d images%s)",
             diagram_bbox,
             len(clustered_blocks),
+            f", constrained to {constraint_bbox}" if constraint_bbox else "",
         )
 
         return Diagram(bbox=diagram_bbox)
 
     def _expand_cluster(
-        self, seed_block: Image, result: ClassificationResult
+        self,
+        seed_block: Image,
+        result: ClassificationResult,
+        constraint_bbox: BBox | None = None,
     ) -> list[Image]:
         """Expand from a seed image to include all adjacent unclaimed images.
 
@@ -237,16 +258,20 @@ class DiagramClassifier(LabelClassifier):
         Args:
             seed_block: The starting image block
             result: Classification result to check consumed blocks
+            constraint_bbox: Optional bounding box to constrain clustering.
+                If provided, only images fully contained within this bbox
+                will be considered for clustering.
 
         Returns:
             List of all images in the cluster (including seed)
         """
         # Get all unclaimed image blocks on the page
         log.debug(
-            "[diagram] _expand_cluster: seed=%d at %s, consumed_blocks=%s",
+            "[diagram] _expand_cluster: seed=%d at %s, consumed_blocks=%s%s",
             seed_block.id,
             seed_block.bbox,
             sorted(result._consumed_blocks),
+            f", constraint={constraint_bbox}" if constraint_bbox else "",
         )
         unclaimed_images: list[Image] = []
         for block in result.page_data.blocks:
@@ -258,6 +283,15 @@ class DiagramClassifier(LabelClassifier):
                     "[diagram] Skipping consumed image id=%d at %s",
                     block.id,
                     block.bbox,
+                )
+                continue
+            # Skip if outside constraint bbox
+            if constraint_bbox and not constraint_bbox.contains(block.bbox):
+                log.debug(
+                    "[diagram] Skipping image id=%d at %s (outside constraint %s)",
+                    block.id,
+                    block.bbox,
+                    constraint_bbox,
                 )
                 continue
             unclaimed_images.append(block)
