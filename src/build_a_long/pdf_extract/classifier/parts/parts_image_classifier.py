@@ -191,7 +191,7 @@ class PartsImageClassifier(LabelClassifier):
         if shine:
             bbox = bbox.union(shine.bbox)
 
-        return PartImage(bbox=bbox, shine=shine)
+        return PartImage(bbox=bbox, shine=shine, image_id=ps.image.image_id)
 
     def _find_and_build_shine(
         self, image: Image, result: ClassificationResult

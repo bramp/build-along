@@ -297,7 +297,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             )
 
         # Run validation checks
-        validation = validate_results(classified_pages, batch_result.results)
+        validation = validate_results(batch_result)
         print_validation(validation)
 
         # Save classified Manual JSON

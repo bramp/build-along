@@ -1,10 +1,11 @@
 """Main validation runner that orchestrates all validation rules."""
 
-from build_a_long.pdf_extract.classifier import ClassificationResult
+from build_a_long.pdf_extract.classifier import BatchClassificationResult
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 
 from .rules import (
+    validate_catalog_coverage,
     validate_content_no_metadata_overlap,
     validate_elements_within_page,
     validate_first_page_number,
@@ -25,8 +26,7 @@ from .types import ValidationResult
 
 
 def validate_results(
-    pages: list[PageData],
-    results: list[ClassificationResult],
+    batch_result: BatchClassificationResult,
 ) -> ValidationResult:
     """Run all validation rules on classification results.
 
@@ -41,8 +41,7 @@ def validate_results(
     - The first page number found should be reasonable (typically 1-4)
 
     Args:
-        pages: List of PageData containing extracted elements
-        results: List of ClassificationResult with labels
+        batch_result: The complete batch classification result.
 
     Returns:
         ValidationResult containing all found issues
@@ -58,8 +57,9 @@ def validate_results(
     invalid_pages: list[int] = []  # Pages where classification produced no Page
     progress_bars: list[tuple[int, float]] = []  # (pdf_page, progress_value)
 
-    for page_data, result in zip(pages, results, strict=True):
+    for result in batch_result.results:
         page = result.page
+        page_data = result.page_data
         pdf_page = page_data.page_number
 
         # Check for skipped pages
@@ -103,7 +103,9 @@ def validate_results(
     validate_invalid_pages(validation, invalid_pages)
 
     # Rule 1: Missing page numbers
-    validate_missing_page_numbers(validation, missing_page_numbers, len(pages))
+    validate_missing_page_numbers(
+        validation, missing_page_numbers, len(batch_result.results)
+    )
 
     # Rule 2 & 3: Step number sequence validation
     validate_step_sequence(validation, step_numbers_seen)
@@ -119,6 +121,11 @@ def validate_results(
 
     # Rule 7: Progress bar sequence validation
     validate_progress_bar_sequence(validation, progress_bars)
+
+    # Rule 8: Catalog coverage
+    validate_catalog_coverage(validation, batch_result.manual, experimental=True)
+
+    return validation
 
     return validation
 

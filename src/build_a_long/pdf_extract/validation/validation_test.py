@@ -1,13 +1,16 @@
 """Tests for validation module."""
 
 from build_a_long.pdf_extract.classifier import (
+    BatchClassificationResult,
     Candidate,
     ClassificationResult,
+    TextHistogram,
 )
 from build_a_long.pdf_extract.classifier.test_utils import TestScore
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    Manual,
     Page,
     PageNumber,
     Part,
@@ -20,6 +23,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 from .printer import print_validation
 from .rules import (
     format_ranges,
+    validate_catalog_coverage,
     validate_elements_within_page,
     validate_first_page_number,
     validate_missing_page_numbers,
@@ -343,6 +347,127 @@ class TestValidateProgressBarSequence:
         assert not validation.has_issues()
 
 
+class TestValidateCatalogCoverage:
+    """Tests for validate_catalog_coverage rule."""
+
+    def _make_part_with_image(self, image_id: str) -> Part:
+        """Create a Part with a diagram image ID."""
+        from build_a_long.pdf_extract.extractor.lego_page_elements import PartImage
+
+        return Part(
+            bbox=BBox(0, 0, 10, 10),
+            count=PartCount(bbox=BBox(0, 0, 5, 5), count=1),
+            diagram=PartImage(bbox=BBox(0, 0, 10, 10), image_id=image_id),
+        )
+
+    def _make_manual(
+        self, instruction_image_ids: list[str], catalog_image_ids: list[str]
+    ) -> Manual:
+        """Create a Manual with specified parts."""
+        pages = []
+
+        # Instruction page
+        if instruction_image_ids:
+            parts = [self._make_part_with_image(iid) for iid in instruction_image_ids]
+            step = Step(
+                bbox=BBox(0, 0, 100, 100),
+                step_number=StepNumber(bbox=BBox(0, 0, 10, 10), value=1),
+                parts_list=PartsList(bbox=BBox(0, 0, 50, 50), parts=parts),
+            )
+            pages.append(
+                Page(
+                    bbox=BBox(0, 0, 100, 100),
+                    pdf_page_number=1,
+                    page_number=PageNumber(bbox=BBox(90, 90, 100, 100), value=1),
+                    categories={Page.PageType.INSTRUCTION},
+                    steps=[step],
+                )
+            )
+
+        # Catalog page
+        if catalog_image_ids:
+            parts = [self._make_part_with_image(iid) for iid in catalog_image_ids]
+            pages.append(
+                Page(
+                    bbox=BBox(0, 0, 100, 100),
+                    pdf_page_number=2,
+                    page_number=PageNumber(bbox=BBox(90, 90, 100, 100), value=2),
+                    categories={Page.PageType.CATALOG},
+                    catalog=parts,
+                )
+            )
+
+        return Manual(pages=pages)
+
+    def test_no_catalog_pages(self) -> None:
+        """Test when no catalog pages are present."""
+        manual = self._make_manual(["img1"], [])
+        validation = ValidationResult()
+        validate_catalog_coverage(validation, manual)
+        assert not validation.has_issues()
+
+    def test_no_instruction_parts(self) -> None:
+        """Test when no instruction parts are found."""
+        manual = self._make_manual([], ["img1"])
+        validation = ValidationResult()
+        validate_catalog_coverage(validation, manual)
+        assert not validation.has_issues()
+
+    def test_perfect_coverage(self) -> None:
+        """Test when all instruction parts are in catalog."""
+        manual = self._make_manual(["img1", "img2"], ["img1", "img2", "img3"])
+        validation = ValidationResult()
+        validate_catalog_coverage(validation, manual)
+        # Should have INFO about coverage
+        assert validation.info_count == 1
+        assert "100.0%" in validation.issues[0].message
+
+    def test_partial_coverage_experimental(self) -> None:
+        """Test partial coverage with experimental flag (INFO)."""
+        # 1 match, 1 missing -> 50% coverage
+        manual = self._make_manual(["img1", "img2"], ["img1"])
+        validation = ValidationResult()
+        validate_catalog_coverage(validation, manual, experimental=True)
+
+        # 1 INFO for coverage stat, 1 INFO for missing parts (experimental)
+        assert validation.info_count == 2
+        assert validation.warning_count == 0
+        assert any(i.rule == "missing_from_catalog" for i in validation.issues)
+        missing_issue = next(
+            i for i in validation.issues if i.rule == "missing_from_catalog"
+        )
+        assert missing_issue.severity == ValidationSeverity.INFO
+        assert "[EXPERIMENTAL]" in missing_issue.message
+
+    def test_partial_coverage_strict(self) -> None:
+        """Test partial coverage without experimental flag (WARNING)."""
+        # 1 match, 1 missing -> 50% coverage
+        manual = self._make_manual(["img1", "img2"], ["img1"])
+        validation = ValidationResult()
+        validate_catalog_coverage(validation, manual, experimental=False)
+
+        # 1 INFO for coverage stat, 1 WARNING for missing parts
+        assert validation.info_count == 1
+        assert validation.warning_count == 1
+        assert any(i.rule == "missing_from_catalog" for i in validation.issues)
+        missing_issue = next(
+            i for i in validation.issues if i.rule == "missing_from_catalog"
+        )
+        assert missing_issue.severity == ValidationSeverity.WARNING
+        assert "[EXPERIMENTAL]" not in missing_issue.message
+
+    def test_zero_coverage(self) -> None:
+        """Test zero coverage (should not warn, assumes no image reuse)."""
+        manual = self._make_manual(["img1"], ["img2"])
+        validation = ValidationResult()
+        validate_catalog_coverage(validation, manual)
+
+        # Only stats info, no warning because coverage is 0% (implies different images used)
+        assert validation.info_count == 1
+        assert validation.warning_count == 0
+        assert "0.0%" in validation.issues[0].message
+
+
 class TestValidateStepsHaveParts:
     """Tests for validate_steps_have_parts rule."""
 
@@ -453,8 +578,11 @@ class TestValidateResults:
             _make_classification_result(pages[1], page_number_val=2, step_numbers=[2]),
             _make_classification_result(pages[2], page_number_val=3, step_numbers=[3]),
         ]
+        batch_result = BatchClassificationResult(
+            results=results, histogram=TextHistogram.empty()
+        )
 
-        validation = validate_results(pages, results)
+        validation = validate_results(batch_result)
         # No errors or warnings expected
         assert validation.error_count == 0
         assert validation.warning_count == 0
@@ -471,8 +599,11 @@ class TestValidateResults:
                 pages[2], page_number_val=None, step_numbers=[3]
             ),
         ]
+        batch_result = BatchClassificationResult(
+            results=results, histogram=TextHistogram.empty()
+        )
 
-        validation = validate_results(pages, results)
+        validation = validate_results(batch_result)
         assert any(i.rule == "missing_page_numbers" for i in validation.issues)
 
     def test_step_sequence_issues(self) -> None:
@@ -485,8 +616,11 @@ class TestValidateResults:
             ),  # Skipped step 2
             _make_classification_result(pages[2], page_number_val=3, step_numbers=[4]),
         ]
+        batch_result = BatchClassificationResult(
+            results=results, histogram=TextHistogram.empty()
+        )
 
-        validation = validate_results(pages, results)
+        validation = validate_results(batch_result)
         assert any(i.rule == "step_gaps" for i in validation.issues)
 
 

@@ -235,10 +235,14 @@ class PartImage(LegoPageElement):
     shine: Shine | None = None
     """Optional shine effect indicating a metallic part."""
 
+    image_id: str | None = Field(default=None, exclude=True)
+    """Optional image ID from the source Image block (e.g., 'image_123')."""
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         shine_str = ", shiny" if self.shine else ""
-        return f"PartImage(bbox={self.bbox}{shine_str})"
+        image_id_str = f", image_id={self.image_id}" if self.image_id else ""
+        return f"PartImage(bbox={self.bbox}{shine_str}{image_id_str})"
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over this PartImage and all child elements."""

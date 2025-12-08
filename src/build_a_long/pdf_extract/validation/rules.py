@@ -4,7 +4,11 @@ import statistics
 
 from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.lego_page_elements import Page
+from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    Manual,
+    Page,
+    Part,
+)
 
 from .types import ValidationIssue, ValidationResult, ValidationSeverity
 
@@ -386,6 +390,95 @@ def validate_progress_bar_sequence(
                     )
             except statistics.StatisticsError:
                 pass  # Ignore calculation errors for edge cases
+
+
+def validate_catalog_coverage(
+    validation: ValidationResult,
+    manual: Manual,
+    experimental: bool = True,
+) -> None:
+    """Validate that parts used in instructions are present in the catalog.
+
+    This currently uses `image_id` matching, which relies on the PDF reusing
+    the same image XObject for the same part. This is common but not guaranteed.
+    Future improvements could use image hashing or pixel comparison.
+
+    Args:
+        validation: ValidationResult to add issues to
+        manual: The complete Manual object containing all pages
+        experimental: Whether to treat this rule as experimental (INFO severity only)
+    """
+    if not manual.catalog_pages:
+        return  # No catalog to check against
+
+    # 1. Collect all parts from instruction pages
+    instruction_parts: list[tuple[int, Part]] = []  # (page_num, Part)
+    for page in manual.instruction_pages:
+        for step in page.steps:
+            if step.parts_list:
+                for part in step.parts_list.parts:
+                    if part.diagram and part.diagram.image_id:
+                        instruction_parts.append((page.pdf_page_number, part))
+
+    if not instruction_parts:
+        return
+
+    # 2. Collect all parts from catalog pages
+    catalog_image_ids: set[str] = set()
+    for part in manual.catalog_parts:
+        if part.diagram and part.diagram.image_id:
+            catalog_image_ids.add(part.diagram.image_id)
+
+    if not catalog_image_ids:
+        return
+
+    # 3. Check coverage
+    matched_count = 0
+    unmatched_parts: list[tuple[int, str]] = []  # (page_num, image_id)
+
+    for page_num, part in instruction_parts:
+        if part.diagram and part.diagram.image_id in catalog_image_ids:
+            matched_count += 1
+        else:
+            # Safe to access diagram.image_id because we filtered for it above
+            unmatched_parts.append((page_num, part.diagram.image_id))  # type: ignore[arg-type]
+
+    # Report stats
+    coverage_pct = matched_count / len(instruction_parts) * 100
+    msg_prefix = "[EXPERIMENTAL] " if experimental else ""
+
+    validation.add(
+        ValidationIssue(
+            severity=ValidationSeverity.INFO,
+            rule="catalog_coverage",
+            message=f"{msg_prefix}Catalog coverage: {matched_count}/{len(instruction_parts)} "
+            f"parts matched by image reference ({coverage_pct:.1f}%)",
+            details=f"Catalog has {len(catalog_image_ids)} unique images. "
+            f"Instructions use {len(instruction_parts)} part instances.",
+        )
+    )
+
+    # If coverage is low but non-zero, it suggests image reuse is happening
+    # but we're missing some. If coverage is 0%, maybe image reuse isn't used.
+    if 0 < coverage_pct < 80:
+        # Report a sample of unmatched parts
+        unmatched_summary = ", ".join(
+            f"p.{p} ({iid})" for p, iid in unmatched_parts[:5]
+        )
+        if len(unmatched_parts) > 5:
+            unmatched_summary += " ..."
+
+        severity = (
+            ValidationSeverity.INFO if experimental else ValidationSeverity.WARNING
+        )
+        validation.add(
+            ValidationIssue(
+                severity=severity,
+                rule="missing_from_catalog",
+                message=f"{msg_prefix}{len(unmatched_parts)} instruction parts not found in catalog",
+                details=f"Unmatched image IDs: {unmatched_summary}",
+            )
+        )
 
 
 def format_ranges(numbers: list[int]) -> str:
