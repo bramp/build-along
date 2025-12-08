@@ -35,6 +35,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     ProgressBar,
     Step,
+    TriviaText,
 )
 
 log = logging.getLogger(__name__)
@@ -66,6 +67,7 @@ class PageClassifier(LabelClassifier):
             "step",
             "parts_list",
             "rotation_symbol",
+            "trivia_text",
         }
     )
 
@@ -130,6 +132,17 @@ class PageClassifier(LabelClassifier):
         dividers = result.build_all_for_label("divider")
         assert all(isinstance(d, Divider) for d in dividers)
         dividers = [d for d in dividers if isinstance(d, Divider)]  # type narrow
+
+        # Build trivia text (if any) - only one per page
+        # TODO Consider multiple per page
+        trivia_text = None
+        trivia_text_candidates = result.get_scored_candidates(
+            "trivia_text", valid_only=False, exclude_failed=True
+        )
+        if trivia_text_candidates:
+            best_cand = trivia_text_candidates[0]
+            trivia_text = result.build(best_cand)
+            assert isinstance(trivia_text, TriviaText)
 
         # Get new bags from candidates
         new_bags: list[NewBag] = []
@@ -235,6 +248,7 @@ class PageClassifier(LabelClassifier):
             progress_bar=progress_bar,
             background=background,
             dividers=dividers,
+            trivia_text=trivia_text,
             new_bags=new_bags,
             steps=steps,
             catalog=catalog_parts,

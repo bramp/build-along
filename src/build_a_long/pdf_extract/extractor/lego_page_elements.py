@@ -348,6 +348,36 @@ class Background(LegoPageElement):
         return f"Background(bbox={str(self.bbox)}{color_str})"
 
 
+class TriviaText(LegoPageElement):
+    """Trivia or flavor text containing fun facts about the LEGO set.
+
+    These are informational text blocks that appear on some pages, containing
+    stories, facts, or background information about the set's theme. They are
+    not part of the building instructions themselves.
+
+    Characteristics:
+    - Multiple lines of text in a smaller font (typically 8pt)
+    - Often in multiple languages (English, French, Spanish, etc.)
+    - May have an accompanying image or illustration
+    - Usually located at the bottom portion of a page
+
+    Positional context: Typically appears in the lower section of pages,
+    spanning a significant width of the page.
+    """
+
+    tag: Literal["TriviaText"] = Field(
+        default="TriviaText", alias="__tag__", frozen=True
+    )
+
+    text_lines: list[str] = Field(default_factory=list)
+    """The text content, split by line."""
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        preview = self.text_lines[0][:30] + "..." if self.text_lines else ""
+        return f"TriviaText(lines={len(self.text_lines)}, {preview!r})"
+
+
 class RotationSymbol(LegoPageElement):
     """A symbol indicating the builder should rotate the assembled model.
 
@@ -755,6 +785,8 @@ class Page(LegoPageElement):
     progress_bar: ProgressBar | None = None
     """The detected progress bar element on the page, if present."""
 
+    trivia_text: TriviaText | None = None
+    """Trivia/flavor text on the page, if present."""
 
     dividers: list[Divider] = Field(default_factory=list)
     """List of divider lines on the page separating sections."""
@@ -809,6 +841,8 @@ class Page(LegoPageElement):
             yield from self.page_number.iter_elements()
         if self.progress_bar:
             yield from self.progress_bar.iter_elements()
+        if self.trivia_text:
+            yield from self.trivia_text.iter_elements()
 
         for divider in self.dividers:
             yield from divider.iter_elements()
@@ -834,6 +868,7 @@ LegoPageElements = Annotated[
     | Shine
     | ProgressBar
     | Background
+    | TriviaText
     | Divider
     | RotationSymbol
     | Arrow

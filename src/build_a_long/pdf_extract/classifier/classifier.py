@@ -51,6 +51,9 @@ from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
 from build_a_long.pdf_extract.classifier.pages.progress_bar_classifier import (
     ProgressBarClassifier,
 )
+from build_a_long.pdf_extract.classifier.pages.trivia_text_classifier import (
+    TriviaTextClassifier,
+)
 from build_a_long.pdf_extract.classifier.parts import (
     PartCountClassifier,
     PartNumberClassifier,
@@ -281,6 +284,7 @@ type Classifiers = (
     | ArrowClassifier
     | SubAssemblyClassifier
     | StepClassifier
+    | TriviaTextClassifier
     | PageClassifier
 )
 
@@ -316,6 +320,7 @@ class Classifier:
                 NewBagClassifier(config=config),
                 SubAssemblyClassifier(config=config),
                 StepClassifier(config=config),
+                TriviaTextClassifier(config=config),
                 PageClassifier(config=config),
             ]
         )

@@ -44,6 +44,26 @@
     },
     "full_width": 517.74
   },
+  "trivia_text": {
+    "__tag__": "TriviaText",
+    "bbox": {
+      "x0": 0.0,
+      "y0": 317.08,
+      "x1": 552.76,
+      "y1": 463.48
+    },
+    "text_lines": [
+      "While R2-D2 has the strategic skills to win at the holographic dejarik table, it might be ",
+      "wiser to let Chewbacca win. As Han explains, droids don\u2019t pull people\u2019s arms out  ",
+      "of their sockets when they lose.",
+      "Bien que R2-D2 poss\u00e8de les comp\u00e9tences strat\u00e9giques n\u00e9cessaires pour gagner \u00e0 la ",
+      "table d\u2019holojeu Dejarik, il est peut-\u00eatre plus sage de laisser Chewbacca gagner. Comme ",
+      "l\u2019explique Han, un dro\u00efde n\u2019ose pas broyer les bras de son adversaire lorsqu\u2019il perd.",
+      "Aunque R2-D2 tiene las habilidades estrat\u00e9gicas para ganar en el tablero hologr\u00e1fico de  ",
+      "Dejarik, quiz\u00e1 sea m\u00e1s prudente dejar que gane Chewbacca. Como explica Han,  ",
+      "los droides no les arrancan los brazos a sus oponentes cuando pierden."
+    ]
+  },
   "steps": [
     {
       "__tag__": "Step",
