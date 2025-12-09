@@ -28,6 +28,7 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.classifier.config import ProgressBarConfig
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
@@ -86,6 +87,9 @@ class ProgressBarClassifier(LabelClassifier):
         page_bbox = page_data.bbox
         assert page_bbox is not None
 
+        # Get the config for ProgressBarClassifier
+        config: ProgressBarConfig = self.config.progress_bar
+
         # Get page number location if available to help with positioning
         page_number_bbox = self._get_page_number_bbox(result)
 
@@ -96,15 +100,15 @@ class ProgressBarClassifier(LabelClassifier):
 
             #  Score the block
             position_score = self._score_bottom_position(
-                block.bbox, page_bbox, page_number_bbox
+                block.bbox, page_bbox, page_number_bbox, config
             )
 
             # Skip if not in bottom 20% of page
             if position_score == 0.0:
                 continue
 
-            width_score = self._score_width_coverage(block.bbox, page_bbox)
-            aspect_ratio_score = self._score_aspect_ratio(block.bbox)
+            width_score = self._score_width_coverage(block.bbox, page_bbox, config)
+            aspect_ratio_score = self._score_aspect_ratio(block.bbox, config)
 
             # Must have minimum width (at least 30% of page width)
             if width_score == 0.0:
@@ -120,7 +124,7 @@ class ProgressBarClassifier(LabelClassifier):
 
             # Find all overlapping blocks within the progress bar area
             overlapping_blocks = self._find_overlapping_blocks(
-                block, clipped_bbox, result
+                block, clipped_bbox, result, config
             )
 
             score_details = _ProgressBarScore(
@@ -155,12 +159,16 @@ class ProgressBarClassifier(LabelClassifier):
         detail_score = candidate.score_details
         assert isinstance(detail_score, _ProgressBarScore)
 
+        # Get the config for ProgressBarClassifier
+        config: ProgressBarConfig = self.config.progress_bar
+
         # Find and build the indicator at build time
         indicator, progress = self._find_and_build_indicator(
             detail_score.clipped_bbox,
             detail_score.bar_start_x,
             detail_score.original_width,
             result,
+            config,
         )
 
         # Construct the ProgressBar element
@@ -184,7 +192,11 @@ class ProgressBarClassifier(LabelClassifier):
         return None
 
     def _score_bottom_position(
-        self, bbox: BBox, page_bbox: BBox, page_number_bbox: BBox | None
+        self,
+        bbox: BBox,
+        page_bbox: BBox,
+        page_number_bbox: BBox | None,
+        config: ProgressBarConfig,
     ) -> float:
         """Score based on position at bottom of page.
 
@@ -199,11 +211,11 @@ class ProgressBarClassifier(LabelClassifier):
         bottom_margin_ratio = bottom_distance / page_height
 
         # Should be in bottom 20% of page
-        if bottom_margin_ratio > 0.2:
+        if bottom_margin_ratio > config.bottom_margin_threshold:
             return 0.0
 
         # Score based on proximity to bottom (closer = better)
-        position_score = 1.0 - (bottom_margin_ratio / 0.2)
+        position_score = 1.0 - (bottom_margin_ratio / config.bottom_margin_threshold)
 
         # Boost score if near page number
         if page_number_bbox is not None:
@@ -212,12 +224,19 @@ class ProgressBarClassifier(LabelClassifier):
                 abs(bbox.x0 - page_number_bbox.x1),
                 abs(bbox.x1 - page_number_bbox.x0),
             )
-            if horizontal_distance < page_bbox.width * 0.3:
-                position_score = min(1.0, position_score * 1.2)
+            if (
+                horizontal_distance
+                < page_bbox.width * config.page_number_proximity_threshold
+            ):
+                position_score = min(
+                    1.0, position_score * config.page_number_proximity_boost
+                )
 
         return min(1.0, position_score)
 
-    def _score_width_coverage(self, bbox: BBox, page_bbox: BBox) -> float:
+    def _score_width_coverage(
+        self, bbox: BBox, page_bbox: BBox, config: ProgressBarConfig
+    ) -> float:
         """Score based on how much of the page width the element spans.
 
         Progress bars typically span >50% of the page width.
@@ -225,18 +244,20 @@ class ProgressBarClassifier(LabelClassifier):
         width_ratio = bbox.width / page_bbox.width
 
         # Penalize elements that are too narrow
-        if width_ratio < 0.3:
+        if width_ratio < config.min_width_ratio:
             return 0.0
 
         # Score increases with width, maxing at 80% coverage
         # (some margin is expected on sides)
-        if width_ratio >= 0.8:
+        if width_ratio >= config.max_score_width_ratio:
             return 1.0
 
         # Linear interpolation between 0.3 and 0.8
-        return (width_ratio - 0.3) / 0.5
+        return (width_ratio - config.min_width_ratio) / (
+            config.max_score_width_ratio - config.min_width_ratio
+        )
 
-    def _score_aspect_ratio(self, bbox: BBox) -> float:
+    def _score_aspect_ratio(self, bbox: BBox, config: ProgressBarConfig) -> float:
         """Score based on aspect ratio (should be wide and thin).
 
         Progress bars are typically very wide relative to their height.
@@ -245,14 +266,16 @@ class ProgressBarClassifier(LabelClassifier):
 
         # Progress bars should be wide and thin
         # Typical aspect ratio might be 10:1 or higher
-        if aspect_ratio < 3.0:  # Too square
+        if aspect_ratio < config.min_aspect_ratio:  # Too square
             return 0.0
 
-        if aspect_ratio >= 10.0:  # Good aspect ratio
+        if aspect_ratio >= config.ideal_aspect_ratio:  # Good aspect ratio
             return 1.0
 
         # Linear interpolation between 3 and 10
-        return (aspect_ratio - 3.0) / 7.0
+        return (aspect_ratio - config.min_aspect_ratio) / (
+            config.ideal_aspect_ratio - config.min_aspect_ratio
+        )
 
     def _find_and_build_indicator(
         self,
@@ -260,6 +283,7 @@ class ProgressBarClassifier(LabelClassifier):
         bar_start_x: float,
         bar_full_width: float,
         result: ClassificationResult,
+        config: ProgressBarConfig,
     ) -> tuple[ProgressBarIndicator | None, float | None]:
         """Find and build a progress bar indicator for this progress bar.
 
@@ -272,7 +296,7 @@ class ProgressBarClassifier(LabelClassifier):
             bar_start_x: The starting X position of the progress bar
             bar_full_width: The original unclipped width of the progress bar
             result: Classification result containing indicator candidates
-
+            config: ProgressBarConfig instance
         Returns:
             A tuple of (indicator, progress) where:
             - indicator: The built ProgressBarIndicator, or None
@@ -310,7 +334,10 @@ class ProgressBarClassifier(LabelClassifier):
             # Must be horizontally within or near the progress bar
             indicator_x = (cand_bbox.x0 + cand_bbox.x1) / 2
             bar_end_x = bar_start_x + bar_full_width
-            if indicator_x < bar_start_x - 10 or indicator_x > bar_end_x + 10:
+            if (
+                indicator_x < bar_start_x - config.indicator_search_margin
+                or indicator_x > bar_end_x + config.indicator_search_margin
+            ):
                 continue
 
             # Keep the indicator with the highest score (most circular shape)
@@ -353,6 +380,7 @@ class ProgressBarClassifier(LabelClassifier):
         bar_block: Drawing | Image,
         bar_bbox: BBox,
         result: ClassificationResult,
+        config: ProgressBarConfig,
     ) -> list[Blocks]:
         """Find all Drawing/Image blocks that are contained within the progress bar.
 
@@ -371,7 +399,7 @@ class ProgressBarClassifier(LabelClassifier):
             bar_block: The main progress bar drawing/image block
             bar_bbox: The clipped bounding box of the progress bar
             result: The classification result containing all page blocks
-
+            config: ProgressBarConfig instance
         Returns:
             List of blocks that are contained within the progress bar area
         """
@@ -379,7 +407,7 @@ class ProgressBarClassifier(LabelClassifier):
 
         # Expand the bbox slightly vertically to catch elements that extend
         # a bit beyond (like the indicator)
-        expanded_bbox = bar_bbox.expand(5.0)
+        expanded_bbox = bar_bbox.expand(config.overlap_expansion)
 
         for block in result.page_data.blocks:
             # Only consider Drawing and Image elements
