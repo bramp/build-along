@@ -33,7 +33,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.bbox import BBox, filter_contained
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PieceLength,
 )
@@ -153,9 +153,22 @@ class PieceLengthClassifier(LabelClassifier):
             if combined < 0.3:
                 continue
 
-            # Include both text and containing drawing in source blocks
+            # Include text and containing drawing in source blocks
             # Bbox should be the union of both
             bbox = BBox.union(text.bbox, containing_drawing.bbox)
+
+            # Find all drawings that are part of this piece length indicator.
+            # Use an expanded bbox to capture outer rings/circles that may
+            # extend slightly beyond the core indicator.
+            expanded_bbox = bbox.expand(3.0)
+            contained = filter_contained(drawings, expanded_bbox)
+
+            source_blocks: list[Drawing | Text] = [text]
+            source_blocks.extend(contained)
+
+            # Update bbox to include all contained drawings
+            for drawing in contained:
+                bbox = BBox.union(bbox, drawing.bbox)
 
             result.add_candidate(
                 Candidate(
@@ -163,7 +176,7 @@ class PieceLengthClassifier(LabelClassifier):
                     label="piece_length",
                     score=combined,
                     score_details=detail_score,
-                    source_blocks=[text, containing_drawing],
+                    source_blocks=list(source_blocks),
                 ),
             )
 
