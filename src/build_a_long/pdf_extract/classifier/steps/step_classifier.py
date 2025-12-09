@@ -116,7 +116,14 @@ class StepClassifier(LabelClassifier):
 
     output = "step"
     requires = frozenset(
-        {"step_number", "parts_list", "diagram", "rotation_symbol", "subassembly"}
+        {
+            "step_number",
+            "parts_list",
+            "diagram",
+            "rotation_symbol",
+            "subassembly",
+            "preview",
+        }
     )
 
     def _score(self, result: ClassificationResult) -> None:
@@ -232,23 +239,40 @@ class StepClassifier(LabelClassifier):
                     e,
                 )
 
-        # Phase 3: Build all subassemblies BEFORE steps.
-        # This allows us to exclude diagrams inside subassemblies from being
-        # selected as the main step diagram.
-        for sa_candidate in result.get_scored_candidates(
+        # Phase 3: Build subassemblies and previews BEFORE steps.
+        # Both subassemblies and previews are white boxes with diagrams inside.
+        # We combine them and build in score order so the higher-scoring
+        # candidate claims the white box first. When a candidate is built,
+        # its source_blocks are marked as consumed, causing any competing
+        # candidate using the same blocks to fail.
+        #
+        # This allows subassemblies (which have step_count labels like "2x")
+        # to be distinguished from previews (which appear before steps).
+        subassembly_candidates = result.get_scored_candidates(
             "subassembly", valid_only=False, exclude_failed=True
-        ):
+        )
+        preview_candidates = result.get_scored_candidates(
+            "preview", valid_only=False, exclude_failed=True
+        )
+
+        # Combine and sort by score (highest first)
+        combined_candidates = list(subassembly_candidates) + list(preview_candidates)
+        combined_candidates.sort(key=lambda c: c.score, reverse=True)
+
+        for candidate in combined_candidates:
             try:
-                result.build(sa_candidate)
+                result.build(candidate)
                 log.debug(
-                    "[step] Built subassembly at %s (score=%.2f)",
-                    sa_candidate.bbox,
-                    sa_candidate.score,
+                    "[step] Built %s at %s (score=%.2f)",
+                    candidate.label,
+                    candidate.bbox,
+                    candidate.score,
                 )
             except Exception as e:
                 log.debug(
-                    "[step] Failed to construct subassembly candidate at %s: %s",
-                    sa_candidate.bbox,
+                    "[step] Failed to construct %s candidate at %s: %s",
+                    candidate.label,
+                    candidate.bbox,
                     e,
                 )
 

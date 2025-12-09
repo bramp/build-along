@@ -428,22 +428,22 @@ class TestPreviewClassifier:
         diagram_classifier: DiagramClassifier,
         step_number_classifier: StepNumberClassifier,
     ):
-        """Test that boxes overlapping step_numbers are rejected.
+        """Test that boxes below/overlapping step_numbers are rejected.
 
-        Step numbers indicate this box is part of a step area.
-        Previews appear before steps, so they shouldn't overlap step_numbers.
+        White boxes that overlap with or are below step_numbers are subassemblies,
+        not previews. Only boxes ABOVE all step_numbers can be previews.
         """
-        # Create a white box
-        box_bbox = BBox(x0=100, y0=100, x1=300, y1=300)
+        # Create a white box that is BELOW the step number
+        box_bbox = BBox(x0=100, y0=300, x1=300, y1=500)
         box_drawing = make_drawing(box_bbox, fill_color=(1.0, 1.0, 1.0), id=1)
 
         # Create an image inside (so it would otherwise be a valid preview)
-        image_bbox = BBox(x0=120, y0=120, x1=280, y1=280)
+        image_bbox = BBox(x0=120, y0=320, x1=280, y1=480)
         image_block = make_image(image_bbox, id=2)
 
-        # Create a step number overlapping the box (indicates this is part of a step)
+        # Create a step number ABOVE the box
         # Step numbers have a specific format - typically large bold numbers
-        step_num_bbox = BBox(x0=90, y0=150, x1=120, y1=200)  # Overlaps with box
+        step_num_bbox = BBox(x0=400, y0=100, x1=450, y1=150)
         step_num_text = make_text(step_num_bbox, "3", id=3, font_size=30.0)
 
         page_data = make_page_data([box_drawing, image_block, step_num_text])
@@ -454,22 +454,58 @@ class TestPreviewClassifier:
         diagram_classifier._score(result)
         preview_classifier._score(result)
 
-        # Should reject the box because it overlaps with a step_number
+        # Should reject preview candidates because box is below the step_number
         candidates = result.get_scored_candidates("preview", valid_only=False)
         assert len(candidates) == 0
 
-    def test_accepts_box_with_no_step_elements_nearby(
+    def test_accepts_box_above_step_numbers(
+        self,
+        preview_classifier: PreviewClassifier,
+        diagram_classifier: DiagramClassifier,
+        step_number_classifier: StepNumberClassifier,
+    ):
+        """Test that boxes ABOVE all step_numbers are accepted as previews.
+
+        Previews can appear at the top of instruction pages, above where the
+        steps begin. If the white box is entirely above all step_numbers, it
+        should be classified as a preview.
+        """
+        # Create a white box at the TOP of the page
+        box_bbox = BBox(x0=100, y0=10, x1=300, y1=100)
+        box_drawing = make_drawing(box_bbox, fill_color=(1.0, 1.0, 1.0), id=1)
+
+        # Create an image inside (so it would otherwise be a valid preview)
+        image_bbox = BBox(x0=120, y0=20, x1=280, y1=90)
+        image_block = make_image(image_bbox, id=2)
+
+        # Create a step number BELOW the box
+        step_num_bbox = BBox(x0=400, y0=200, x1=450, y1=250)
+        step_num_text = make_text(step_num_bbox, "3", id=3, font_size=30.0)
+
+        page_data = make_page_data([box_drawing, image_block, step_num_text])
+        result = ClassificationResult(page_data=page_data)
+
+        # Run classifiers - step_number first, then diagram, then preview
+        step_number_classifier._score(result)
+        diagram_classifier._score(result)
+        preview_classifier._score(result)
+
+        # Should accept preview because it's above all step_numbers
+        candidates = result.get_scored_candidates("preview", valid_only=False)
+        assert len(candidates) == 1
+        assert candidates[0].bbox == box_bbox
+
+    def test_accepts_box_on_page_without_step_numbers(
         self,
         preview_classifier: PreviewClassifier,
         diagram_classifier: DiagramClassifier,
         step_count_classifier: StepCountClassifier,
-        step_number_classifier: StepNumberClassifier,
         config: ClassifierConfig,
     ):
-        """Test boxes without step_count or step_number overlap are accepted.
+        """Test previews are accepted on pages without step_numbers (INFO pages).
 
         This is the correct scenario for a preview - a white box with a diagram
-        that appears before steps (no step elements nearby).
+        on an INFO page that doesn't have any step numbers.
         """
         # Create a white box
         box_bbox = BBox(x0=100, y0=100, x1=300, y1=300)
@@ -479,26 +515,17 @@ class TestPreviewClassifier:
         image_bbox = BBox(x0=120, y0=120, x1=280, y1=280)
         image_block = make_image(image_bbox, id=2)
 
-        # Create a step number far away from the box (doesn't overlap)
-        step_num_bbox = BBox(x0=400, y0=400, x1=450, y1=450)
-        step_num_text = make_text(step_num_bbox, "5", id=3, font_size=30.0)
+        # NO step_number on this page - it's an INFO page
 
-        # Create a step count far away from the box
-        step_count_bbox = BBox(x0=450, y0=100, x1=480, y1=120)
-        step_count_text = make_text(step_count_bbox, "3x", id=4, font_size=10.0)
-
-        page_data = make_page_data(
-            [box_drawing, image_block, step_num_text, step_count_text]
-        )
+        page_data = make_page_data([box_drawing, image_block])
         result = ClassificationResult(page_data=page_data)
 
         # Run classifiers
         step_count_classifier._score(result)
-        step_number_classifier._score(result)
         diagram_classifier._score(result)
         preview_classifier._score(result)
 
-        # Should accept the box because no step elements overlap it
+        # Should accept the box because this is an INFO page (no step_numbers)
         candidates = result.get_scored_candidates("preview", valid_only=False)
         assert len(candidates) == 1
         assert candidates[0].score >= config.preview.min_score

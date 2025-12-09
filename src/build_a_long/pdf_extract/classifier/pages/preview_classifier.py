@@ -46,7 +46,6 @@ from build_a_long.pdf_extract.classifier.score import (
 from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
     filter_contained,
-    filter_overlapping,
     group_by_similar_bbox,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
@@ -105,26 +104,40 @@ class PreviewClassifier(LabelClassifier):
     def _score(self, result: ClassificationResult) -> None:
         """Score Drawing blocks as potential preview boxes.
 
-        Previews are white boxes containing diagrams that appear BEFORE steps.
-        They are distinguished from subassemblies by:
-        - Not containing step_count labels (e.g., "2x")
-        - Not overlapping with step_number elements (they're outside step areas)
+        Previews are white boxes containing diagrams that appear BEFORE any
+        instruction steps. They are distinguished from subassemblies by:
+        - Appearing on pages WITHOUT step_numbers (INFO pages), OR
+        - Being vertically ABOVE all step_numbers on the page
+
+        Subassemblies appear within or below steps on INSTRUCTION pages.
         """
         page_data = result.page_data
         preview_config = self.config.preview
+
+        # Get step_number candidates to determine if/where steps are
+        step_number_candidates = result.get_scored_candidates(
+            "step_number", valid_only=False, exclude_failed=True
+        )
+
+        # Calculate the minimum y0 of all step_numbers (top of step area)
+        # Previews must be above this line (lower y value = higher on page)
+        min_step_y0: float | None = None
+        if step_number_candidates:
+            min_step_y0 = min(c.bbox.y0 for c in step_number_candidates)
+            log.debug(
+                "[preview] Page has %d step_numbers, topmost at y0=%.1f",
+                len(step_number_candidates),
+                min_step_y0,
+            )
 
         # Get diagram candidates for checking what's inside potential previews
         diagram_candidates = result.get_scored_candidates(
             "diagram", valid_only=False, exclude_failed=True
         )
 
-        # Get step_count and step_number candidates to distinguish from subassemblies
-        # Subassemblies contain step_counts (e.g., "2x") and are within step areas
+        # Get step_count candidates to reject boxes with "2x" labels inside
         step_count_candidates = result.get_scored_candidates(
             "step_count", valid_only=False, exclude_failed=True
-        )
-        step_number_candidates = result.get_scored_candidates(
-            "step_number", valid_only=False, exclude_failed=True
         )
 
         # Find rectangular drawing blocks that could be preview boxes
@@ -180,14 +193,15 @@ class PreviewClassifier(LabelClassifier):
                 )
                 continue
 
-            # Reject boxes that overlap with step_numbers
-            # Previews appear before steps, so they shouldn't overlap step_numbers
-            step_numbers_inside = filter_overlapping(step_number_candidates, bbox)
-            if step_numbers_inside:
+            # If there are step_numbers on the page, the box must be ABOVE all of them
+            # to be a preview (previews appear before steps, subassemblies appear within)
+            if min_step_y0 is not None and bbox.y1 > min_step_y0:
                 log.debug(
-                    "[preview] Rejected box at %s: overlaps step_number "
-                    "(likely part of a step area)",
+                    "[preview] Rejected box at %s: y1=%.1f is below/overlapping "
+                    "step area (min_step_y0=%.1f) - likely a subassembly",
                     bbox,
+                    bbox.y1,
+                    min_step_y0,
                 )
                 continue
 
@@ -225,13 +239,21 @@ class PreviewClassifier(LabelClassifier):
                 )
                 continue
 
+            # Find all drawings contained within the preview bbox
+            # This captures the white fill boxes (from group) plus any border/decoration
+            # drawings that are inside the preview area
+            all_drawings_inside: list[Blocks] = []
+            for block in page_data.blocks:
+                if isinstance(block, Drawing) and bbox.contains(block.bbox):
+                    all_drawings_inside.append(block)
+
             result.add_candidate(
                 Candidate(
                     bbox=bbox,
                     label="preview",
                     score=score_details.score(),
                     score_details=score_details,
-                    source_blocks=list(group),
+                    source_blocks=all_drawings_inside,
                 )
             )
             log.debug(

@@ -28,7 +28,7 @@ class PreviewConfig(BaseModel):
     )
 
     min_height: float = Field(
-        default=50.0, description="Minimum height of a Preview element in points."
+        default=40.0, description="Minimum height of a Preview element in points."
     )
 
     max_page_width_ratio: float = Field(

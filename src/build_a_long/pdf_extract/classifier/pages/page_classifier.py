@@ -33,6 +33,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Page,
     PageNumber,
     Part,
+    Preview,
     ProgressBar,
     Step,
     TriviaText,
@@ -62,8 +63,7 @@ class PageClassifier(LabelClassifier):
             "background",
             "divider",
             "page_number",
-            # TODO: Re-enable preview once classifier is more accurate
-            # "preview",
+            "preview",  # Built by StepClassifier alongside subassemblies
             "progress_bar",
             "new_bag",
             "step",
@@ -135,13 +135,6 @@ class PageClassifier(LabelClassifier):
         assert all(isinstance(d, Divider) for d in dividers)
         dividers = [d for d in dividers if isinstance(d, Divider)]  # type narrow
 
-        # TODO: Re-enable preview building once classifier is more accurate
-        # Build all previews
-        # previews = result.build_all_for_label("preview")
-        # assert all(isinstance(p, Preview) for p in previews)
-        # previews = [p for p in previews if isinstance(p, Preview)]  # type narrow
-        previews = []  # Disabled for now
-
         # Build trivia text (if any) - only one per page
         # TODO Consider multiple per page
         trivia_text = None
@@ -201,6 +194,15 @@ class PageClassifier(LabelClassifier):
 
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
+
+        # Previews are built by StepClassifier.build_all alongside subassemblies
+        # to properly deconflict white boxes that could be either.
+        # Here we just collect the already-built previews.
+        previews = [
+            c.constructed
+            for c in result.get_candidates("preview")
+            if c.constructed is not None and isinstance(c.constructed, Preview)
+        ]
 
         # Collect parts that are already used in steps (to exclude from catalog)
         parts_in_steps: set[int] = set()
