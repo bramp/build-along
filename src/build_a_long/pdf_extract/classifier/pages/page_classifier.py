@@ -62,6 +62,8 @@ class PageClassifier(LabelClassifier):
             "background",
             "divider",
             "page_number",
+            # TODO: Re-enable preview once classifier is more accurate
+            # "preview",
             "progress_bar",
             "new_bag",
             "step",
@@ -132,6 +134,13 @@ class PageClassifier(LabelClassifier):
         dividers = result.build_all_for_label("divider")
         assert all(isinstance(d, Divider) for d in dividers)
         dividers = [d for d in dividers if isinstance(d, Divider)]  # type narrow
+
+        # TODO: Re-enable preview building once classifier is more accurate
+        # Build all previews
+        # previews = result.build_all_for_label("preview")
+        # assert all(isinstance(p, Preview) for p in previews)
+        # previews = [p for p in previews if isinstance(p, Preview)]  # type narrow
+        previews = []  # Disabled for now
 
         # Build trivia text (if any) - only one per page
         # TODO Consider multiple per page
@@ -228,13 +237,14 @@ class PageClassifier(LabelClassifier):
 
         log.debug(
             "[page] page=%s categories=%s page_number=%s progress_bar=%s "
-            "background=%s dividers=%d new_bags=%d steps=%d catalog=%s",
+            "background=%s dividers=%d previews=%d new_bags=%d steps=%d catalog=%s",
             page_data.page_number,
             [c.name for c in categories],
             page_number.value if page_number else None,
             progress_bar is not None,
             background is not None,
             len(dividers),
+            len(previews),
             len(new_bags),
             len(steps),
             f"{len(catalog_parts)} parts" if catalog_parts else None,
@@ -248,6 +258,7 @@ class PageClassifier(LabelClassifier):
             progress_bar=progress_bar,
             background=background,
             dividers=dividers,
+            previews=previews,
             trivia_text=trivia_text,
             new_bags=new_bags,
             steps=steps,

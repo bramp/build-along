@@ -655,6 +655,45 @@ class SubAssemblyStep(LegoPageElement):
             yield from self.diagram.iter_elements()
 
 
+class Preview(LegoPageElement):
+    """A preview area showing a diagram or model preview.
+
+    Preview elements are white rectangular areas containing a diagram.
+    They typically appear on info pages to show what the completed model
+    (or a section of it) will look like.
+
+    Structure:
+    - A white rectangular background (Drawing block with white fill)
+    - A diagram inside (which may be composed of multiple image blocks)
+    - May have optional border drawings or semi-transparent overlay
+
+    Positional context: Can appear anywhere on the page, typically in areas
+    outside the main instruction content.
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["Preview"] = Field(default="Preview", alias="__tag__", frozen=True)
+
+    diagram: Diagram | None = None
+    """The diagram inside the preview area.
+    
+    The diagram may be composed of multiple underlying image blocks
+    that have been merged into a single Diagram element.
+    """
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        diagram_str = ", has_diagram" if self.diagram else ""
+        return f"Preview(bbox={str(self.bbox)}{diagram_str})"
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over this Preview and all child elements."""
+        yield self
+        if self.diagram:
+            yield from self.diagram.iter_elements()
+
+
 class SubAssembly(LegoPageElement):
     """A sub-assembly within a main step, typically shown in a callout box.
 
@@ -839,6 +878,9 @@ class Page(LegoPageElement):
     dividers: list[Divider] = Field(default_factory=list)
     """List of divider lines on the page separating sections."""
 
+    previews: list[Preview] = Field(default_factory=list)
+    """List of preview elements showing model diagrams."""
+
     new_bags: list[NewBag] = Field(default_factory=list)
     steps: list[Step] = Field(default_factory=list)
     catalog: list[Part] = Field(default_factory=list)
@@ -895,6 +937,9 @@ class Page(LegoPageElement):
         for divider in self.dividers:
             yield from divider.iter_elements()
 
+        for preview in self.previews:
+            yield from preview.iter_elements()
+
         for new_bag in self.new_bags:
             yield from new_bag.iter_elements()
 
@@ -926,6 +971,7 @@ LegoPageElements = Annotated[
     | BagNumber
     | NewBag
     | Diagram
+    | Preview
     | SubAssemblyStep
     | SubAssembly
     | Step

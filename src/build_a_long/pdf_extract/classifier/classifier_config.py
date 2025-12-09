@@ -14,6 +14,7 @@ from build_a_long.pdf_extract.classifier.config import (
     PartCountConfig,
     PartNumberConfig,
     PartsListConfig,
+    PreviewConfig,
     ProgressBarConfig,
     ProgressBarIndicatorConfig,
     RotationSymbolConfig,
@@ -97,6 +98,10 @@ class ClassifierConfig(BaseModel):
     # SubAssembly classifier settings
     subassembly: SubAssemblyConfig = Field(default_factory=SubAssemblyConfig)
     """Configuration for subassembly classification."""
+
+    # Preview classifier settings
+    preview: PreviewConfig = Field(default_factory=PreviewConfig)
+    """Configuration for preview classification."""
 
     # Trivia text classifier settings
     trivia_text: TriviaTextConfig = Field(default_factory=TriviaTextConfig)

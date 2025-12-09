@@ -48,6 +48,9 @@ from build_a_long.pdf_extract.classifier.pages.page_classifier import PageClassi
 from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
     PageNumberClassifier,
 )
+from build_a_long.pdf_extract.classifier.pages.preview_classifier import (
+    PreviewClassifier,
+)
 from build_a_long.pdf_extract.classifier.pages.progress_bar_classifier import (
     ProgressBarClassifier,
 )
@@ -271,6 +274,7 @@ type Classifiers = (
     PageNumberClassifier
     | ProgressBarClassifier
     | ProgressBarIndicatorClassifier
+    | PreviewClassifier
     | BackgroundClassifier
     | DividerClassifier
     | BagNumberClassifier
@@ -323,6 +327,7 @@ class Classifier:
                 PartsImageClassifier(config=config),
                 ShineClassifier(config=config),
                 NewBagClassifier(config=config),
+                PreviewClassifier(config=config),
                 SubAssemblyClassifier(config=config),
                 StepClassifier(config=config),
                 TriviaTextClassifier(config=config),

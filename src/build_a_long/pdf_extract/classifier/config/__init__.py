@@ -21,6 +21,7 @@ from build_a_long.pdf_extract.classifier.config.part_number_config import (
 from build_a_long.pdf_extract.classifier.config.parts_list_config import (
     PartsListConfig,
 )
+from build_a_long.pdf_extract.classifier.config.preview_config import PreviewConfig
 from build_a_long.pdf_extract.classifier.config.progress_bar_config import (
     ProgressBarConfig,
 )
@@ -53,6 +54,7 @@ __all__ = [
     "PartCountConfig",
     "PartNumberConfig",
     "PartsListConfig",
+    "PreviewConfig",
     "ProgressBarConfig",
     "ProgressBarIndicatorConfig",
     "RotationSymbolConfig",
