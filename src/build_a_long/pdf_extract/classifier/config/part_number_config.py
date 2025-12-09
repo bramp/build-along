@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from build_a_long.pdf_extract.classifier.score import Weight
 
@@ -14,5 +14,6 @@ class PartNumberConfig(BaseModel):
     on catalog pages below part counts.
     """
 
-    min_score: Weight = 0.5
-    """Minimum score threshold for part number candidates."""
+    min_score: Weight = Field(
+        default=0.5, description="Minimum score threshold for part number candidates."
+    )

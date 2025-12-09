@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from build_a_long.pdf_extract.classifier.score import Weight
 
@@ -13,11 +13,14 @@ class StepNumberConfig(BaseModel):
     Step numbers appear on instruction pages to indicate the current build step.
     """
 
-    min_score: Weight = 0.5
-    """Minimum score threshold for step number candidates."""
+    min_score: Weight = Field(
+        default=0.5, description="Minimum score threshold for step number candidates."
+    )
 
-    text_weight: Weight = 0.7
-    """Weight for text pattern matching score."""
+    text_weight: Weight = Field(
+        default=0.7, description="Weight for text pattern matching score."
+    )
 
-    font_size_weight: Weight = 0.3
-    """Weight for font size matching score."""
+    font_size_weight: Weight = Field(
+        default=0.3, description="Weight for font size matching score."
+    )

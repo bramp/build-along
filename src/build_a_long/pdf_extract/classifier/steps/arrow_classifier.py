@@ -185,7 +185,10 @@ class ArrowClassifier(LabelClassifier):
 
         # Check aspect ratio (triangles are roughly square-ish to elongated)
         aspect = bbox.width / bbox.height if bbox.height > 0 else 0
-        if aspect < arrow_config.min_aspect or aspect > arrow_config.max_aspect:
+        if (
+            aspect < arrow_config.min_aspect_ratio
+            or aspect > arrow_config.max_aspect_ratio
+        ):
             return None
 
         # Must have 3-5 line items forming the shape

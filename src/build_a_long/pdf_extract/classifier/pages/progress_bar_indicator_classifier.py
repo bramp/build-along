@@ -118,10 +118,10 @@ class ProgressBarIndicatorClassifier(LabelClassifier):
             bottom_margin_ratio = bottom_distance / page_height
 
             # Should be in bottom portion of page
-            if bottom_margin_ratio > cfg.bottom_margin_threshold:
+            if bottom_margin_ratio > cfg.max_bottom_margin_ratio:
                 continue
 
-            position_score = 1.0 - (bottom_margin_ratio / cfg.bottom_margin_threshold)
+            position_score = 1.0 - (bottom_margin_ratio / cfg.max_bottom_margin_ratio)
 
             score_details = _ProgressBarIndicatorScore(
                 shape_score=shape_score,

@@ -1,6 +1,8 @@
 """Configuration for the subassembly classifier."""
 
-from pydantic import BaseModel
+from __future__ import annotations
+
+from pydantic import BaseModel, Field
 
 from build_a_long.pdf_extract.classifier.score import Weight
 
@@ -16,35 +18,46 @@ class SubAssemblyConfig(BaseModel):
     - Often an arrow pointing to the main diagram
     """
 
-    min_score: Weight = 0.5
-    """Minimum score threshold for subassembly candidates."""
+    min_score: Weight = Field(
+        default=0.5, description="Minimum score threshold for subassembly candidates."
+    )
 
     # Minimum size configuration
-    # TODO The min_part sizes should be moved to a common config used by both
-    min_part_width: float = 20.0
-    """Minimum width of a Part element in points."""
+    min_part_width: float = Field(
+        default=20.0, description="Minimum width of a Part element in points."
+    )
 
-    min_part_height: float = 15.0
-    """Minimum height of a Part element in points."""
+    min_part_height: float = Field(
+        default=15.0, description="Minimum height of a Part element in points."
+    )
 
-    min_size_part_multiplier: float = 1.5
-    """SubAssembly must be at least this many times larger than the minimum Part size."""
+    min_size_part_multiplier: float = Field(
+        default=1.5,
+        description="SubAssembly must be at least this many times larger than the minimum Part size.",
+    )
 
-    max_page_width_ratio: float = 0.5
-    """Maximum width of a SubAssembly as a ratio of the page width."""
+    max_page_width_ratio: float = Field(
+        default=0.5,
+        description="Maximum width of a SubAssembly as a ratio of the page width.",
+    )
 
-    max_page_height_ratio: float = 0.5
-    """Maximum height of a SubAssembly as a ratio of the page height."""
+    max_page_height_ratio: float = Field(
+        default=0.5,
+        description="Maximum height of a SubAssembly as a ratio of the page height.",
+    )
 
     # Score weights
-    box_shape_weight: Weight = 0.3
-    """Weight for box shape score (rectangular quality)."""
+    box_shape_weight: Weight = Field(
+        default=0.3, description="Weight for box shape score (rectangular quality)."
+    )
 
-    count_weight: Weight = 0.4
-    """Weight for count label presence and quality."""
+    count_weight: Weight = Field(
+        default=0.4, description="Weight for count label presence and quality."
+    )
 
-    diagram_weight: Weight = 0.3
-    """Weight for diagram/image presence inside box."""
+    diagram_weight: Weight = Field(
+        default=0.3, description="Weight for diagram/image presence inside box."
+    )
 
     @property
     def min_subassembly_width(self) -> float:

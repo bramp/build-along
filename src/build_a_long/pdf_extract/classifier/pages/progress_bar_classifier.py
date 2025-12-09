@@ -211,11 +211,11 @@ class ProgressBarClassifier(LabelClassifier):
         bottom_margin_ratio = bottom_distance / page_height
 
         # Should be in bottom 20% of page
-        if bottom_margin_ratio > config.bottom_margin_threshold:
+        if bottom_margin_ratio > config.max_bottom_margin_ratio:
             return 0.0
 
         # Score based on proximity to bottom (closer = better)
-        position_score = 1.0 - (bottom_margin_ratio / config.bottom_margin_threshold)
+        position_score = 1.0 - (bottom_margin_ratio / config.max_bottom_margin_ratio)
 
         # Boost score if near page number
         if page_number_bbox is not None:
@@ -226,10 +226,10 @@ class ProgressBarClassifier(LabelClassifier):
             )
             if (
                 horizontal_distance
-                < page_bbox.width * config.page_number_proximity_threshold
+                < page_bbox.width * config.max_page_number_proximity_ratio
             ):
                 position_score = min(
-                    1.0, position_score * config.page_number_proximity_boost
+                    1.0, position_score * config.page_number_proximity_multiplier
                 )
 
         return min(1.0, position_score)
@@ -407,7 +407,7 @@ class ProgressBarClassifier(LabelClassifier):
 
         # Expand the bbox slightly vertically to catch elements that extend
         # a bit beyond (like the indicator)
-        expanded_bbox = bar_bbox.expand(config.overlap_expansion)
+        expanded_bbox = bar_bbox.expand(config.overlap_expansion_margin)
 
         for block in result.page_data.blocks:
             # Only consider Drawing and Image elements

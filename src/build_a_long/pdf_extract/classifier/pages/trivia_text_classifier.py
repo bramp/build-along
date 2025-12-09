@@ -109,11 +109,11 @@ class TriviaTextClassifier(LabelClassifier):
             if isinstance(block, Text) and self._is_trivia_content(block.text)
         ]
 
-        if len(content_blocks) < config.min_text_blocks:
+        if len(content_blocks) < config.min_text_block_count:
             log.debug(
                 "[trivia_text] Not enough content text blocks: %d < %d",
                 len(content_blocks),
-                config.min_text_blocks,
+                config.min_text_block_count,
             )
             return
 
@@ -121,20 +121,20 @@ class TriviaTextClassifier(LabelClassifier):
         clusters = self._cluster_text_blocks(content_blocks, config.proximity_margin)
 
         for cluster in clusters:
-            if len(cluster) < config.min_text_blocks:
+            if len(cluster) < config.min_text_block_count:
                 continue
 
             # Calculate total characters
             total_chars = sum(len(block.text) for block in cluster)
 
             # Need minimum characters to be considered trivia
-            if total_chars < config.min_total_characters:
+            if total_chars < config.min_character_count:
                 log.debug(
                     "[trivia_text] Cluster with %d blocks rejected: "
                     "only %d chars (need %d)",
                     len(cluster),
                     total_chars,
-                    config.min_total_characters,
+                    config.min_character_count,
                 )
                 continue
 

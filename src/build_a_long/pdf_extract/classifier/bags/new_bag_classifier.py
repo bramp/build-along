@@ -205,14 +205,14 @@ class NewBagClassifier(LabelClassifier):
 
         # Check minimum size
         if (
-            cluster_bbox.width < nb_config.icon_min_size
-            or cluster_bbox.height < nb_config.icon_min_size
+            cluster_bbox.width < nb_config.min_icon_size
+            or cluster_bbox.height < nb_config.min_icon_size
         ):
             return None
 
         # Check position - must be in top-left area
-        max_x = page_bbox.width * nb_config.icon_max_x_ratio
-        max_y = page_bbox.height * nb_config.icon_max_y_ratio
+        max_x = page_bbox.width * nb_config.max_icon_x_ratio
+        max_y = page_bbox.height * nb_config.max_icon_y_ratio
         if cluster_bbox.x0 > max_x or cluster_bbox.y0 > max_y:
             return None
 
@@ -223,8 +223,8 @@ class NewBagClassifier(LabelClassifier):
 
         # Score aspect ratio (square is best)
         aspect = cluster_bbox.width / cluster_bbox.height if cluster_bbox.height else 0
-        min_aspect = nb_config.icon_min_aspect
-        max_aspect = nb_config.icon_max_aspect
+        min_aspect = nb_config.min_icon_aspect_ratio
+        max_aspect = nb_config.max_icon_aspect_ratio
 
         if min_aspect <= aspect <= max_aspect:
             # Within acceptable range - score based on how close to 1.0

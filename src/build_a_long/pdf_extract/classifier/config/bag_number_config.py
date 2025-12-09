@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from build_a_long.pdf_extract.classifier.score import Weight
 
@@ -13,14 +13,18 @@ class BagNumberConfig(BaseModel):
     Bag numbers are large numbers (1, 2, 3...) indicating which bag of parts to open.
     """
 
-    min_score: Weight = 0.1
-    """Minimum score threshold for bag number candidates."""
+    min_score: Weight = Field(
+        default=0.1, description="Minimum score threshold for bag number candidates."
+    )
 
-    text_weight: Weight = 0.4
-    """Weight for text pattern matching score."""
+    text_weight: Weight = Field(
+        default=0.4, description="Weight for text pattern matching score."
+    )
 
-    position_weight: Weight = 0.4
-    """Weight for position score."""
+    position_weight: Weight = Field(
+        default=0.4, description="Weight for position score."
+    )
 
-    font_size_weight: Weight = 0.2
-    """Weight for font size score."""
+    font_size_weight: Weight = Field(
+        default=0.2, description="Weight for font size score."
+    )

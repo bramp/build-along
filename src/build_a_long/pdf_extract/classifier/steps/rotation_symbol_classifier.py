@@ -353,12 +353,12 @@ class RotationSymbolClassifier(LabelClassifier):
 
         # Score aspect ratio (prefer square)
         aspect = width / height if height > 0 else 0
-        if aspect < rs_config.min_aspect or aspect > rs_config.max_aspect:
+        if aspect < rs_config.min_aspect_ratio or aspect > rs_config.max_aspect_ratio:
             return None
 
         # Perfect square = 1.0, score decreases linearly to 0 at boundaries
         aspect_diff = abs(aspect - 1.0)
-        aspect_tolerance = rs_config.max_aspect - 1.0
+        aspect_tolerance = rs_config.max_aspect_ratio - 1.0
         aspect_score = max(0.0, 1.0 - (aspect_diff / aspect_tolerance))
 
         return _RotationSymbolScore(

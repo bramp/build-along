@@ -71,7 +71,7 @@ class BackgroundClassifier(LabelClassifier):
 
         config = self.config.background
         min_coverage_ratio = config.min_coverage_ratio
-        edge_tolerance = config.edge_tolerance
+        edge_margin = config.edge_margin
 
         page_width = page_bbox.width
         page_height = page_bbox.height
@@ -116,11 +116,11 @@ class BackgroundClassifier(LabelClassifier):
             avg_edge_dist = (left_dist + right_dist + top_dist + bottom_dist) / 4
 
             # Position score is higher when closer to edges
-            if avg_edge_dist <= edge_tolerance:
+            if avg_edge_dist <= edge_margin:
                 position_score = 1.0
             else:
                 # Decrease score as distance increases
-                position_score = max(0.0, 1.0 - (avg_edge_dist - edge_tolerance) / 50.0)
+                position_score = max(0.0, 1.0 - (avg_edge_dist - edge_margin) / 50.0)
 
             # Extract fill color as RGB tuple
             fill_color: tuple[float, float, float] | None = None
