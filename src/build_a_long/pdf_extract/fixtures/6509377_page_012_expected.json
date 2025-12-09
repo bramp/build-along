@@ -42,8 +42,17 @@
       "x1": 552.76,
       "y1": 482.59
     },
-    "progress": 0.04,
-    "full_width": 517.74
+    "progress": 0.03,
+    "full_width": 517.74,
+    "indicator": {
+      "__tag__": "ProgressBarIndicator",
+      "bbox": {
+        "x0": 41.55,
+        "y0": 471.31,
+        "x1": 55.23,
+        "y1": 484.98
+      }
+    }
   },
   "dividers": [
     {

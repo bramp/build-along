@@ -51,6 +51,9 @@ from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
 from build_a_long.pdf_extract.classifier.pages.progress_bar_classifier import (
     ProgressBarClassifier,
 )
+from build_a_long.pdf_extract.classifier.pages.progress_bar_indicator_classifier import (
+    ProgressBarIndicatorClassifier,
+)
 from build_a_long.pdf_extract.classifier.pages.trivia_text_classifier import (
     TriviaTextClassifier,
 )
@@ -267,6 +270,7 @@ def classify_pages(
 type Classifiers = (
     PageNumberClassifier
     | ProgressBarClassifier
+    | ProgressBarIndicatorClassifier
     | BackgroundClassifier
     | DividerClassifier
     | BagNumberClassifier
@@ -301,6 +305,7 @@ class Classifier:
         self.classifiers = topological_sort(
             [
                 PageNumberClassifier(config=config),
+                ProgressBarIndicatorClassifier(config=config),
                 ProgressBarClassifier(config=config),
                 BackgroundClassifier(config=config),
                 DividerClassifier(config=config),

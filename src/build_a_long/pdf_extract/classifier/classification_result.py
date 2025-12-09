@@ -711,6 +711,8 @@ class ClassificationResult(BaseModel):
             self.candidates[label] = []
         self.candidates[label].append(candidate)
 
+    # TODO Reconsider the removal API below - do we need it? We have been
+    # capturing all blocks by a element.
     def mark_removed(self, block: Blocks, reason: RemovalReason) -> None:
         """Mark a block as removed with the given reason.
 

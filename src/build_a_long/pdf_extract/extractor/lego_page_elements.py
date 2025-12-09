@@ -267,6 +267,25 @@ class PartImage(LegoPageElement):
             yield from self.shine.iter_elements()
 
 
+class ProgressBarIndicator(LegoPageElement):
+    """The movable indicator showing current progress within a progress bar.
+
+    Positional context: Located within the ProgressBar, positioned horizontally
+    to indicate how far through the instructions the reader has progressed.
+    Typically a narrow vertical element that moves along the bar.
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["ProgressBarIndicator"] = Field(
+        default="ProgressBarIndicator", alias="__tag__", frozen=True
+    )
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"ProgressBarIndicator(bbox={str(self.bbox)})"
+
+
 class ProgressBar(LegoPageElement):
     """A progress bar showing building progress through the instruction book.
 
@@ -295,10 +314,23 @@ class ProgressBar(LegoPageElement):
     that may be semantically meaningful for calculating progress percentage.
     """
 
+    indicator: ProgressBarIndicator | None = None
+    """The progress indicator element, if detected."""
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         progress_str = f", {self.progress:.1%}" if self.progress is not None else ""
         return f"ProgressBar(bbox={str(self.bbox)}{progress_str})"
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over this ProgressBar and its indicator.
+
+        Yields:
+            This element and the indicator if present
+        """
+        yield self
+        if self.indicator:
+            yield from self.indicator.iter_elements()
 
 
 class Divider(LegoPageElement):
@@ -883,6 +915,7 @@ LegoPageElements = Annotated[
     | PartImage
     | Shine
     | ProgressBar
+    | ProgressBarIndicator
     | Background
     | TriviaText
     | Divider

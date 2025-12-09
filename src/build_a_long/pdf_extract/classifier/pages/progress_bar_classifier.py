@@ -35,6 +35,7 @@ from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     ProgressBar,
+    ProgressBarIndicator,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Blocks,
@@ -63,11 +64,8 @@ class _ProgressBarScore(Score):
     clipped_bbox: BBox
     """Bounding box clipped to page boundaries."""
 
-    indicator_block: Blocks | None = None
-    """The block representing the progress indicator, if found."""
-
-    indicator_progress: float | None = None
-    """The calculated progress (0.0-1.0) based on indicator position."""
+    bar_start_x: float
+    """The starting X position of the progress bar."""
 
     def score(self) -> Weight:
         """Calculate final weighted score from components."""
@@ -80,7 +78,7 @@ class ProgressBarClassifier(LabelClassifier):
     """Classifier for progress bars on instruction pages."""
 
     output = "progress_bar"
-    requires = frozenset({"page_number"})
+    requires = frozenset({"page_number", "progress_bar_indicator"})
 
     def _score(self, result: ClassificationResult) -> None:
         """Score Drawing/Image elements and create candidates."""
@@ -120,9 +118,9 @@ class ProgressBarClassifier(LabelClassifier):
             original_width = block.bbox.width
             clipped_bbox = block.bbox.clip_to(page_bbox)
 
-            # Find progress indicator within the bar's vertical range
-            indicator_block, indicator_progress = self._find_progress_indicator(
-                block, result, original_width
+            # Find all overlapping blocks within the progress bar area
+            overlapping_blocks = self._find_overlapping_blocks(
+                block, clipped_bbox, result
             )
 
             score_details = _ProgressBarScore(
@@ -131,16 +129,14 @@ class ProgressBarClassifier(LabelClassifier):
                 aspect_ratio_score=aspect_ratio_score,
                 original_width=original_width,
                 clipped_bbox=clipped_bbox,
-                indicator_block=indicator_block,
-                indicator_progress=indicator_progress,
+                bar_start_x=block.bbox.x0,
             )
 
             combined = score_details.score()
 
-            # Build source_blocks list including indicator if found
+            # Build source_blocks list including all overlapping blocks
             source_blocks: list[Blocks] = [block]
-            if indicator_block is not None:
-                source_blocks.append(indicator_block)
+            source_blocks.extend(overlapping_blocks)
 
             # Store candidate
             result.add_candidate(
@@ -159,11 +155,20 @@ class ProgressBarClassifier(LabelClassifier):
         detail_score = candidate.score_details
         assert isinstance(detail_score, _ProgressBarScore)
 
+        # Find and build the indicator at build time
+        indicator, progress = self._find_and_build_indicator(
+            detail_score.clipped_bbox,
+            detail_score.bar_start_x,
+            detail_score.original_width,
+            result,
+        )
+
         # Construct the ProgressBar element
         return ProgressBar(
             bbox=detail_score.clipped_bbox,
-            progress=detail_score.indicator_progress,
+            progress=progress,
             full_width=detail_score.original_width,
+            indicator=indicator,
         )
 
     def _get_page_number_bbox(self, result: ClassificationResult) -> BBox | None:
@@ -249,46 +254,135 @@ class ProgressBarClassifier(LabelClassifier):
         # Linear interpolation between 3 and 10
         return (aspect_ratio - 3.0) / 7.0
 
-    def _find_progress_indicator(
+    def _find_and_build_indicator(
+        self,
+        bar_bbox: BBox,
+        bar_start_x: float,
+        bar_full_width: float,
+        result: ClassificationResult,
+    ) -> tuple[ProgressBarIndicator | None, float | None]:
+        """Find and build a progress bar indicator for this progress bar.
+
+        Looks for progress_bar_indicator candidates that are vertically aligned
+        with the progress bar and selects the one furthest to the right (showing
+        most progress).
+
+        Args:
+            bar_bbox: The clipped bounding box of the progress bar
+            bar_start_x: The starting X position of the progress bar
+            bar_full_width: The original unclipped width of the progress bar
+            result: Classification result containing indicator candidates
+
+        Returns:
+            A tuple of (indicator, progress) where:
+            - indicator: The built ProgressBarIndicator, or None
+            - progress: The calculated progress (0.0-1.0), or None if not found
+        """
+        # Get available indicator candidates
+        indicator_candidates = result.get_scored_candidates(
+            "progress_bar_indicator",
+            valid_only=False,
+            exclude_failed=True,
+        )
+
+        bar_height = bar_bbox.height
+        bar_center_y = (bar_bbox.y0 + bar_bbox.y1) / 2
+
+        best_candidate: Candidate | None = None
+        best_score: float = -1.0
+
+        for cand in indicator_candidates:
+            # Skip if already built (consumed by another progress bar)
+            if cand.constructed is not None:
+                continue
+
+            cand_bbox = cand.bbox
+
+            # Indicator must be at least as tall as the bar to avoid false positives
+            if cand_bbox.height < bar_height:
+                continue
+
+            # Check if the candidate's center Y is aligned with the bar's center Y
+            cand_center_y = (cand_bbox.y0 + cand_bbox.y1) / 2
+            if abs(cand_center_y - bar_center_y) > bar_height:
+                continue
+
+            # Must be horizontally within or near the progress bar
+            indicator_x = (cand_bbox.x0 + cand_bbox.x1) / 2
+            bar_end_x = bar_start_x + bar_full_width
+            if indicator_x < bar_start_x - 10 or indicator_x > bar_end_x + 10:
+                continue
+
+            # Keep the indicator with the highest score (most circular shape)
+            if cand.score > best_score:
+                best_candidate = cand
+                best_score = cand.score
+
+        if best_candidate is None:
+            return None, None
+
+        # Calculate progress based on indicator position
+        best_indicator_x = (best_candidate.bbox.x0 + best_candidate.bbox.x1) / 2
+        progress = (best_indicator_x - bar_start_x) / bar_full_width
+        progress = max(0.0, min(1.0, progress))
+
+        log.debug(
+            "Found progress indicator candidate at x=%.1f, bar_start=%.1f, "
+            "full_width=%.1f, progress=%.1%%",
+            best_indicator_x,
+            bar_start_x,
+            bar_full_width,
+            progress * 100,
+        )
+
+        # Build the indicator
+        try:
+            indicator_elem = result.build(best_candidate)
+            assert isinstance(indicator_elem, ProgressBarIndicator)
+            return indicator_elem, progress
+        except Exception as e:
+            log.debug(
+                "[progress_bar] Failed to build indicator at %s: %s",
+                best_candidate.bbox,
+                e,
+            )
+            return None, None
+
+    def _find_overlapping_blocks(
         self,
         bar_block: Drawing | Image,
+        bar_bbox: BBox,
         result: ClassificationResult,
-        bar_full_width: float,
-    ) -> tuple[Blocks | None, float | None]:
-        """Find a progress indicator within the progress bar's vertical range.
+    ) -> list[Blocks]:
+        """Find all Drawing/Image blocks that are contained within the progress bar.
 
-        Progress bars often have a small visual indicator (a narrow drawing or
-        image element) that shows how far through the instructions the reader is.
-        This method searches for such an indicator within the bar's Y-range.
+        This captures all visual elements that are part of the progress bar
+        visualization, including:
+        - The colored progress section on the left
+        - Inner/outer borders
+        - Progress indicator elements
+        - Any decorative elements within the bar area
 
-        The indicator must:
-        - Be a Drawing or Image element
-        - Be narrow (width < 20 pixels)
-        - Be at least as tall as the progress bar (to avoid false positives)
-        - Have its vertical center aligned with the bar
+        Only includes blocks that are fully or mostly contained within the
+        progress bar's vertical extent to avoid capturing unrelated elements
+        like page backgrounds or vertical dividers.
 
         Args:
             bar_block: The main progress bar drawing/image block
+            bar_bbox: The clipped bounding box of the progress bar
             result: The classification result containing all page blocks
-            bar_full_width: The original unclipped width of the progress bar
 
         Returns:
-            A tuple of (indicator_block, progress) where:
-            - indicator_block: The block representing the indicator, or None
-            - progress: The calculated progress (0.0-1.0), or None if not found
+            List of blocks that are contained within the progress bar area
         """
-        bar_bbox = bar_block.bbox
-        bar_start_x = bar_bbox.x0
-        bar_height = bar_bbox.height
+        overlapping: list[Blocks] = []
 
-        # Maximum width for an indicator (should be a narrow element)
-        max_indicator_width = 20.0
-
-        best_indicator: Blocks | None = None
-        best_indicator_x: float | None = None
+        # Expand the bbox slightly vertically to catch elements that extend
+        # a bit beyond (like the indicator)
+        expanded_bbox = bar_bbox.expand(5.0)
 
         for block in result.page_data.blocks:
-            # Consider both Drawing and Image elements as potential indicators
+            # Only consider Drawing and Image elements
             if not isinstance(block, Drawing | Image):
                 continue
 
@@ -298,44 +392,20 @@ class ProgressBarClassifier(LabelClassifier):
 
             block_bbox = block.bbox
 
-            # Check if block is narrow enough to be an indicator
-            if block_bbox.width > max_indicator_width:
+            # Block must be mostly within the progress bar's vertical extent
+            # This filters out full-page backgrounds and vertical dividers
+            if block_bbox.y0 < expanded_bbox.y0 or block_bbox.y1 > expanded_bbox.y1:
                 continue
 
-            # Indicator must be at least as tall as the bar to avoid false positives
-            if block_bbox.height < bar_height:
+            # Block must overlap horizontally with the progress bar
+            if block_bbox.x1 < bar_bbox.x0 or block_bbox.x0 > bar_bbox.x1:
                 continue
 
-            # Check if the block's center Y is aligned with the bar's center Y
-            block_center_y = (block_bbox.y0 + block_bbox.y1) / 2
-            bar_center_y = (bar_bbox.y0 + bar_bbox.y1) / 2
-            if abs(block_center_y - bar_center_y) > bar_height:
-                continue
+            overlapping.append(block)
+            log.debug(
+                "Found overlapping block for progress bar: %s at %s",
+                type(block).__name__,
+                block.bbox,
+            )
 
-            # This looks like an indicator - use the center X position
-            indicator_x = (block_bbox.x0 + block_bbox.x1) / 2
-
-            # Keep the indicator with the largest X (furthest progress)
-            # This handles cases where there might be multiple small elements
-            if best_indicator_x is None or indicator_x > best_indicator_x:
-                best_indicator = block
-                best_indicator_x = indicator_x
-
-        if best_indicator is None or best_indicator_x is None:
-            return None, None
-
-        # Calculate progress as position relative to bar start, normalized by width
-        # Clamp to 0.0-1.0 range
-        progress = (best_indicator_x - bar_start_x) / bar_full_width
-        progress = max(0.0, min(1.0, progress))
-
-        log.debug(
-            "Found progress indicator at x=%.1f, bar_start=%.1f, "
-            "full_width=%.1f, progress=%.1%%",
-            best_indicator_x,
-            bar_start_x,
-            bar_full_width,
-            progress * 100,
-        )
-
-        return best_indicator, progress
+        return overlapping
