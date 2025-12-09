@@ -353,25 +353,44 @@ class TestValidateProgressBarSequence:
 class TestValidateCatalogCoverage:
     """Tests for validate_catalog_coverage rule."""
 
-    def _make_part_with_image(self, image_id: str) -> Part:
-        """Create a Part with a diagram image ID."""
+    def _make_part_with_image(
+        self,
+        image_id: str | None = None,
+        xref: int | None = None,
+        digest: bytes | None = None,
+    ) -> Part:
+        """Create a Part with a diagram image ID, xref, and/or digest."""
         from build_a_long.pdf_extract.extractor.lego_page_elements import PartImage
 
         return Part(
             bbox=BBox(0, 0, 10, 10),
             count=PartCount(bbox=BBox(0, 0, 5, 5), count=1),
-            diagram=PartImage(bbox=BBox(0, 0, 10, 10), image_id=image_id),
+            diagram=PartImage(
+                bbox=BBox(0, 0, 10, 10),
+                image_id=image_id,
+                xref=xref,
+                digest=digest,
+            ),
         )
 
     def _make_manual(
-        self, instruction_image_ids: list[str], catalog_image_ids: list[str]
+        self,
+        instruction_parts_config: list[dict[str, Any]],
+        catalog_parts_config: list[dict[str, Any]],
     ) -> Manual:
-        """Create a Manual with specified parts."""
+        """Create a Manual with specified parts.
+
+        Args:
+            instruction_parts_config: List of dicts with keys 'image_id', 'xref', 'digest'
+            catalog_parts_config: List of dicts with keys 'image_id', 'xref', 'digest'
+        """
         pages = []
 
         # Instruction page
-        if instruction_image_ids:
-            parts = [self._make_part_with_image(iid) for iid in instruction_image_ids]
+        if instruction_parts_config:
+            parts = [
+                self._make_part_with_image(**cfg) for cfg in instruction_parts_config
+            ]
             step = Step(
                 bbox=BBox(0, 0, 100, 100),
                 step_number=StepNumber(bbox=BBox(0, 0, 10, 10), value=1),
@@ -388,8 +407,8 @@ class TestValidateCatalogCoverage:
             )
 
         # Catalog page
-        if catalog_image_ids:
-            parts = [self._make_part_with_image(iid) for iid in catalog_image_ids]
+        if catalog_parts_config:
+            parts = [self._make_part_with_image(**cfg) for cfg in catalog_parts_config]
             pages.append(
                 Page(
                     bbox=BBox(0, 0, 100, 100),
@@ -404,31 +423,66 @@ class TestValidateCatalogCoverage:
 
     def test_no_catalog_pages(self) -> None:
         """Test when no catalog pages are present."""
-        manual = self._make_manual(["img1"], [])
+        manual = self._make_manual([{"xref": 1}], [])
         validation = ValidationResult()
         validate_catalog_coverage(validation, manual)
         assert not validation.has_issues()
 
     def test_no_instruction_parts(self) -> None:
         """Test when no instruction parts are found."""
-        manual = self._make_manual([], ["img1"])
+        manual = self._make_manual([], [{"xref": 1}])
         validation = ValidationResult()
         validate_catalog_coverage(validation, manual)
         assert not validation.has_issues()
 
-    def test_perfect_coverage(self) -> None:
-        """Test when all instruction parts are in catalog."""
-        manual = self._make_manual(["img1", "img2"], ["img1", "img2", "img3"])
+    def test_perfect_coverage_xref(self) -> None:
+        """Test when all instruction parts are in catalog using xref."""
+        manual = self._make_manual(
+            [{"xref": 1}, {"xref": 2}],
+            [{"xref": 1}, {"xref": 2}, {"xref": 3}],
+        )
         validation = ValidationResult()
         validate_catalog_coverage(validation, manual)
-        # Should have INFO about coverage
+        assert validation.info_count == 1
+        assert "100.0%" in validation.issues[0].message
+
+    def test_perfect_coverage_digest(self) -> None:
+        """Test when all instruction parts are in catalog using digest."""
+        manual = self._make_manual(
+            [{"digest": b"a"}, {"digest": b"b"}],
+            [{"digest": b"a"}, {"digest": b"b"}, {"digest": b"c"}],
+        )
+        validation = ValidationResult()
+        validate_catalog_coverage(validation, manual)
+        assert validation.info_count == 1
+        assert "100.0%" in validation.issues[0].message
+
+    def test_mixed_matching(self) -> None:
+        """Test matching using both xref and digest."""
+        manual = self._make_manual(
+            [
+                {"xref": 1},  # Matches by xref
+                {"digest": b"b"},  # Matches by digest
+                {"xref": 3, "digest": b"c"},  # Matches by xref (preferred)
+            ],
+            [
+                {"xref": 1, "digest": b"x"},
+                {"xref": 9, "digest": b"b"},
+                {"xref": 3, "digest": b"z"},
+            ],
+        )
+        validation = ValidationResult()
+        validate_catalog_coverage(validation, manual)
         assert validation.info_count == 1
         assert "100.0%" in validation.issues[0].message
 
     def test_partial_coverage_experimental(self) -> None:
         """Test partial coverage with experimental flag (INFO)."""
-        # 1 match, 1 missing -> 50% coverage
-        manual = self._make_manual(["img1", "img2"], ["img1"])
+        # 1 match (xref), 1 missing
+        manual = self._make_manual(
+            [{"xref": 1}, {"xref": 2}],
+            [{"xref": 1}],
+        )
         validation = ValidationResult()
         validate_catalog_coverage(validation, manual, experimental=True)
 
@@ -441,11 +495,16 @@ class TestValidateCatalogCoverage:
         )
         assert missing_issue.severity == ValidationSeverity.INFO
         assert "[EXPERIMENTAL]" in missing_issue.message
+        assert missing_issue.details is not None
+        assert "xref:2" in missing_issue.details
 
     def test_partial_coverage_strict(self) -> None:
         """Test partial coverage without experimental flag (WARNING)."""
-        # 1 match, 1 missing -> 50% coverage
-        manual = self._make_manual(["img1", "img2"], ["img1"])
+        # 1 match, 1 missing
+        manual = self._make_manual(
+            [{"digest": b"a"}, {"digest": b"b"}],
+            [{"digest": b"a"}],
+        )
         validation = ValidationResult()
         validate_catalog_coverage(validation, manual, experimental=False)
 
@@ -458,14 +517,16 @@ class TestValidateCatalogCoverage:
         )
         assert missing_issue.severity == ValidationSeverity.WARNING
         assert "[EXPERIMENTAL]" not in missing_issue.message
+        assert missing_issue.details is not None
+        assert "digest:" in missing_issue.details  # Hex representation of b"b"
 
     def test_zero_coverage(self) -> None:
         """Test zero coverage (should not warn, assumes no image reuse)."""
-        manual = self._make_manual(["img1"], ["img2"])
+        manual = self._make_manual([{"xref": 1}], [{"xref": 2}])
         validation = ValidationResult()
         validate_catalog_coverage(validation, manual)
 
-        # Only stats info, no warning because coverage is 0% (implies different images used)
+        # Only stats info, no warning because coverage is 0%
         assert validation.info_count == 1
         assert validation.warning_count == 0
         assert "0.0%" in validation.issues[0].message

@@ -402,9 +402,9 @@ def validate_catalog_coverage(
 ) -> None:
     """Validate that parts used in instructions are present in the catalog.
 
-    This currently uses `image_id` matching, which relies on the PDF reusing
-    the same image XObject for the same part. This is common but not guaranteed.
-    Future improvements could use image hashing or pixel comparison.
+    This uses `xref` matching, falling back to `digest` if `xref` is not available.
+    `xref` is unique within a PDF, while `digest` is a globally unique MD5 hash of
+    the image.
 
     Args:
         validation: ValidationResult to add issues to
@@ -420,31 +420,56 @@ def validate_catalog_coverage(
         for step in page.steps:
             if step.parts_list:
                 for part in step.parts_list.parts:
-                    if part.diagram and part.diagram.image_id:
+                    if part.diagram:  # Ensure there's a diagram
                         instruction_parts.append((page.pdf_page_number, part))
 
     if not instruction_parts:
         return
 
-    # 2. Collect all parts from catalog pages
-    catalog_image_ids: set[str] = set()
+    # 2. Collect all unique identifiers from catalog parts (xref or digest)
+    catalog_identifiers: set[int | bytes] = set()
     for part in manual.catalog_parts:
-        if part.diagram and part.diagram.image_id:
-            catalog_image_ids.add(part.diagram.image_id)
+        if part.diagram:
+            if part.diagram.xref is not None:
+                catalog_identifiers.add(part.diagram.xref)
+            if part.diagram.digest is not None:
+                catalog_identifiers.add(part.diagram.digest)
 
-    if not catalog_image_ids:
+    if not catalog_identifiers:
         return
 
     # 3. Check coverage
     matched_count = 0
-    unmatched_parts: list[tuple[int, str]] = []  # (page_num, image_id)
+    unmatched_parts: list[
+        tuple[int, str]
+    ] = []  # (page_num, identifier_type + id_value)
 
     for page_num, part in instruction_parts:
-        if part.diagram and part.diagram.image_id in catalog_image_ids:
-            matched_count += 1
-        else:
-            # Safe to access diagram.image_id because we filtered for it above
-            unmatched_parts.append((page_num, part.diagram.image_id))  # type: ignore[arg-type]
+        is_matched = False
+        if part.diagram:
+            if (
+                part.diagram.xref is not None
+                and part.diagram.xref in catalog_identifiers
+            ):
+                matched_count += 1
+                is_matched = True
+            elif (
+                part.diagram.digest is not None
+                and part.diagram.digest in catalog_identifiers
+            ):
+                matched_count += 1
+                is_matched = True
+
+        if not is_matched:
+            # Prepare identifier for unmatched parts
+            identifier = ""
+            if part.diagram and part.diagram.xref is not None:
+                identifier = f"xref:{part.diagram.xref}"
+            elif part.diagram and part.diagram.digest is not None:
+                identifier = f"digest:{part.diagram.digest.hex()}"
+            else:
+                identifier = "unknown_id"
+            unmatched_parts.append((page_num, identifier))
 
     # Report stats
     coverage_pct = matched_count / len(instruction_parts) * 100
@@ -455,15 +480,15 @@ def validate_catalog_coverage(
             severity=ValidationSeverity.INFO,
             rule="catalog_coverage",
             message=f"{msg_prefix}Catalog coverage: {matched_count}/{len(instruction_parts)} "
-            f"parts matched by image reference ({coverage_pct:.1f}%)",
-            details=f"Catalog has {len(catalog_image_ids)} unique images. "
+            f"parts matched ({coverage_pct:.1f}%)",
+            details=f"Catalog has {len(catalog_identifiers)} unique image identifiers. "
             f"Instructions use {len(instruction_parts)} part instances.",
         )
     )
 
     # If coverage is low but non-zero, it suggests image reuse is happening
     # but we're missing some. If coverage is 0%, maybe image reuse isn't used.
-    if 0 < coverage_pct < 80:
+    if 0 < coverage_pct < 80 and unmatched_parts:
         # Report a sample of unmatched parts
         unmatched_summary = ", ".join(
             f"p.{p} ({iid})" for p, iid in unmatched_parts[:5]
@@ -479,7 +504,7 @@ def validate_catalog_coverage(
                 severity=severity,
                 rule="missing_from_catalog",
                 message=f"{msg_prefix}{len(unmatched_parts)} instruction parts not found in catalog",
-                details=f"Unmatched image IDs: {unmatched_summary}",
+                details=f"Unmatched identifiers: {unmatched_summary}",
             )
         )
 
