@@ -29,6 +29,7 @@ class ProcessingConfig(BaseModel):
     draw_elements: bool = False
     draw_deleted: bool = False
     draw_drawings: bool = False
+    draw_unassigned: bool = False
 
     # Debug flags
     debug_classification: bool = False
@@ -65,6 +66,7 @@ class ProcessingConfig(BaseModel):
             draw_elements=args.draw_elements,
             draw_deleted=args.draw_deleted,
             draw_drawings=args.draw_drawings,
+            draw_unassigned=args.draw_unassigned,
             debug_classification=args.debug_classification,
             debug_candidates=args.debug_candidates,
             debug_candidates_label=args.debug_candidates_label,
@@ -181,6 +183,14 @@ def parse_arguments() -> argparse.Namespace:
         default=False,
         help=(
             "Draw the actual drawing paths (not just bounding boxes) on annotated images."
+        ),
+    )
+    output_group.add_argument(
+        "--draw-unassigned",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Draw bounding boxes for blocks that have no candidates (unassigned blocks)."
         ),
     )
 

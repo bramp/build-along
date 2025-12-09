@@ -311,7 +311,12 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             elapsed = time.monotonic() - start_time
             print(f"Classification finished saved: {output_path} (took {elapsed:.1f}s)")
 
-        if config.draw_blocks or config.draw_elements or config.draw_drawings:
+        if (
+            config.draw_blocks
+            or config.draw_elements
+            or config.draw_drawings
+            or config.draw_unassigned
+        ):
             render_annotated_images(
                 doc,
                 batch_result.results,
@@ -321,6 +326,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
                 draw_elements=config.draw_elements,
                 draw_deleted=config.draw_deleted,
                 draw_drawings=config.draw_drawings,
+                draw_unassigned=config.draw_unassigned,
                 debug_candidates_label=config.debug_candidates_label,
             )
 

@@ -211,6 +211,7 @@ def render_annotated_images(
     draw_elements: bool = False,
     draw_deleted: bool = False,
     draw_drawings: bool = False,
+    draw_unassigned: bool = False,
     debug_candidates_label: str | None = None,
 ) -> None:
     """Render PDF pages with annotated bounding boxes as PNG images.
@@ -224,6 +225,7 @@ def render_annotated_images(
         draw_elements: If True, render classified LEGO page elements.
         draw_deleted: If True, also render elements marked as deleted.
         draw_drawings: If True, render the actual drawing paths.
+        draw_unassigned: If True, render blocks with no candidates.
         debug_candidates_label: If provided, only render candidates with this label.
     """
     if output_dir == Path("/dev/null"):
@@ -241,5 +243,6 @@ def render_annotated_images(
             draw_elements=draw_elements,
             draw_deleted=draw_deleted,
             draw_drawings=draw_drawings,
+            draw_unassigned=draw_unassigned,
             debug_candidates_label=debug_candidates_label,
         )
