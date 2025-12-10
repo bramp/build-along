@@ -470,6 +470,50 @@ def filter_overlapping[T: HasBBox](items: list[T], target: BBox) -> list[T]:
     return [item for item in items if target.overlaps(item.bbox)]
 
 
+def filter_by_max_area[T: HasBBox](
+    items: list[T],
+    max_area: float | None = None,
+    max_ratio: float | None = None,
+    reference_bbox: BBox | None = None,
+) -> list[T]:
+    """Filter items to exclude those exceeding a maximum area.
+
+    Useful for excluding full-page backgrounds or other large elements
+    when looking for smaller UI components.
+
+    Must specify either max_area OR (max_ratio AND reference_bbox).
+
+    Args:
+        items: List of items with bbox property
+        max_area: Maximum allowed area in absolute units (e.g., square points)
+        max_ratio: Maximum allowed area as a ratio of reference_bbox area
+            (e.g., 0.5 for 50% of page size)
+        reference_bbox: Reference bbox for ratio calculation (typically page bbox)
+
+    Returns:
+        List of items with area <= threshold
+
+    Raises:
+        ValueError: If neither max_area nor (max_ratio, reference_bbox) provided
+
+    Example:
+        >>> # Filter out drawings larger than 50% of the page
+        >>> small_drawings = filter_by_max_area(
+        ...     drawings, max_ratio=0.5, reference_bbox=page_bbox
+        ... )
+    """
+    if max_area is not None:
+        threshold = max_area
+    elif max_ratio is not None and reference_bbox is not None:
+        threshold = reference_bbox.area * max_ratio
+    else:
+        raise ValueError(
+            "Must specify either max_area or (max_ratio and reference_bbox)"
+        )
+
+    return [item for item in items if item.bbox.area <= threshold]
+
+
 def group_by_similar_bbox[T: HasBBox](
     items: list[T],
     tolerance: float = 2.0,
