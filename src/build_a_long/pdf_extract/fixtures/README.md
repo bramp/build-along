@@ -132,7 +132,7 @@ pants test src/build_a_long/pdf_extract/classifier/font_size_hints_test.py -- -k
 To regenerate all existing fixture files (raw input and golden output files):
 
 ```bash
-./src/build_a_long/pdf_extract/classifier/tools/regenerate_fixtures.sh
+pants run src/build_a_long/pdf_extract/classifier/tools/regenerate_fixtures.py
 ```
 
 This script regenerates:
@@ -161,16 +161,19 @@ pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_hints.py
 ### LEGO® Sets Represented
 
 - **10237** The Lord of the Rings™ The Tower of Orthanc
+
   - 2359 pieces, released in 2013
   - **`6055739_*`** Manual 1 of 3
   - **`6055740_*`** Manual 2 of 3
   - **`6055741_*`** Manual 3 of 3
 
 - **40573** Ideas Christmas Tree
+
   - 784 pieces, released in 2022
   - **`6433200_*`** Manual 1 of 1 (pages 4, 5, 7, 31)
 
 - **75375** Star Wars™ Millennium Falcon™
+
   - 921 pieces, released in 2024
   - **`6509377_*`** Manual 1 of 1
 
