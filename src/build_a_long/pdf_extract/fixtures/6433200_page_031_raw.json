@@ -10,14 +10,15 @@
 			},
 			"blocks": [
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 34.02,
-						"y0": 16.27,
+						"y0": 21.35,
 						"x1": 63.24,
-						"y1": 48.59
+						"y1": 47.35
 					},
 					"id": 0,
-					"__tag__": "Text",
+					"draw_order": 2,
 					"text": "43",
 					"font_name": "CeraPro-Medium",
 					"font_size": 26.0,
@@ -31,35 +32,15 @@
 					]
 				},
 				{
-					"bbox": {
-						"x0": 34.02,
-						"y0": 16.27,
-						"x1": 63.24,
-						"y1": 48.59
-					},
-					"id": 1,
 					"__tag__": "Text",
-					"text": "43",
-					"font_name": "CeraPro-Medium",
-					"font_size": 26.0,
-					"font_flags": 4,
-					"color": 0,
-					"ascender": 1.0,
-					"descender": -0.24,
-					"origin": [
-						34.02,
-						42.27
-					]
-				},
-				{
 					"bbox": {
 						"x0": 529.29,
-						"y0": 471.89,
+						"y0": 473.84,
 						"x1": 538.59,
-						"y1": 484.32
+						"y1": 483.84
 					},
-					"id": 2,
-					"__tag__": "Text",
+					"id": 1,
+					"draw_order": 17,
 					"text": "31",
 					"font_name": "CeraPro-Medium",
 					"font_size": 10.0,
@@ -73,14 +54,15 @@
 					]
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 44.88,
 						"y0": 13.69,
 						"x1": 321.88,
 						"y1": 240.8
 					},
-					"id": 3,
-					"__tag__": "Image",
+					"id": 2,
+					"draw_order": 3,
 					"image_id": "image_1",
 					"width": 578,
 					"height": 474,
@@ -101,14 +83,15 @@
 					"digest": "dfcf1b849fd65e31dbd49640c85aa9ab"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 44.88,
 						"y0": 24.71,
 						"x1": 62.61,
 						"y1": 42.92
 					},
-					"id": 4,
-					"__tag__": "Image",
+					"id": 3,
+					"draw_order": 4,
 					"image_id": "image_2",
 					"width": 37,
 					"height": 38,
@@ -129,14 +112,15 @@
 					"digest": "0436b680189bc4f7238b0448b405c3fd"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 44.88,
 						"y0": 24.71,
 						"x1": 62.61,
 						"y1": 42.92
 					},
-					"id": 5,
-					"__tag__": "Image",
+					"id": 4,
+					"draw_order": 4,
 					"image_id": "image_4",
 					"width": 37,
 					"height": 38,
@@ -157,14 +141,15 @@
 					"digest": "749735a655d72c2293f2088006159d0e"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 300.64,
 						"y0": 216.26,
 						"x1": 538.41,
 						"y1": 454.02
 					},
-					"id": 6,
-					"__tag__": "Image",
+					"id": 5,
+					"draw_order": 6,
 					"image_id": "image_5",
 					"width": 496,
 					"height": 496,
@@ -185,14 +170,15 @@
 					"digest": "edf64487771b3f933f3eb3e4d031a7fa"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 301.0,
 						"y0": 216.58,
 						"x1": 321.64,
 						"y1": 240.57
 					},
-					"id": 7,
-					"__tag__": "Image",
+					"id": 6,
+					"draw_order": 7,
 					"image_id": "image_6",
 					"width": 86,
 					"height": 100,
@@ -213,14 +199,15 @@
 					"digest": "297d8afac37350fb8ca8f77ced8253c8"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": -0.59,
 						"y0": 170.04,
 						"x1": 187.73,
 						"y1": 276.5
 					},
-					"id": 8,
-					"__tag__": "Image",
+					"id": 7,
+					"draw_order": 8,
 					"image_id": "image_7",
 					"width": 393,
 					"height": 222,
@@ -241,14 +228,15 @@
 					"digest": "3444850545a4b53af7db152eebfb90e5"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 45.11,
 						"y0": 170.06,
 						"x1": 187.7,
 						"y1": 240.57
 					},
-					"id": 9,
-					"__tag__": "Image",
+					"id": 8,
+					"draw_order": 9,
 					"image_id": "image_8",
 					"width": 594,
 					"height": 294,
@@ -269,14 +257,15 @@
 					"digest": "5b9bb32edd0c78b2b748505391dd23a2"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": -0.59,
 						"y0": 240.06,
 						"x1": 182.94,
 						"y1": 275.55
 					},
-					"id": 10,
-					"__tag__": "Image",
+					"id": 9,
+					"draw_order": 10,
 					"image_id": "image_9",
 					"width": 383,
 					"height": 74,
@@ -297,14 +286,15 @@
 					"digest": "d10a6b763083d2d389927f744b6bd18d"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 181.22,
 						"y0": 182.29,
 						"x1": 182.66,
 						"y1": 240.57
 					},
-					"id": 11,
-					"__tag__": "Image",
+					"id": 10,
+					"draw_order": 11,
 					"image_id": "image_10",
 					"width": 6,
 					"height": 243,
@@ -325,14 +315,15 @@
 					"digest": "f0112b6a825030141cf1673d6dfdc965"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 177.14,
 						"y0": 171.02,
 						"x1": 186.74,
 						"y1": 183.97
 					},
-					"id": 12,
-					"__tag__": "Image",
+					"id": 11,
+					"draw_order": 12,
 					"image_id": "image_11",
 					"width": 40,
 					"height": 54,
@@ -353,14 +344,15 @@
 					"digest": "55c2b2de48fcb4c03a8a30255b3de22e"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 181.22,
 						"y0": 182.29,
 						"x1": 182.66,
 						"y1": 183.01
 					},
-					"id": 13,
-					"__tag__": "Image",
+					"id": 12,
+					"draw_order": 13,
 					"image_id": "image_12",
 					"width": 6,
 					"height": 3,
@@ -381,14 +373,15 @@
 					"digest": "8910e6fc12f07a52b796eb55fbf3edda"
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 0.0,
 						"y0": 0.0,
 						"x1": 552.76,
 						"y1": 496.06
 					},
-					"id": 14,
-					"__tag__": "Drawing",
+					"id": 13,
+					"draw_order": 0,
 					"fill_color": [
 						0.83,
 						0.93,
@@ -411,14 +404,15 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 34.48,
 						"y0": 25.11,
 						"x1": 45.35,
 						"y1": 42.55
 					},
-					"id": 15,
-					"__tag__": "Drawing",
+					"id": 14,
+					"draw_order": 1,
 					"fill_color": [
 						0.83,
 						0.93,
@@ -441,14 +435,15 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 0.0,
 						"y0": 474.1,
 						"x1": 517.74,
 						"y1": 482.59
 					},
-					"id": 16,
-					"__tag__": "Drawing",
+					"id": 15,
+					"draw_order": 14,
 					"fill_color": [
 						0.51,
 						0.64,
@@ -573,14 +568,15 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 529.5,
 						"y0": 475.29,
 						"x1": 537.59,
 						"y1": 482.0
 					},
-					"id": 17,
-					"__tag__": "Drawing",
+					"id": 16,
+					"draw_order": 16,
 					"fill_color": [
 						0.83,
 						0.93,

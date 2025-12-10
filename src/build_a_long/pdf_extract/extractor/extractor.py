@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Sequence
-from typing import Any
 
 import pymupdf
 from pydantic import BaseModel
@@ -16,16 +15,62 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 )
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
     DrawingDict,
-    ImageBlockDict,
     ImageInfoDict,
     PointLikeTuple,
-    RawDict,
     RectLikeTuple,
-    TextBlockDict,
 )
 from build_a_long.pdf_extract.utils import SerializationMixin
 
 logger = logging.getLogger("extractor")
+
+
+# Map bboxlog types to our block types (only images need bbox matching)
+BBOXLOG_IMAGE_TYPES = frozenset({"fill-image"})
+
+
+class BBoxLogTracker:
+    """Tracks bboxlog entries and matches them to blocks.
+
+    This class is used to determine the draw order of image blocks by matching
+    them to entries in PyMuPDF's get_bboxlog() output. Text and drawing blocks
+    get their draw order directly from seqno fields in get_texttrace() and
+    get_drawings() respectively.
+    """
+
+    def __init__(
+        self,
+        bboxlog: list[tuple[str, tuple[float, float, float, float]]],
+    ):
+        """Initialize with bboxlog entries.
+
+        Args:
+            bboxlog: List of (type, bbox) tuples from page.get_bboxlog()
+        """
+        # Pre-index image entries for faster lookup
+        self._image_entries: list[tuple[int, tuple[float, float, float, float]]] = []
+
+        for idx, (entry_type, bbox) in enumerate(bboxlog):
+            if entry_type in BBOXLOG_IMAGE_TYPES:
+                self._image_entries.append((idx, bbox))
+
+    def find_image_draw_order(
+        self,
+        bbox: tuple[float, float, float, float],
+        tolerance: float = 0.5,
+    ) -> int | None:
+        """Find draw order for an image by matching bbox to bboxlog entries.
+
+        Args:
+            bbox: The bounding box to match (x0, y0, x1, y1)
+            tolerance: Maximum difference allowed for bbox matching.
+
+        Returns:
+            The draw order (bboxlog index), or None if no match found
+        """
+        for idx, entry_bbox in self._image_entries:
+            if all(abs(bbox[i] - entry_bbox[i]) < tolerance for i in range(4)):
+                return idx
+        return None
 
 
 class PageData(BaseModel):
@@ -50,10 +95,6 @@ class ExtractionResult(SerializationMixin, BaseModel):
 
 class Extractor:
     """Handles extraction of elements from a single PDF page.
-
-    Each Extractor instance is bound to a single page and caches the TextPage
-    for efficient repeated extractions. The TextPage is lazily created on first
-    text extraction and reused for subsequent calls.
 
     Example usage:
         extractor = Extractor(page, page_num=1)
@@ -83,8 +124,8 @@ class Extractor:
         self._include_metadata = include_metadata
         self._next_id = 0
 
-        # Lazy-initialized cached TextPage
-        self._textpage: pymupdf.TextPage | None = None
+        # Lazy-initialized BBoxLogTracker for draw order
+        self._bboxlog_tracker: BBoxLogTracker | None = None
 
     @property
     def page(self) -> pymupdf.Page:
@@ -96,17 +137,18 @@ class Extractor:
         """The 1-indexed page number."""
         return self._page_num
 
-    def _get_textpage(self) -> pymupdf.TextPage:
-        """Get or create the cached TextPage.
+    def _get_bboxlog_tracker(self) -> BBoxLogTracker:
+        """Get or create the cached BBoxLogTracker.
 
-        TextPage creation is expensive, so we cache it for reuse across
-        multiple text extractions. This can provide 50-95% speedup when
-        extracting text multiple times from the same page.
+        The tracker is lazily created on first use and cached for reuse
+        across multiple block extractions.
         """
-        if self._textpage is None:
-            self._textpage = self._page.get_textpage()
-        return self._textpage
+        if self._bboxlog_tracker is None:
+            bboxlog = self._page.get_bboxlog()
+            self._bboxlog_tracker = BBoxLogTracker(bboxlog)
+        return self._bboxlog_tracker
 
+    # TODO Maybe the ID should be based on the draw_order (which is also unique)
     def _get_next_id(self) -> int:
         """Get the next sequential ID and increment the counter."""
         current_id = self._next_id
@@ -120,78 +162,83 @@ class Extractor:
         """
         self._next_id = 0
 
-    def _extract_text_blocks(
-        self, blocks: list[TextBlockDict | ImageBlockDict]
-    ) -> list[Text]:
-        """Extract text blocks from a page's dictionary blocks.
+    def _extract_text_blocks_from_texttrace(self, texttrace: list[dict]) -> list[Text]:
+        """Extract text blocks from texttrace spans.
+
+        Uses get_texttrace() which provides text in render order with seqno
+        that directly corresponds to bboxlog index for draw_order.
 
         Args:
-            blocks: List of block dictionaries from page.get_text("dict")["blocks"]
+            texttrace: List of span dicts from page.get_texttrace()
 
         Returns:
             List of Text blocks with assigned IDs
         """
         text_blocks: list[Text] = []
 
-        for b in blocks:
-            assert isinstance(b, dict)
-
-            bi: int | None = b.get("number")
-            btype: int | None = b.get("type")  # 0=text, 1=image
-
-            if btype != 0:  # Skip non-text blocks
+        for span in texttrace:
+            bbox = span.get("bbox")
+            if not bbox:
                 continue
 
-            # Now we know b is a text block
-            text_block: TextBlockDict = b  # type: ignore[assignment]
+            nbbox = BBox.from_tuple(bbox)
 
-            for line in text_block.get("lines", []):
-                for span in line.get("spans", []):
-                    sbbox: RectLikeTuple = span.get("bbox", (0.0, 0.0, 0.0, 0.0))
-                    nbbox = BBox.from_tuple(sbbox)
+            # Assemble text from chars array
+            # Each char is (unicode, glyph_id, origin, bbox)
+            chars = span.get("chars", [])
+            text = "".join(chr(c[0]) for c in chars)
 
-                    text: str = span.get("text", "")
+            font_size: float | None = span.get("size")
+            font_name: str | None = span.get("font")
 
-                    font_size: float | None = span.get("size", None)
-                    font_name: str | None = span.get("font", None)
+            # seqno directly gives us the draw_order (bboxlog index)
+            draw_order = span.get("seqno")
 
-                    # Extract additional metadata if requested
-                    font_flags: int | None = None
-                    color: int | None = None
-                    ascender: float | None = None
-                    descender: float | None = None
-                    origin: PointLikeTuple | None = None
+            # Extract additional metadata if requested
+            font_flags: int | None = None
+            color: int | None = None
+            ascender: float | None = None
+            descender: float | None = None
+            origin: PointLikeTuple | None = None
 
-                    if self._include_metadata:
-                        font_flags = span.get("flags")
-                        color = span.get("color")
-                        ascender = span.get("ascender")
-                        descender = span.get("descender")
-                        origin = span.get("origin")
+            if self._include_metadata:
+                font_flags = span.get("flags")
+                # texttrace returns color as RGB tuple (0-1 range)
+                # Convert to int like get_text("dict") does
+                raw_color = span.get("color")
+                if isinstance(raw_color, tuple) and len(raw_color) >= 3:
+                    r, g, b = raw_color[:3]
+                    color = (int(r * 255) << 16) | (int(g * 255) << 8) | int(b * 255)
+                ascender = span.get("ascender")
+                descender = span.get("descender")
+                # Get origin from first char if available
+                if chars:
+                    origin = chars[0][2]  # origin is 3rd element of char tuple
 
-                    logger.debug(
-                        "Found text %s %r with bbox %s, font %s, size %s",
-                        bi,
-                        text,
-                        nbbox,
-                        font_name,
-                        font_size,
-                    )
+            logger.debug(
+                "Found text %r with bbox %s, font %s, size %s, draw_order %s",
+                text,
+                nbbox,
+                font_name,
+                font_size,
+                draw_order,
+            )
 
-                    text_blocks.append(
-                        Text(
-                            bbox=nbbox,
-                            text=text,
-                            font_name=font_name,
-                            font_size=font_size,
-                            font_flags=font_flags,
-                            color=color,
-                            ascender=ascender,
-                            descender=descender,
-                            origin=origin,
-                            id=self._get_next_id(),
-                        )
-                    )
+            text_blocks.append(
+                Text(
+                    id=self._get_next_id(),
+                    bbox=nbbox,
+                    draw_order=draw_order,
+                    text=text,
+                    font_name=font_name,
+                    font_size=font_size,
+                    font_flags=font_flags,
+                    color=color,
+                    ascender=ascender,
+                    descender=descender,
+                    origin=origin,
+                )
+            )
 
         return text_blocks
 
@@ -207,6 +254,7 @@ class Extractor:
             List of Image blocks with assigned IDs
         """
         image_blocks: list[Image] = []
+        tracker = self._get_bboxlog_tracker()
 
         # Use get_image_info with xrefs=True to get xref and digest (MD5 hash)
         # This is more comprehensive than extracting from rawdict
@@ -215,6 +263,11 @@ class Extractor:
         for img_info in image_infos:
             bbox: RectLikeTuple = img_info.get("bbox", (0.0, 0.0, 0.0, 0.0))
             nbbox = BBox.from_tuple(bbox)
+
+            bi = img_info.get("number")
+
+            # Find draw order by matching bbox
+            draw_order = tracker.find_image_draw_order(bbox)
 
             # Get the xref - 0 means inline image (no xref)
             xref: int | None = img_info.get("xref")
@@ -247,8 +300,6 @@ class Extractor:
                 transform = img_info.get("transform")
                 digest = img_info.get("digest")
 
-            bi = img_info.get("number")
-
             image_blocks.append(
                 Image(
                     bbox=nbbox,
@@ -265,9 +316,16 @@ class Extractor:
                     smask=smask,
                     digest=digest,
                     id=self._get_next_id(),
+                    draw_order=draw_order,
                 )
             )
-            logger.debug("Found image %s with %s, xref=%s", bi, nbbox, xref)
+            logger.debug(
+                "Found image %s with %s, xref=%s, draw_order=%s",
+                bi,
+                nbbox,
+                xref,
+                draw_order,
+            )
 
         # Now get smask info from page.get_images() and update the image blocks
         # page.get_images() returns: (xref, smask, width, height, bpc, colorspace, ...)
@@ -484,6 +542,9 @@ class Extractor:
                     visible_bbox,
                 )
 
+            # Get draw order directly from seqno (corresponds to bboxlog index)
+            draw_order = d.get("seqno")
+
             drawing_blocks.append(
                 Drawing(
                     bbox=visible_bbox if visible_bbox else nbbox,
@@ -500,56 +561,33 @@ class Extractor:
                     if visible_bbox and visible_bbox != nbbox
                     else None,
                     id=self._get_next_id(),
+                    draw_order=draw_order,
                 )
             )
             logger.debug(
-                "Found drawing with bbox=%s, visible_bbox=%s", nbbox, visible_bbox
+                "Found drawing with bbox=%s, visible_bbox=%s, draw_order=%s",
+                nbbox,
+                visible_bbox,
+                draw_order,
             )
 
         return drawing_blocks
 
-    def _warn_unknown_block_types(self, blocks: list[Any]) -> bool:
-        """Log warnings for blocks with unsupported types.
-
-        Args:
-            blocks: List of block dictionaries from page.get_text("rawdict")["blocks"]
-
-        Returns:
-            True if all blocks are valid types, False if any unknown types were found
-        """
-        for b in blocks:
-            assert isinstance(b, dict)
-            bi: int | None = b.get("number")
-            btype: int | None = b.get("type")  # 0=text, 1=image
-
-            if btype not in (0, 1):
-                logger.warning(
-                    "Skipping block with unsupported type %s at index %s", btype, bi
-                )
-                return False
-        return True
-
     def extract_text_blocks(self) -> list[Text]:
         """Extract text blocks from the page.
 
-        Uses the cached TextPage for efficiency. Multiple calls will reuse
-        the same TextPage.
+        Uses get_texttrace() which provides text in render order with seqno
+        for direct draw_order mapping.
 
         Returns:
             List of Text blocks with assigned IDs
         """
-        # Get dictionary with text blocks using cached TextPage
-        # Using "dict" instead of "rawdict" - dict is faster and provides
-        # pre-assembled text in spans (no char-level detail needed)
-        textpage = self._get_textpage()
-        raw: RawDict = self._page.get_text("dict", textpage=textpage)  # type: ignore[assignment]
-        assert isinstance(raw, dict), (
-            f"Expected dict to be a dictionary but got {type(raw)}"
-        )
-
-        blocks = raw.get("blocks", [])
-        assert self._warn_unknown_block_types(blocks)
-        return self._extract_text_blocks(blocks)
+        # Use get_texttrace() for text extraction - it provides:
+        # - Text in render order (not reading order)
+        # - seqno field that directly maps to bboxlog index for draw_order
+        # - All font/style information we need
+        texttrace = self._page.get_texttrace()
+        return self._extract_text_blocks_from_texttrace(texttrace)
 
     def extract_page_data(
         self,
@@ -629,7 +667,7 @@ def extract_page_data(
             continue
         page = doc[page_index]
 
-        # Create Extractor for this page - it handles TextPage caching internally
+        # Create Extractor for this page
         extractor = Extractor(
             page=page,
             page_num=page_num,

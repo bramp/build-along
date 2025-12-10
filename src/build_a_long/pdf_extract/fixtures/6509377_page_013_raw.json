@@ -10,14 +10,15 @@
 			},
 			"blocks": [
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 74.3,
-						"y0": 41.56,
+						"y0": 43.14,
 						"x1": 82.87,
-						"y1": 51.53
+						"y1": 51.14
 					},
 					"id": 0,
-					"__tag__": "Text",
+					"draw_order": 7,
 					"text": "4x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -31,14 +32,15 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 123.52,
-						"y0": 41.56,
+						"y0": 43.14,
 						"x1": 132.1,
-						"y1": 51.53
+						"y1": 51.14
 					},
 					"id": 1,
-					"__tag__": "Text",
+					"draw_order": 11,
 					"text": "4x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -52,14 +54,15 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 34.02,
-						"y0": 64.51,
+						"y0": 69.64,
 						"x1": 60.2,
-						"y1": 96.9
+						"y1": 95.64
 					},
 					"id": 2,
-					"__tag__": "Text",
+					"draw_order": 14,
 					"text": "10",
 					"font_name": "CeraPro-Light",
 					"font_size": 26.0,
@@ -73,19 +76,20 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 454.77,
-						"y0": 351.67,
+						"y0": 354.82,
 						"x1": 472.24,
-						"y1": 371.6
+						"y1": 370.82
 					},
 					"id": 3,
-					"__tag__": "Text",
+					"draw_order": 27,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578774,
+					"color": 1578517,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -94,19 +98,20 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 454.77,
-						"y0": 351.67,
+						"y0": 354.82,
 						"x1": 472.24,
-						"y1": 371.6
+						"y1": 370.82
 					},
 					"id": 4,
-					"__tag__": "Text",
+					"draw_order": 29,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578774,
+					"color": 1578517,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -115,19 +120,20 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 328.16,
-						"y0": 105.93,
+						"y0": 109.08,
 						"x1": 345.64,
-						"y1": 125.86
+						"y1": 125.08
 					},
 					"id": 5,
-					"__tag__": "Text",
+					"draw_order": 43,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578774,
+					"color": 1578517,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -136,19 +142,20 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 328.16,
-						"y0": 105.93,
+						"y0": 109.08,
 						"x1": 345.64,
-						"y1": 125.86
+						"y1": 125.08
 					},
 					"id": 6,
-					"__tag__": "Text",
+					"draw_order": 45,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578774,
+					"color": 1578517,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -157,14 +164,15 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 529.7,
-						"y0": 471.89,
+						"y0": 473.86,
 						"x1": 538.59,
-						"y1": 484.35
+						"y1": 483.86
 					},
 					"id": 7,
-					"__tag__": "Text",
+					"draw_order": 50,
 					"text": "13",
 					"font_name": "CeraPro-Light",
 					"font_size": 10.0,
@@ -178,6 +186,7 @@
 					]
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 194.17,
 						"y0": 222.24,
@@ -185,7 +194,7 @@
 						"y1": 314.64
 					},
 					"id": 8,
-					"__tag__": "Image",
+					"draw_order": 1,
 					"image_id": "image_0",
 					"width": 270,
 					"height": 193,
@@ -206,6 +215,7 @@
 					"digest": "19f0b3a98f6ee2c9743044d535a5ee82"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 73.82,
 						"y0": 28.42,
@@ -213,7 +223,7 @@
 						"y1": 42.56
 					},
 					"id": 9,
-					"__tag__": "Image",
+					"draw_order": 4,
 					"image_id": "image_1",
 					"width": 46,
 					"height": 30,
@@ -234,6 +244,7 @@
 					"digest": "724f49f901ecd9c7327cb67e08fa9f05"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 123.05,
 						"y0": 26.02,
@@ -241,7 +252,7 @@
 						"y1": 42.57
 					},
 					"id": 10,
-					"__tag__": "Image",
+					"draw_order": 8,
 					"image_id": "image_3",
 					"width": 51,
 					"height": 35,
@@ -262,6 +273,7 @@
 					"digest": "4beed6196893915c9b0bdc24f995de8f"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 215.43,
 						"y0": 229.4,
@@ -269,7 +281,7 @@
 						"y1": 348.92
 					},
 					"id": 11,
-					"__tag__": "Image",
+					"draw_order": 17,
 					"image_id": "image_6",
 					"width": 382,
 					"height": 249,
@@ -290,6 +302,7 @@
 					"digest": "90e7ca5c3a2c16c883f4424d91d7b41e"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 215.49,
 						"y0": 229.44,
@@ -297,7 +310,7 @@
 						"y1": 314.4
 					},
 					"id": 12,
-					"__tag__": "Image",
+					"draw_order": 18,
 					"image_id": "image_7",
 					"width": 449,
 					"height": 354,
@@ -318,6 +331,7 @@
 					"digest": "a4ba439ad919e1fcb42ae94951f25aa5"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 354.38,
 						"y0": 317.24,
@@ -325,7 +339,7 @@
 						"y1": 348.92
 					},
 					"id": 13,
-					"__tag__": "Image",
+					"draw_order": 19,
 					"image_id": "image_8",
 					"width": 92,
 					"height": 66,
@@ -346,6 +360,7 @@
 					"digest": "6ccc16dc7c3a0d4862493246e404d14d"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 363.66,
 						"y0": 326.63,
@@ -353,7 +368,7 @@
 						"y1": 368.14
 					},
 					"id": 14,
-					"__tag__": "Image",
+					"draw_order": 24,
 					"image_id": "image_9",
 					"width": 180,
 					"height": 87,
@@ -374,6 +389,7 @@
 					"digest": "855c4a419aefe0c164589ac57bfcfccd"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 241.52,
 						"y0": 130.83,
@@ -381,7 +397,7 @@
 						"y1": 222.99
 					},
 					"id": 15,
-					"__tag__": "Image",
+					"draw_order": 32,
 					"image_id": "image_11",
 					"width": 108,
 					"height": 192,
@@ -402,6 +418,7 @@
 					"digest": "78fc0ba00936c6e87f0ab54b62834be4"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 241.84,
 						"y0": 222.48,
@@ -409,7 +426,7 @@
 						"y1": 229.92
 					},
 					"id": 16,
-					"__tag__": "Image",
+					"draw_order": 33,
 					"image_id": "image_12",
 					"width": 213,
 					"height": 31,
@@ -430,6 +447,7 @@
 					"digest": "0355a86722d3232a29fff2e07b3f0ff4"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 241.84,
 						"y0": 229.44,
@@ -437,7 +455,7 @@
 						"y1": 275.28
 					},
 					"id": 17,
-					"__tag__": "Image",
+					"draw_order": 34,
 					"image_id": "image_13",
 					"width": 213,
 					"height": 191,
@@ -458,6 +476,7 @@
 					"digest": "45c9ff7eedae1a4068274795ff3f9557"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 241.52,
 						"y0": 129.87,
@@ -465,7 +484,7 @@
 						"y1": 131.79
 					},
 					"id": 18,
-					"__tag__": "Image",
+					"draw_order": 35,
 					"image_id": "image_14",
 					"width": 108,
 					"height": 4,
@@ -486,6 +505,7 @@
 					"digest": "5cb6bdb56e411020faab9553755f6131"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 227.8,
 						"y0": 80.89,
@@ -493,7 +513,7 @@
 						"y1": 122.4
 					},
 					"id": 19,
-					"__tag__": "Image",
+					"draw_order": 40,
 					"image_id": "image_15",
 					"width": 200,
 					"height": 87,
@@ -514,6 +534,7 @@
 					"digest": "78c2c186b94df0b5f722c13bb45c1da1"
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 0.0,
 						"y0": 0.0,
@@ -521,7 +542,7 @@
 						"y1": 496.06
 					},
 					"id": 20,
-					"__tag__": "Drawing",
+					"draw_order": 0,
 					"fill_color": [
 						0.54,
 						0.56,
@@ -544,6 +565,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 34.52,
 						"y0": 14.67,
@@ -551,7 +573,7 @@
 						"y1": 61.91
 					},
 					"id": 21,
-					"__tag__": "Drawing",
+					"draw_order": 2,
 					"fill_color": [
 						0.54,
 						0.56,
@@ -574,6 +596,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 34.52,
 						"y0": 14.67,
@@ -581,7 +604,7 @@
 						"y1": 61.91
 					},
 					"id": 22,
-					"__tag__": "Drawing",
+					"draw_order": 3,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -605,6 +628,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 74.49,
 						"y0": 44.28,
@@ -612,7 +636,7 @@
 						"y1": 49.56
 					},
 					"id": 23,
-					"__tag__": "Drawing",
+					"draw_order": 5,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -791,6 +815,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 79.24,
 						"y0": 45.69,
@@ -798,7 +823,7 @@
 						"y1": 49.56
 					},
 					"id": 24,
-					"__tag__": "Drawing",
+					"draw_order": 6,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -944,6 +969,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 123.72,
 						"y0": 44.28,
@@ -951,7 +977,7 @@
 						"y1": 49.56
 					},
 					"id": 25,
-					"__tag__": "Drawing",
+					"draw_order": 9,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -1130,6 +1156,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 128.47,
 						"y0": 45.69,
@@ -1137,7 +1164,7 @@
 						"y1": 49.56
 					},
 					"id": 26,
-					"__tag__": "Drawing",
+					"draw_order": 10,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -1283,6 +1310,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 34.95,
 						"y0": 73.35,
@@ -1290,7 +1318,7 @@
 						"y1": 90.51
 					},
 					"id": 27,
-					"__tag__": "Drawing",
+					"draw_order": 12,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -1381,6 +1409,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 46.26,
 						"y0": 73.09,
@@ -1388,7 +1417,7 @@
 						"y1": 90.77
 					},
 					"id": 28,
-					"__tag__": "Drawing",
+					"draw_order": 13,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -1554,6 +1583,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 355.63,
 						"y0": 318.6,
@@ -1561,7 +1591,7 @@
 						"y1": 376.17
 					},
 					"id": 29,
-					"__tag__": "Drawing",
+					"draw_order": 15,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -1584,6 +1614,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 354.88,
 						"y0": 317.85,
@@ -1591,7 +1622,7 @@
 						"y1": 376.92
 					},
 					"id": 30,
-					"__tag__": "Drawing",
+					"draw_order": 16,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -1725,6 +1756,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 220.68,
 						"y0": 234.62,
@@ -1732,7 +1764,7 @@
 						"y1": 347.39
 					},
 					"id": 31,
-					"__tag__": "Drawing",
+					"draw_order": 20,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -1877,6 +1909,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 216.63,
 						"y0": 298.35,
@@ -1884,7 +1917,7 @@
 						"y1": 310.85
 					},
 					"id": 32,
-					"__tag__": "Drawing",
+					"draw_order": 21,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -1941,6 +1974,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 311.17,
 						"y0": 230.57,
@@ -1948,7 +1982,7 @@
 						"y1": 239.68
 					},
 					"id": 33,
-					"__tag__": "Drawing",
+					"draw_order": 22,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -2005,6 +2039,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 355.63,
 						"y0": 318.6,
@@ -2012,7 +2047,7 @@
 						"y1": 376.17
 					},
 					"id": 34,
-					"__tag__": "Drawing",
+					"draw_order": 23,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -2035,6 +2070,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 455.44,
 						"y0": 356.84,
@@ -2042,7 +2078,7 @@
 						"y1": 367.77
 					},
 					"id": 35,
-					"__tag__": "Drawing",
+					"draw_order": 25,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -2335,6 +2371,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 455.54,
 						"y0": 356.95,
@@ -2342,7 +2379,7 @@
 						"y1": 367.67
 					},
 					"id": 36,
-					"__tag__": "Drawing",
+					"draw_order": 26,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -2371,6 +2408,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 455.54,
 						"y0": 356.95,
@@ -2378,7 +2416,7 @@
 						"y1": 367.67
 					},
 					"id": 37,
-					"__tag__": "Drawing",
+					"draw_order": 28,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -2407,6 +2445,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 219.78,
 						"y0": 72.86,
@@ -2414,7 +2453,7 @@
 						"y1": 130.43
 					},
 					"id": 38,
-					"__tag__": "Drawing",
+					"draw_order": 30,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -2437,6 +2476,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 219.03,
 						"y0": 72.11,
@@ -2444,7 +2484,7 @@
 						"y1": 131.18
 					},
 					"id": 39,
-					"__tag__": "Drawing",
+					"draw_order": 31,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -2600,6 +2640,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 247.17,
 						"y0": 91.56,
@@ -2607,7 +2648,7 @@
 						"y1": 262.8
 					},
 					"id": 40,
-					"__tag__": "Drawing",
+					"draw_order": 36,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -2696,6 +2737,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 243.12,
 						"y0": 261.6,
@@ -2703,7 +2745,7 @@
 						"y1": 274.11
 					},
 					"id": 41,
-					"__tag__": "Drawing",
+					"draw_order": 37,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -2760,6 +2802,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 282.52,
 						"y0": 209.87,
@@ -2767,7 +2810,7 @@
 						"y1": 222.38
 					},
 					"id": 42,
-					"__tag__": "Drawing",
+					"draw_order": 38,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -2824,6 +2867,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 219.78,
 						"y0": 72.86,
@@ -2831,7 +2875,7 @@
 						"y1": 130.43
 					},
 					"id": 43,
-					"__tag__": "Drawing",
+					"draw_order": 39,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -2854,6 +2898,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 328.83,
 						"y0": 111.1,
@@ -2861,7 +2906,7 @@
 						"y1": 122.03
 					},
 					"id": 44,
-					"__tag__": "Drawing",
+					"draw_order": 41,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -3154,6 +3199,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 328.93,
 						"y0": 111.21,
@@ -3161,7 +3207,7 @@
 						"y1": 121.93
 					},
 					"id": 45,
-					"__tag__": "Drawing",
+					"draw_order": 42,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -3190,6 +3236,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 328.93,
 						"y0": 111.21,
@@ -3197,7 +3244,7 @@
 						"y1": 121.93
 					},
 					"id": 46,
-					"__tag__": "Drawing",
+					"draw_order": 44,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -3226,6 +3273,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 0.0,
 						"y0": 474.1,
@@ -3233,7 +3281,7 @@
 						"y1": 482.59
 					},
 					"id": 47,
-					"__tag__": "Drawing",
+					"draw_order": 46,
 					"fill_color": [
 						0.74,
 						0.76,
@@ -3358,6 +3406,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 530.06,
 						"y0": 475.29,
@@ -3365,7 +3414,7 @@
 						"y1": 481.89
 					},
 					"id": 48,
-					"__tag__": "Drawing",
+					"draw_order": 48,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -3456,6 +3505,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 533.58,
 						"y0": 475.29,
@@ -3463,7 +3513,7 @@
 						"y1": 481.99
 					},
 					"id": 49,
-					"__tag__": "Drawing",
+					"draw_order": 49,
 					"stroke_color": [
 						1.0,
 						1.0,

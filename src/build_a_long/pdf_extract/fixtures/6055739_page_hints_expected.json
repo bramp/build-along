@@ -389,10 +389,10 @@
       "confidences": {
         "catalog": 0.0,
         "info": 0.0,
-        "instruction": 0.7
+        "instruction": 0.6
       },
       "page_number": 41,
-      "part_count_count": 6,
+      "part_count_count": 5,
       "part_number_count": 0,
       "step_number_count": 0
     },
@@ -513,7 +513,7 @@
         "instruction": 0.7
       },
       "page_number": 51,
-      "part_count_count": 10,
+      "part_count_count": 7,
       "part_number_count": 0,
       "step_number_count": 0
     },
@@ -601,7 +601,7 @@
         "instruction": 0.7
       },
       "page_number": 59,
-      "part_count_count": 14,
+      "part_count_count": 13,
       "part_number_count": 0,
       "step_number_count": 0
     },
@@ -634,7 +634,7 @@
         "instruction": 0.7
       },
       "page_number": 61,
-      "part_count_count": 14,
+      "part_count_count": 13,
       "part_number_count": 0,
       "step_number_count": 0
     },
@@ -700,9 +700,9 @@
         "instruction": 0.9
       },
       "page_number": 67,
-      "part_count_count": 12,
+      "part_count_count": 11,
       "part_number_count": 0,
-      "step_number_count": 2
+      "step_number_count": 1
     },
     "68": {
       "confidences": {

@@ -799,7 +799,7 @@
         "instruction": 0.6
       },
       "page_number": 63,
-      "part_count_count": 5,
+      "part_count_count": 3,
       "part_number_count": 0,
       "step_number_count": 0
     },
@@ -1137,10 +1137,10 @@
       "confidences": {
         "catalog": 0.0,
         "info": 0.0,
-        "instruction": 0.7
+        "instruction": 0.6
       },
       "page_number": 91,
-      "part_count_count": 6,
+      "part_count_count": 4,
       "part_number_count": 0,
       "step_number_count": 0
     },
@@ -1162,7 +1162,7 @@
         "instruction": 0.6
       },
       "page_number": 93,
-      "part_count_count": 5,
+      "part_count_count": 3,
       "part_number_count": 0,
       "step_number_count": 0
     },

@@ -55,6 +55,15 @@ class Block(SerializationMixin, BaseModel, ABC):
     id: int
     """Unique block ID assigned by the Extractor."""
 
+    draw_order: int | None = None
+    """Index in the PDF's rendering order from get_bboxlog().
+
+    This represents when this block was drawn relative to other blocks on the page.
+    Lower values mean the block was drawn earlier (further back in z-order).
+    None means the draw order could not be determined (e.g., block not found
+    in bboxlog).
+    """
+
 
 class Drawing(Block):
     """A vector drawing block on the page.

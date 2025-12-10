@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import cast
 from unittest.mock import MagicMock
 
 import pymupdf
@@ -15,29 +15,36 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 from build_a_long.pdf_extract.extractor.pymupdf_types import DrawingDict
 
 
+def make_texttrace_span(
+    text: str,
+    bbox: tuple[float, float, float, float],
+    seqno: int,
+    font: str = "Arial",
+    size: float = 12.0,
+) -> dict:
+    """Helper to create a texttrace span dict for testing."""
+    # Each char is (unicode, glyph_id, origin, bbox)
+    chars = [(ord(c), i, (bbox[0], bbox[3] - 5), bbox) for i, c in enumerate(text)]
+    return {
+        "bbox": bbox,
+        "font": font,
+        "size": size,
+        "seqno": seqno,
+        "chars": chars,
+    }
+
+
 class TestBoundingBoxExtractor:
     def test_extract_page_data_basic(self):
-        # Build a fake document with 1 page and simple rawdict content
+        # Build a fake document with 1 page and simple texttrace content
         fake_page = MagicMock()
-        fake_page.get_text.return_value = {
-            "blocks": [
-                {  # text block representing a numeric instruction number
-                    "type": 0,
-                    "bbox": [10, 20, 30, 40],
-                    "lines": [
-                        {
-                            "spans": [
-                                {"text": "1", "bbox": [10, 20, 30, 40]},
-                            ]
-                        }
-                    ],
-                },
-                {  # image block - ignored by get_text, handled by get_image_info
-                    "type": 1,
-                    "bbox": [50, 60, 150, 200],
-                },
-            ]
-        }
+        fake_page.get_texttrace.return_value = [
+            make_texttrace_span("1", (10.0, 20.0, 30.0, 40.0), seqno=0),
+        ]
+        fake_page.get_bboxlog.return_value = [
+            ("fill-text", (10.0, 20.0, 30.0, 40.0)),
+            ("fill-image", (50.0, 60.0, 150.0, 200.0)),
+        ]
         fake_page.get_drawings.return_value = []
         # Mock get_image_info for the new image extraction approach
         fake_page.get_image_info.return_value = [
@@ -88,21 +95,12 @@ class TestBoundingBoxExtractor:
     def test_extract_page_data_with_output(self):
         """Test that extractor does NOT write images/json (that's in main.py now)."""
         mock_page = MagicMock()
-        mock_page.get_text.return_value = {
-            "blocks": [
-                {
-                    "type": 0,
-                    "bbox": [10, 20, 30, 40],
-                    "lines": [
-                        {
-                            "spans": [
-                                {"text": "1", "bbox": [10, 20, 30, 40]},
-                            ]
-                        }
-                    ],
-                }
-            ]
-        }
+        mock_page.get_texttrace.return_value = [
+            make_texttrace_span("1", (10.0, 20.0, 30.0, 40.0), seqno=0),
+        ]
+        mock_page.get_bboxlog.return_value = [
+            ("fill-text", (10.0, 20.0, 30.0, 40.0)),
+        ]
         mock_page.get_drawings.return_value = []
         mock_page.get_image_info.return_value = []  # No images
         mock_page.get_images.return_value = []
@@ -125,24 +123,24 @@ class TestBoundingBoxExtractor:
     def test_extract_text_blocks(self):
         """Test that regular text is extracted as Text elements with content."""
         mock_page = MagicMock()
-        mock_page.get_text.return_value = {
-            "blocks": [
-                {
-                    "type": 0,
-                    "bbox": [10, 20, 100, 40],
-                    "lines": [
-                        {
-                            "spans": [
-                                {
-                                    "text": "Build Step Instructions",
-                                    "bbox": [10, 20, 100, 40],
-                                },
-                            ]
-                        }
-                    ],
-                }
-            ]
-        }
+        # Convert "Build Step Instructions" to chars
+        text = "Build Step Instructions"
+        chars = [
+            (ord(c), i, (10.0 + i * 4, 35.0), (10.0 + i * 4, 20.0, 14.0 + i * 4, 40.0))
+            for i, c in enumerate(text)
+        ]
+        mock_page.get_texttrace.return_value = [
+            {
+                "bbox": (10.0, 20.0, 100.0, 40.0),
+                "font": "Arial",
+                "size": 12.0,
+                "seqno": 0,
+                "chars": chars,
+            },
+        ]
+        mock_page.get_bboxlog.return_value = [
+            ("fill-text", (10.0, 20.0, 100.0, 40.0)),
+        ]
         mock_page.get_drawings.return_value = []
         mock_page.get_image_info.return_value = []  # No images
         mock_page.get_images.return_value = []
@@ -166,28 +164,19 @@ class TestBoundingBoxExtractor:
     def test_sequential_id_assignment(self):
         """Test that IDs are assigned sequentially within a page."""
         mock_page = MagicMock()
-        mock_page.get_text.return_value = {
-            "blocks": [
-                {
-                    "type": 0,
-                    "bbox": [10, 20, 30, 40],
-                    "lines": [
-                        {
-                            "spans": [
-                                {"text": "First", "bbox": [10, 20, 30, 40]},
-                                {"text": "Second", "bbox": [35, 20, 55, 40]},
-                            ]
-                        }
-                    ],
-                },
-                {
-                    "type": 1,
-                    "bbox": [50, 60, 150, 200],
-                },
-            ]
-        }
+        # Two text spans in texttrace
+        mock_page.get_texttrace.return_value = [
+            make_texttrace_span("First", (10.0, 20.0, 30.0, 40.0), seqno=0),
+            make_texttrace_span("Second", (35.0, 20.0, 55.0, 40.0), seqno=1),
+        ]
+        mock_page.get_bboxlog.return_value = [
+            ("fill-text", (10.0, 20.0, 30.0, 40.0)),
+            ("fill-text", (35.0, 20.0, 55.0, 40.0)),
+            ("fill-image", (50.0, 60.0, 150.0, 200.0)),
+            ("fill-path", (100.0, 100.0, 200.0, 200.0)),
+        ]
         mock_page.get_drawings.return_value = [
-            {"rect": pymupdf.Rect(100, 100, 200, 200)},
+            {"rect": pymupdf.Rect(100, 100, 200, 200), "seqno": 3},
         ]
         # Mock get_image_info for the new image extraction approach
         mock_page.get_image_info.return_value = [
@@ -230,42 +219,24 @@ class TestBoundingBoxExtractor:
     def test_id_reset_across_pages(self):
         """Test that IDs reset to 0 for each new page."""
         mock_page1 = MagicMock()
-        mock_page1.get_text.return_value = {
-            "blocks": [
-                {
-                    "type": 0,
-                    "bbox": [10, 20, 30, 40],
-                    "lines": [
-                        {
-                            "spans": [
-                                {"text": "Page 1", "bbox": [10, 20, 30, 40]},
-                            ]
-                        }
-                    ],
-                }
-            ]
-        }
+        mock_page1.get_texttrace.return_value = [
+            make_texttrace_span("Page 1", (10.0, 20.0, 30.0, 40.0), seqno=0),
+        ]
+        mock_page1.get_bboxlog.return_value = [
+            ("fill-text", (10.0, 20.0, 30.0, 40.0)),
+        ]
         mock_page1.get_drawings.return_value = []
         mock_page1.get_image_info.return_value = []  # No images
         mock_page1.get_images.return_value = []
         mock_page1.rect = MagicMock(x0=0, y0=0, x1=612, y1=792)
 
         mock_page2 = MagicMock()
-        mock_page2.get_text.return_value = {
-            "blocks": [
-                {
-                    "type": 0,
-                    "bbox": [10, 20, 30, 40],
-                    "lines": [
-                        {
-                            "spans": [
-                                {"text": "Page 2", "bbox": [10, 20, 30, 40]},
-                            ]
-                        }
-                    ],
-                }
-            ]
-        }
+        mock_page2.get_texttrace.return_value = [
+            make_texttrace_span("Page 2", (10.0, 20.0, 30.0, 40.0), seqno=0),
+        ]
+        mock_page2.get_bboxlog.return_value = [
+            ("fill-text", (10.0, 20.0, 30.0, 40.0)),
+        ]
         mock_page2.get_drawings.return_value = []
         mock_page2.get_image_info.return_value = []  # No images
         mock_page2.get_images.return_value = []
@@ -304,22 +275,12 @@ class TestExtractor:
         mock_page = MagicMock()
         extractor = Extractor(page=mock_page, page_num=1)
 
-        blocks: list[Any] = [
-            {
-                "type": 0,
-                "number": 1,
-                "lines": [
-                    {
-                        "spans": [
-                            {"text": "Hello", "bbox": [10.0, 20.0, 30.0, 40.0]},
-                            {"text": "World", "bbox": [35.0, 20.0, 55.0, 40.0]},
-                        ]
-                    }
-                ],
-            },
+        texttrace = [
+            make_texttrace_span("Hello", (10.0, 20.0, 30.0, 40.0), seqno=0),
+            make_texttrace_span("World", (35.0, 20.0, 55.0, 40.0), seqno=1),
         ]
 
-        result = extractor._extract_text_blocks(blocks)
+        result = extractor._extract_text_blocks_from_texttrace(texttrace)
 
         assert len(result) == 2
         assert result[0].id == 0
@@ -327,11 +288,6 @@ class TestExtractor:
 
     def test_extractor_ids_across_types(self):
         """Test that IDs increment across different element types."""
-        rect = MagicMock()
-        rect.x0 = 10.0
-        rect.y0 = 20.0
-        rect.x1 = 30.0
-        rect.y1 = 40.0
         drawings = cast(
             list[DrawingDict], [{"rect": pymupdf.Rect(10.0, 20.0, 30.0, 40.0)}]
         )
@@ -339,6 +295,9 @@ class TestExtractor:
         # Create mock page with identity transformation matrix
         mock_page = MagicMock()
         mock_page.transformation_matrix = pymupdf.Identity
+        mock_page.get_bboxlog.return_value = [
+            ("fill-image", (100.0, 200.0, 150.0, 250.0)),
+        ]
         mock_page.get_image_info.return_value = [
             {
                 "number": 2,
@@ -361,22 +320,12 @@ class TestExtractor:
 
         extractor = Extractor(page=mock_page, page_num=1)
 
-        text_blocks: list[Any] = [
-            {
-                "type": 0,
-                "number": 1,
-                "lines": [
-                    {
-                        "spans": [
-                            {"text": "Text1", "bbox": [10.0, 20.0, 30.0, 40.0]},
-                        ]
-                    }
-                ],
-            },
+        texttrace = [
+            make_texttrace_span("Text1", (10.0, 20.0, 30.0, 40.0), seqno=0),
         ]
 
         # Extract in order and verify IDs increment
-        texts = extractor._extract_text_blocks(text_blocks)
+        texts = extractor._extract_text_blocks_from_texttrace(texttrace)
         images = extractor.extract_image_blocks()
         draw = extractor.extract_drawing_blocks()
 
@@ -388,46 +337,37 @@ class TestExtractor:
 class TestExtractorMethods:
     """Tests for the Extractor class methods."""
 
-    def test_extract_text_blocks(self):
-        """Test Extractor._extract_text_blocks extracts text from blocks."""
+    def test_extract_text_blocks_from_texttrace(self):
+        """Test Extractor._extract_text_blocks_from_texttrace extracts text."""
         mock_page = MagicMock()
         extractor = Extractor(page=mock_page, page_num=1)
-        blocks: list[Any] = [
-            {
-                "type": 0,
-                "number": 1,
-                "lines": [
-                    {
-                        "spans": [
-                            {"text": "Hello", "bbox": [10.0, 20.0, 30.0, 40.0]},
-                            {"text": "World", "bbox": [35.0, 20.0, 55.0, 40.0]},
-                        ]
-                    }
-                ],
-            },
-            {
-                "type": 1,  # image block, should be skipped
-                "number": 2,
-                "bbox": [100.0, 200.0, 150.0, 250.0],
-            },
+        texttrace = [
+            make_texttrace_span("Hello", (10.0, 20.0, 30.0, 40.0), seqno=0),
+            make_texttrace_span("World", (35.0, 20.0, 55.0, 40.0), seqno=1),
         ]
 
-        result = extractor._extract_text_blocks(blocks)
+        result = extractor._extract_text_blocks_from_texttrace(texttrace)
 
         assert len(result) == 2
         assert isinstance(result[0], Text)
         assert result[0].text == "Hello"
         assert result[0].bbox.x0 == 10.0
         assert result[0].id == 0
+        assert result[0].draw_order == 0
         assert isinstance(result[1], Text)
         assert result[1].text == "World"
         assert result[1].bbox.x0 == 35.0
         assert result[1].id == 1
+        assert result[1].draw_order == 1
 
     def test_extract_image_blocks(self):
         """Test Extractor.extract_image_blocks extracts images from page."""
         # Create mock page with get_image_info and get_images
         mock_page = MagicMock()
+        mock_page.get_bboxlog.return_value = [
+            ("fill-image", (100.0, 200.0, 150.0, 250.0)),
+            ("fill-image", (200.0, 300.0, 250.0, 350.0)),
+        ]
         mock_page.get_image_info.return_value = [
             {
                 "number": 2,
@@ -509,39 +449,11 @@ class TestExtractorMethods:
         assert result[1].bbox.y0 == 60.0
         assert result[1].id == 1
 
-    def test_warn_unknown_block_types_valid(self):
-        """Test Extractor._warn_unknown_block_types returns True for valid blocks."""
+    def test_extract_text_blocks_from_texttrace_empty(self):
+        """Test Extractor._extract_text_blocks_from_texttrace handles empty list."""
         mock_page = MagicMock()
         extractor = Extractor(page=mock_page, page_num=1)
-        blocks = [
-            {"type": 0, "number": 1},
-            {"type": 1, "number": 2},
-            {"type": 0, "number": 3},
-        ]
-
-        result = extractor._warn_unknown_block_types(blocks)
-
-        assert result is True
-
-    def test_warn_unknown_block_types_invalid(self):
-        """Test Extractor._warn_unknown_block_types returns False and logs warning for
-        unknown types."""
-        mock_page = MagicMock()
-        extractor = Extractor(page=mock_page, page_num=1)
-        blocks = [
-            {"type": 0, "number": 1},
-            {"type": 99, "number": 2},  # Unknown type
-        ]
-
-        result = extractor._warn_unknown_block_types(blocks)
-
-        assert result is False
-
-    def test_extract_text_blocks_empty_blocks(self):
-        """Test Extractor._extract_text_blocks handles empty blocks list."""
-        mock_page = MagicMock()
-        extractor = Extractor(page=mock_page, page_num=1)
-        result = extractor._extract_text_blocks([])
+        result = extractor._extract_text_blocks_from_texttrace([])
         assert result == []
 
     def test_extract_image_blocks_empty_page(self):

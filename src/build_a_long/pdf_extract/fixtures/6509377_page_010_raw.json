@@ -10,19 +10,20 @@
 			},
 			"blocks": [
 				{
+					"__tag__": "Text",
 					"bbox": {
-						"x0": 113.93,
-						"y0": 104.82,
-						"x1": 148.61,
-						"y1": 169.89
+						"x0": 116.42,
+						"y0": 114.28,
+						"x1": 148.01,
+						"y1": 167.59
 					},
 					"id": 0,
-					"__tag__": "Text",
+					"draw_order": 365,
 					"text": "1",
 					"font_name": "CeraPro-Medium",
 					"font_size": 50.0,
 					"font_flags": 4,
-					"color": 0,
+					"color": 1578517,
 					"ascender": 1.0,
 					"descender": -0.24,
 					"origin": [
@@ -31,14 +32,15 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 316.2,
-						"y0": 58.86,
+						"y0": 60.44,
 						"x1": 325.08,
-						"y1": 68.83
+						"y1": 68.44
 					},
 					"id": 1,
-					"__tag__": "Text",
+					"draw_order": 373,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -52,14 +54,15 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 268.34,
-						"y0": 78.0,
+						"y0": 83.13,
 						"x1": 277.96,
-						"y1": 110.39
+						"y1": 109.13
 					},
 					"id": 2,
-					"__tag__": "Text",
+					"draw_order": 375,
 					"text": "1",
 					"font_name": "CeraPro-Light",
 					"font_size": 26.0,
@@ -73,14 +76,15 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 321.96,
-						"y0": 268.67,
+						"y0": 270.25,
 						"x1": 330.84,
-						"y1": 278.64
+						"y1": 278.25
 					},
 					"id": 3,
-					"__tag__": "Text",
+					"draw_order": 381,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -94,14 +98,15 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 268.34,
-						"y0": 287.81,
+						"y0": 292.94,
 						"x1": 282.62,
-						"y1": 320.2
+						"y1": 318.94
 					},
 					"id": 4,
-					"__tag__": "Text",
+					"draw_order": 383,
 					"text": "2",
 					"font_name": "CeraPro-Light",
 					"font_size": 26.0,
@@ -115,14 +120,15 @@
 					]
 				},
 				{
+					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 471.89,
+						"y0": 473.86,
 						"x1": 23.88,
-						"y1": 484.35
+						"y1": 483.86
 					},
 					"id": 5,
-					"__tag__": "Text",
+					"draw_order": 398,
 					"text": "10",
 					"font_name": "CeraPro-Light",
 					"font_size": 10.0,
@@ -136,6 +142,7 @@
 					]
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 16.0,
 						"y0": 39.0,
@@ -143,7 +150,6 @@
 						"y1": 254.0
 					},
 					"id": 6,
-					"__tag__": "Image",
 					"image_id": "image_0",
 					"width": 237,
 					"height": 215,
@@ -163,6 +169,7 @@
 					"digest": "51cfc9721339c732b53c4ff11dd2ce78"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 28.35,
 						"y0": 15.94,
@@ -170,7 +177,7 @@
 						"y1": 206.98
 					},
 					"id": 7,
-					"__tag__": "Image",
+					"draw_order": 3,
 					"image_id": "image_1",
 					"width": 751,
 					"height": 796,
@@ -191,6 +198,7 @@
 					"digest": "1c71b6f91fb5c5aa1cadec73490eaabd"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 46.0,
 						"y0": 30.0,
@@ -198,7 +206,6 @@
 						"y1": 112.0
 					},
 					"id": 8,
-					"__tag__": "Image",
 					"image_id": "image_2",
 					"width": 86,
 					"height": 82,
@@ -218,6 +225,7 @@
 					"digest": "1d5bb1c387b058e029972dd91e7f62d2"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 36.57,
 						"y0": 22.67,
@@ -225,7 +233,7 @@
 						"y1": 200.03
 					},
 					"id": 9,
-					"__tag__": "Image",
+					"draw_order": 295,
 					"image_id": "image_3",
 					"width": 689,
 					"height": 739,
@@ -246,6 +254,7 @@
 					"digest": "8e20cc12e5adc624b6bed78a676439b0"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 125.9,
 						"y0": 173.71,
@@ -253,7 +262,7 @@
 						"y1": 189.03
 					},
 					"id": 10,
-					"__tag__": "Image",
+					"draw_order": 296,
 					"image_id": "image_4",
 					"width": 45,
 					"height": 32,
@@ -274,6 +283,7 @@
 					"digest": "9803be8af9a39f398e95e5234ef66ef6"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 128.29,
 						"y0": 178.97,
@@ -281,7 +291,7 @@
 						"y1": 188.07
 					},
 					"id": 11,
-					"__tag__": "Image",
+					"draw_order": 297,
 					"image_id": "image_5",
 					"width": 16,
 					"height": 19,
@@ -302,6 +312,7 @@
 					"digest": "58f92f484cf7221853de8601ad75ece6"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 131.17,
 						"y0": 177.54,
@@ -309,7 +320,7 @@
 						"y1": 182.33
 					},
 					"id": 12,
-					"__tag__": "Image",
+					"draw_order": 298,
 					"image_id": "image_6",
 					"width": 11,
 					"height": 10,
@@ -330,6 +341,7 @@
 					"digest": "5ac6d50a200cdb5478033beb1ba37931"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 130.69,
 						"y0": 178.5,
@@ -337,7 +349,7 @@
 						"y1": 183.28
 					},
 					"id": 13,
-					"__tag__": "Image",
+					"draw_order": 299,
 					"image_id": "image_7",
 					"width": 11,
 					"height": 10,
@@ -358,6 +370,7 @@
 					"digest": "5ac6d50a200cdb5478033beb1ba37931"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 135.0,
 						"y0": 182.81,
@@ -365,7 +378,7 @@
 						"y1": 187.12
 					},
 					"id": 14,
-					"__tag__": "Image",
+					"draw_order": 300,
 					"image_id": "image_8",
 					"width": 11,
 					"height": 9,
@@ -386,6 +399,7 @@
 					"digest": "a87ce27590f6b67a5507cc354abc9d46"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 134.52,
 						"y0": 183.28,
@@ -393,7 +407,7 @@
 						"y1": 187.59
 					},
 					"id": 15,
-					"__tag__": "Image",
+					"draw_order": 300,
 					"image_id": "image_9",
 					"width": 12,
 					"height": 9,
@@ -414,6 +428,7 @@
 					"digest": "25c122c0eb3521f6d9387ed2166e4a62"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 140.27,
 						"y0": 179.93,
@@ -421,7 +436,7 @@
 						"y1": 184.72
 					},
 					"id": 16,
-					"__tag__": "Image",
+					"draw_order": 302,
 					"image_id": "image_10",
 					"width": 10,
 					"height": 10,
@@ -442,6 +457,7 @@
 					"digest": "e967ecb7652c784968dda24de9e46710"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 139.79,
 						"y0": 180.89,
@@ -449,7 +465,7 @@
 						"y1": 185.68
 					},
 					"id": 17,
-					"__tag__": "Image",
+					"draw_order": 303,
 					"image_id": "image_11",
 					"width": 11,
 					"height": 10,
@@ -470,6 +486,7 @@
 					"digest": "5ac6d50a200cdb5478033beb1ba37931"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 135.96,
 						"y0": 175.14,
@@ -477,7 +494,7 @@
 						"y1": 179.93
 					},
 					"id": 18,
-					"__tag__": "Image",
+					"draw_order": 304,
 					"image_id": "image_12",
 					"width": 11,
 					"height": 10,
@@ -498,6 +515,7 @@
 					"digest": "5ac6d50a200cdb5478033beb1ba37931"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 135.48,
 						"y0": 176.1,
@@ -505,7 +523,7 @@
 						"y1": 180.89
 					},
 					"id": 19,
-					"__tag__": "Image",
+					"draw_order": 305,
 					"image_id": "image_13",
 					"width": 11,
 					"height": 10,
@@ -526,6 +544,7 @@
 					"digest": "5ac6d50a200cdb5478033beb1ba37931"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 105.3,
 						"y0": 181.85,
@@ -533,7 +552,7 @@
 						"y1": 194.78
 					},
 					"id": 20,
-					"__tag__": "Image",
+					"draw_order": 306,
 					"image_id": "image_14",
 					"width": 37,
 					"height": 27,
@@ -554,6 +573,7 @@
 					"digest": "662db7f8cd6341017cf5734d39235bec"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 106.73,
 						"y0": 184.24,
@@ -561,7 +581,7 @@
 						"y1": 188.07
 					},
 					"id": 21,
-					"__tag__": "Image",
+					"draw_order": 307,
 					"image_id": "image_15",
 					"width": 34,
 					"height": 8,
@@ -582,6 +602,7 @@
 					"digest": "e65a4461a5f8e15997c77fad31456bb7"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 112.0,
 						"y0": 187.12,
@@ -589,7 +610,7 @@
 						"y1": 192.86
 					},
 					"id": 22,
-					"__tag__": "Image",
+					"draw_order": 308,
 					"image_id": "image_16",
 					"width": 5,
 					"height": 12,
@@ -610,6 +631,7 @@
 					"digest": "72b2c48503806206c4eb042b4977bb8e"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 114.4,
 						"y0": 188.07,
@@ -617,7 +639,7 @@
 						"y1": 192.38
 					},
 					"id": 23,
-					"__tag__": "Image",
+					"draw_order": 309,
 					"image_id": "image_17",
 					"width": 9,
 					"height": 9,
@@ -638,6 +660,7 @@
 					"digest": "ec071839a3763a77a1a9b5ffae3840c0"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 113.44,
 						"y0": 187.59,
@@ -645,7 +668,7 @@
 						"y1": 192.38
 					},
 					"id": 24,
-					"__tag__": "Image",
+					"draw_order": 310,
 					"image_id": "image_18",
 					"width": 9,
 					"height": 10,
@@ -666,6 +689,7 @@
 					"digest": "a7d0e1fb4e1ef31125a1bf68672b75d3"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 118.71,
 						"y0": 187.12,
@@ -673,7 +697,7 @@
 						"y1": 191.43
 					},
 					"id": 25,
-					"__tag__": "Image",
+					"draw_order": 311,
 					"image_id": "image_19",
 					"width": 8,
 					"height": 9,
@@ -694,6 +718,7 @@
 					"digest": "dd1b98e27673ad86a3bd8f4be5f0ffd5"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 117.75,
 						"y0": 186.64,
@@ -701,7 +726,7 @@
 						"y1": 191.43
 					},
 					"id": 26,
-					"__tag__": "Image",
+					"draw_order": 312,
 					"image_id": "image_20",
 					"width": 9,
 					"height": 10,
@@ -722,6 +747,7 @@
 					"digest": "a7d0e1fb4e1ef31125a1bf68672b75d3"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 154.64,
 						"y0": 176.1,
@@ -729,7 +755,7 @@
 						"y1": 180.41
 					},
 					"id": 27,
-					"__tag__": "Image",
+					"draw_order": 313,
 					"image_id": "image_21",
 					"width": 4,
 					"height": 9,
@@ -750,6 +776,7 @@
 					"digest": "70dac15fcbd57f00a26ab2601a782fa1"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 153.69,
 						"y0": 169.88,
@@ -757,7 +784,7 @@
 						"y1": 174.19
 					},
 					"id": 28,
-					"__tag__": "Image",
+					"draw_order": 314,
 					"image_id": "image_22",
 					"width": 4,
 					"height": 9,
@@ -778,6 +805,7 @@
 					"digest": "70dac15fcbd57f00a26ab2601a782fa1"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 153.21,
 						"y0": 161.26,
@@ -785,7 +813,7 @@
 						"y1": 179.93
 					},
 					"id": 29,
-					"__tag__": "Image",
+					"draw_order": 315,
 					"image_id": "image_23",
 					"width": 37,
 					"height": 39,
@@ -806,6 +834,7 @@
 					"digest": "d33a0d0dc480825a69e54aafa2d22627"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 160.39,
 						"y0": 162.69,
@@ -813,7 +842,7 @@
 						"y1": 181.37
 					},
 					"id": 30,
-					"__tag__": "Image",
+					"draw_order": 316,
 					"image_id": "image_24",
 					"width": 9,
 					"height": 39,
@@ -834,6 +863,7 @@
 					"digest": "c5a049093a5bd5acece67defefd62abf"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 154.64,
 						"y0": 178.02,
@@ -841,7 +871,7 @@
 						"y1": 183.28
 					},
 					"id": 31,
-					"__tag__": "Image",
+					"draw_order": 317,
 					"image_id": "image_25",
 					"width": 8,
 					"height": 11,
@@ -862,6 +892,7 @@
 					"digest": "3753ba94dfa7ad4830f4fb77b643766c"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 156.56,
 						"y0": 178.02,
@@ -869,7 +900,7 @@
 						"y1": 182.33
 					},
 					"id": 32,
-					"__tag__": "Image",
+					"draw_order": 318,
 					"image_id": "image_26",
 					"width": 6,
 					"height": 9,
@@ -890,6 +921,7 @@
 					"digest": "f748b0448d0348f7a646393b4d3623ea"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 156.56,
 						"y0": 163.65,
@@ -897,7 +929,7 @@
 						"y1": 168.92
 					},
 					"id": 33,
-					"__tag__": "Image",
+					"draw_order": 319,
 					"image_id": "image_27",
 					"width": 8,
 					"height": 11,
@@ -918,6 +950,7 @@
 					"digest": "38bf15d3621663613978d680dccd24a4"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 157.52,
 						"y0": 163.17,
@@ -925,7 +958,7 @@
 						"y1": 168.92
 					},
 					"id": 34,
-					"__tag__": "Image",
+					"draw_order": 320,
 					"image_id": "image_28",
 					"width": 8,
 					"height": 12,
@@ -946,6 +979,7 @@
 					"digest": "3588ab746a7cb298a20d01a9996b1775"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 157.52,
 						"y0": 169.4,
@@ -953,7 +987,7 @@
 						"y1": 175.14
 					},
 					"id": 35,
-					"__tag__": "Image",
+					"draw_order": 321,
 					"image_id": "image_29",
 					"width": 8,
 					"height": 12,
@@ -974,6 +1008,7 @@
 					"digest": "d9e74c8ed6676b756272946b4f5ce1ef"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 158.48,
 						"y0": 169.4,
@@ -981,7 +1016,7 @@
 						"y1": 175.14
 					},
 					"id": 36,
-					"__tag__": "Image",
+					"draw_order": 322,
 					"image_id": "image_30",
 					"width": 8,
 					"height": 12,
@@ -1002,6 +1037,7 @@
 					"digest": "d9e74c8ed6676b756272946b4f5ce1ef"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 153.69,
 						"y0": 171.79,
@@ -1009,7 +1045,7 @@
 						"y1": 177.54
 					},
 					"id": 37,
-					"__tag__": "Image",
+					"draw_order": 323,
 					"image_id": "image_31",
 					"width": 8,
 					"height": 12,
@@ -1030,6 +1066,7 @@
 					"digest": "d9e74c8ed6676b756272946b4f5ce1ef"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 155.12,
 						"y0": 171.79,
@@ -1037,7 +1074,7 @@
 						"y1": 177.54
 					},
 					"id": 38,
-					"__tag__": "Image",
+					"draw_order": 324,
 					"image_id": "image_32",
 					"width": 8,
 					"height": 12,
@@ -1058,6 +1095,7 @@
 					"digest": "d9e74c8ed6676b756272946b4f5ce1ef"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 158.48,
 						"y0": 176.1,
@@ -1065,7 +1103,7 @@
 						"y1": 181.37
 					},
 					"id": 39,
-					"__tag__": "Image",
+					"draw_order": 325,
 					"image_id": "image_33",
 					"width": 8,
 					"height": 11,
@@ -1086,6 +1124,7 @@
 					"digest": "3753ba94dfa7ad4830f4fb77b643766c"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 159.44,
 						"y0": 176.1,
@@ -1093,7 +1132,7 @@
 						"y1": 181.37
 					},
 					"id": 40,
-					"__tag__": "Image",
+					"draw_order": 326,
 					"image_id": "image_34",
 					"width": 8,
 					"height": 11,
@@ -1114,6 +1153,7 @@
 					"digest": "3753ba94dfa7ad4830f4fb77b643766c"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 152.73,
 						"y0": 165.57,
@@ -1121,7 +1161,7 @@
 						"y1": 171.31
 					},
 					"id": 41,
-					"__tag__": "Image",
+					"draw_order": 327,
 					"image_id": "image_35",
 					"width": 8,
 					"height": 12,
@@ -1142,6 +1182,7 @@
 					"digest": "51811cb68ee27ba5474a420485afb3c1"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 154.17,
 						"y0": 165.57,
@@ -1149,7 +1190,7 @@
 						"y1": 171.31
 					},
 					"id": 42,
-					"__tag__": "Image",
+					"draw_order": 328,
 					"image_id": "image_36",
 					"width": 8,
 					"height": 12,
@@ -1170,6 +1211,7 @@
 					"digest": "a5fad4dda601a08b5c0d1cc3696c3333"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 139.79,
 						"y0": 166.52,
@@ -1177,7 +1219,7 @@
 						"y1": 173.71
 					},
 					"id": 43,
-					"__tag__": "Image",
+					"draw_order": 329,
 					"image_id": "image_37",
 					"width": 19,
 					"height": 15,
@@ -1198,6 +1240,7 @@
 					"digest": "5f5453c15316b1dfcb50e6f7af23c2b3"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 139.79,
 						"y0": 167.48,
@@ -1205,7 +1248,7 @@
 						"y1": 173.23
 					},
 					"id": 44,
-					"__tag__": "Image",
+					"draw_order": 330,
 					"image_id": "image_38",
 					"width": 17,
 					"height": 12,
@@ -1226,6 +1269,7 @@
 					"digest": "0277083e3c3725f8c161d97bf69125e9"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 141.23,
 						"y0": 167.0,
@@ -1233,7 +1277,7 @@
 						"y1": 168.92
 					},
 					"id": 45,
-					"__tag__": "Image",
+					"draw_order": 331,
 					"image_id": "image_39",
 					"width": 4,
 					"height": 4,
@@ -1254,6 +1298,7 @@
 					"digest": "82ca18de5582ef0c5ea18ae53bd07bbc"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 178.08,
 						"y0": 165.47,
@@ -1261,7 +1306,7 @@
 						"y1": 177.47
 					},
 					"id": 46,
-					"__tag__": "Image",
+					"draw_order": 332,
 					"image_id": "image_40",
 					"width": 64,
 					"height": 50,
@@ -1282,6 +1327,7 @@
 					"digest": "7169e4c9e982e4583c141d9c1a6f723c"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 177.64,
 						"y0": 164.61,
@@ -1289,7 +1335,7 @@
 						"y1": 178.02
 					},
 					"id": 47,
-					"__tag__": "Image",
+					"draw_order": 333,
 					"image_id": "image_41",
 					"width": 34,
 					"height": 28,
@@ -1310,6 +1356,7 @@
 					"digest": "7032a9e42ab5baa8152169be0da52683"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 185.31,
 						"y0": 166.52,
@@ -1317,7 +1364,7 @@
 						"y1": 171.31
 					},
 					"id": 48,
-					"__tag__": "Image",
+					"draw_order": 334,
 					"image_id": "image_42",
 					"width": 9,
 					"height": 10,
@@ -1338,6 +1385,7 @@
 					"digest": "a7d0e1fb4e1ef31125a1bf68672b75d3"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 184.35,
 						"y0": 166.52,
@@ -1345,7 +1393,7 @@
 						"y1": 172.27
 					},
 					"id": 49,
-					"__tag__": "Image",
+					"draw_order": 335,
 					"image_id": "image_43",
 					"width": 10,
 					"height": 12,
@@ -1366,6 +1414,7 @@
 					"digest": "d23c8481ceaf47ae6539a5a6b502a9ba"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 185.31,
 						"y0": 171.79,
@@ -1373,7 +1422,7 @@
 						"y1": 176.1
 					},
 					"id": 50,
-					"__tag__": "Image",
+					"draw_order": 336,
 					"image_id": "image_44",
 					"width": 9,
 					"height": 9,
@@ -1394,6 +1443,7 @@
 					"digest": "ec071839a3763a77a1a9b5ffae3840c0"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 184.35,
 						"y0": 172.27,
@@ -1401,7 +1451,7 @@
 						"y1": 176.1
 					},
 					"id": 51,
-					"__tag__": "Image",
+					"draw_order": 337,
 					"image_id": "image_45",
 					"width": 5,
 					"height": 8,
@@ -1422,6 +1472,7 @@
 					"digest": "33ef7a0b74408195296d55bc949239fc"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 189.62,
 						"y0": 168.92,
@@ -1429,7 +1480,7 @@
 						"y1": 174.19
 					},
 					"id": 52,
-					"__tag__": "Image",
+					"draw_order": 338,
 					"image_id": "image_46",
 					"width": 9,
 					"height": 11,
@@ -1450,6 +1501,7 @@
 					"digest": "a87ce27590f6b67a5507cc354abc9d46"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 188.66,
 						"y0": 169.4,
@@ -1457,7 +1509,7 @@
 						"y1": 174.66
 					},
 					"id": 53,
-					"__tag__": "Image",
+					"draw_order": 339,
 					"image_id": "image_47",
 					"width": 10,
 					"height": 11,
@@ -1478,6 +1530,7 @@
 					"digest": "5ac6d50a200cdb5478033beb1ba37931"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 183.39,
 						"y0": 164.61,
@@ -1485,7 +1538,7 @@
 						"y1": 176.58
 					},
 					"id": 54,
-					"__tag__": "Image",
+					"draw_order": 340,
 					"image_id": "image_48",
 					"width": 3,
 					"height": 25,
@@ -1506,6 +1559,7 @@
 					"digest": "e7fbf1e7ae8800dca96001f66805c03e"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 118.23,
 						"y0": 170.35,
@@ -1513,7 +1567,7 @@
 						"y1": 178.5
 					},
 					"id": 55,
-					"__tag__": "Image",
+					"draw_order": 341,
 					"image_id": "image_49",
 					"width": 26,
 					"height": 17,
@@ -1534,6 +1588,7 @@
 					"digest": "09a38038e5dccc078252066fad1db6a9"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 120.15,
 						"y0": 173.71,
@@ -1541,7 +1596,7 @@
 						"y1": 178.5
 					},
 					"id": 56,
-					"__tag__": "Image",
+					"draw_order": 342,
 					"image_id": "image_50",
 					"width": 6,
 					"height": 10,
@@ -1562,6 +1617,7 @@
 					"digest": "924c4633903b868266c01701a972e69d"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 112.96,
 						"y0": 109.06,
@@ -1569,7 +1625,7 @@
 						"y1": 110.97
 					},
 					"id": 57,
-					"__tag__": "Image",
+					"draw_order": 343,
 					"image_id": "image_51",
 					"width": 4,
 					"height": 4,
@@ -1590,6 +1646,7 @@
 					"digest": "c75453477a901594785d7b0466df6aea"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 72.31,
 						"y0": 53.15,
@@ -1597,7 +1654,7 @@
 						"y1": 121.31
 					},
 					"id": 58,
-					"__tag__": "Image",
+					"draw_order": 344,
 					"image_id": "image_52",
 					"width": 268,
 					"height": 284,
@@ -1618,6 +1675,7 @@
 					"digest": "d58032935c72d26bc633cddfa0a11af0"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 70.8,
 						"y0": 52.07,
@@ -1625,7 +1683,7 @@
 						"y1": 122.46
 					},
 					"id": 59,
-					"__tag__": "Image",
+					"draw_order": 345,
 					"image_id": "image_53",
 					"width": 140,
 					"height": 147,
@@ -1646,6 +1704,7 @@
 					"digest": "4803254b35c0132a031514544fb02a51"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 49.76,
 						"y0": 95.39,
@@ -1653,7 +1712,7 @@
 						"y1": 110.27
 					},
 					"id": 60,
-					"__tag__": "Image",
+					"draw_order": 346,
 					"image_id": "image_54",
 					"width": 35,
 					"height": 62,
@@ -1674,6 +1733,7 @@
 					"digest": "2b3a1f26e87c42e2d89e9158a2497912"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 45.69,
 						"y0": 98.99,
@@ -1681,7 +1741,7 @@
 						"y1": 107.63
 					},
 					"id": 61,
-					"__tag__": "Image",
+					"draw_order": 347,
 					"image_id": "image_55",
 					"width": 12,
 					"height": 36,
@@ -1702,6 +1762,7 @@
 					"digest": "5cb6bdb56e411020faab9553755f6131"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 153.86,
 						"y0": 60.35,
@@ -1709,7 +1770,7 @@
 						"y1": 70.67
 					},
 					"id": 62,
-					"__tag__": "Image",
+					"draw_order": 348,
 					"image_id": "image_56",
 					"width": 66,
 					"height": 43,
@@ -1730,6 +1791,7 @@
 					"digest": "94086f11409a570e3df03233977e8a21"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 167.22,
 						"y0": 58.42,
@@ -1737,7 +1799,7 @@
 						"y1": 63.46
 					},
 					"id": 63,
-					"__tag__": "Image",
+					"draw_order": 349,
 					"image_id": "image_57",
 					"width": 18,
 					"height": 21,
@@ -1758,6 +1820,7 @@
 					"digest": "f5e3cfe502ebf66b0dafe6b9dc40f838"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 163.93,
 						"y0": 57.71,
@@ -1765,7 +1828,7 @@
 						"y1": 60.59
 					},
 					"id": 64,
-					"__tag__": "Image",
+					"draw_order": 350,
 					"image_id": "image_58",
 					"width": 18,
 					"height": 12,
@@ -1786,6 +1849,7 @@
 					"digest": "33ef75c3c763842ffff969e0db3e5ac0"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 81.42,
 						"y0": 189.47,
@@ -1793,7 +1857,7 @@
 						"y1": 197.39
 					},
 					"id": 65,
-					"__tag__": "Image",
+					"draw_order": 351,
 					"image_id": "image_59",
 					"width": 52,
 					"height": 33,
@@ -1814,6 +1878,7 @@
 					"digest": "46ef13d526f6b4dcd9854182ab82d249"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 83.99,
 						"y0": 198.58,
@@ -1821,7 +1886,7 @@
 						"y1": 199.54
 					},
 					"id": 66,
-					"__tag__": "Image",
+					"draw_order": 352,
 					"image_id": "image_60",
 					"width": 9,
 					"height": 4,
@@ -1842,6 +1907,7 @@
 					"digest": "4681ab2d3e4ff39745acbd69b4e9a024"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 80.22,
 						"y0": 194.99,
@@ -1849,7 +1915,7 @@
 						"y1": 199.31
 					},
 					"id": 67,
-					"__tag__": "Image",
+					"draw_order": 353,
 					"image_id": "image_61",
 					"width": 25,
 					"height": 18,
@@ -1870,6 +1936,7 @@
 					"digest": "045e3952268388822f12985a0ba7c470"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 197.68,
 						"y0": 148.18,
@@ -1877,7 +1944,7 @@
 						"y1": 161.86
 					},
 					"id": 68,
-					"__tag__": "Image",
+					"draw_order": 354,
 					"image_id": "image_62",
 					"width": 19,
 					"height": 57,
@@ -1898,6 +1965,7 @@
 					"digest": "5bd3e4f402803a8d172efb9d50f19f81"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 194.63,
 						"y0": 159.95,
@@ -1905,7 +1973,7 @@
 						"y1": 163.55
 					},
 					"id": 69,
-					"__tag__": "Image",
+					"draw_order": 355,
 					"image_id": "image_63",
 					"width": 17,
 					"height": 15,
@@ -1926,6 +1994,7 @@
 					"digest": "a26b5cb3450868d4d8e7ec8cd27efdc7"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 203.2,
 						"y0": 152.02,
@@ -1933,7 +2002,7 @@
 						"y1": 159.7
 					},
 					"id": 70,
-					"__tag__": "Image",
+					"draw_order": 356,
 					"image_id": "image_64",
 					"width": 14,
 					"height": 32,
@@ -1954,6 +2023,7 @@
 					"digest": "3b9893d3e42b6b8323fce2ec1ce05a01"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 114.76,
 						"y0": 116.99,
@@ -1961,7 +2031,7 @@
 						"y1": 164.51
 					},
 					"id": 71,
-					"__tag__": "Image",
+					"draw_order": 358,
 					"image_id": "image_65",
 					"width": 144,
 					"height": 198,
@@ -1982,6 +2052,7 @@
 					"digest": "13b9ac2a7abcf9720d64903f12875865"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 114.76,
 						"y0": 116.99,
@@ -1989,7 +2060,7 @@
 						"y1": 120.11
 					},
 					"id": 72,
-					"__tag__": "Image",
+					"draw_order": 359,
 					"image_id": "image_66",
 					"width": 35,
 					"height": 13,
@@ -2010,6 +2081,7 @@
 					"digest": "e158e10e2b5396847567fae778af7403"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 114.76,
 						"y0": 116.99,
@@ -2017,7 +2089,7 @@
 						"y1": 121.31
 					},
 					"id": 73,
-					"__tag__": "Image",
+					"draw_order": 360,
 					"image_id": "image_67",
 					"width": 44,
 					"height": 18,
@@ -2038,6 +2110,7 @@
 					"digest": "50364583e970a9784717ae370a83cce9"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 119.08,
 						"y0": 125.15,
@@ -2045,7 +2118,7 @@
 						"y1": 158.03
 					},
 					"id": 74,
-					"__tag__": "Image",
+					"draw_order": 362,
 					"image_id": "image_68",
 					"width": 58,
 					"height": 137,
@@ -2066,6 +2139,7 @@
 					"digest": "2b9cf3afbac5bfa634635062f4f3eeb0"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 119.08,
 						"y0": 125.15,
@@ -2073,7 +2147,7 @@
 						"y1": 158.03
 					},
 					"id": 75,
-					"__tag__": "Image",
+					"draw_order": 362,
 					"image_id": "image_70",
 					"width": 58,
 					"height": 137,
@@ -2094,6 +2168,7 @@
 					"digest": "cf74336b8e8e72ea143d8b685cb52b50"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 326.47,
 						"y0": 368.26,
@@ -2101,7 +2176,7 @@
 						"y1": 441.93
 					},
 					"id": 76,
-					"__tag__": "Image",
+					"draw_order": 366,
 					"image_id": "image_72",
 					"width": 247,
 					"height": 154,
@@ -2122,6 +2197,7 @@
 					"digest": "a15b5bb1743b8ecd207196311abb48e8"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 339.79,
 						"y0": 94.83,
@@ -2129,7 +2205,7 @@
 						"y1": 213.15
 					},
 					"id": 77,
-					"__tag__": "Image",
+					"draw_order": 367,
 					"image_id": "image_73",
 					"width": 191,
 					"height": 247,
@@ -2150,6 +2226,7 @@
 					"digest": "c8deabc18556af71b4d1efa6b6548dc7"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 315.72,
 						"y0": 22.2,
@@ -2157,7 +2234,7 @@
 						"y1": 59.87
 					},
 					"id": 78,
-					"__tag__": "Image",
+					"draw_order": 370,
 					"image_id": "image_74",
 					"width": 122,
 					"height": 79,
@@ -2178,6 +2255,7 @@
 					"digest": "5b306f043f7faccc8209ac851f000e47"
 				},
 				{
+					"__tag__": "Image",
 					"bbox": {
 						"x0": 321.48,
 						"y0": 241.61,
@@ -2185,7 +2263,7 @@
 						"y1": 269.69
 					},
 					"id": 79,
-					"__tag__": "Image",
+					"draw_order": 378,
 					"image_id": "image_76",
 					"width": 98,
 					"height": 59,
@@ -2206,6 +2284,7 @@
 					"digest": "91f65b9084dcc7cc5579d3a6aeeb50c0"
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 552.76,
 						"y0": 0.0,
@@ -2213,7 +2292,7 @@
 						"y1": 496.06
 					},
 					"id": 80,
-					"__tag__": "Drawing",
+					"draw_order": 0,
 					"fill_color": [
 						0.54,
 						0.56,
@@ -2242,6 +2321,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 0.0,
 						"y0": 0.0,
@@ -2249,7 +2329,7 @@
 						"y1": 496.06
 					},
 					"id": 81,
-					"__tag__": "Drawing",
+					"draw_order": 1,
 					"fill_color": [
 						0.54,
 						0.56,
@@ -2272,6 +2352,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 108.22,
 						"y0": 161.08,
@@ -2279,7 +2360,7 @@
 						"y1": 161.43
 					},
 					"id": 82,
-					"__tag__": "Drawing",
+					"draw_order": 4,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -2359,6 +2440,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 113.67,
 						"y0": 160.98,
@@ -2366,7 +2448,7 @@
 						"y1": 160.98
 					},
 					"id": 83,
-					"__tag__": "Drawing",
+					"draw_order": 5,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -2424,6 +2506,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 105.77,
 						"y0": 161.08,
@@ -2431,7 +2514,7 @@
 						"y1": 161.33
 					},
 					"id": 84,
-					"__tag__": "Drawing",
+					"draw_order": 6,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -2527,6 +2610,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 212.01,
 						"y0": 199.09,
@@ -2534,7 +2618,7 @@
 						"y1": 200.46
 					},
 					"id": 85,
-					"__tag__": "Drawing",
+					"draw_order": 7,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -2630,6 +2714,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 211.75,
 						"y0": 198.22,
@@ -2637,7 +2722,7 @@
 						"y1": 200.46
 					},
 					"id": 86,
-					"__tag__": "Drawing",
+					"draw_order": 8,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -2727,6 +2812,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 210.28,
 						"y0": 199.32,
@@ -2734,7 +2820,7 @@
 						"y1": 207.05
 					},
 					"id": 87,
-					"__tag__": "Drawing",
+					"draw_order": 9,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -2808,6 +2894,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 212.29,
 						"y0": 204.83,
@@ -2815,7 +2902,7 @@
 						"y1": 207.66
 					},
 					"id": 88,
-					"__tag__": "Drawing",
+					"draw_order": 10,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -2867,6 +2954,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 209.9,
 						"y0": 197.36,
@@ -2874,7 +2962,7 @@
 						"y1": 203.13
 					},
 					"id": 89,
-					"__tag__": "Drawing",
+					"draw_order": 11,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -2964,6 +3052,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 211.22,
 						"y0": 198.81,
@@ -2971,7 +3060,7 @@
 						"y1": 202.01
 					},
 					"id": 90,
-					"__tag__": "Drawing",
+					"draw_order": 12,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3045,6 +3134,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 211.0,
 						"y0": 197.58,
@@ -3052,7 +3142,7 @@
 						"y1": 201.16
 					},
 					"id": 91,
-					"__tag__": "Drawing",
+					"draw_order": 13,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3142,6 +3232,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 211.76,
 						"y0": 198.25,
@@ -3149,7 +3240,7 @@
 						"y1": 200.46
 					},
 					"id": 92,
-					"__tag__": "Drawing",
+					"draw_order": 14,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3239,6 +3330,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 179.67,
 						"y0": 190.39,
@@ -3246,7 +3338,7 @@
 						"y1": 191.93
 					},
 					"id": 93,
-					"__tag__": "Drawing",
+					"draw_order": 15,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3342,6 +3434,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 179.67,
 						"y0": 189.57,
@@ -3349,7 +3442,7 @@
 						"y1": 191.93
 					},
 					"id": 94,
-					"__tag__": "Drawing",
+					"draw_order": 16,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3439,6 +3532,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 175.26,
 						"y0": 190.13,
@@ -3446,7 +3540,7 @@
 						"y1": 198.27
 					},
 					"id": 95,
-					"__tag__": "Drawing",
+					"draw_order": 17,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3520,6 +3614,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 175.54,
 						"y0": 195.22,
@@ -3527,7 +3622,7 @@
 						"y1": 198.7
 					},
 					"id": 96,
-					"__tag__": "Drawing",
+					"draw_order": 18,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3579,6 +3674,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 177.12,
 						"y0": 188.58,
@@ -3586,7 +3682,7 @@
 						"y1": 194.65
 					},
 					"id": 97,
-					"__tag__": "Drawing",
+					"draw_order": 19,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3676,6 +3772,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 178.63,
 						"y0": 189.83,
@@ -3683,7 +3780,7 @@
 						"y1": 193.46
 					},
 					"id": 98,
-					"__tag__": "Drawing",
+					"draw_order": 20,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3757,6 +3854,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 178.89,
 						"y0": 188.91,
@@ -3764,7 +3862,7 @@
 						"y1": 192.65
 					},
 					"id": 99,
-					"__tag__": "Drawing",
+					"draw_order": 21,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3854,6 +3952,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 179.67,
 						"y0": 189.6,
@@ -3861,7 +3960,7 @@
 						"y1": 191.93
 					},
 					"id": 100,
-					"__tag__": "Drawing",
+					"draw_order": 22,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -3951,6 +4050,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 126.36,
 						"y0": 174.37,
@@ -3958,7 +4058,7 @@
 						"y1": 198.95
 					},
 					"id": 101,
-					"__tag__": "Drawing",
+					"draw_order": 23,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -4735,6 +4835,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 138.74,
 						"y0": 189.08,
@@ -4742,7 +4843,7 @@
 						"y1": 198.72
 					},
 					"id": 102,
-					"__tag__": "Drawing",
+					"draw_order": 24,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -4778,6 +4879,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 128.54,
 						"y0": 179.58,
@@ -4785,7 +4887,7 @@
 						"y1": 194.59
 					},
 					"id": 103,
-					"__tag__": "Drawing",
+					"draw_order": 25,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -4896,6 +4998,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 131.54,
 						"y0": 178.22,
@@ -4903,7 +5006,7 @@
 						"y1": 182.05
 					},
 					"id": 104,
-					"__tag__": "Drawing",
+					"draw_order": 26,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -5264,6 +5367,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 131.12,
 						"y0": 179.07,
@@ -5271,7 +5375,7 @@
 						"y1": 182.86
 					},
 					"id": 105,
-					"__tag__": "Drawing",
+					"draw_order": 27,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -5590,6 +5694,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 135.61,
 						"y0": 183.05,
@@ -5597,7 +5702,7 @@
 						"y1": 186.88
 					},
 					"id": 106,
-					"__tag__": "Drawing",
+					"draw_order": 28,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -5958,6 +6063,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 135.19,
 						"y0": 183.9,
@@ -5965,7 +6071,7 @@
 						"y1": 187.68
 					},
 					"id": 107,
-					"__tag__": "Drawing",
+					"draw_order": 29,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -6284,6 +6390,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 139.65,
 						"y0": 187.89,
@@ -6291,7 +6398,7 @@
 						"y1": 191.69
 					},
 					"id": 108,
-					"__tag__": "Drawing",
+					"draw_order": 30,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -6381,6 +6488,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 139.22,
 						"y0": 188.84,
@@ -6388,7 +6496,7 @@
 						"y1": 192.51
 					},
 					"id": 109,
-					"__tag__": "Drawing",
+					"draw_order": 31,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -6462,6 +6570,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 144.53,
 						"y0": 185.26,
@@ -6469,7 +6578,7 @@
 						"y1": 189.09
 					},
 					"id": 110,
-					"__tag__": "Drawing",
+					"draw_order": 32,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -6830,6 +6939,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 144.11,
 						"y0": 186.11,
@@ -6837,7 +6947,7 @@
 						"y1": 189.9
 					},
 					"id": 111,
-					"__tag__": "Drawing",
+					"draw_order": 33,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -7156,6 +7266,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 140.47,
 						"y0": 180.44,
@@ -7163,7 +7274,7 @@
 						"y1": 184.26
 					},
 					"id": 112,
-					"__tag__": "Drawing",
+					"draw_order": 34,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -7524,6 +7635,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 140.05,
 						"y0": 181.29,
@@ -7531,7 +7643,7 @@
 						"y1": 185.07
 					},
 					"id": 113,
-					"__tag__": "Drawing",
+					"draw_order": 35,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -7850,6 +7962,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 136.4,
 						"y0": 175.63,
@@ -7857,7 +7970,7 @@
 						"y1": 179.46
 					},
 					"id": 114,
-					"__tag__": "Drawing",
+					"draw_order": 36,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -8218,6 +8331,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 135.98,
 						"y0": 176.48,
@@ -8225,7 +8339,7 @@
 						"y1": 180.27
 					},
 					"id": 115,
-					"__tag__": "Drawing",
+					"draw_order": 37,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -8544,6 +8658,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 140.02,
 						"y0": 221.81,
@@ -8551,7 +8666,7 @@
 						"y1": 241.86
 					},
 					"id": 116,
-					"__tag__": "Drawing",
+					"draw_order": 38,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -8631,6 +8746,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 154.2,
 						"y0": 233.54,
@@ -8638,7 +8754,7 @@
 						"y1": 241.86
 					},
 					"id": 117,
-					"__tag__": "Drawing",
+					"draw_order": 39,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -8674,6 +8790,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 140.02,
 						"y0": 226.09,
@@ -8681,7 +8798,7 @@
 						"y1": 237.82
 					},
 					"id": 118,
-					"__tag__": "Drawing",
+					"draw_order": 40,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -8713,6 +8830,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 142.52,
 						"y0": 223.39,
@@ -8720,7 +8838,7 @@
 						"y1": 226.73
 					},
 					"id": 119,
-					"__tag__": "Drawing",
+					"draw_order": 42,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -8810,6 +8928,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 142.62,
 						"y0": 224.87,
@@ -8817,7 +8936,7 @@
 						"y1": 227.65
 					},
 					"id": 120,
-					"__tag__": "Drawing",
+					"draw_order": 43,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -8891,6 +9010,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 147.24,
 						"y0": 227.3,
@@ -8898,7 +9018,7 @@
 						"y1": 230.64
 					},
 					"id": 121,
-					"__tag__": "Drawing",
+					"draw_order": 44,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -8988,6 +9108,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 147.34,
 						"y0": 228.78,
@@ -8995,7 +9116,7 @@
 						"y1": 231.55
 					},
 					"id": 122,
-					"__tag__": "Drawing",
+					"draw_order": 45,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9069,6 +9190,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 151.97,
 						"y0": 231.21,
@@ -9076,7 +9198,7 @@
 						"y1": 234.55
 					},
 					"id": 123,
-					"__tag__": "Drawing",
+					"draw_order": 46,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9166,6 +9288,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 152.08,
 						"y0": 232.69,
@@ -9173,7 +9296,7 @@
 						"y1": 235.47
 					},
 					"id": 124,
-					"__tag__": "Drawing",
+					"draw_order": 47,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9247,6 +9370,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 199.51,
 						"y0": 172.66,
@@ -9254,7 +9378,7 @@
 						"y1": 188.86
 					},
 					"id": 125,
-					"__tag__": "Drawing",
+					"draw_order": 48,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9340,6 +9464,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 216.53,
 						"y0": 179.7,
@@ -9347,7 +9472,7 @@
 						"y1": 188.86
 					},
 					"id": 126,
-					"__tag__": "Drawing",
+					"draw_order": 49,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9389,6 +9514,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 199.51,
 						"y0": 178.15,
@@ -9396,7 +9522,7 @@
 						"y1": 185.17
 					},
 					"id": 127,
-					"__tag__": "Drawing",
+					"draw_order": 50,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -9428,6 +9554,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 201.41,
 						"y0": 173.94,
@@ -9435,7 +9562,7 @@
 						"y1": 177.68
 					},
 					"id": 128,
-					"__tag__": "Drawing",
+					"draw_order": 52,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9525,6 +9652,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 201.77,
 						"y0": 175.04,
@@ -9532,7 +9660,7 @@
 						"y1": 178.52
 					},
 					"id": 129,
-					"__tag__": "Drawing",
+					"draw_order": 53,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9606,6 +9734,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 207.08,
 						"y0": 176.28,
@@ -9613,7 +9742,7 @@
 						"y1": 180.02
 					},
 					"id": 130,
-					"__tag__": "Drawing",
+					"draw_order": 54,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9703,6 +9832,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 207.44,
 						"y0": 177.38,
@@ -9710,7 +9840,7 @@
 						"y1": 180.86
 					},
 					"id": 131,
-					"__tag__": "Drawing",
+					"draw_order": 55,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9784,6 +9914,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 212.76,
 						"y0": 178.63,
@@ -9791,7 +9922,7 @@
 						"y1": 182.37
 					},
 					"id": 132,
-					"__tag__": "Drawing",
+					"draw_order": 56,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9881,6 +10012,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 213.12,
 						"y0": 179.73,
@@ -9888,7 +10020,7 @@
 						"y1": 183.2
 					},
 					"id": 133,
-					"__tag__": "Drawing",
+					"draw_order": 57,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -9962,6 +10094,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 246.38,
@@ -9969,7 +10102,7 @@
 						"y1": 253.17
 					},
 					"id": 134,
-					"__tag__": "Drawing",
+					"draw_order": 58,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10055,6 +10188,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.34,
 						"y0": 248.85,
@@ -10062,7 +10196,7 @@
 						"y1": 253.17
 					},
 					"id": 135,
-					"__tag__": "Drawing",
+					"draw_order": 59,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10104,6 +10238,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 252.53,
@@ -10111,7 +10246,7 @@
 						"y1": 253.17
 					},
 					"id": 136,
-					"__tag__": "Drawing",
+					"draw_order": 60,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -10149,6 +10284,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 249.63,
@@ -10156,7 +10292,7 @@
 						"y1": 253.17
 					},
 					"id": 137,
-					"__tag__": "Drawing",
+					"draw_order": 62,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10236,6 +10372,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 191.46,
@@ -10243,7 +10380,7 @@
 						"y1": 218.26
 					},
 					"id": 138,
-					"__tag__": "Drawing",
+					"draw_order": 63,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10340,6 +10477,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 209.77,
@@ -10347,7 +10485,7 @@
 						"y1": 218.26
 					},
 					"id": 139,
-					"__tag__": "Drawing",
+					"draw_order": 64,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10389,6 +10527,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 184.83,
 						"y0": 213.5,
@@ -10396,7 +10535,7 @@
 						"y1": 216.55
 					},
 					"id": 140,
-					"__tag__": "Drawing",
+					"draw_order": 65,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10421,6 +10560,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 182.06,
 						"y0": 219.25,
@@ -10428,7 +10568,7 @@
 						"y1": 222.25
 					},
 					"id": 141,
-					"__tag__": "Drawing",
+					"draw_order": 66,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10453,6 +10593,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 179.3,
 						"y0": 224.9,
@@ -10460,7 +10601,7 @@
 						"y1": 227.97
 					},
 					"id": 142,
-					"__tag__": "Drawing",
+					"draw_order": 67,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10485,6 +10626,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 163.82,
 						"y0": 204.12,
@@ -10492,7 +10634,7 @@
 						"y1": 231.42
 					},
 					"id": 143,
-					"__tag__": "Drawing",
+					"draw_order": 68,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10583,6 +10725,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 174.89,
 						"y0": 204.12,
@@ -10590,7 +10733,7 @@
 						"y1": 208.56
 					},
 					"id": 144,
-					"__tag__": "Drawing",
+					"draw_order": 69,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10626,6 +10769,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 169.05,
 						"y0": 208.35,
@@ -10633,7 +10777,7 @@
 						"y1": 231.25
 					},
 					"id": 145,
-					"__tag__": "Drawing",
+					"draw_order": 70,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10658,6 +10802,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 180.04,
 						"y0": 210.13,
@@ -10665,7 +10810,7 @@
 						"y1": 213.99
 					},
 					"id": 146,
-					"__tag__": "Drawing",
+					"draw_order": 71,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10755,6 +10900,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 179.1,
 						"y0": 209.33,
@@ -10762,7 +10908,7 @@
 						"y1": 213.59
 					},
 					"id": 147,
-					"__tag__": "Drawing",
+					"draw_order": 72,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10836,6 +10982,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 181.62,
 						"y0": 215.98,
@@ -10843,7 +10990,7 @@
 						"y1": 219.83
 					},
 					"id": 148,
-					"__tag__": "Drawing",
+					"draw_order": 73,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -10933,6 +11080,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 180.67,
 						"y0": 215.17,
@@ -10940,7 +11088,7 @@
 						"y1": 219.44
 					},
 					"id": 149,
-					"__tag__": "Drawing",
+					"draw_order": 74,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11014,6 +11162,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 171.74,
 						"y0": 227.3,
@@ -11021,7 +11170,7 @@
 						"y1": 231.15
 					},
 					"id": 150,
-					"__tag__": "Drawing",
+					"draw_order": 75,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11111,6 +11260,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 170.79,
 						"y0": 226.5,
@@ -11118,7 +11268,7 @@
 						"y1": 230.76
 					},
 					"id": 151,
-					"__tag__": "Drawing",
+					"draw_order": 76,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11192,6 +11342,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 184.38,
 						"y0": 210.23,
@@ -11199,7 +11350,7 @@
 						"y1": 214.09
 					},
 					"id": 152,
-					"__tag__": "Drawing",
+					"draw_order": 77,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11289,6 +11440,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 183.44,
 						"y0": 209.43,
@@ -11296,7 +11448,7 @@
 						"y1": 213.69
 					},
 					"id": 153,
-					"__tag__": "Drawing",
+					"draw_order": 78,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11370,6 +11522,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 174.5,
 						"y0": 221.58,
@@ -11377,7 +11530,7 @@
 						"y1": 225.44
 					},
 					"id": 154,
-					"__tag__": "Drawing",
+					"draw_order": 79,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11467,6 +11620,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 173.56,
 						"y0": 220.78,
@@ -11474,7 +11628,7 @@
 						"y1": 225.04
 					},
 					"id": 155,
-					"__tag__": "Drawing",
+					"draw_order": 80,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11548,6 +11702,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 178.84,
 						"y0": 221.66,
@@ -11555,7 +11710,7 @@
 						"y1": 225.51
 					},
 					"id": 156,
-					"__tag__": "Drawing",
+					"draw_order": 81,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11645,6 +11800,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 177.9,
 						"y0": 220.85,
@@ -11652,7 +11808,7 @@
 						"y1": 225.12
 					},
 					"id": 157,
-					"__tag__": "Drawing",
+					"draw_order": 82,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11726,6 +11882,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 177.27,
 						"y0": 215.86,
@@ -11733,7 +11890,7 @@
 						"y1": 219.72
 					},
 					"id": 158,
-					"__tag__": "Drawing",
+					"draw_order": 83,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11823,6 +11980,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 176.32,
 						"y0": 215.06,
@@ -11830,7 +11988,7 @@
 						"y1": 219.33
 					},
 					"id": 159,
-					"__tag__": "Drawing",
+					"draw_order": 84,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -11904,6 +12062,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 176.07,
 						"y0": 227.34,
@@ -11911,7 +12070,7 @@
 						"y1": 231.2
 					},
 					"id": 160,
-					"__tag__": "Drawing",
+					"draw_order": 85,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -12001,6 +12160,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 175.12,
 						"y0": 226.54,
@@ -12008,7 +12168,7 @@
 						"y1": 230.8
 					},
 					"id": 161,
-					"__tag__": "Drawing",
+					"draw_order": 86,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -12082,6 +12242,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 120.36,
 						"y0": 190.52,
@@ -12089,7 +12250,7 @@
 						"y1": 194.37
 					},
 					"id": 162,
-					"__tag__": "Drawing",
+					"draw_order": 87,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -12200,6 +12361,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 119.53,
 						"y0": 197.06,
@@ -12207,7 +12369,7 @@
 						"y1": 200.36
 					},
 					"id": 163,
-					"__tag__": "Drawing",
+					"draw_order": 88,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -12232,6 +12394,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 118.43,
 						"y0": 203.25,
@@ -12239,7 +12402,7 @@
 						"y1": 206.6
 					},
 					"id": 164,
-					"__tag__": "Drawing",
+					"draw_order": 89,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -12264,6 +12427,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 103.03,
 						"y0": 182.54,
@@ -12271,7 +12435,7 @@
 						"y1": 212.8
 					},
 					"id": 165,
-					"__tag__": "Drawing",
+					"draw_order": 90,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -12612,6 +12776,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 107.39,
 						"y0": 184.61,
@@ -12619,7 +12784,7 @@
 						"y1": 187.75
 					},
 					"id": 166,
-					"__tag__": "Drawing",
+					"draw_order": 91,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -12763,6 +12928,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 109.24,
 						"y0": 187.48,
@@ -12770,7 +12936,7 @@
 						"y1": 212.61
 					},
 					"id": 167,
-					"__tag__": "Drawing",
+					"draw_order": 92,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -12827,6 +12993,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 114.95,
 						"y0": 188.49,
@@ -12834,7 +13001,7 @@
 						"y1": 192.74
 					},
 					"id": 168,
-					"__tag__": "Drawing",
+					"draw_order": 93,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -13331,6 +13498,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 113.83,
 						"y0": 188.03,
@@ -13338,7 +13506,7 @@
 						"y1": 192.67
 					},
 					"id": 169,
-					"__tag__": "Drawing",
+					"draw_order": 94,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -13569,6 +13737,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 118.14,
 						"y0": 193.73,
@@ -13576,7 +13745,7 @@
 						"y1": 197.89
 					},
 					"id": 170,
-					"__tag__": "Drawing",
+					"draw_order": 95,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -13666,6 +13835,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 117.01,
 						"y0": 193.21,
@@ -13673,7 +13843,7 @@
 						"y1": 197.64
 					},
 					"id": 171,
-					"__tag__": "Drawing",
+					"draw_order": 96,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -13747,6 +13917,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 111.74,
 						"y0": 207.32,
@@ -13754,7 +13925,7 @@
 						"y1": 211.49
 					},
 					"id": 172,
-					"__tag__": "Drawing",
+					"draw_order": 97,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -13844,6 +14015,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 110.61,
 						"y0": 206.81,
@@ -13851,7 +14023,7 @@
 						"y1": 211.24
 					},
 					"id": 173,
-					"__tag__": "Drawing",
+					"draw_order": 98,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -13925,6 +14097,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 119.15,
 						"y0": 187.4,
@@ -13932,7 +14105,7 @@
 						"y1": 191.65
 					},
 					"id": 174,
-					"__tag__": "Drawing",
+					"draw_order": 99,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -14429,6 +14602,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 118.03,
 						"y0": 186.94,
@@ -14436,7 +14610,7 @@
 						"y1": 191.58
 					},
 					"id": 175,
-					"__tag__": "Drawing",
+					"draw_order": 100,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -14667,6 +14841,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 112.83,
 						"y0": 201.07,
@@ -14674,7 +14849,7 @@
 						"y1": 205.23
 					},
 					"id": 176,
-					"__tag__": "Drawing",
+					"draw_order": 101,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -14764,6 +14939,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 111.7,
 						"y0": 200.55,
@@ -14771,7 +14947,7 @@
 						"y1": 204.98
 					},
 					"id": 177,
-					"__tag__": "Drawing",
+					"draw_order": 102,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -14845,6 +15021,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 117.02,
 						"y0": 199.95,
@@ -14852,7 +15029,7 @@
 						"y1": 204.12
 					},
 					"id": 178,
-					"__tag__": "Drawing",
+					"draw_order": 103,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -14942,6 +15119,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 115.9,
 						"y0": 199.44,
@@ -14949,7 +15127,7 @@
 						"y1": 203.87
 					},
 					"id": 179,
-					"__tag__": "Drawing",
+					"draw_order": 104,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -15023,6 +15201,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 113.93,
 						"y0": 194.81,
@@ -15030,7 +15209,7 @@
 						"y1": 198.98
 					},
 					"id": 180,
-					"__tag__": "Drawing",
+					"draw_order": 105,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -15120,6 +15299,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 112.8,
 						"y0": 194.3,
@@ -15127,7 +15307,7 @@
 						"y1": 198.73
 					},
 					"id": 181,
-					"__tag__": "Drawing",
+					"draw_order": 106,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -15201,6 +15381,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 115.91,
 						"y0": 206.18,
@@ -15208,7 +15389,7 @@
 						"y1": 210.34
 					},
 					"id": 182,
-					"__tag__": "Drawing",
+					"draw_order": 107,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -15298,6 +15479,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 114.78,
 						"y0": 205.67,
@@ -15305,7 +15487,7 @@
 						"y1": 210.09
 					},
 					"id": 183,
-					"__tag__": "Drawing",
+					"draw_order": 108,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -15379,6 +15561,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 166.78,
 						"y0": 161.08,
@@ -15386,7 +15569,7 @@
 						"y1": 162.0
 					},
 					"id": 184,
-					"__tag__": "Drawing",
+					"draw_order": 109,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -15483,6 +15666,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 155.93,
 						"y0": 182.64,
@@ -15490,7 +15674,7 @@
 						"y1": 186.49
 					},
 					"id": 185,
-					"__tag__": "Drawing",
+					"draw_order": 110,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -15601,6 +15785,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 155.0,
 						"y0": 176.37,
@@ -15608,7 +15793,7 @@
 						"y1": 180.18
 					},
 					"id": 186,
-					"__tag__": "Drawing",
+					"draw_order": 111,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -15719,6 +15904,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 154.06,
 						"y0": 170.1,
@@ -15726,7 +15912,7 @@
 						"y1": 173.97
 					},
 					"id": 187,
-					"__tag__": "Drawing",
+					"draw_order": 112,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -15837,6 +16023,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 153.5,
 						"y0": 161.62,
@@ -15844,7 +16031,7 @@
 						"y1": 192.42
 					},
 					"id": 188,
-					"__tag__": "Drawing",
+					"draw_order": 113,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -16185,6 +16372,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 157.5,
 						"y0": 187.0,
@@ -16192,7 +16380,7 @@
 						"y1": 191.67
 					},
 					"id": 189,
-					"__tag__": "Drawing",
+					"draw_order": 114,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -16228,6 +16416,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 160.7,
 						"y0": 161.82,
@@ -16235,7 +16424,7 @@
 						"y1": 187.04
 					},
 					"id": 190,
-					"__tag__": "Drawing",
+					"draw_order": 115,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -16292,6 +16481,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 160.0,
 						"y0": 182.84,
@@ -16299,7 +16489,7 @@
 						"y1": 186.97
 					},
 					"id": 191,
-					"__tag__": "Drawing",
+					"draw_order": 116,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -16389,6 +16579,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 161.0,
 						"y0": 182.9,
@@ -16396,7 +16587,7 @@
 						"y1": 187.1
 					},
 					"id": 192,
-					"__tag__": "Drawing",
+					"draw_order": 117,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -16470,6 +16661,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 155.27,
 						"y0": 178.72,
@@ -16477,7 +16669,7 @@
 						"y1": 183.2
 					},
 					"id": 193,
-					"__tag__": "Drawing",
+					"draw_order": 118,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -16980,6 +17172,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 156.38,
 						"y0": 178.72,
@@ -16987,7 +17180,7 @@
 						"y1": 183.31
 					},
 					"id": 194,
-					"__tag__": "Drawing",
+					"draw_order": 119,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -17278,6 +17471,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 157.05,
 						"y0": 163.8,
@@ -17285,7 +17479,7 @@
 						"y1": 168.28
 					},
 					"id": 195,
-					"__tag__": "Drawing",
+					"draw_order": 120,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -17799,6 +17993,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 158.16,
 						"y0": 163.8,
@@ -17806,7 +18001,7 @@
 						"y1": 168.39
 					},
 					"id": 196,
-					"__tag__": "Drawing",
+					"draw_order": 121,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -18097,6 +18292,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 156.36,
 						"y0": 185.2,
@@ -18104,7 +18300,7 @@
 						"y1": 189.33
 					},
 					"id": 197,
-					"__tag__": "Drawing",
+					"draw_order": 122,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -18194,6 +18390,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 157.36,
 						"y0": 185.26,
@@ -18201,7 +18398,7 @@
 						"y1": 189.46
 					},
 					"id": 198,
-					"__tag__": "Drawing",
+					"draw_order": 123,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -18275,6 +18472,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 157.98,
 						"y0": 170.08,
@@ -18282,7 +18480,7 @@
 						"y1": 174.56
 					},
 					"id": 199,
-					"__tag__": "Drawing",
+					"draw_order": 124,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -18785,6 +18983,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 159.1,
 						"y0": 170.09,
@@ -18792,7 +18991,7 @@
 						"y1": 174.67
 					},
 					"id": 200,
-					"__tag__": "Drawing",
+					"draw_order": 125,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -19083,6 +19282,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 154.36,
 						"y0": 172.46,
@@ -19090,7 +19290,7 @@
 						"y1": 176.94
 					},
 					"id": 201,
-					"__tag__": "Drawing",
+					"draw_order": 126,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -19593,6 +19793,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 155.48,
 						"y0": 172.47,
@@ -19600,7 +19801,7 @@
 						"y1": 177.06
 					},
 					"id": 202,
-					"__tag__": "Drawing",
+					"draw_order": 127,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -19891,6 +20092,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 158.92,
 						"y0": 176.36,
@@ -19898,7 +20100,7 @@
 						"y1": 180.84
 					},
 					"id": 203,
-					"__tag__": "Drawing",
+					"draw_order": 128,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -20401,6 +20603,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 160.04,
 						"y0": 176.37,
@@ -20408,7 +20611,7 @@
 						"y1": 180.96
 					},
 					"id": 204,
-					"__tag__": "Drawing",
+					"draw_order": 129,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -20699,6 +20902,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 153.45,
 						"y0": 166.2,
@@ -20706,7 +20910,7 @@
 						"y1": 170.68
 					},
 					"id": 205,
-					"__tag__": "Drawing",
+					"draw_order": 130,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -21209,6 +21413,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 154.56,
 						"y0": 166.21,
@@ -21216,7 +21421,7 @@
 						"y1": 170.8
 					},
 					"id": 206,
-					"__tag__": "Drawing",
+					"draw_order": 131,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -21518,6 +21723,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 207.38,
 						"y0": 223.92,
@@ -21525,7 +21731,7 @@
 						"y1": 253.17
 					},
 					"id": 207,
-					"__tag__": "Drawing",
+					"draw_order": 132,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -21622,6 +21828,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 207.38,
 						"y0": 223.92,
@@ -21629,7 +21836,7 @@
 						"y1": 229.75
 					},
 					"id": 208,
-					"__tag__": "Drawing",
+					"draw_order": 133,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -21671,6 +21878,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 214.08,
 						"y0": 229.46,
@@ -21678,7 +21886,7 @@
 						"y1": 253.17
 					},
 					"id": 209,
-					"__tag__": "Drawing",
+					"draw_order": 134,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -21709,6 +21917,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 216.7,
 						"y0": 229.07,
@@ -21716,7 +21925,7 @@
 						"y1": 233.12
 					},
 					"id": 210,
-					"__tag__": "Drawing",
+					"draw_order": 135,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -21806,6 +22015,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 215.47,
 						"y0": 229.08,
@@ -21813,7 +22023,7 @@
 						"y1": 233.15
 					},
 					"id": 211,
-					"__tag__": "Drawing",
+					"draw_order": 136,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -21887,6 +22097,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 219.8,
 						"y0": 226.27,
@@ -21894,7 +22105,7 @@
 						"y1": 230.32
 					},
 					"id": 212,
-					"__tag__": "Drawing",
+					"draw_order": 137,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -21990,6 +22201,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 218.78,
 						"y0": 226.28,
@@ -21997,7 +22209,7 @@
 						"y1": 230.35
 					},
 					"id": 213,
-					"__tag__": "Drawing",
+					"draw_order": 138,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22077,6 +22289,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 218.93,
 						"y0": 241.33,
@@ -22084,7 +22297,7 @@
 						"y1": 245.39
 					},
 					"id": 214,
-					"__tag__": "Drawing",
+					"draw_order": 139,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22164,6 +22377,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 218.43,
 						"y0": 235.2,
@@ -22171,7 +22385,7 @@
 						"y1": 239.25
 					},
 					"id": 215,
-					"__tag__": "Drawing",
+					"draw_order": 140,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22267,6 +22481,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 217.2,
 						"y0": 235.22,
@@ -22274,7 +22489,7 @@
 						"y1": 239.28
 					},
 					"id": 216,
-					"__tag__": "Drawing",
+					"draw_order": 141,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22354,6 +22569,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 200.31,
 						"y0": 161.08,
@@ -22361,7 +22577,7 @@
 						"y1": 165.68
 					},
 					"id": 217,
-					"__tag__": "Drawing",
+					"draw_order": 142,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22458,6 +22674,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 210.07,
 						"y0": 161.08,
@@ -22465,7 +22682,7 @@
 						"y1": 165.68
 					},
 					"id": 218,
-					"__tag__": "Drawing",
+					"draw_order": 143,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22507,6 +22724,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 200.31,
 						"y0": 161.08,
@@ -22514,7 +22732,7 @@
 						"y1": 164.45
 					},
 					"id": 219,
-					"__tag__": "Drawing",
+					"draw_order": 144,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22545,6 +22763,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 123.84,
 						"y0": 202.59,
@@ -22552,7 +22771,7 @@
 						"y1": 219.85
 					},
 					"id": 220,
-					"__tag__": "Drawing",
+					"draw_order": 145,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22643,6 +22862,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 123.84,
 						"y0": 203.3,
@@ -22650,7 +22870,7 @@
 						"y1": 213.8
 					},
 					"id": 221,
-					"__tag__": "Drawing",
+					"draw_order": 146,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22686,6 +22906,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 129.74,
 						"y0": 213.8,
@@ -22693,7 +22914,7 @@
 						"y1": 219.85
 					},
 					"id": 222,
-					"__tag__": "Drawing",
+					"draw_order": 147,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22729,6 +22950,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 137.85,
 						"y0": 208.23,
@@ -22736,7 +22958,7 @@
 						"y1": 218.75
 					},
 					"id": 223,
-					"__tag__": "Drawing",
+					"draw_order": 148,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22761,6 +22983,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 128.25,
 						"y0": 202.8,
@@ -22768,7 +22991,7 @@
 						"y1": 206.29
 					},
 					"id": 224,
-					"__tag__": "Drawing",
+					"draw_order": 149,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22858,6 +23081,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 128.6,
 						"y0": 203.65,
@@ -22865,7 +23089,7 @@
 						"y1": 207.3
 					},
 					"id": 225,
-					"__tag__": "Drawing",
+					"draw_order": 150,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -22939,6 +23163,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 125.46,
 						"y0": 208.08,
@@ -22946,7 +23171,7 @@
 						"y1": 211.57
 					},
 					"id": 226,
-					"__tag__": "Drawing",
+					"draw_order": 151,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -23036,6 +23261,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 125.8,
 						"y0": 208.93,
@@ -23043,7 +23269,7 @@
 						"y1": 212.58
 					},
 					"id": 227,
-					"__tag__": "Drawing",
+					"draw_order": 152,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -23117,6 +23343,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 138.54,
 						"y0": 245.04,
@@ -23124,7 +23351,7 @@
 						"y1": 253.17
 					},
 					"id": 228,
-					"__tag__": "Drawing",
+					"draw_order": 153,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -23264,6 +23491,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 138.93,
 						"y0": 245.3,
@@ -23271,7 +23499,7 @@
 						"y1": 252.0
 					},
 					"id": 229,
-					"__tag__": "Drawing",
+					"draw_order": 154,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -23307,6 +23535,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 140.53,
 						"y0": 250.33,
@@ -23314,7 +23543,7 @@
 						"y1": 253.17
 					},
 					"id": 230,
-					"__tag__": "Drawing",
+					"draw_order": 155,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -23372,6 +23601,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 197.22,
 						"y0": 209.41,
@@ -23379,7 +23609,7 @@
 						"y1": 220.13
 					},
 					"id": 231,
-					"__tag__": "Drawing",
+					"draw_order": 156,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -23513,6 +23743,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 208.67,
 						"y0": 216.83,
@@ -23520,7 +23751,7 @@
 						"y1": 220.13
 					},
 					"id": 232,
-					"__tag__": "Drawing",
+					"draw_order": 157,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -23556,6 +23787,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 197.32,
 						"y0": 210.68,
@@ -23563,7 +23795,7 @@
 						"y1": 217.04
 					},
 					"id": 233,
-					"__tag__": "Drawing",
+					"draw_order": 158,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -23599,6 +23831,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 199.84,
 						"y0": 214.78,
@@ -23606,7 +23839,7 @@
 						"y1": 218.52
 					},
 					"id": 234,
-					"__tag__": "Drawing",
+					"draw_order": 159,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -23658,6 +23891,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 137.76,
 						"y0": 161.08,
@@ -23665,7 +23899,7 @@
 						"y1": 173.35
 					},
 					"id": 235,
-					"__tag__": "Drawing",
+					"draw_order": 160,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -24342,6 +24576,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 140.42,
 						"y0": 167.85,
@@ -24349,7 +24584,7 @@
 						"y1": 172.55
 					},
 					"id": 236,
-					"__tag__": "Drawing",
+					"draw_order": 161,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -24493,6 +24728,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 139.12,
 						"y0": 161.08,
@@ -24500,7 +24736,7 @@
 						"y1": 168.32
 					},
 					"id": 237,
-					"__tag__": "Drawing",
+					"draw_order": 162,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -24780,6 +25016,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 197.43,
 						"y0": 222.72,
@@ -24787,7 +25024,7 @@
 						"y1": 227.0
 					},
 					"id": 238,
-					"__tag__": "Drawing",
+					"draw_order": 163,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -24861,6 +25098,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 198.39,
 						"y0": 222.4,
@@ -24868,7 +25106,7 @@
 						"y1": 226.51
 					},
 					"id": 239,
-					"__tag__": "Drawing",
+					"draw_order": 164,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -24958,6 +25196,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 199.01,
 						"y0": 223.04,
@@ -24965,7 +25204,7 @@
 						"y1": 225.87
 					},
 					"id": 240,
-					"__tag__": "Drawing",
+					"draw_order": 165,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -25055,6 +25294,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 199.01,
 						"y0": 223.89,
@@ -25062,7 +25302,7 @@
 						"y1": 225.87
 					},
 					"id": 241,
-					"__tag__": "Drawing",
+					"draw_order": 166,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -25158,6 +25398,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 199.01,
 						"y0": 223.04,
@@ -25165,7 +25406,7 @@
 						"y1": 225.87
 					},
 					"id": 242,
-					"__tag__": "Drawing",
+					"draw_order": 167,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -25255,6 +25496,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 188.31,
 						"y0": 220.3,
@@ -25262,7 +25504,7 @@
 						"y1": 234.08
 					},
 					"id": 243,
-					"__tag__": "Drawing",
+					"draw_order": 168,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -25488,6 +25730,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 196.81,
 						"y0": 222.45,
@@ -25495,7 +25738,7 @@
 						"y1": 227.76
 					},
 					"id": 244,
-					"__tag__": "Drawing",
+					"draw_order": 169,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -25596,6 +25839,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 178.5,
@@ -25603,7 +25847,7 @@
 						"y1": 196.51
 					},
 					"id": 245,
-					"__tag__": "Drawing",
+					"draw_order": 170,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -25886,6 +26130,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 184.44,
@@ -25893,7 +26138,7 @@
 						"y1": 187.03
 					},
 					"id": 246,
-					"__tag__": "Drawing",
+					"draw_order": 171,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -25989,6 +26234,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 185.46,
@@ -25996,7 +26242,7 @@
 						"y1": 188.31
 					},
 					"id": 247,
-					"__tag__": "Drawing",
+					"draw_order": 172,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26076,6 +26322,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 179.21,
@@ -26083,7 +26330,7 @@
 						"y1": 181.72
 					},
 					"id": 248,
-					"__tag__": "Drawing",
+					"draw_order": 173,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26179,6 +26426,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 180.16,
@@ -26186,7 +26434,7 @@
 						"y1": 182.94
 					},
 					"id": 249,
-					"__tag__": "Drawing",
+					"draw_order": 174,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26266,6 +26514,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 93.34,
 						"y0": 182.54,
@@ -26273,7 +26522,7 @@
 						"y1": 185.16
 					},
 					"id": 250,
-					"__tag__": "Drawing",
+					"draw_order": 175,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26363,6 +26612,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 93.13,
 						"y0": 183.53,
@@ -26370,7 +26620,7 @@
 						"y1": 186.43
 					},
 					"id": 251,
-					"__tag__": "Drawing",
+					"draw_order": 176,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26444,6 +26694,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 182.81,
@@ -26451,7 +26702,7 @@
 						"y1": 189.71
 					},
 					"id": 252,
-					"__tag__": "Drawing",
+					"draw_order": 177,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26493,6 +26744,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 90.01,
 						"y0": 189.71,
@@ -26500,7 +26752,7 @@
 						"y1": 196.29
 					},
 					"id": 253,
-					"__tag__": "Drawing",
+					"draw_order": 178,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26531,6 +26783,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 160.75,
 						"y0": 241.77,
@@ -26538,7 +26791,7 @@
 						"y1": 253.17
 					},
 					"id": 254,
-					"__tag__": "Drawing",
+					"draw_order": 179,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26624,6 +26877,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 168.11,
 						"y0": 242.78,
@@ -26631,7 +26885,7 @@
 						"y1": 246.71
 					},
 					"id": 255,
-					"__tag__": "Drawing",
+					"draw_order": 180,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26721,6 +26975,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 167.14,
 						"y0": 243.16,
@@ -26728,7 +26983,7 @@
 						"y1": 247.49
 					},
 					"id": 256,
-					"__tag__": "Drawing",
+					"draw_order": 181,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26802,6 +27057,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 168.99,
 						"y0": 248.18,
@@ -26809,7 +27065,7 @@
 						"y1": 252.12
 					},
 					"id": 257,
-					"__tag__": "Drawing",
+					"draw_order": 182,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26899,6 +27155,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 168.0,
 						"y0": 248.59,
@@ -26906,7 +27163,7 @@
 						"y1": 252.95
 					},
 					"id": 258,
-					"__tag__": "Drawing",
+					"draw_order": 183,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -26980,6 +27237,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 172.99,
 						"y0": 244.67,
@@ -26987,7 +27245,7 @@
 						"y1": 248.58
 					},
 					"id": 259,
-					"__tag__": "Drawing",
+					"draw_order": 184,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -27077,6 +27335,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 172.04,
 						"y0": 245.05,
@@ -27084,7 +27343,7 @@
 						"y1": 249.36
 					},
 					"id": 260,
-					"__tag__": "Drawing",
+					"draw_order": 185,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -27158,6 +27417,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 173.87,
 						"y0": 250.01,
@@ -27165,7 +27425,7 @@
 						"y1": 253.17
 					},
 					"id": 261,
-					"__tag__": "Drawing",
+					"draw_order": 186,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -27261,6 +27521,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 172.86,
 						"y0": 250.41,
@@ -27268,7 +27529,7 @@
 						"y1": 253.17
 					},
 					"id": 262,
-					"__tag__": "Drawing",
+					"draw_order": 187,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -27348,6 +27609,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 165.89,
 						"y0": 241.77,
@@ -27355,7 +27617,7 @@
 						"y1": 253.17
 					},
 					"id": 263,
-					"__tag__": "Drawing",
+					"draw_order": 188,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -27397,6 +27659,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 162.44,
 						"y0": 252.72,
@@ -27404,7 +27667,7 @@
 						"y1": 253.17
 					},
 					"id": 264,
-					"__tag__": "Drawing",
+					"draw_order": 189,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -27435,6 +27698,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 177.88,
 						"y0": 165.21,
@@ -27442,7 +27706,7 @@
 						"y1": 185.48
 					},
 					"id": 265,
-					"__tag__": "Drawing",
+					"draw_order": 190,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -27719,6 +27983,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 185.75,
 						"y0": 166.9,
@@ -27726,7 +27991,7 @@
 						"y1": 171.08
 					},
 					"id": 266,
-					"__tag__": "Drawing",
+					"draw_order": 191,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -28147,6 +28412,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 184.69,
 						"y0": 167.01,
@@ -28154,7 +28420,7 @@
 						"y1": 171.64
 					},
 					"id": 267,
-					"__tag__": "Drawing",
+					"draw_order": 192,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -28385,6 +28651,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 185.75,
 						"y0": 172.39,
@@ -28392,7 +28659,7 @@
 						"y1": 176.56
 					},
 					"id": 268,
-					"__tag__": "Drawing",
+					"draw_order": 193,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -28753,6 +29020,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 184.67,
 						"y0": 172.52,
@@ -28760,7 +29028,7 @@
 						"y1": 177.18
 					},
 					"id": 269,
-					"__tag__": "Drawing",
+					"draw_order": 194,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -28991,6 +29259,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 190.27,
 						"y0": 169.54,
@@ -28998,7 +29267,7 @@
 						"y1": 173.7
 					},
 					"id": 270,
-					"__tag__": "Drawing",
+					"draw_order": 195,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -29343,6 +29612,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 189.23,
 						"y0": 169.66,
@@ -29350,7 +29620,7 @@
 						"y1": 174.27
 					},
 					"id": 271,
-					"__tag__": "Drawing",
+					"draw_order": 196,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -29581,6 +29851,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 190.27,
 						"y0": 174.97,
@@ -29588,7 +29859,7 @@
 						"y1": 179.17
 					},
 					"id": 272,
-					"__tag__": "Drawing",
+					"draw_order": 197,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -29949,6 +30220,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 189.17,
 						"y0": 175.09,
@@ -29956,7 +30228,7 @@
 						"y1": 179.76
 					},
 					"id": 273,
-					"__tag__": "Drawing",
+					"draw_order": 198,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -30187,6 +30459,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 183.69,
 						"y0": 165.18,
@@ -30194,7 +30467,7 @@
 						"y1": 182.3
 					},
 					"id": 274,
-					"__tag__": "Drawing",
+					"draw_order": 199,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -30338,6 +30611,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 177.85,
 						"y0": 176.24,
@@ -30345,7 +30619,7 @@
 						"y1": 180.01
 					},
 					"id": 275,
-					"__tag__": "Drawing",
+					"draw_order": 200,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -30456,6 +30730,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 154.87,
 						"y0": 215.3,
@@ -30463,7 +30738,7 @@
 						"y1": 222.54
 					},
 					"id": 276,
-					"__tag__": "Drawing",
+					"draw_order": 201,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -30553,6 +30828,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 156.96,
 						"y0": 216.9,
@@ -30560,7 +30836,7 @@
 						"y1": 221.3
 					},
 					"id": 277,
-					"__tag__": "Drawing",
+					"draw_order": 202,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -30650,6 +30926,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 156.04,
 						"y0": 216.71,
@@ -30657,7 +30934,7 @@
 						"y1": 220.96
 					},
 					"id": 278,
-					"__tag__": "Drawing",
+					"draw_order": 203,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -30747,6 +31024,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 153.85,
 						"y0": 215.73,
@@ -30754,7 +31032,7 @@
 						"y1": 221.25
 					},
 					"id": 279,
-					"__tag__": "Drawing",
+					"draw_order": 204,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -30806,6 +31084,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 154.51,
 						"y0": 215.7,
@@ -30813,7 +31092,7 @@
 						"y1": 221.51
 					},
 					"id": 280,
-					"__tag__": "Drawing",
+					"draw_order": 205,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -30903,6 +31182,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 200.41,
 						"y0": 242.26,
@@ -30910,7 +31190,7 @@
 						"y1": 249.5
 					},
 					"id": 281,
-					"__tag__": "Drawing",
+					"draw_order": 206,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31000,6 +31280,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 202.5,
 						"y0": 243.86,
@@ -31007,7 +31288,7 @@
 						"y1": 248.26
 					},
 					"id": 282,
-					"__tag__": "Drawing",
+					"draw_order": 207,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31097,6 +31378,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 201.58,
 						"y0": 243.67,
@@ -31104,7 +31386,7 @@
 						"y1": 247.92
 					},
 					"id": 283,
-					"__tag__": "Drawing",
+					"draw_order": 208,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31194,6 +31476,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 199.39,
 						"y0": 242.69,
@@ -31201,7 +31484,7 @@
 						"y1": 248.21
 					},
 					"id": 284,
-					"__tag__": "Drawing",
+					"draw_order": 209,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31253,6 +31536,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 200.04,
 						"y0": 242.66,
@@ -31260,7 +31544,7 @@
 						"y1": 248.47
 					},
 					"id": 285,
-					"__tag__": "Drawing",
+					"draw_order": 210,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31350,6 +31634,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 125.28,
 						"y0": 232.18,
@@ -31357,7 +31642,7 @@
 						"y1": 242.41
 					},
 					"id": 286,
-					"__tag__": "Drawing",
+					"draw_order": 211,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31459,6 +31744,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 125.28,
 						"y0": 238.13,
@@ -31466,7 +31752,7 @@
 						"y1": 241.88
 					},
 					"id": 287,
-					"__tag__": "Drawing",
+					"draw_order": 212,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31502,6 +31788,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 131.18,
 						"y0": 232.18,
@@ -31509,7 +31796,7 @@
 						"y1": 238.13
 					},
 					"id": 288,
-					"__tag__": "Drawing",
+					"draw_order": 213,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31534,6 +31821,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 126.1,
 						"y0": 232.66,
@@ -31541,7 +31829,7 @@
 						"y1": 236.69
 					},
 					"id": 289,
-					"__tag__": "Drawing",
+					"draw_order": 214,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31631,6 +31919,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 126.69,
 						"y0": 233.28,
@@ -31638,7 +31927,7 @@
 						"y1": 237.4
 					},
 					"id": 290,
-					"__tag__": "Drawing",
+					"draw_order": 215,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31712,6 +32001,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 180.0,
 						"y0": 235.21,
@@ -31719,7 +32009,7 @@
 						"y1": 245.44
 					},
 					"id": 291,
-					"__tag__": "Drawing",
+					"draw_order": 216,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31821,6 +32111,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 180.0,
 						"y0": 241.16,
@@ -31828,7 +32119,7 @@
 						"y1": 244.91
 					},
 					"id": 292,
-					"__tag__": "Drawing",
+					"draw_order": 217,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31864,6 +32155,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 185.91,
 						"y0": 235.21,
@@ -31871,7 +32163,7 @@
 						"y1": 241.16
 					},
 					"id": 293,
-					"__tag__": "Drawing",
+					"draw_order": 218,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31896,6 +32188,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 180.82,
 						"y0": 235.69,
@@ -31903,7 +32196,7 @@
 						"y1": 239.72
 					},
 					"id": 294,
-					"__tag__": "Drawing",
+					"draw_order": 219,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -31993,6 +32286,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 181.41,
 						"y0": 236.31,
@@ -32000,7 +32294,7 @@
 						"y1": 240.44
 					},
 					"id": 295,
-					"__tag__": "Drawing",
+					"draw_order": 220,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32074,6 +32368,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 92.31,
 						"y0": 217.79,
@@ -32081,7 +32376,7 @@
 						"y1": 229.76
 					},
 					"id": 296,
-					"__tag__": "Drawing",
+					"draw_order": 221,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32183,6 +32478,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 95.91,
 						"y0": 217.92,
@@ -32190,7 +32486,7 @@
 						"y1": 224.83
 					},
 					"id": 297,
-					"__tag__": "Drawing",
+					"draw_order": 222,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32226,6 +32522,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 94.17,
 						"y0": 222.82,
@@ -32233,7 +32530,7 @@
 						"y1": 227.76
 					},
 					"id": 298,
-					"__tag__": "Drawing",
+					"draw_order": 223,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32258,6 +32555,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 96.86,
 						"y0": 225.37,
@@ -32265,7 +32563,7 @@
 						"y1": 229.04
 					},
 					"id": 299,
-					"__tag__": "Drawing",
+					"draw_order": 224,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32355,6 +32653,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 96.48,
 						"y0": 224.45,
@@ -32362,7 +32661,7 @@
 						"y1": 227.88
 					},
 					"id": 300,
-					"__tag__": "Drawing",
+					"draw_order": 225,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32436,6 +32735,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 148.97,
 						"y0": 198.18,
@@ -32443,7 +32743,7 @@
 						"y1": 211.95
 					},
 					"id": 301,
-					"__tag__": "Drawing",
+					"draw_order": 226,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32556,6 +32856,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 151.81,
 						"y0": 200.95,
@@ -32563,7 +32864,7 @@
 						"y1": 204.46
 					},
 					"id": 302,
-					"__tag__": "Drawing",
+					"draw_order": 227,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32653,6 +32954,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 151.7,
 						"y0": 202.51,
@@ -32660,7 +32962,7 @@
 						"y1": 205.35
 					},
 					"id": 303,
-					"__tag__": "Drawing",
+					"draw_order": 228,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32734,6 +33036,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 158.12,
 						"y0": 199.05,
@@ -32741,7 +33044,7 @@
 						"y1": 202.56
 					},
 					"id": 304,
-					"__tag__": "Drawing",
+					"draw_order": 229,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32831,6 +33134,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 158.01,
 						"y0": 200.61,
@@ -32838,7 +33142,7 @@
 						"y1": 203.45
 					},
 					"id": 305,
-					"__tag__": "Drawing",
+					"draw_order": 230,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32912,6 +33216,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 149.41,
 						"y0": 201.95,
@@ -32919,7 +33224,7 @@
 						"y1": 207.14
 					},
 					"id": 306,
-					"__tag__": "Drawing",
+					"draw_order": 231,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32955,6 +33260,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 151.57,
 						"y0": 207.14,
@@ -32962,7 +33268,7 @@
 						"y1": 211.95
 					},
 					"id": 307,
-					"__tag__": "Drawing",
+					"draw_order": 232,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -32987,6 +33293,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 91.95,
 						"y0": 163.29,
@@ -32994,7 +33301,7 @@
 						"y1": 178.74
 					},
 					"id": 308,
-					"__tag__": "Drawing",
+					"draw_order": 233,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -33107,6 +33414,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 98.73,
 						"y0": 165.11,
@@ -33114,7 +33422,7 @@
 						"y1": 169.56
 					},
 					"id": 309,
-					"__tag__": "Drawing",
+					"draw_order": 234,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -33204,6 +33512,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 97.98,
 						"y0": 165.6,
@@ -33211,7 +33520,7 @@
 						"y1": 170.01
 					},
 					"id": 310,
-					"__tag__": "Drawing",
+					"draw_order": 235,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -33285,6 +33594,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 104.07,
 						"y0": 168.96,
@@ -33292,7 +33602,7 @@
 						"y1": 173.41
 					},
 					"id": 311,
-					"__tag__": "Drawing",
+					"draw_order": 236,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -33382,6 +33692,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 103.32,
 						"y0": 169.45,
@@ -33389,7 +33700,7 @@
 						"y1": 173.86
 					},
 					"id": 312,
-					"__tag__": "Drawing",
+					"draw_order": 237,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -33463,6 +33774,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 96.04,
 						"y0": 163.29,
@@ -33470,7 +33782,7 @@
 						"y1": 176.18
 					},
 					"id": 313,
-					"__tag__": "Drawing",
+					"draw_order": 238,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -33506,6 +33818,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 91.95,
 						"y0": 168.5,
@@ -33513,7 +33826,7 @@
 						"y1": 171.08
 					},
 					"id": 314,
-					"__tag__": "Drawing",
+					"draw_order": 239,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -33538,6 +33851,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 115.68,
 						"y0": 161.08,
@@ -33545,7 +33859,7 @@
 						"y1": 177.87
 					},
 					"id": 315,
-					"__tag__": "Drawing",
+					"draw_order": 240,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -34041,6 +34355,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 118.09,
 						"y0": 166.32,
@@ -34048,7 +34363,7 @@
 						"y1": 170.22
 					},
 					"id": 316,
-					"__tag__": "Drawing",
+					"draw_order": 241,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -34138,6 +34453,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 118.41,
 						"y0": 167.46,
@@ -34145,7 +34461,7 @@
 						"y1": 171.05
 					},
 					"id": 317,
-					"__tag__": "Drawing",
+					"draw_order": 242,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -34219,6 +34535,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 122.91,
 						"y0": 161.83,
@@ -34226,7 +34543,7 @@
 						"y1": 165.73
 					},
 					"id": 318,
-					"__tag__": "Drawing",
+					"draw_order": 243,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -34316,6 +34633,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 123.23,
 						"y0": 162.97,
@@ -34323,7 +34641,7 @@
 						"y1": 166.56
 					},
 					"id": 319,
-					"__tag__": "Drawing",
+					"draw_order": 244,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -34397,6 +34715,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 115.67,
 						"y0": 163.87,
@@ -34404,7 +34723,7 @@
 						"y1": 173.36
 					},
 					"id": 320,
-					"__tag__": "Drawing",
+					"draw_order": 245,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -34556,6 +34875,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 120.29,
 						"y0": 172.83,
@@ -34563,7 +34883,7 @@
 						"y1": 177.88
 					},
 					"id": 321,
-					"__tag__": "Drawing",
+					"draw_order": 246,
 					"fill_color": [
 						0.38,
 						0.38,
@@ -34674,6 +34994,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 185.46,
 						"y0": 251.31,
@@ -34681,7 +35002,7 @@
 						"y1": 253.17
 					},
 					"id": 322,
-					"__tag__": "Drawing",
+					"draw_order": 247,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -34800,6 +35121,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 191.09,
 						"y0": 252.68,
@@ -34807,7 +35129,7 @@
 						"y1": 253.17
 					},
 					"id": 323,
-					"__tag__": "Drawing",
+					"draw_order": 248,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -34903,6 +35225,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 190.51,
 						"y0": 253.25,
@@ -34910,7 +35233,7 @@
 						"y1": 253.25
 					},
 					"id": 324,
-					"__tag__": "Drawing",
+					"draw_order": 249,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -34990,6 +35313,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 188.87,
 						"y0": 251.31,
@@ -34997,7 +35321,7 @@
 						"y1": 253.17
 					},
 					"id": 325,
-					"__tag__": "Drawing",
+					"draw_order": 250,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35039,6 +35363,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 109.37,
 						"y0": 220.88,
@@ -35046,7 +35371,7 @@
 						"y1": 235.74
 					},
 					"id": 326,
-					"__tag__": "Drawing",
+					"draw_order": 251,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35137,6 +35462,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 111.07,
 						"y0": 221.16,
@@ -35144,7 +35470,7 @@
 						"y1": 225.08
 					},
 					"id": 327,
-					"__tag__": "Drawing",
+					"draw_order": 252,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35180,6 +35506,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 113.18,
 						"y0": 220.88,
@@ -35187,7 +35514,7 @@
 						"y1": 224.29
 					},
 					"id": 328,
-					"__tag__": "Drawing",
+					"draw_order": 253,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35261,6 +35588,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 114.4,
 						"y0": 225.08,
@@ -35268,7 +35596,7 @@
 						"y1": 235.73
 					},
 					"id": 329,
-					"__tag__": "Drawing",
+					"draw_order": 254,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35304,6 +35632,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 109.37,
 						"y0": 233.9,
@@ -35311,7 +35640,7 @@
 						"y1": 234.34
 					},
 					"id": 330,
-					"__tag__": "Drawing",
+					"draw_order": 255,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35336,6 +35665,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 112.92,
 						"y0": 220.32,
@@ -35343,7 +35673,7 @@
 						"y1": 222.97
 					},
 					"id": 331,
-					"__tag__": "Drawing",
+					"draw_order": 256,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35433,6 +35763,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 95.74,
 						"y0": 237.87,
@@ -35440,7 +35771,7 @@
 						"y1": 246.76
 					},
 					"id": 332,
-					"__tag__": "Drawing",
+					"draw_order": 257,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35552,6 +35883,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 95.74,
 						"y0": 237.87,
@@ -35559,7 +35891,7 @@
 						"y1": 243.43
 					},
 					"id": 333,
-					"__tag__": "Drawing",
+					"draw_order": 258,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35595,6 +35927,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 97.28,
 						"y0": 242.95,
@@ -35602,7 +35935,7 @@
 						"y1": 247.11
 					},
 					"id": 334,
-					"__tag__": "Drawing",
+					"draw_order": 259,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35635,6 +35968,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 107.61,
 						"y0": 243.79,
@@ -35642,7 +35976,7 @@
 						"y1": 253.17
 					},
 					"id": 335,
-					"__tag__": "Drawing",
+					"draw_order": 260,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35877,6 +36211,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 120.29,
 						"y0": 245.39,
@@ -35884,7 +36219,7 @@
 						"y1": 250.0
 					},
 					"id": 336,
-					"__tag__": "Drawing",
+					"draw_order": 261,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -35985,6 +36320,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 119.35,
 						"y0": 245.7,
@@ -35992,7 +36328,7 @@
 						"y1": 250.06
 					},
 					"id": 337,
-					"__tag__": "Drawing",
+					"draw_order": 262,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36066,6 +36402,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 116.84,
 						"y0": 248.29,
@@ -36073,7 +36410,7 @@
 						"y1": 252.66
 					},
 					"id": 338,
-					"__tag__": "Drawing",
+					"draw_order": 263,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36219,6 +36556,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 118.79,
 						"y0": 252.3,
@@ -36226,7 +36564,7 @@
 						"y1": 253.17
 					},
 					"id": 339,
-					"__tag__": "Drawing",
+					"draw_order": 264,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36306,6 +36644,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 114.07,
 						"y0": 250.82,
@@ -36313,7 +36652,7 @@
 						"y1": 253.14
 					},
 					"id": 340,
-					"__tag__": "Drawing",
+					"draw_order": 265,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36387,6 +36726,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 115.19,
 						"y0": 250.65,
@@ -36394,7 +36734,7 @@
 						"y1": 253.17
 					},
 					"id": 341,
-					"__tag__": "Drawing",
+					"draw_order": 266,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36501,6 +36841,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 114.62,
 						"y0": 245.51,
@@ -36508,7 +36849,7 @@
 						"y1": 248.59
 					},
 					"id": 342,
-					"__tag__": "Drawing",
+					"draw_order": 267,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36571,6 +36912,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 115.9,
 						"y0": 244.23,
@@ -36578,7 +36920,7 @@
 						"y1": 244.38
 					},
 					"id": 343,
-					"__tag__": "Drawing",
+					"draw_order": 268,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36603,6 +36945,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 114.81,
 						"y0": 245.44,
@@ -36610,7 +36953,7 @@
 						"y1": 245.5
 					},
 					"id": 344,
-					"__tag__": "Drawing",
+					"draw_order": 269,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36635,6 +36978,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 115.69,
 						"y0": 244.14,
@@ -36642,7 +36986,7 @@
 						"y1": 248.5
 					},
 					"id": 345,
-					"__tag__": "Drawing",
+					"draw_order": 270,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36743,6 +37087,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 119.82,
 						"y0": 252.05,
@@ -36750,7 +37095,7 @@
 						"y1": 253.17
 					},
 					"id": 346,
-					"__tag__": "Drawing",
+					"draw_order": 271,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36857,6 +37202,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 113.21,
 						"y0": 243.56,
@@ -36864,7 +37210,7 @@
 						"y1": 253.17
 					},
 					"id": 347,
-					"__tag__": "Drawing",
+					"draw_order": 272,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -36960,6 +37306,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 122.76,
 						"y0": 249.51,
@@ -36967,7 +37314,7 @@
 						"y1": 253.17
 					},
 					"id": 348,
-					"__tag__": "Drawing",
+					"draw_order": 273,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -37025,6 +37372,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 191.73,
 						"y0": 192.88,
@@ -37032,7 +37380,7 @@
 						"y1": 204.25
 					},
 					"id": 349,
-					"__tag__": "Drawing",
+					"draw_order": 274,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -37261,6 +37609,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 193.49,
 						"y0": 188.16,
@@ -37268,7 +37617,7 @@
 						"y1": 191.43
 					},
 					"id": 350,
-					"__tag__": "Drawing",
+					"draw_order": 275,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -37369,6 +37718,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 193.8,
 						"y0": 189.49,
@@ -37376,7 +37726,7 @@
 						"y1": 192.35
 					},
 					"id": 351,
-					"__tag__": "Drawing",
+					"draw_order": 276,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -37450,6 +37800,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 196.25,
 						"y0": 191.97,
@@ -37457,7 +37808,7 @@
 						"y1": 195.0
 					},
 					"id": 352,
-					"__tag__": "Drawing",
+					"draw_order": 277,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -37603,6 +37954,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 200.38,
 						"y0": 190.38,
@@ -37610,7 +37962,7 @@
 						"y1": 193.16
 					},
 					"id": 353,
-					"__tag__": "Drawing",
+					"draw_order": 278,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -37684,6 +38036,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 198.72,
 						"y0": 195.38,
@@ -37691,7 +38044,7 @@
 						"y1": 197.83
 					},
 					"id": 354,
-					"__tag__": "Drawing",
+					"draw_order": 279,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -37765,6 +38118,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 202.84,
 						"y0": 195.1,
@@ -37772,7 +38126,7 @@
 						"y1": 196.89
 					},
 					"id": 355,
-					"__tag__": "Drawing",
+					"draw_order": 280,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -37816,6 +38170,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 198.56,
 						"y0": 193.4,
@@ -37823,7 +38178,7 @@
 						"y1": 196.7
 					},
 					"id": 356,
-					"__tag__": "Drawing",
+					"draw_order": 281,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -37924,6 +38279,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 193.35,
 						"y0": 194.18,
@@ -37931,7 +38287,7 @@
 						"y1": 197.06
 					},
 					"id": 357,
-					"__tag__": "Drawing",
+					"draw_order": 282,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -37994,6 +38350,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 192.16,
 						"y0": 194.48,
@@ -38001,7 +38358,7 @@
 						"y1": 195.7
 					},
 					"id": 358,
-					"__tag__": "Drawing",
+					"draw_order": 283,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -38026,6 +38383,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 193.33,
 						"y0": 195.72,
@@ -38033,7 +38391,7 @@
 						"y1": 196.82
 					},
 					"id": 359,
-					"__tag__": "Drawing",
+					"draw_order": 284,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -38058,6 +38416,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 192.1,
 						"y0": 192.61,
@@ -38065,7 +38424,7 @@
 						"y1": 195.99
 					},
 					"id": 360,
-					"__tag__": "Drawing",
+					"draw_order": 285,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -38166,6 +38525,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 200.16,
 						"y0": 188.97,
@@ -38173,7 +38533,7 @@
 						"y1": 192.13
 					},
 					"id": 361,
-					"__tag__": "Drawing",
+					"draw_order": 286,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -38274,6 +38634,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 191.56,
 						"y0": 190.22,
@@ -38281,7 +38642,7 @@
 						"y1": 198.5
 					},
 					"id": 362,
-					"__tag__": "Drawing",
+					"draw_order": 287,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -38371,6 +38732,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 197.66,
 						"y0": 188.68,
@@ -38378,7 +38740,7 @@
 						"y1": 189.18
 					},
 					"id": 363,
-					"__tag__": "Drawing",
+					"draw_order": 288,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -38430,6 +38792,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 202.7,
 						"y0": 195.75,
@@ -38437,7 +38800,7 @@
 						"y1": 196.89
 					},
 					"id": 364,
-					"__tag__": "Drawing",
+					"draw_order": 289,
 					"stroke_color": [
 						0.38,
 						0.38,
@@ -38462,6 +38825,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 15.17,
 						"y0": 15.17,
@@ -38469,7 +38833,7 @@
 						"y1": 121.58
 					},
 					"id": 365,
-					"__tag__": "Drawing",
+					"draw_order": 290,
 					"fill_color": [
 						0.77,
 						0.78,
@@ -38947,6 +39311,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 15.17,
 						"y0": 15.17,
@@ -38954,7 +39319,7 @@
 						"y1": 122.0
 					},
 					"id": 366,
-					"__tag__": "Drawing",
+					"draw_order": 292,
 					"fill_color": [
 						0.34,
 						0.35,
@@ -41723,6 +42088,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 111.54,
 						"y0": 90.03,
@@ -41730,7 +42096,7 @@
 						"y1": 95.75
 					},
 					"id": 367,
-					"__tag__": "Drawing",
+					"draw_order": 293,
 					"fill_color": [
 						0.34,
 						0.35,
@@ -41876,6 +42242,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 114.49,
 						"y0": 94.6,
@@ -41883,7 +42250,7 @@
 						"y1": 98.78
 					},
 					"id": 368,
-					"__tag__": "Drawing",
+					"draw_order": 294,
 					"fill_color": [
 						0.34,
 						0.35,
@@ -42029,6 +42396,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 14.17,
 						"y0": 14.17,
@@ -42036,7 +42404,7 @@
 						"y1": 254.17
 					},
 					"id": 369,
-					"__tag__": "Drawing",
+					"draw_order": 357,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -42321,6 +42689,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 116.98,
 						"y0": 119.43,
@@ -42328,7 +42697,7 @@
 						"y1": 159.12
 					},
 					"id": 370,
-					"__tag__": "Drawing",
+					"draw_order": 361,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -42836,6 +43205,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 119.57,
 						"y0": 122.54,
@@ -42843,7 +43213,7 @@
 						"y1": 156.56
 					},
 					"id": 371,
-					"__tag__": "Drawing",
+					"draw_order": 364,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -42866,6 +43236,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 268.84,
 						"y0": 14.67,
@@ -42873,7 +43244,7 @@
 						"y1": 75.4
 					},
 					"id": 372,
-					"__tag__": "Drawing",
+					"draw_order": 368,
 					"fill_color": [
 						0.54,
 						0.56,
@@ -42896,6 +43267,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 268.34,
 						"y0": 14.17,
@@ -42903,7 +43275,7 @@
 						"y1": 75.9
 					},
 					"id": 373,
-					"__tag__": "Drawing",
+					"draw_order": 369,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -43081,6 +43453,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 316.58,
 						"y0": 61.5,
@@ -43088,7 +43461,7 @@
 						"y1": 66.86
 					},
 					"id": 374,
-					"__tag__": "Drawing",
+					"draw_order": 371,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -43331,6 +43704,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 321.45,
 						"y0": 63.0,
@@ -43338,7 +43712,7 @@
 						"y1": 66.86
 					},
 					"id": 375,
-					"__tag__": "Drawing",
+					"draw_order": 372,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -43484,6 +43858,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 269.28,
 						"y0": 86.84,
@@ -43491,7 +43866,7 @@
 						"y1": 104.0
 					},
 					"id": 376,
-					"__tag__": "Drawing",
+					"draw_order": 374,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -43582,6 +43957,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 268.84,
 						"y0": 234.09,
@@ -43589,7 +43965,7 @@
 						"y1": 285.21
 					},
 					"id": 377,
-					"__tag__": "Drawing",
+					"draw_order": 376,
 					"fill_color": [
 						0.54,
 						0.56,
@@ -43612,6 +43988,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 268.34,
 						"y0": 233.59,
@@ -43619,7 +43996,7 @@
 						"y1": 285.71
 					},
 					"id": 378,
-					"__tag__": "Drawing",
+					"draw_order": 377,
 					"fill_color": [
 						1.0,
 						1.0,
@@ -43797,6 +44174,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 322.34,
 						"y0": 271.31,
@@ -43804,7 +44182,7 @@
 						"y1": 276.67
 					},
 					"id": 379,
-					"__tag__": "Drawing",
+					"draw_order": 379,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -44047,6 +44425,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 327.21,
 						"y0": 272.81,
@@ -44054,7 +44433,7 @@
 						"y1": 276.67
 					},
 					"id": 380,
-					"__tag__": "Drawing",
+					"draw_order": 380,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -44200,6 +44579,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 269.59,
 						"y0": 296.39,
@@ -44207,7 +44587,7 @@
 						"y1": 313.81
 					},
 					"id": 381,
-					"__tag__": "Drawing",
+					"draw_order": 382,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -44450,6 +44830,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 35.02,
 						"y0": 474.1,
@@ -44457,7 +44838,7 @@
 						"y1": 482.59
 					},
 					"id": 382,
-					"__tag__": "Drawing",
+					"draw_order": 384,
 					"fill_color": [
 						0.74,
 						0.76,
@@ -44574,6 +44955,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 34.02,
 						"y0": 473.1,
@@ -44581,7 +44963,7 @@
 						"y1": 483.59
 					},
 					"id": 383,
-					"__tag__": "Drawing",
+					"draw_order": 385,
 					"fill_color": [
 						0.54,
 						0.56,
@@ -44916,6 +45298,7 @@
 					}
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 35.02,
 						"y0": 474.1,
@@ -44923,7 +45306,7 @@
 						"y1": 482.59
 					},
 					"id": 384,
-					"__tag__": "Drawing",
+					"draw_order": 386,
 					"fill_color": [
 						0.34,
 						0.35,
@@ -45018,6 +45401,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 34.02,
 						"y0": 473.1,
@@ -45025,7 +45409,7 @@
 						"y1": 483.59
 					},
 					"id": 385,
-					"__tag__": "Drawing",
+					"draw_order": 387,
 					"fill_color": [
 						0.54,
 						0.56,
@@ -45389,6 +45773,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 30.01,
 						"y0": 471.31,
@@ -45396,7 +45781,7 @@
 						"y1": 484.98
 					},
 					"id": 386,
-					"__tag__": "Drawing",
+					"draw_order": 388,
 					"fill_color": [
 						0.34,
 						0.35,
@@ -45485,6 +45870,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 29.76,
 						"y0": 471.06,
@@ -45492,7 +45878,7 @@
 						"y1": 485.23
 					},
 					"id": 387,
-					"__tag__": "Drawing",
+					"draw_order": 389,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -45739,6 +46125,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 42.76,
 						"y0": 475.1,
@@ -45746,7 +46133,7 @@
 						"y1": 481.59
 					},
 					"id": 388,
-					"__tag__": "Drawing",
+					"draw_order": 390,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -45876,6 +46263,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 40.99,
 						"y0": 473.1,
@@ -45883,7 +46271,7 @@
 						"y1": 483.59
 					},
 					"id": 389,
-					"__tag__": "Drawing",
+					"draw_order": 391,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -46035,6 +46423,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 30.01,
 						"y0": 471.31,
@@ -46042,7 +46431,7 @@
 						"y1": 484.98
 					},
 					"id": 390,
-					"__tag__": "Drawing",
+					"draw_order": 392,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -46381,6 +46770,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 32.59,
 						"y0": 473.88,
@@ -46388,7 +46778,7 @@
 						"y1": 482.41
 					},
 					"id": 391,
-					"__tag__": "Drawing",
+					"draw_order": 393,
 					"fill_color": [
 						0.34,
 						0.35,
@@ -46477,6 +46867,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 32.34,
 						"y0": 473.63,
@@ -46484,7 +46875,7 @@
 						"y1": 482.66
 					},
 					"id": 392,
-					"__tag__": "Drawing",
+					"draw_order": 394,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -46671,6 +47062,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 32.59,
 						"y0": 473.88,
@@ -46678,7 +47070,7 @@
 						"y1": 482.41
 					},
 					"id": 393,
-					"__tag__": "Drawing",
+					"draw_order": 395,
 					"fill_color": [
 						0.09,
 						0.09,
@@ -46941,6 +47333,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 14.54,
 						"y0": 475.29,
@@ -46948,7 +47341,7 @@
 						"y1": 481.89
 					},
 					"id": 394,
-					"__tag__": "Drawing",
+					"draw_order": 396,
 					"stroke_color": [
 						1.0,
 						1.0,
@@ -47039,6 +47432,7 @@
 					]
 				},
 				{
+					"__tag__": "Drawing",
 					"bbox": {
 						"x0": 18.53,
 						"y0": 475.19,
@@ -47046,7 +47440,7 @@
 						"y1": 481.99
 					},
 					"id": 395,
-					"__tag__": "Drawing",
+					"draw_order": 397,
 					"stroke_color": [
 						1.0,
 						1.0,
