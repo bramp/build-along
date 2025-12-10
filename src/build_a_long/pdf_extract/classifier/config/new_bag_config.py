@@ -19,12 +19,12 @@ class NewBagConfig(BaseModel):
         default=0.5, description="Minimum score threshold for new bag candidates."
     )
 
-    min_icon_size: float = Field(
-        default=180.0,
+    min_circle_size: float = Field(
+        default=150.0,
         description=(
-            "Minimum width/height in points for bag icon images. Based on observed data: "
-            "bag icons are ~240x240 with overlapping images as small as 165x177. Using "
-            "180 to capture most bag icon components."
+            "Minimum width/height in points for circular bag icon outlines. "
+            "Circles range from ~176 to ~240 points. Using 150 to catch smaller ones. "
+            "Also used as minimum size for image cluster fallback detection."
         ),
     )
 
