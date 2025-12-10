@@ -170,7 +170,19 @@ class ClassificationResult(BaseModel):
         if not classifier:
             raise ValueError(f"No classifier registered for label '{label}'")
 
-        return classifier.build_all(self)
+        log.debug(
+            "[build_all] Starting build_all for '%s' on page %s",
+            label,
+            self.page_data.page_number,
+        )
+        result = classifier.build_all(self)
+        log.debug(
+            "[build_all] Completed build_all for '%s' on page %s: built %d elements",
+            label,
+            self.page_data.page_number,
+            len(result),
+        )
+        return result
 
     def build(self, candidate: Candidate, **kwargs: Any) -> LegoPageElements:
         """Construct a candidate using the registered classifier.
@@ -219,6 +231,13 @@ class ClassificationResult(BaseModel):
         classifier = self._classifiers.get(candidate.label)
         if not classifier:
             raise ValueError(f"No classifier registered for label '{candidate.label}'")
+
+        log.debug(
+            "[build] Starting build for '%s' at %s on page %s",
+            candidate.label,
+            candidate.bbox,
+            self.page_data.page_number,
+        )
 
         # Take snapshot before building for automatic rollback on failure
         snapshot = self._take_snapshot()
@@ -330,11 +349,18 @@ class ClassificationResult(BaseModel):
 
                 # Fall back to failing the candidate
                 candidate_block_ids = [b.id for b in candidate.source_blocks]
-                candidate.failure_reason = (
+                failure_reason = (
                     f"Lost conflict to '{winner.label}' at {winner.bbox} "
                     f"(winner_blocks={sorted(winner_block_ids)}, "
                     f"candidate_blocks={candidate_block_ids}, "
                     f"conflicting={sorted(conflicting_block_ids)})"
+                )
+                candidate.failure_reason = failure_reason
+                log.debug(
+                    "[conflict] '%s' at %s failed: %s",
+                    label,
+                    candidate.bbox,
+                    failure_reason,
                 )
 
     def _validate_block_in_page_data(
