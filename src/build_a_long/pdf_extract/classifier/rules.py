@@ -457,6 +457,50 @@ class StepNumberTextRule(Rule):
         return 0.0
 
 
+class FontSizeRangeRule(Rule):
+    """Rule that scores based on font size being within a range.
+
+    Scores 1.0 if strictly between min and max (with tolerance).
+    Scores 0.7 if within tolerance of min (indicating close to smaller type).
+    Scores 0.0 if outside range.
+    """
+
+    def __init__(
+        self,
+        min_size: float | None,
+        max_size: float | None,
+        tolerance: float = 1.0,
+        weight: float = 1.0,
+        name: str = "FontSizeRange",
+        required: bool = False,
+    ):
+        self.name = name
+        self.min_size = min_size
+        self.max_size = max_size
+        self.tolerance = tolerance
+        self.weight = weight
+        self.required = required
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        if not isinstance(block, Text) or block.font_size is None:
+            return 0.0
+
+        if self.min_size is None or self.max_size is None:
+            return 0.5  # Neutral if hints missing
+
+        font_size = block.font_size
+
+        if font_size < self.min_size - self.tolerance:
+            return 0.0
+        if font_size > self.max_size + self.tolerance:
+            return 0.0
+
+        if font_size > self.min_size + self.tolerance:
+            return 1.0
+
+        return 0.7
+
+
 class SizeRangeRule(Rule):
     """Rule that checks if block dimensions are within specified ranges."""
 
