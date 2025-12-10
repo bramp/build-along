@@ -446,18 +446,33 @@ class RotationSymbol(LegoPageElement):
         return f"RotationSymbol(bbox={self.bbox})"
 
 
+class ArrowHead(BaseModel):
+    """A single arrowhead within an Arrow element.
+
+    Represents one triangular arrowhead with its tip position and direction.
+    """
+
+    tip: tuple[float, float]
+    """The tip point (x, y) - where this arrowhead points TO."""
+
+    direction: float
+    """Angle in degrees indicating where the arrowhead points.
+
+    0° = right, 90° = down, 180° = left, -90° = up.
+    """
+
+
 class Arrow(LegoPageElement):
     """An arrow indicating direction or relationship between elements.
 
-    Arrows consist of a triangular arrowhead that points in a specific direction.
-    In LEGO instructions, arrows typically:
+    Arrows consist of one or more triangular arrowheads that point in specific
+    directions. In LEGO instructions, arrows typically:
     - Point from a main assembly to a sub-step callout
     - Indicate direction of motion or insertion
     - Connect related elements visually
 
-    The bbox encompasses the arrowhead. The tip is where the arrow points TO,
-    and the tail is where the arrow line originates FROM (the other end of the
-    arrow shaft, if detected).
+    Arrows can have multiple heads (Y-shaped or branching arrows) that share a
+    common tail/origin point. The bbox encompasses all arrowheads and the shaft.
 
     Direction is measured in degrees where:
     - 0° = pointing right
@@ -468,25 +483,29 @@ class Arrow(LegoPageElement):
 
     tag: Literal["Arrow"] = Field(default="Arrow", alias="__tag__", frozen=True)
 
-    direction: float
-    """Angle in degrees indicating where the arrow points.
+    heads: list[ArrowHead]
+    """List of arrowheads, each with its own tip and direction.
 
-    0° = right, 90° = down, 180° = left, -90° = up.
+    Most arrows have a single head, but branching arrows (Y-shaped) can have
+    multiple heads sharing the same tail/origin.
     """
-
-    tip: tuple[float, float]
-    """The tip point (x, y) of the arrowhead - where the arrow points TO."""
 
     tail: tuple[float, float] | None = None
     """The tail point (x, y) - where the arrow line originates FROM.
-    
+
     This is the far end of the arrow shaft (not the arrowhead base).
     May be None if the arrow shaft was not detected.
+    For branching arrows, this is the common origin point.
     """
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        return f"Arrow(bbox={self.bbox}, direction={self.direction:.0f}°)"
+        if len(self.heads) == 1:
+            return f"Arrow(bbox={self.bbox}, direction={self.heads[0].direction:.0f}°)"
+        return (
+            f"Arrow(bbox={self.bbox}, heads={len(self.heads)}, "
+            f"directions={[f'{h.direction:.0f}°' for h in self.heads]})"
+        )
 
 
 class Part(LegoPageElement):

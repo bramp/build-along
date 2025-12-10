@@ -11,6 +11,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.classifier.steps.arrow_classifier import (
     ArrowClassifier,
+    _ArrowHeadData,
     _ArrowScore,
 )
 from build_a_long.pdf_extract.extractor import PageData
@@ -83,11 +84,18 @@ class TestArrowScore:
 
     def test_score_calculation(self):
         """Test score combines shape and size scores with weights."""
-        score = _ArrowScore(
+        # Create a mock Drawing block for the head
+        bbox = BBox(x0=100.0, y0=50.0, x1=110.0, y1=60.0)
+        drawing = make_drawing(bbox, fill_color=(1.0, 1.0, 1.0))
+        head = _ArrowHeadData(
+            tip=(100.0, 50.0),
+            direction=0.0,
             shape_score=1.0,
             size_score=0.8,
-            direction=0.0,
-            tip=(100.0, 50.0),
+            block=drawing,
+        )
+        score = _ArrowScore(
+            heads=[head],
             shape_weight=0.7,
             size_weight=0.3,
         )
@@ -96,11 +104,18 @@ class TestArrowScore:
 
     def test_score_with_low_shape_score(self):
         """Test score with lower shape score."""
-        score = _ArrowScore(
+        # Create a mock Drawing block for the head
+        bbox = BBox(x0=100.0, y0=100.0, x1=110.0, y1=110.0)
+        drawing = make_drawing(bbox, fill_color=(1.0, 1.0, 1.0))
+        head = _ArrowHeadData(
+            tip=(100.0, 100.0),
+            direction=45.0,
             shape_score=0.5,
             size_score=1.0,
-            direction=45.0,
-            tip=(100.0, 100.0),
+            block=drawing,
+        )
+        score = _ArrowScore(
+            heads=[head],
             shape_weight=0.6,
             size_weight=0.4,
         )
@@ -210,23 +225,30 @@ class TestArrowClassifier:
         assert len(candidates) == 1
         score_details = candidates[0].score_details
         assert isinstance(score_details, _ArrowScore)
+        assert len(score_details.heads) == 1
         # Right-pointing arrow has direction close to 0°
-        assert abs(score_details.direction) < 30
+        assert abs(score_details.heads[0].direction) < 30
 
     def test_build_creates_arrow(self, arrow_classifier: ArrowClassifier):
         """Test building an Arrow element from a candidate."""
         bbox = BBox(x0=100.0, y0=100.0, x1=112.5, y1=109.0)
-        score_details = _ArrowScore(
-            shape_score=1.0,
-            size_score=0.9,
-            direction=0.0,
-            tip=(112.5, 104.5),
-        )
         # Create a mock Drawing block for source_blocks
         drawing = make_drawing(
             bbox,
             fill_color=(1.0, 1.0, 1.0),
             items=make_triangular_arrow_items(100.0, 100.0),
+        )
+        head_data = _ArrowHeadData(
+            tip=(112.5, 104.5),
+            direction=0.0,
+            shape_score=1.0,
+            size_score=0.9,
+            block=drawing,
+        )
+        score_details = _ArrowScore(
+            heads=[head_data],
+            shaft_block=None,
+            tail=None,
         )
         candidate = Candidate(
             bbox=bbox,
@@ -244,8 +266,9 @@ class TestArrowClassifier:
 
         assert isinstance(arrow, Arrow)
         assert arrow.bbox == bbox
-        assert arrow.direction == 0.0
-        assert arrow.tip == (112.5, 104.5)
+        assert len(arrow.heads) == 1
+        assert arrow.heads[0].direction == 0.0
+        assert arrow.heads[0].tip == (112.5, 104.5)
 
 
 class TestExtractUniquePoints:
@@ -324,10 +347,12 @@ class TestShaftDetection:
 
         score_details = candidates[0].score_details
         assert isinstance(score_details, _ArrowScore)
-        assert score_details.shaft_block is shaft
-        assert score_details.tail is not None
+        assert len(score_details.heads) == 1
+        head_data = score_details.heads[0]
+        assert head_data.shaft_block is shaft
+        assert head_data.tail is not None
         # Tail should be at the left end of the shaft (far from arrowhead)
-        assert score_details.tail[0] == pytest.approx(333.98, abs=1.0)
+        assert head_data.tail[0] == pytest.approx(333.98, abs=1.0)
 
     def test_no_shaft_when_colors_dont_match(self, arrow_classifier: ArrowClassifier):
         """Test that shaft is not found when colors don't match."""
@@ -366,9 +391,11 @@ class TestShaftDetection:
 
         score_details = candidates[0].score_details
         assert isinstance(score_details, _ArrowScore)
+        assert len(score_details.heads) == 1
+        head_data = score_details.heads[0]
         # No shaft should be found due to color mismatch
-        assert score_details.shaft_block is None
-        assert score_details.tail is None
+        assert head_data.shaft_block is None
+        assert head_data.tail is None
 
     def test_no_shaft_when_too_thick(self, arrow_classifier: ArrowClassifier):
         """Test that thick rectangles are not matched as shafts."""
@@ -406,8 +433,10 @@ class TestShaftDetection:
 
         score_details = candidates[0].score_details
         assert isinstance(score_details, _ArrowScore)
+        assert len(score_details.heads) == 1
+        head_data = score_details.heads[0]
         # No shaft should be found due to thickness
-        assert score_details.shaft_block is None
+        assert head_data.shaft_block is None
 
     def test_no_shaft_when_too_short(self, arrow_classifier: ArrowClassifier):
         """Test that short rectangles are not matched as shafts."""
@@ -445,8 +474,10 @@ class TestShaftDetection:
 
         score_details = candidates[0].score_details
         assert isinstance(score_details, _ArrowScore)
+        assert len(score_details.heads) == 1
+        head_data = score_details.heads[0]
         # No shaft should be found due to short length
-        assert score_details.shaft_block is None
+        assert head_data.shaft_block is None
 
     def test_shaft_included_in_source_blocks(self, arrow_classifier: ArrowClassifier):
         """Test that detected shaft is included in source_blocks."""

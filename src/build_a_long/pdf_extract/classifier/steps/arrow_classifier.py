@@ -32,6 +32,8 @@ import logging
 import math
 from typing import ClassVar
 
+from pydantic import BaseModel
+
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
@@ -39,14 +41,20 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import filter_overlapping
-from build_a_long.pdf_extract.extractor.lego_page_elements import Arrow
+from build_a_long.pdf_extract.extractor.lego_page_elements import Arrow, ArrowHead
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing
 
 log = logging.getLogger(__name__)
 
 
-class _ArrowScore(Score):
-    """Internal score representation for arrow classification."""
+class _ArrowHeadData(BaseModel):
+    """Data for a single arrowhead within an arrow."""
+
+    tip: tuple[float, float]
+    """The tip point (x, y) - where the arrowhead points TO."""
+
+    direction: float
+    """Direction angle in degrees (0=right, 90=down, 180=left, -90=up)."""
 
     shape_score: float
     """Score based on shape being triangular (0.0-1.0)."""
@@ -54,30 +62,41 @@ class _ArrowScore(Score):
     size_score: float
     """Score based on size being in expected range (0.0-1.0)."""
 
-    direction: float
-    """Direction angle in degrees (0=right, 90=down, 180=left, -90=up)."""
-
-    tip: tuple[float, float]
-    """The tip point (x, y) of the arrowhead - where arrow points TO."""
-
-    tail: tuple[float, float] | None = None
-    """The tail point (x, y) - where the arrow line originates FROM.
-    
-    This is the far end of the arrow shaft (opposite the arrowhead).
-    None if no shaft was detected.
-    """
+    block: Drawing
+    """The Drawing block for this arrowhead."""
 
     shaft_block: Drawing | None = None
-    """The Drawing block representing the arrow shaft, if detected."""
+    """The shaft Drawing block, if detected."""
 
-    # Store weights for score calculation
-    # TODO Move these into the configuration (and assert they sum to 1.0)
+    tail: tuple[float, float] | None = None
+    """The tail/origin point where the shaft starts. None if no shaft detected."""
+
+
+class _ArrowScore(Score):
+    """Score representation for an arrow (one or more arrowheads + optional shaft)."""
+
+    heads: list[_ArrowHeadData]
+    """Data for each arrowhead in this arrow."""
+
+    tail: tuple[float, float] | None = None
+    """The tail/origin point where the shaft starts. None if no shaft detected."""
+
+    shaft_block: Drawing | None = None
+    """The shaft Drawing block, if detected."""
+
+    # Weights for score calculation
     shape_weight: float = 0.7
     size_weight: float = 0.3
 
     def score(self) -> Weight:
-        """Calculate final weighted score from components."""
-        return self.shape_score * self.shape_weight + self.size_score * self.size_weight
+        """Return the average score of all arrowheads."""
+        if not self.heads:
+            return 0.0
+        total = sum(
+            h.shape_score * self.shape_weight + h.size_score * self.size_weight
+            for h in self.heads
+        )
+        return total / len(self.heads)
 
 
 class ArrowClassifier(LabelClassifier):
@@ -87,83 +106,123 @@ class ArrowClassifier(LabelClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score Drawing blocks as potential arrowheads and find their shafts."""
+        """Score Drawing blocks as potential arrowheads and group by shared tail."""
         page_data = result.page_data
         arrow_config = self.config.arrow
 
-        # Collect all Drawing blocks for shaft searching
         all_drawings = [
             block for block in page_data.blocks if isinstance(block, Drawing)
         ]
 
-        # Process each Drawing block looking for arrowheads
+        # Phase 1: Find all valid arrowheads
+        arrowheads: list[_ArrowHeadData] = []
         for block in all_drawings:
-            score_details = self._score_drawing(block)
-            if score_details is None:
+            head = self._score_arrowhead(block, all_drawings)
+            if head is None:
                 continue
 
-            if score_details.score() < arrow_config.min_score:
+            head_score = (
+                head.shape_score * arrow_config.shape_weight
+                + head.size_score * arrow_config.size_weight
+            )
+            if head_score < arrow_config.min_score:
                 log.debug(
                     "[arrow] Rejected at %s: score=%.2f < min_score=%.2f",
                     block.bbox,
-                    score_details.score(),
+                    head_score,
                     arrow_config.min_score,
                 )
                 continue
 
-            # Try to find a shaft for this arrowhead
-            shaft_result = self._find_shaft(block, score_details, all_drawings)
-            if shaft_result is not None:
-                shaft_block, tail = shaft_result
-                score_details = _ArrowScore(
-                    shape_score=score_details.shape_score,
-                    size_score=score_details.size_score,
-                    direction=score_details.direction,
-                    tip=score_details.tip,
-                    tail=tail,
-                    shaft_block=shaft_block,
-                    shape_weight=score_details.shape_weight,
-                    size_weight=score_details.size_weight,
-                )
-                log.debug(
-                    "[arrow] Found shaft for arrowhead at %s, tail at %s",
-                    block.bbox,
-                    tail,
-                )
+            arrowheads.append(head)
 
-            source_blocks: list[Blocks] = [block]
-            # Compute bounding box that encompasses the whole arrow
-            # (arrowhead + shaft if present)
-            arrow_bbox = block.bbox
-            if score_details.shaft_block is not None:
-                source_blocks.append(score_details.shaft_block)
-                arrow_bbox = block.bbox.union(score_details.shaft_block.bbox)
+        # Phase 2: Group arrowheads by tail (rounded to group nearby tails)
+        groups: dict[tuple[float, float] | None, list[_ArrowHeadData]] = {}
+        for head in arrowheads:
+            tail_key: tuple[float, float] | None = None
+            if head.tail is not None:
+                tail_key = (round(head.tail[0], 1), round(head.tail[1], 1))
+            groups.setdefault(tail_key, []).append(head)
 
-            result.add_candidate(
-                Candidate(
-                    bbox=arrow_bbox,
-                    label="arrow",
-                    score=score_details.score(),
-                    score_details=score_details,
-                    source_blocks=source_blocks,
-                )
+        # Phase 3: Create candidates
+        for tail_key, heads in groups.items():
+            if tail_key is None:
+                # No shaft - each arrowhead is its own arrow
+                for head in heads:
+                    self._add_arrow_candidate(result, [head])
+            else:
+                # Shared tail - one arrow with multiple heads
+                self._add_arrow_candidate(result, heads)
+
+    def _add_arrow_candidate(
+        self, result: ClassificationResult, heads: list[_ArrowHeadData]
+    ) -> None:
+        """Create and add an arrow candidate from arrowhead data."""
+        # Collect source blocks (deduplicated by object identity)
+        seen_ids: set[int] = set()
+        source_blocks: list[Blocks] = []
+        for head in heads:
+            if id(head.block) not in seen_ids:
+                seen_ids.add(id(head.block))
+                source_blocks.append(head.block)
+            if head.shaft_block is not None and id(head.shaft_block) not in seen_ids:
+                seen_ids.add(id(head.shaft_block))
+                source_blocks.append(head.shaft_block)
+
+        # Compute combined bbox
+        arrow_bbox = source_blocks[0].bbox
+        for block in source_blocks[1:]:
+            arrow_bbox = arrow_bbox.union(block.bbox)
+
+        # Get shared tail and shaft (if any)
+        tail = next((h.tail for h in heads if h.tail), None)
+        shaft_block = next((h.shaft_block for h in heads if h.shaft_block), None)
+
+        arrow_score = _ArrowScore(
+            heads=heads,
+            tail=tail,
+            shaft_block=shaft_block,
+            shape_weight=self.config.arrow.shape_weight,
+            size_weight=self.config.arrow.size_weight,
+        )
+
+        result.add_candidate(
+            Candidate(
+                bbox=arrow_bbox,
+                label="arrow",
+                score=arrow_score.score(),
+                score_details=arrow_score,
+                source_blocks=source_blocks,
             )
+        )
+
+        if len(heads) == 1:
             log.debug(
-                "[arrow] Candidate at %s: score=%.2f, direction=%.0f°, tail=%s",
-                block.bbox,
-                score_details.score(),
-                score_details.direction,
-                score_details.tail,
+                "[arrow] Candidate at %s: score=%.2f, direction=%.0f°",
+                arrow_bbox,
+                arrow_score.score(),
+                heads[0].direction,
+            )
+        else:
+            log.debug(
+                "[arrow] Candidate (multi-head) at %s: score=%.2f, heads=%d",
+                arrow_bbox,
+                arrow_score.score(),
+                len(heads),
             )
 
-    def _score_drawing(self, block: Drawing) -> _ArrowScore | None:
+    def _score_arrowhead(
+        self, block: Drawing, all_drawings: list[Drawing]
+    ) -> _ArrowHeadData | None:
         """Score a Drawing block as a potential arrowhead.
 
         Args:
-            block: The Drawing block to analyze
+            block: The Drawing block to score
+            all_drawings: All Drawing blocks on the page (for shaft searching)
 
         Returns:
-            Score details if this could be an arrowhead, None otherwise
+            ArrowHeadData if this is a valid arrowhead, None otherwise.
+            Includes shaft_block and tail if a shaft was found.
         """
         arrow_config = self.config.arrow
         bbox = block.bbox
@@ -235,13 +294,26 @@ class ArrowClassifier(LabelClassifier):
         size_diff = abs(bbox.width - ideal_size) + abs(bbox.height - ideal_size)
         size_score = max(0.0, 1.0 - (size_diff / (ideal_size * 2)))
 
-        return _ArrowScore(
+        # Try to find a shaft for this arrowhead
+        shaft_block: Drawing | None = None
+        tail: tuple[float, float] | None = None
+        shaft_result = self._find_shaft(block, direction, tip, all_drawings)
+        if shaft_result is not None:
+            shaft_block, tail = shaft_result
+            log.debug(
+                "[arrow] Found shaft for arrowhead at %s, tail at %s",
+                block.bbox,
+                tail,
+            )
+
+        return _ArrowHeadData(
+            tip=tip,
+            direction=direction,
             shape_score=shape_score,
             size_score=size_score,
-            direction=direction,
-            tip=tip,
-            shape_weight=arrow_config.shape_weight,
-            size_weight=arrow_config.size_weight,
+            block=block,
+            shaft_block=shaft_block,
+            tail=tail,
         )
 
     def _extract_unique_points(
@@ -274,7 +346,8 @@ class ArrowClassifier(LabelClassifier):
     def _find_shaft(
         self,
         arrowhead: Drawing,
-        score_details: _ArrowScore,
+        direction: float,
+        tip: tuple[float, float],
         all_drawings: list[Drawing],
     ) -> tuple[Drawing, tuple[float, float]] | None:
         """Find the shaft connected to an arrowhead.
@@ -289,7 +362,8 @@ class ArrowClassifier(LabelClassifier):
 
         Args:
             arrowhead: The arrowhead Drawing block
-            score_details: Score details including direction and tip
+            direction: Direction angle in degrees (0=right, 90=down, etc.)
+            tip: The tip point (x, y) of the arrowhead
             all_drawings: All Drawing blocks on the page to search
 
         Returns:
@@ -301,17 +375,18 @@ class ArrowClassifier(LabelClassifier):
         search_bbox = arrowhead.bbox.expand(20.0)  # generous margin
         nearby_drawings = filter_overlapping(all_drawings, search_bbox)
 
-        result = self._find_simple_shaft(arrowhead, score_details, nearby_drawings)
+        result = self._find_simple_shaft(arrowhead, direction, tip, nearby_drawings)
         if result is not None:
             return result
 
         # Try to find an L-shaped (cornered) shaft
-        return self._find_cornered_shaft(arrowhead, score_details, nearby_drawings)
+        return self._find_cornered_shaft(arrowhead, direction, nearby_drawings)
 
     def _find_simple_shaft(
         self,
         arrowhead: Drawing,
-        score_details: _ArrowScore,
+        direction: float,
+        tip: tuple[float, float],
         all_drawings: list[Drawing],
     ) -> tuple[Drawing, tuple[float, float]] | None:
         """Find a simple rectangular shaft connected to an arrowhead.
@@ -324,14 +399,14 @@ class ArrowClassifier(LabelClassifier):
 
         Args:
             arrowhead: The arrowhead Drawing block
-            score_details: Score details including direction and tip
+            direction: Direction angle in degrees (0=right, 90=down, etc.)
+            tip: The tip point (x, y) of the arrowhead
             all_drawings: All Drawing blocks on the page to search
 
         Returns:
             Tuple of (shaft Drawing block, tail point) if found, None otherwise
         """
-        direction_rad = math.radians(score_details.direction)
-        tip = score_details.tip
+        direction_rad = math.radians(direction)
 
         # The arrowhead's base is opposite the tip
         # Calculate expected shaft direction (opposite to tip direction)
@@ -415,7 +490,7 @@ class ArrowClassifier(LabelClassifier):
                     continue
 
                 # Check horizontal proximity to arrowhead
-                if score_details.direction > 90 or score_details.direction < -90:
+                if direction > 90 or direction < -90:
                     # Arrow points left, shaft should be to the right
                     gap = bbox.x0 - arrowhead.bbox.x1
                 else:
@@ -426,7 +501,7 @@ class ArrowClassifier(LabelClassifier):
                     continue
 
                 # Calculate tail point (far end of shaft from arrowhead)
-                if score_details.direction > 90 or score_details.direction < -90:
+                if direction > 90 or direction < -90:
                     # Arrow points left, tail is at right end of shaft
                     tail = (bbox.x1, shaft_center_y)
                 else:
@@ -439,7 +514,7 @@ class ArrowClassifier(LabelClassifier):
                     continue
 
                 # Check vertical proximity to arrowhead
-                if score_details.direction > 0:
+                if direction > 0:
                     # Arrow points down, shaft should be above
                     gap = arrowhead.bbox.y0 - bbox.y1
                 else:
@@ -450,7 +525,7 @@ class ArrowClassifier(LabelClassifier):
                     continue
 
                 # Calculate tail point (far end of shaft from arrowhead)
-                if score_details.direction > 0:
+                if direction > 0:
                     # Arrow points down, tail is at top of shaft
                     tail = (shaft_center_x, bbox.y0)
                 else:
@@ -470,7 +545,7 @@ class ArrowClassifier(LabelClassifier):
     def _find_cornered_shaft(
         self,
         arrowhead: Drawing,
-        score_details: _ArrowScore,
+        direction: float,
         all_drawings: list[Drawing],
     ) -> tuple[Drawing, tuple[float, float]] | None:
         """Find an L-shaped (cornered) shaft connected to an arrowhead.
@@ -486,7 +561,7 @@ class ArrowClassifier(LabelClassifier):
 
         Args:
             arrowhead: The arrowhead Drawing block
-            score_details: Score details including direction and tip
+            direction: Direction angle in degrees (0=right, 90=down, etc.)
             all_drawings: All Drawing blocks on the page to search
 
         Returns:
@@ -500,7 +575,6 @@ class ArrowClassifier(LabelClassifier):
         # For a downward-pointing arrow, base is at the top
         # For an upward-pointing arrow, base is at the bottom
         # etc.
-        direction = score_details.direction
         if -45 <= direction < 45:
             # Points right, base is on the left
             base_x = arrowhead.bbox.x0
@@ -667,9 +741,14 @@ class ArrowClassifier(LabelClassifier):
         score_details = candidate.score_details
         assert isinstance(score_details, _ArrowScore)
 
+        # Build ArrowHead instances from head data
+        heads = [
+            ArrowHead(tip=head.tip, direction=head.direction)
+            for head in score_details.heads
+        ]
+
         return Arrow(
             bbox=candidate.bbox,
-            direction=score_details.direction,
-            tip=score_details.tip,
+            heads=heads,
             tail=score_details.tail,
         )
