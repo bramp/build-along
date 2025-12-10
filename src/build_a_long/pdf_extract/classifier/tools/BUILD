@@ -5,6 +5,7 @@ python_sources(
         "generate_golden_files.py": {"run_goal_use_sandbox": False},
         "generate_golden_hints.py": {"run_goal_use_sandbox": False},
         "regenerate_fixtures.py": {"run_goal_use_sandbox": False},
+        "tune_config.py": {"run_goal_use_sandbox": False},
     },
 )
 

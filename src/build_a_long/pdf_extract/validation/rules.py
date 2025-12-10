@@ -450,10 +450,7 @@ def validate_catalog_coverage(
             if (
                 part.diagram.xref is not None
                 and part.diagram.xref in catalog_identifiers
-            ):
-                matched_count += 1
-                is_matched = True
-            elif (
+            ) or (
                 part.diagram.digest is not None
                 and part.diagram.digest in catalog_identifiers
             ):
