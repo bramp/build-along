@@ -73,6 +73,12 @@ class RuleBasedClassifier(LabelClassifier):
                 # If required rule fails (score 0), fail the block immediately
                 if rule.required and score == 0.0:
                     failed = True
+                    # log.debug(
+                    #    "[%s] block_id=%s failed required rule '%s'",
+                    #    self.output,
+                    #    block.id,
+                    #    rule.name,
+                    # )
                     break
 
                 rule_weight = rule.weight  # Using direct weight from Rule instance
@@ -92,7 +98,23 @@ class RuleBasedClassifier(LabelClassifier):
 
             # Check classifier-specific acceptance logic
             if not self._should_accept(final_score):
+                log.debug(
+                    "[%s] block_id=%s rejected: score=%.3f < min_score=%.3f components=%s",
+                    self.output,
+                    block.id,
+                    final_score,
+                    self.min_score,
+                    components,
+                )
                 continue
+
+            log.debug(
+                "[%s] block_id=%s accepted: score=%.3f components=%s",
+                self.output,
+                block.id,
+                final_score,
+                components,
+            )
 
             # Build source blocks list, including text outline effects for Text blocks
             source_blocks: list = [block]
