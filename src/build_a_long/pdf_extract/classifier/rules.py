@@ -22,7 +22,7 @@ from build_a_long.pdf_extract.classifier.text import (
     extract_step_number_value,
 )
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.page_blocks import Block, Text, Drawing
+from build_a_long.pdf_extract.extractor.page_blocks import Block, Drawing, Text
 
 
 @dataclass

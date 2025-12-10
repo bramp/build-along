@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Annotated, Protocol, TypeVar
+from collections.abc import Sequence
+from typing import Annotated, Protocol
 
 from annotated_types import Ge, Le
 from pydantic import BaseModel, ConfigDict
@@ -52,10 +53,7 @@ class HasScore(Protocol):
     def score(self) -> float: ...
 
 
-S = TypeVar("S", bound=HasScore)
-
-
-def find_best_scoring(items: list[S]) -> S | None:
+def find_best_scoring[S: HasScore](items: Sequence[S]) -> S | None:
     """Find the item with the highest score in the list.
 
     Args:

@@ -1,4 +1,6 @@
+# No python_sources in this directory as it's not part of the pants build path.
 # python_sources()
+
 
 shell_sources(
     name="shell-scripts",
