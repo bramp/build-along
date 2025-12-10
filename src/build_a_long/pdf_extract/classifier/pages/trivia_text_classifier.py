@@ -32,7 +32,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.bbox import BBox, filter_by_max_area
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     TriviaText,
 )
@@ -255,16 +255,18 @@ class TriviaTextClassifier(LabelClassifier):
         expanded_bbox = text_bbox.expand(20.0)  # 20pt margin
 
         # Calculate page area to identify background elements
-        page_area = page_bbox.area
+        # page_area = page_bbox.area
 
-        for block in all_blocks:
-            if not isinstance(block, Image | Drawing):
-                continue
+        candidate_blocks: list[Image | Drawing] = [
+            block for block in all_blocks if isinstance(block, Image | Drawing)
+        ]
 
-            # Skip large background elements (covering >50% of page)
-            if block.bbox.area > page_area * 0.5:
-                continue
+        # Skip large background elements (covering >50% of page)
+        filtered_blocks = filter_by_max_area(
+            candidate_blocks, max_ratio=0.5, reference_bbox=page_bbox
+        )
 
+        for block in filtered_blocks:
             # Check if visual overlaps with or is contained in text area
             if expanded_bbox.contains(block.bbox) or text_bbox.iou(block.bbox) > 0.1:
                 related.append(block)
