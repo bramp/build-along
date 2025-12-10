@@ -3,7 +3,7 @@
 
 httpx~=0.28.1
 numpy~=2.3.5
-scipy~=1.16.2
+scipy~=1.16.3
 beautifulsoup4~=4.14.3 # Used by src/build_a_long/downloader/legocom.py
 json5~=0.12.1
 PyMuPDF~=1.26.6
