@@ -162,34 +162,6 @@ class DiagramClassifier(LabelClassifier):
             )
             result.add_candidate(candidate)
 
-    # TODO Can we delete this
-    def rescore_without_blocks(
-        self,
-        candidate: Candidate,
-        excluded_block_ids: set[int],
-        result: ClassificationResult,
-    ) -> Candidate | None:
-        """Create a new diagram candidate excluding specified blocks.
-
-        Since each candidate now represents a single image, if that image
-        is excluded, the candidate is no longer valid.
-
-        Args:
-            candidate: The original candidate to re-score
-            excluded_block_ids: Set of block IDs to exclude
-            result: The classification result context
-
-        Returns:
-            The same candidate if the image is not excluded, None otherwise.
-        """
-        # With single-image candidates, if the block is excluded, return None
-        if (
-            candidate.source_blocks
-            and candidate.source_blocks[0].id in excluded_block_ids
-        ):
-            return None
-        return candidate
-
     def build(
         self,
         candidate: Candidate,

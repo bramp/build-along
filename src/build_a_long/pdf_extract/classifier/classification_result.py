@@ -328,21 +328,6 @@ class ClassificationResult(BaseModel):
                 if not conflicting_block_ids:
                     continue
 
-                # Try to create a reduced candidate via rescore_without_blocks
-                classifier = self._classifiers.get(label)
-                if classifier:
-                    reduced = classifier.rescore_without_blocks(
-                        candidate, winner_block_ids, self
-                    )
-                    if reduced is not None:
-                        # Add the reduced candidate as a replacement
-                        candidates.append(reduced)
-                        candidate.failure_reason = (
-                            f"Replaced by reduced candidate "
-                            f"(excluded blocks: {conflicting_block_ids})"
-                        )
-                        continue
-
                 # Fall back to failing the candidate
                 candidate_block_ids = [b.id for b in candidate.source_blocks]
                 candidate.failure_reason = (

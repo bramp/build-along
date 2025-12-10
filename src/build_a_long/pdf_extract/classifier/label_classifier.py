@@ -176,29 +176,3 @@ class LabelClassifier(BaseModel, ABC):
             The constructed LegoPageElement
         """
         pass
-
-    def rescore_without_blocks(
-        self,
-        candidate: Candidate,
-        excluded_block_ids: set[int],
-        result: ClassificationResult,
-    ) -> Candidate | None:
-        """Create a new candidate excluding specified blocks.
-
-        This method is called when a candidate's source blocks conflict with
-        another candidate that won. Instead of failing the candidate entirely,
-        we try to create a reduced version without the conflicting blocks.
-
-        The default implementation returns None (no re-scoring support).
-        Subclasses can override to provide graceful degradation.
-
-        Args:
-            candidate: The original candidate to re-score
-            excluded_block_ids: Set of block IDs to exclude
-            result: The classification result context
-
-        Returns:
-            A new candidate without the excluded blocks, or None if the
-            candidate is no longer valid without those blocks.
-        """
-        return None
