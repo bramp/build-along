@@ -44,6 +44,7 @@ from build_a_long.pdf_extract.classifier.score import (
     find_best_scoring,
 )
 from build_a_long.pdf_extract.classifier.text import extract_step_number_value
+from build_a_long.pdf_extract.classifier.utils import score_white_fill
 from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
     filter_contained,
@@ -164,7 +165,7 @@ class SubAssemblyClassifier(LabelClassifier):
             bbox = BBox.union_all([d.bbox for d in group])
 
             # Score each drawing's colors and pick the best
-            best_box_score = max(self._score_box_colors(d) for d in group)
+            best_box_score = max(score_white_fill(d) for d in group)
             if best_box_score < 0.3:
                 continue
 
@@ -216,30 +217,6 @@ class SubAssemblyClassifier(LabelClassifier):
                 has_diagram_or_images,
                 score_details.score(),
             )
-
-    def _score_box_colors(self, block: Drawing) -> float:
-        """Score a drawing block based on having white fill.
-
-        SubAssembly boxes typically have a white or light fill color.
-        The outer black border boxes can be matched separately later.
-
-        Args:
-            block: The Drawing block to analyze
-
-        Returns:
-            Score from 0.0 to 1.0 where 1.0 is white fill
-        """
-        # Check fill color (white or light = good)
-        if block.fill_color is not None:
-            r, g, b = block.fill_color
-            # Check if it's white or very light (all channels > 0.9)
-            if r > 0.9 and g > 0.9 and b > 0.9:
-                return 1.0
-            # Light gray is also acceptable
-            if r > 0.7 and g > 0.7 and b > 0.7:
-                return 0.6
-
-        return 0.0
 
     def _find_candidate_inside(
         self, bbox: BBox, candidates: list[Candidate]

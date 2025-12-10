@@ -40,7 +40,11 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.bbox import filter_overlapping
+from build_a_long.pdf_extract.classifier.utils import (
+    colors_match,
+    extract_unique_points,
+)
+from build_a_long.pdf_extract.extractor.bbox import BBox, filter_overlapping
 from build_a_long.pdf_extract.extractor.lego_page_elements import Arrow, ArrowHead
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing
 
@@ -170,9 +174,7 @@ class ArrowClassifier(LabelClassifier):
                 source_blocks.append(head.shaft_block)
 
         # Compute combined bbox
-        arrow_bbox = source_blocks[0].bbox
-        for block in source_blocks[1:]:
-            arrow_bbox = arrow_bbox.union(block.bbox)
+        arrow_bbox = BBox.union_all([b.bbox for b in source_blocks])
 
         # Get shared tail and shaft (if any)
         tail = next((h.tail for h in heads if h.tail), None)
@@ -260,7 +262,7 @@ class ArrowClassifier(LabelClassifier):
             return None
 
         # Extract unique points from line items
-        points = self._extract_unique_points(line_items)
+        points = extract_unique_points(line_items)
         if len(points) < 3 or len(points) > 5:
             return None
 
@@ -315,33 +317,6 @@ class ArrowClassifier(LabelClassifier):
             shaft_block=shaft_block,
             tail=tail,
         )
-
-    def _extract_unique_points(
-        self, line_items: list[tuple]
-    ) -> list[tuple[float, float]]:
-        """Extract unique points from line items.
-
-        Args:
-            line_items: List of line items, each ('l', (x1, y1), (x2, y2))
-                where points are tuples (converted from PyMuPDF Point objects)
-
-        Returns:
-            List of unique (x, y) points, rounded to 1 decimal place
-        """
-        points: list[tuple[float, float]] = []
-        seen: set[tuple[float, float]] = set()
-
-        for item in line_items:
-            # item is ('l', (x1, y1), (x2, y2)) - tuples not Point objects
-            p1, p2 = item[1], item[2]
-            for p in [p1, p2]:
-                # p is a tuple (x, y)
-                key = (round(p[0], 1), round(p[1], 1))
-                if key not in seen:
-                    seen.add(key)
-                    points.append((p[0], p[1]))
-
-        return points
 
     def _find_shaft(
         self,
@@ -713,28 +688,6 @@ class ArrowClassifier(LabelClassifier):
                         points.append(p)
 
         return points
-
-    def _colors_match(
-        self,
-        color1: tuple[float, ...],
-        color2: tuple[float, ...],
-        tolerance: float = 0.1,
-    ) -> bool:
-        """Check if two colors match within a tolerance.
-
-        Args:
-            color1: First color as RGB tuple (0.0-1.0)
-            color2: Second color as RGB tuple (0.0-1.0)
-            tolerance: Maximum difference per channel
-
-        Returns:
-            True if colors match within tolerance
-        """
-        if len(color1) != len(color2):
-            return False
-        return all(
-            abs(c1 - c2) <= tolerance for c1, c2 in zip(color1, color2, strict=True)
-        )
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> Arrow:
         """Construct an Arrow element from a candidate."""

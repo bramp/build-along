@@ -43,6 +43,7 @@ from build_a_long.pdf_extract.classifier.score import (
     Score,
     Weight,
 )
+from build_a_long.pdf_extract.classifier.utils import score_white_fill
 from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
     filter_contained,
@@ -209,7 +210,9 @@ class PreviewClassifier(LabelClassifier):
             best_fill_score = 0.0
             best_box_score = 0.0
             for drawing in group:
-                fill_score = self._score_fill_color(drawing, preview_config)
+                fill_score = score_white_fill(
+                    drawing, white_threshold=preview_config.white_threshold
+                )
                 if fill_score > best_fill_score:
                     best_fill_score = fill_score
                     best_box_score = 1.0 if fill_score > 0 else 0.0
@@ -262,33 +265,6 @@ class PreviewClassifier(LabelClassifier):
                 has_images,
                 score_details.score(),
             )
-
-    def _score_fill_color(self, block: Drawing, config: PreviewConfig) -> float:
-        """Score a drawing block based on having white fill.
-
-        Preview boxes typically have a white or light fill color.
-
-        Args:
-            block: The Drawing block to analyze
-            config: Preview configuration with white threshold
-
-        Returns:
-            Score from 0.0 to 1.0 where 1.0 is white fill
-        """
-        if block.fill_color is not None:
-            r, g, b = block.fill_color
-            # Check if it's white (all channels above threshold)
-            if (
-                r >= config.white_threshold
-                and g >= config.white_threshold
-                and b >= config.white_threshold
-            ):
-                return 1.0
-            # Light gray is also acceptable
-            if r > 0.8 and g > 0.8 and b > 0.8:
-                return 0.7
-
-        return 0.0
 
     def _find_images_inside(self, bbox: BBox, blocks: list[Blocks]) -> list[Image]:
         """Find Image blocks that are fully inside the given box.

@@ -45,6 +45,7 @@ def make_drawing(
     bbox: BBox,
     *,
     fill_color: tuple[float, float, float] | None = (1.0, 1.0, 1.0),
+    stroke_color: tuple[float, float, float] | None = None,
     items: tuple[tuple, ...] | None = None,
     block_id: int = 1,
 ) -> Drawing:
@@ -52,6 +53,7 @@ def make_drawing(
     return Drawing(
         bbox=bbox,
         fill_color=fill_color,
+        stroke_color=stroke_color,
         items=items,
         id=block_id,
     )
@@ -271,35 +273,6 @@ class TestArrowClassifier:
         assert arrow.heads[0].tip == (112.5, 104.5)
 
 
-class TestExtractUniquePoints:
-    """Tests for _extract_unique_points helper."""
-
-    def test_extracts_triangle_points(self, arrow_classifier: ArrowClassifier):
-        """Test extracting points from triangle line items."""
-        items = [
-            ("l", (0.0, 0.0), (10.0, 5.0)),
-            ("l", (10.0, 5.0), (0.0, 10.0)),
-            ("l", (0.0, 10.0), (0.0, 0.0)),
-        ]
-        points = arrow_classifier._extract_unique_points(items)
-
-        assert len(points) == 3
-        assert (0.0, 0.0) in points
-        assert (10.0, 5.0) in points
-        assert (0.0, 10.0) in points
-
-    def test_deduplicates_close_points(self, arrow_classifier: ArrowClassifier):
-        """Test that very close points are deduplicated when rounded."""
-        items = [
-            ("l", (0.0, 0.0), (10.0, 5.0)),
-            ("l", (10.02, 5.04), (0.0, 10.0)),  # Very close to (10.0, 5.0)
-        ]
-        points = arrow_classifier._extract_unique_points(items)
-
-        # Should deduplicate to 3 unique points (10.02 rounds to 10.0)
-        assert len(points) == 3
-
-
 def make_shaft_rect_items(bbox: BBox) -> tuple[tuple, ...]:
     """Create rectangle items for a shaft."""
     return (("re", (bbox.x0, bbox.y0, bbox.x1, bbox.y1), -1),)
@@ -517,23 +490,3 @@ class TestShaftDetection:
         assert len(source_blocks) == 2
         assert arrowhead in source_blocks
         assert shaft in source_blocks
-
-
-class TestColorsMatch:
-    """Tests for _colors_match helper."""
-
-    def test_exact_match(self, arrow_classifier: ArrowClassifier):
-        """Test exact color match."""
-        assert arrow_classifier._colors_match((1.0, 1.0, 1.0), (1.0, 1.0, 1.0))
-
-    def test_within_tolerance(self, arrow_classifier: ArrowClassifier):
-        """Test colors within tolerance."""
-        assert arrow_classifier._colors_match((1.0, 1.0, 1.0), (0.95, 1.0, 1.0))
-
-    def test_outside_tolerance(self, arrow_classifier: ArrowClassifier):
-        """Test colors outside tolerance."""
-        assert not arrow_classifier._colors_match((1.0, 1.0, 1.0), (0.5, 1.0, 1.0))
-
-    def test_different_lengths(self, arrow_classifier: ArrowClassifier):
-        """Test colors with different channel counts."""
-        assert not arrow_classifier._colors_match((1.0, 1.0, 1.0), (1.0, 1.0))
