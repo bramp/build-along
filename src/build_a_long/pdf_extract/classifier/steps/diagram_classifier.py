@@ -251,11 +251,11 @@ class DiagramClassifier(LabelClassifier):
                 continue
             # Skip if already consumed
             if block.id in result._consumed_blocks:
-                log.debug(
-                    "[diagram] Skipping consumed image id=%d at %s",
-                    block.id,
-                    block.bbox,
-                )
+                # log.debug(
+                #    "[diagram] Skipping consumed image id=%d at %s",
+                #    block.id,
+                #    block.bbox,
+                # )
                 continue
             # Skip if outside constraint bbox
             if constraint_bbox and not constraint_bbox.contains(block.bbox):

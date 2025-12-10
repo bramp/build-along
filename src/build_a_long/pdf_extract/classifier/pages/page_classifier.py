@@ -149,8 +149,7 @@ class PageClassifier(LabelClassifier):
         # Get new bags from candidates
         new_bags: list[NewBag] = []
 
-        # Construct ALL new_bag candidates? Or just the ones that pass a threshold?
-        # For now, construct all scored candidates.
+        # Construct ALL new_bag candidates
         # TODO Consider pre-filtering based on runs of bag numbers
         for nb_candidate in result.get_scored_candidates(
             "new_bag", valid_only=False, exclude_failed=True

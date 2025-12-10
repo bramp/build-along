@@ -18,9 +18,9 @@ class StepNumberConfig(BaseModel):
     )
 
     text_weight: Weight = Field(
-        default=0.7, description="Weight for text pattern matching score."
+        default=0.5, description="Weight for text pattern matching score."
     )
 
     font_size_weight: Weight = Field(
-        default=0.3, description="Weight for font size matching score."
+        default=0.5, description="Weight for font size matching score."
     )
