@@ -455,3 +455,136 @@ class StepNumberTextRule(Rule):
         if extract_step_number_value(block.text) is not None:
             return 1.0
         return 0.0
+
+
+class SizeRangeRule(Rule):
+    """Rule that checks if block dimensions are within specified ranges."""
+
+    def __init__(
+        self,
+        min_width: float | None = None,
+        max_width: float | None = None,
+        min_height: float | None = None,
+        max_height: float | None = None,
+        weight: float = 1.0,
+        name: str = "SizeRange",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+        self.min_width = min_width
+        self.max_width = max_width
+        self.min_height = min_height
+        self.max_height = max_height
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        width = block.bbox.width
+        height = block.bbox.height
+
+        if self.min_width is not None and width < self.min_width:
+            return 0.0
+        if self.max_width is not None and width > self.max_width:
+            return 0.0
+        if self.min_height is not None and height < self.min_height:
+            return 0.0
+        if self.max_height is not None and height > self.max_height:
+            return 0.0
+
+        return 1.0
+
+
+class AspectRatioRule(Rule):
+    """Rule that checks if block aspect ratio (width/height) is within range."""
+
+    def __init__(
+        self,
+        min_ratio: float,
+        max_ratio: float,
+        weight: float = 1.0,
+        name: str = "AspectRatio",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+        self.min_ratio = min_ratio
+        self.max_ratio = max_ratio
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        if block.bbox.height <= 0:
+            return 0.0
+
+        ratio = block.bbox.width / block.bbox.height
+        if self.min_ratio <= ratio <= self.max_ratio:
+            return 1.0
+        return 0.0
+
+
+class CoverageRule(Rule):
+    """Rule that scores based on page area coverage."""
+
+    def __init__(
+        self,
+        min_ratio: float = 0.85,
+        weight: float = 1.0,
+        name: str = "Coverage",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+        self.min_ratio = min_ratio
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        page_bbox = context.page_data.bbox
+        assert page_bbox is not None
+        page_area = page_bbox.area
+        if page_area <= 0:
+            return 0.0
+
+        block_area = block.bbox.area
+        coverage_ratio = block_area / page_area
+
+        if coverage_ratio < self.min_ratio:
+            return 0.0
+
+        # Score increases from min_ratio to 1.0
+        # Map [min_ratio, 1.0] -> [0.5, 1.0]
+        normalized = (coverage_ratio - self.min_ratio) / (1.0 - self.min_ratio)
+        return min(1.0, normalized * 0.5 + 0.5)
+
+
+class EdgeProximityRule(Rule):
+    """Rule that scores based on proximity to page edges."""
+
+    def __init__(
+        self,
+        threshold: float = 10.0,
+        weight: float = 1.0,
+        name: str = "EdgeProximity",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+        self.threshold = threshold
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        page_bbox = context.page_data.bbox
+        assert page_bbox is not None
+
+        # Calculate distance from each edge
+        left_dist = abs(block.bbox.x0 - page_bbox.x0)
+        right_dist = abs(block.bbox.x1 - page_bbox.x1)
+        top_dist = abs(block.bbox.y0 - page_bbox.y0)
+        bottom_dist = abs(block.bbox.y1 - page_bbox.y1)
+
+        avg_edge_dist = (left_dist + right_dist + top_dist + bottom_dist) / 4.0
+
+        if avg_edge_dist <= self.threshold:
+            return 1.0
+
+        # Decrease score as distance increases
+        # Decay over 50 units
+        return max(0.0, 1.0 - (avg_edge_dist - self.threshold) / 50.0)
