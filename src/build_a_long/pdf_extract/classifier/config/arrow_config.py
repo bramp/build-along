@@ -43,3 +43,11 @@ class ArrowConfig(BaseModel):
     size_weight: Weight = Field(
         default=0.3, description="Weight for size score in final arrow score."
     )
+
+    tail_grouping_tolerance: float = Field(
+        default=5.0,
+        description=(
+            "Maximum distance (in points) between tail coordinates "
+            "to group arrowheads into a single multi-head arrow."
+        ),
+    )

@@ -278,6 +278,13 @@ def make_shaft_rect_items(bbox: BBox) -> tuple[tuple, ...]:
     return (("re", (bbox.x0, bbox.y0, bbox.x1, bbox.y1), -1),)
 
 
+def make_stroked_line_items(
+    x0: float, y0: float, x1: float, y1: float
+) -> tuple[tuple, ...]:
+    """Create a single line item for a stroked line shaft."""
+    return (("l", (x0, y0), (x1, y1)),)
+
+
 class TestShaftDetection:
     """Tests for arrow shaft detection."""
 
@@ -489,4 +496,171 @@ class TestShaftDetection:
         source_blocks = candidates[0].source_blocks
         assert len(source_blocks) == 2
         assert arrowhead in source_blocks
+        assert shaft in source_blocks
+
+    def test_finds_stroked_line_shaft(self, arrow_classifier: ArrowClassifier):
+        """Test finding a stroked line shaft (not filled)."""
+        # Arrowhead pointing right
+        arrowhead_bbox = BBox(x0=185.0, y0=280.0, x1=197.5, y1=289.1)
+        arrowhead_items = make_triangular_arrow_items(185.0, 280.0)
+        arrowhead = make_drawing(
+            arrowhead_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=arrowhead_items,
+            block_id=1,
+        )
+
+        # Stroked line shaft to the left of arrowhead
+        # Line from x=0 to x=186 (horizontal line at y=284.6)
+        shaft_bbox = BBox(x0=0.0, y0=284.56, x1=186.22, y1=284.56)
+        shaft_items = make_stroked_line_items(0.0, 284.56, 186.22, 284.56)
+        shaft = make_drawing(
+            shaft_bbox,
+            fill_color=None,  # No fill
+            stroke_color=(1.0, 1.0, 1.0),  # White stroke matches arrowhead
+            items=shaft_items,
+            block_id=2,
+        )
+
+        page_data = make_page_data([shaft, arrowhead])
+        result = ClassificationResult(page_data=page_data)
+
+        arrow_classifier._score(result)
+
+        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        assert len(candidates) == 1
+
+        score_details = candidates[0].score_details
+        assert isinstance(score_details, _ArrowScore)
+        assert len(score_details.heads) == 1
+        head_data = score_details.heads[0]
+        assert head_data.shaft_block is shaft
+        assert head_data.tail is not None
+        # Tail should be at x=0 (far end from arrowhead at x=185)
+        assert head_data.tail[0] == pytest.approx(0.0, abs=1.0)
+
+    def test_tail_is_far_from_tip_not_near(self, arrow_classifier: ArrowClassifier):
+        """Test that tail is at the far end of shaft, not near the arrowhead tip."""
+        # Arrowhead pointing right at x=376, tip at x=389
+        arrowhead_bbox = BBox(x0=376.47, y0=413.39, x1=388.98, y1=422.49)
+        arrowhead_items = (
+            ("l", (388.98, 417.94), (376.47, 413.39)),
+            ("l", (376.47, 413.39), (377.67, 417.94)),
+            ("l", (377.67, 417.94), (376.47, 422.49)),
+            ("l", (376.47, 422.49), (388.98, 417.94)),
+        )
+        arrowhead = make_drawing(
+            arrowhead_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=arrowhead_items,
+            block_id=84,
+        )
+
+        # Shaft to the left of arrowhead, from x=100 to x=377
+        shaft_bbox = BBox(x0=100.0, y0=417.44, x1=377.67, y1=418.44)
+        shaft_items = make_shaft_rect_items(shaft_bbox)
+        shaft = make_drawing(
+            shaft_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=shaft_items,
+            block_id=83,
+        )
+
+        page_data = make_page_data([shaft, arrowhead])
+        result = ClassificationResult(page_data=page_data)
+
+        arrow_classifier._score(result)
+
+        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        assert len(candidates) == 1
+
+        score_details = candidates[0].score_details
+        assert isinstance(score_details, _ArrowScore)
+        head_data = score_details.heads[0]
+
+        # The tip is at x=388.98 (right side of arrowhead)
+        tip_x = head_data.tip[0]
+        assert tip_x == pytest.approx(388.98, abs=1.0)
+
+        # The tail should be at x=100 (left end of shaft, far from tip)
+        # NOT at x=377.67 (right end of shaft, near the tip)
+        assert head_data.tail is not None
+        tail_x = head_data.tail[0]
+        assert tail_x == pytest.approx(100.0, abs=1.0)
+
+        # Verify tail is far from tip (at least shaft length apart)
+        assert abs(tail_x - tip_x) > 200  # Shaft is ~277 pixels long
+
+    def test_two_heads_sharing_same_shaft_grouped_together(
+        self, arrow_classifier: ArrowClassifier
+    ):
+        """Test that two arrowheads sharing the same shaft are grouped into one arrow."""
+        # Create an L-shaped shaft with two arrowheads at different ends
+        # L-shape: horizontal from (100, 200) to (200, 200), then vertical to (200, 300)
+
+        # Arrowhead 1: pointing left at (100, 200)
+        head1_bbox = BBox(x0=91.0, y0=195.5, x1=100.0, y1=204.5)
+        head1_items = (
+            ("l", (91.0, 200.0), (100.0, 195.5)),
+            ("l", (100.0, 195.5), (100.0, 204.5)),
+            ("l", (100.0, 204.5), (91.0, 200.0)),
+        )
+        head1 = make_drawing(
+            head1_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=head1_items,
+            block_id=1,
+        )
+
+        # Arrowhead 2: pointing down at (200, 300)
+        head2_bbox = BBox(x0=195.5, y0=300.0, x1=204.5, y1=309.0)
+        head2_items = (
+            ("l", (200.0, 309.0), (195.5, 300.0)),
+            ("l", (195.5, 300.0), (204.5, 300.0)),
+            ("l", (204.5, 300.0), (200.0, 309.0)),
+        )
+        head2 = make_drawing(
+            head2_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=head2_items,
+            block_id=2,
+        )
+
+        # L-shaped shaft connecting both heads
+        shaft_bbox = BBox(x0=100.0, y0=199.0, x1=201.0, y1=300.0)
+        shaft_items = (
+            ("l", (100.0, 199.5), (200.5, 199.5)),  # Horizontal segment
+            ("l", (200.5, 199.5), (200.5, 300.0)),  # Vertical segment
+        )
+        shaft = make_drawing(
+            shaft_bbox,
+            fill_color=(1.0, 1.0, 1.0),
+            items=shaft_items,
+            block_id=3,
+        )
+
+        page_data = make_page_data([head1, head2, shaft])
+        result = ClassificationResult(page_data=page_data)
+
+        arrow_classifier._score(result)
+
+        candidates = result.get_scored_candidates("arrow", valid_only=False)
+
+        # Should have exactly 1 arrow candidate with 2 heads
+        # (not 2 separate single-head arrows)
+        assert len(candidates) == 1
+
+        score_details = candidates[0].score_details
+        assert isinstance(score_details, _ArrowScore)
+        assert len(score_details.heads) == 2
+
+        # Both heads should reference the same shaft block
+        assert score_details.heads[0].shaft_block is shaft
+        assert score_details.heads[1].shaft_block is shaft
+
+        # Source blocks should include both arrowheads and the shaft
+        source_blocks = candidates[0].source_blocks
+        assert len(source_blocks) == 3
+        assert head1 in source_blocks
+        assert head2 in source_blocks
         assert shaft in source_blocks

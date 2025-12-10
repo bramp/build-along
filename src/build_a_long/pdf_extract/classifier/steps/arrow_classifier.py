@@ -140,23 +140,82 @@ class ArrowClassifier(LabelClassifier):
 
             arrowheads.append(head)
 
-        # Phase 2: Group arrowheads by tail (rounded to group nearby tails)
-        groups: dict[tuple[float, float] | None, list[_ArrowHeadData]] = {}
-        for head in arrowheads:
-            tail_key: tuple[float, float] | None = None
-            if head.tail is not None:
-                tail_key = (round(head.tail[0], 1), round(head.tail[1], 1))
-            groups.setdefault(tail_key, []).append(head)
+        # Phase 2: Group arrowheads that share the same shaft or have nearby tails
+        # This handles:
+        # - Y-shaped arrows: multiple heads with tails close together
+        # - L-shaped arrows: multiple heads sharing the same shaft block
+        tolerance = arrow_config.tail_grouping_tolerance
+        groups = self._group_arrowheads(arrowheads, tolerance)
 
         # Phase 3: Create candidates
-        for tail_key, heads in groups.items():
-            if tail_key is None:
-                # No shaft - each arrowhead is its own arrow
-                for head in heads:
-                    self._add_arrow_candidate(result, [head])
-            else:
-                # Shared tail - one arrow with multiple heads
-                self._add_arrow_candidate(result, heads)
+        for heads in groups:
+            self._add_arrow_candidate(result, heads)
+
+    def _group_arrowheads(
+        self, arrowheads: list[_ArrowHeadData], tail_tolerance: float
+    ) -> list[list[_ArrowHeadData]]:
+        """Group arrowheads that belong to the same arrow.
+
+        Arrowheads are grouped together if they:
+        1. Share the same shaft_block (same object identity), OR
+        2. Have tails within tail_tolerance distance of each other
+
+        Args:
+            arrowheads: List of arrowhead data to group
+            tail_tolerance: Maximum distance between tail coordinates to be grouped
+
+        Returns:
+            List of groups, where each group is a list of arrowheads
+        """
+        if not arrowheads:
+            return []
+
+        # Use union-find to group arrowheads
+        # Each arrowhead starts in its own group
+        parent: dict[int, int] = {i: i for i in range(len(arrowheads))}
+
+        def find(x: int) -> int:
+            if parent[x] != x:
+                parent[x] = find(parent[x])
+            return parent[x]
+
+        def union(x: int, y: int) -> None:
+            px, py = find(x), find(y)
+            if px != py:
+                parent[px] = py
+
+        # Group by shared shaft_block (same object identity)
+        shaft_to_indices: dict[int, list[int]] = {}
+        for i, head in enumerate(arrowheads):
+            if head.shaft_block is not None:
+                shaft_id = id(head.shaft_block)
+                if shaft_id in shaft_to_indices:
+                    # Union with first arrowhead sharing this shaft
+                    union(i, shaft_to_indices[shaft_id][0])
+                    shaft_to_indices[shaft_id].append(i)
+                else:
+                    shaft_to_indices[shaft_id] = [i]
+
+        # Group by tail proximity
+        for i, head_i in enumerate(arrowheads):
+            if head_i.tail is None:
+                continue
+            for j, head_j in enumerate(arrowheads):
+                if i >= j or head_j.tail is None:
+                    continue
+                dx = head_i.tail[0] - head_j.tail[0]
+                dy = head_i.tail[1] - head_j.tail[1]
+                dist = math.sqrt(dx * dx + dy * dy)
+                if dist <= tail_tolerance:
+                    union(i, j)
+
+        # Collect groups
+        group_map: dict[int, list[_ArrowHeadData]] = {}
+        for i, head in enumerate(arrowheads):
+            root = find(i)
+            group_map.setdefault(root, []).append(head)
+
+        return list(group_map.values())
 
     def _add_arrow_candidate(
         self, result: ClassificationResult, heads: list[_ArrowHeadData]
@@ -328,12 +387,17 @@ class ArrowClassifier(LabelClassifier):
         """Find the shaft connected to an arrowhead.
 
         The shaft can be:
-        1. A thin rectangle (single "re" item) - simple straight shaft
-        2. A path with multiple "l" (line) items and/or "re" items - L-shaped shaft
+        1. A thin filled rectangle (single "re" item)
+        2. A stroked line (single "l" item with stroke_color)
+        3. A path with multiple "l" (line) items - L-shaped shaft
 
         The shaft must:
         - Be positioned adjacent to the arrowhead base (opposite the tip)
-        - Have the same fill color as the arrowhead (within tolerance)
+        - Have a color matching the arrowhead's fill_color (either fill or stroke)
+
+        All shaft types are handled uniformly by extracting their endpoints
+        and finding the point closest to the tip (connection) and furthest
+        from the tip (tail).
 
         Args:
             arrowhead: The arrowhead Drawing block
@@ -344,247 +408,32 @@ class ArrowClassifier(LabelClassifier):
         Returns:
             Tuple of (shaft Drawing block, tail point) if found, None otherwise
         """
-        # Try to find a simple rectangular shaft first
         # Optimization: Filter to drawings near the arrowhead
         # Shaft must connect to arrowhead, so it must overlap a slightly expanded bbox
         search_bbox = arrowhead.bbox.expand(20.0)  # generous margin
         nearby_drawings = filter_overlapping(all_drawings, search_bbox)
 
-        result = self._find_simple_shaft(arrowhead, direction, tip, nearby_drawings)
-        if result is not None:
-            return result
-
-        # Try to find an L-shaped (cornered) shaft
-        return self._find_cornered_shaft(arrowhead, direction, nearby_drawings)
-
-    def _find_simple_shaft(
-        self,
-        arrowhead: Drawing,
-        direction: float,
-        tip: tuple[float, float],
-        all_drawings: list[Drawing],
-    ) -> tuple[Drawing, tuple[float, float]] | None:
-        """Find a simple rectangular shaft connected to an arrowhead.
-
-        The shaft is a thin rectangle that:
-        - Has a single "re" (rectangle) item
-        - Is very thin (typically 1-3 pixels in one dimension)
-        - Is positioned adjacent to the arrowhead base (opposite the tip)
-        - Has the same fill color as the arrowhead
-
-        Args:
-            arrowhead: The arrowhead Drawing block
-            direction: Direction angle in degrees (0=right, 90=down, etc.)
-            tip: The tip point (x, y) of the arrowhead
-            all_drawings: All Drawing blocks on the page to search
-
-        Returns:
-            Tuple of (shaft Drawing block, tail point) if found, None otherwise
-        """
-        direction_rad = math.radians(direction)
-
-        # The arrowhead's base is opposite the tip
-        # Calculate expected shaft direction (opposite to tip direction)
-        shaft_dx = -math.cos(direction_rad)
-        shaft_dy = -math.sin(direction_rad)
-
-        # Maximum distance from arrowhead to search for shaft
-        max_shaft_gap = 5.0  # pixels
-        # Maximum thickness for a shaft
-        max_shaft_thickness = 5.0  # pixels
-        # Minimum length for a shaft
-        min_shaft_length = 10.0  # pixels
+        # Configuration
+        max_connection_distance = 15.0  # pixels - max gap between shaft and arrowhead
+        min_shaft_length = 10.0  # pixels - minimum distance from connection to tail
+        max_shaft_thickness = 5.0  # pixels - for thin rect shafts
 
         best_shaft: Drawing | None = None
         best_tail: tuple[float, float] | None = None
         best_distance = float("inf")
 
-        for drawing in all_drawings:
+        for drawing in nearby_drawings:
             if drawing is arrowhead:
                 continue
 
-            # Must be filled
-            if not drawing.fill_color:
+            # Check color match - shaft color must match arrowhead fill_color
+            # Shaft can be either filled (fill_color) or stroked (stroke_color)
+            shaft_color = drawing.fill_color or drawing.stroke_color
+            if not shaft_color:
                 continue
 
-            # Should have same fill color as arrowhead (within tolerance)
-            if arrowhead.fill_color and not self._colors_match(
-                arrowhead.fill_color, drawing.fill_color
-            ):
-                continue
-
-            # Must have a single rectangle item
-            items = drawing.items
-            if not items or len(items) != 1:
-                continue
-            if items[0][0] != "re":
-                continue
-
-            bbox = drawing.bbox
-
-            # Determine if this is a horizontal or vertical shaft
-            is_horizontal = bbox.width > bbox.height
-            thickness = bbox.height if is_horizontal else bbox.width
-            length = bbox.width if is_horizontal else bbox.height
-
-            # Check shaft dimensions
-            if thickness > max_shaft_thickness:
-                continue
-            if length < min_shaft_length:
-                continue
-
-            # Check if the shaft is positioned appropriately relative to arrowhead
-            # The shaft should be in the direction opposite to the tip
-            shaft_center_x = (bbox.x0 + bbox.x1) / 2
-            shaft_center_y = (bbox.y0 + bbox.y1) / 2
-
-            # Vector from tip to shaft center
-            to_shaft_x = shaft_center_x - tip[0]
-            to_shaft_y = shaft_center_y - tip[1]
-
-            # Distance from tip to shaft center
-            distance = math.sqrt(to_shaft_x**2 + to_shaft_y**2)
-
-            # Check if shaft is roughly in the expected direction (opposite tip)
-            if distance > 0:
-                # Normalize the vector
-                norm_to_shaft_x = to_shaft_x / distance
-                norm_to_shaft_y = to_shaft_y / distance
-
-                # Dot product with expected shaft direction
-                # (should be positive if in same direction)
-                dot = norm_to_shaft_x * shaft_dx + norm_to_shaft_y * shaft_dy
-                if dot < 0.5:  # Not pointing in expected direction
-                    continue
-
-            # Check if shaft connects to arrowhead (adjacent or slightly overlapping)
-            if is_horizontal:
-                # Horizontal shaft - check vertical alignment with arrowhead center
-                arrowhead_center_y = (arrowhead.bbox.y0 + arrowhead.bbox.y1) / 2
-                if abs(shaft_center_y - arrowhead_center_y) > max_shaft_gap + thickness:
-                    continue
-
-                # Check horizontal proximity to arrowhead
-                if direction > 90 or direction < -90:
-                    # Arrow points left, shaft should be to the right
-                    gap = bbox.x0 - arrowhead.bbox.x1
-                else:
-                    # Arrow points right, shaft should be to the left
-                    gap = arrowhead.bbox.x0 - bbox.x1
-
-                if gap > max_shaft_gap or gap < -arrowhead.bbox.width:
-                    continue
-
-                # Calculate tail point (far end of shaft from arrowhead)
-                if direction > 90 or direction < -90:
-                    # Arrow points left, tail is at right end of shaft
-                    tail = (bbox.x1, shaft_center_y)
-                else:
-                    # Arrow points right, tail is at left end of shaft
-                    tail = (bbox.x0, shaft_center_y)
-            else:
-                # Vertical shaft - check horizontal alignment with arrowhead center
-                arrowhead_center_x = (arrowhead.bbox.x0 + arrowhead.bbox.x1) / 2
-                if abs(shaft_center_x - arrowhead_center_x) > max_shaft_gap + thickness:
-                    continue
-
-                # Check vertical proximity to arrowhead
-                if direction > 0:
-                    # Arrow points down, shaft should be above
-                    gap = arrowhead.bbox.y0 - bbox.y1
-                else:
-                    # Arrow points up, shaft should be below
-                    gap = bbox.y0 - arrowhead.bbox.y1
-
-                if gap > max_shaft_gap or gap < -arrowhead.bbox.height:
-                    continue
-
-                # Calculate tail point (far end of shaft from arrowhead)
-                if direction > 0:
-                    # Arrow points down, tail is at top of shaft
-                    tail = (shaft_center_x, bbox.y0)
-                else:
-                    # Arrow points up, tail is at bottom of shaft
-                    tail = (shaft_center_x, bbox.y1)
-
-            # Track the closest/best shaft
-            if distance < best_distance:
-                best_distance = distance
-                best_shaft = drawing
-                best_tail = tail
-
-        if best_shaft is not None and best_tail is not None:
-            return (best_shaft, best_tail)
-        return None
-
-    def _find_cornered_shaft(
-        self,
-        arrowhead: Drawing,
-        direction: float,
-        all_drawings: list[Drawing],
-    ) -> tuple[Drawing, tuple[float, float]] | None:
-        """Find an L-shaped (cornered) shaft connected to an arrowhead.
-
-        L-shaped shafts are paths consisting of multiple line segments and/or
-        rectangles that form a corner. They are used when arrows need to point
-        around obstacles.
-
-        The shaft must:
-        - Have line ("l") items and/or rectangle ("re") items
-        - Have the same fill color as the arrowhead
-        - Connect to the arrowhead base
-
-        Args:
-            arrowhead: The arrowhead Drawing block
-            direction: Direction angle in degrees (0=right, 90=down, etc.)
-            all_drawings: All Drawing blocks on the page to search
-
-        Returns:
-            Tuple of (shaft Drawing block, tail point) if found, None otherwise
-        """
-        # Calculate the arrowhead base center (opposite the tip)
-        arrowhead_center_x = (arrowhead.bbox.x0 + arrowhead.bbox.x1) / 2
-        arrowhead_center_y = (arrowhead.bbox.y0 + arrowhead.bbox.y1) / 2
-
-        # The base is on the opposite side from the tip
-        # For a downward-pointing arrow, base is at the top
-        # For an upward-pointing arrow, base is at the bottom
-        # etc.
-        if -45 <= direction < 45:
-            # Points right, base is on the left
-            base_x = arrowhead.bbox.x0
-            base_y = arrowhead_center_y
-        elif 45 <= direction < 135:
-            # Points down, base is at the top
-            base_x = arrowhead_center_x
-            base_y = arrowhead.bbox.y0
-        elif direction >= 135 or direction < -135:
-            # Points left, base is on the right
-            base_x = arrowhead.bbox.x1
-            base_y = arrowhead_center_y
-        else:
-            # Points up, base is at the bottom
-            base_x = arrowhead_center_x
-            base_y = arrowhead.bbox.y1
-
-        # Maximum distance from arrowhead base to consider a connection
-        max_connection_distance = 15.0  # pixels
-
-        best_shaft: Drawing | None = None
-        best_tail: tuple[float, float] | None = None
-        best_distance = float("inf")
-
-        for drawing in all_drawings:
-            if drawing is arrowhead:
-                continue
-
-            # Must be filled
-            if not drawing.fill_color:
-                continue
-
-            # Should have same fill color as arrowhead (within tolerance)
-            if arrowhead.fill_color and not self._colors_match(
-                arrowhead.fill_color, drawing.fill_color
+            if arrowhead.fill_color and not colors_match(
+                arrowhead.fill_color, shaft_color
             ):
                 continue
 
@@ -592,47 +441,53 @@ class ArrowClassifier(LabelClassifier):
             if not items:
                 continue
 
-            # Check if this looks like an L-shaped shaft path
-            # It should have multiple line items (forming the L-shape)
-            # Single rectangles are handled by _find_simple_shaft
-            line_items = [item for item in items if item[0] == "l"]
-
-            # Must have at least 2 line items to form an L-shape
-            # Paths with only rectangles are handled by _find_simple_shaft
-            if len(line_items) < 2:
-                continue
-
             # Reject if there are curve items - those are typically not shafts
-            curve_items = [item for item in items if item[0] == "c"]
-            if curve_items:
+            if any(item[0] == "c" for item in items):
                 continue
 
-            # Extract all points from the path
-            all_points = self._extract_path_points(items)
-            if len(all_points) < 2:
+            # For thin rectangles, check thickness constraint
+            if len(items) == 1 and items[0][0] == "re":
+                bbox = drawing.bbox
+                thickness = min(bbox.width, bbox.height)
+                if thickness > max_shaft_thickness:
+                    continue
+
+            # Extract all points from the drawing
+            points = self._extract_path_points(items)
+            if len(points) < 2:
                 continue
 
-            # Find the point closest to the arrowhead base
+            # Find the point closest to the arrowhead tip (connection point)
+            closest_point = None
             closest_dist = float("inf")
-            for p in all_points:
-                dist = math.sqrt((p[0] - base_x) ** 2 + (p[1] - base_y) ** 2)
+            for p in points:
+                dist = math.sqrt((p[0] - tip[0]) ** 2 + (p[1] - tip[1]) ** 2)
                 if dist < closest_dist:
                     closest_dist = dist
+                    closest_point = p
 
             # Check if this shaft connects to the arrowhead
             if closest_dist > max_connection_distance:
                 continue
 
-            # Find the tail point (furthest point from the arrowhead base)
+            # Find the tail point (furthest point from the tip)
             tail_point = None
             furthest_dist = 0.0
-            for p in all_points:
-                dist = math.sqrt((p[0] - base_x) ** 2 + (p[1] - base_y) ** 2)
+            for p in points:
+                dist = math.sqrt((p[0] - tip[0]) ** 2 + (p[1] - tip[1]) ** 2)
                 if dist > furthest_dist:
                     furthest_dist = dist
                     tail_point = p
 
-            if tail_point is None:
+            if tail_point is None or closest_point is None:
+                continue
+
+            # Check minimum shaft length (distance from connection to tail)
+            shaft_length = math.sqrt(
+                (tail_point[0] - closest_point[0]) ** 2
+                + (tail_point[1] - closest_point[1]) ** 2
+            )
+            if shaft_length < min_shaft_length:
                 continue
 
             # Track the best shaft (closest connection to arrowhead)
