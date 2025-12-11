@@ -860,3 +860,56 @@ class TextContainerFitRule(Rule):
                     best_score = score
 
         return best_score
+
+
+class SizeRatioRule(Rule):
+    """Rule that scores based on block size relative to page dimensions.
+
+    Calculates width and height ratios relative to page size and scores them
+    using a triangular function peaking at `ideal_ratio` and decaying to 0.0
+    at `min_ratio` and `max_ratio`.
+    """
+
+    def __init__(
+        self,
+        ideal_ratio: float,
+        min_ratio: float,
+        max_ratio: float,
+        weight: float = 1.0,
+        name: str = "SizeRatio",
+        required: bool = False,
+    ):
+        self.name = name
+        self.ideal_ratio = ideal_ratio
+        self.min_ratio = min_ratio
+        self.max_ratio = max_ratio
+        self.weight = weight
+        self.required = required
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        page_bbox = context.page_data.bbox
+        assert page_bbox is not None
+        if page_bbox.width <= 0 or page_bbox.height <= 0:
+            return 0.0
+
+        width_ratio = block.bbox.width / page_bbox.width
+        height_ratio = block.bbox.height / page_bbox.height
+
+        def score_one_dim(ratio: float) -> float:
+            if ratio < self.min_ratio:
+                return 0.0
+            if ratio > self.max_ratio:
+                return 0.0
+
+            if ratio < self.ideal_ratio:
+                # From min to ideal: 0.0 -> 1.0
+                return (ratio - self.min_ratio) / (self.ideal_ratio - self.min_ratio)
+            else:
+                # From ideal to max: 1.0 -> 0.0
+                return 1.0 - (ratio - self.ideal_ratio) / (
+                    self.max_ratio - self.ideal_ratio
+                )
+
+        w_score = score_one_dim(width_ratio)
+        h_score = score_one_dim(height_ratio)
+        return (w_score + h_score) / 2.0
