@@ -764,3 +764,91 @@ class StrokeColorScore(Rule):
                 return 0.5
 
         return 0.0
+
+
+class PieceLengthValueRule(Rule):
+    """Rule that checks if text represents a valid piece length (1-32)."""
+
+    def __init__(
+        self,
+        weight: float = 1.0,
+        name: str = "PieceLengthValue",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        if not isinstance(block, Text):
+            return 0.0
+
+        try:
+            value = int(block.text.strip())
+            if 1 <= value <= 32:
+                return 1.0
+        except ValueError:
+            pass
+        return 0.0
+
+
+class TextContainerFitRule(Rule):
+    """Rule that scores how well a text block fits inside a containing drawing.
+
+    Finds the smallest drawing containing the text and scores based on the
+    ratio of drawing area to text area. Ideal for piece length indicators
+    (numbers inside circles).
+    """
+
+    def __init__(
+        self,
+        weight: float = 1.0,
+        name: str = "TextContainerFit",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        if not isinstance(block, Text):
+            return 0.0
+
+        text_area = block.bbox.area
+        if text_area <= 0:
+            return 0.0
+
+        # Find all drawings
+        drawings = [b for b in context.page_data.blocks if isinstance(b, Drawing)]
+
+        best_score = 0.0
+        # Maximum ratio of drawing area to text area to consider
+        MAX_AREA_RATIO = 6.0
+
+        for drawing in drawings:
+            # Check if text bbox is fully contained in drawing bbox
+            if drawing.bbox.contains(block.bbox):
+                drawing_area = drawing.bbox.area
+
+                # Skip drawings that are way too large
+                ratio = drawing_area / text_area
+                if ratio > MAX_AREA_RATIO:
+                    continue
+
+                # Score based on ratio
+                # Ideal ratio: 2-4x (circle slightly larger than text)
+                score = 0.0
+                if 2.0 <= ratio <= 4.0:
+                    score = 1.0
+                elif 1.0 <= ratio < 2.0:
+                    score = 0.8
+                elif 4.0 < ratio <= 10.0:
+                    # Should be covered by MAX_AREA_RATIO check above, but for completeness
+                    score = 0.6
+                else:
+                    score = 0.1
+
+                if score > best_score:
+                    best_score = score
+
+        return best_score
