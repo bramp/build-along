@@ -402,6 +402,7 @@ class TestExtractorMethods:
             (11, 15, 50, 50, 8, 3, "", "Im2", "DCTDecode", 0),  # has smask=15
         ]
 
+        # Test without smask extraction (default)
         extractor = Extractor(page=mock_page, page_num=1)
         result = extractor.extract_image_blocks()
 
@@ -411,13 +412,21 @@ class TestExtractorMethods:
         assert result[0].bbox.x0 == 100.0
         assert result[0].id == 0
         assert result[0].xref == 10
-        assert result[0].smask is None  # no smask for first image
+        assert result[0].smask is None  # no smask when include_smask=False
         assert isinstance(result[1], Image)
         assert result[1].image_id == "image_3"
         assert result[1].bbox.x0 == 200.0
         assert result[1].id == 1
         assert result[1].xref == 11
-        assert result[1].smask == 15  # has smask
+        assert result[1].smask is None  # no smask when include_smask=False
+
+        # Test with smask extraction enabled
+        extractor_with_smask = Extractor(page=mock_page, page_num=1, include_smask=True)
+        result_with_smask = extractor_with_smask.extract_image_blocks()
+
+        assert len(result_with_smask) == 2
+        assert result_with_smask[0].smask is None  # no smask for first image
+        assert result_with_smask[1].smask == 15  # has smask
 
     def test_extract_drawing_blocks(self):
         """Test Extractor.extract_drawing_blocks extracts drawings from

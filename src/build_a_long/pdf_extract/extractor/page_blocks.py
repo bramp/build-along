@@ -26,8 +26,13 @@ from pydantic import (
 )
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.drawing_utils import convert_drawing_items
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
+    DrawingDict,
+    ImageInfoDict,
     PointLikeTuple,
+    RectLikeTuple,
+    TexttraceSpanDict,
     TransformTuple,
 )
 from build_a_long.pdf_extract.utils import SerializationMixin
@@ -104,6 +109,82 @@ class Drawing(Block):
         """
         return self.original_bbox is not None and self.bbox != self.original_bbox
 
+    @classmethod
+    def from_drawing_dict(
+        cls,
+        d: DrawingDict,
+        block_id: int,
+        visible_bbox: BBox | None = None,
+        *,
+        include_metadata: bool = False,
+    ) -> Drawing:
+        """Create a Drawing block from a PyMuPDF drawing dict.
+
+        Args:
+            d: A drawing dict from page.get_drawings(extended=True)
+            block_id: Unique ID to assign to this block
+            visible_bbox: The visible bbox after clipping (if clipping was computed).
+                If None, the original bbox from the drawing is used.
+            include_metadata: If True, extract additional metadata (colors, items, etc.)
+
+        Returns:
+            A new Drawing block with the extracted data
+
+        Raises:
+            ValueError: If the drawing has no 'rect' field
+        """
+        drect = d.get("rect")
+        if not drect:
+            raise ValueError("Drawing has no 'rect' field")
+
+        nbbox = BBox.from_rect(drect)
+
+        # Extract additional metadata if requested
+        fill_color: tuple[float, ...] | None = None
+        stroke_color: tuple[float, ...] | None = None
+        line_width: float | None = None
+        fill_opacity: float | None = None
+        stroke_opacity: float | None = None
+        path_type: str | None = None
+        dashes: str | None = None
+        even_odd: bool | None = None
+        items: tuple[tuple, ...] | None = None
+
+        if include_metadata:
+            fill_color = d.get("fill")
+            stroke_color = d.get("color")
+            line_width = d.get("width")
+            fill_opacity = d.get("fill_opacity")
+            stroke_opacity = d.get("stroke_opacity")
+            path_type = d.get("type")
+            dashes = d.get("dashes")
+            even_odd = d.get("even_odd")
+            # Convert PyMuPDF objects to tuples for JSON serialization
+            items = convert_drawing_items(d.get("items"))
+
+        # Get draw order directly from seqno (corresponds to bboxlog index)
+        draw_order = d.get("seqno")
+
+        # Determine the final bbox and original_bbox
+        final_bbox = visible_bbox if visible_bbox else nbbox
+        original_bbox = nbbox if visible_bbox and visible_bbox != nbbox else None
+
+        return cls(
+            bbox=final_bbox,
+            fill_color=fill_color,
+            stroke_color=stroke_color,
+            line_width=line_width,
+            fill_opacity=fill_opacity,
+            stroke_opacity=stroke_opacity,
+            path_type=path_type,
+            dashes=dashes,
+            even_odd=even_odd,
+            items=items,
+            original_bbox=original_bbox,
+            id=block_id,
+            draw_order=draw_order,
+        )
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         return f"Drawing(bbox={str(self.bbox)})"
@@ -128,6 +209,76 @@ class Text(Block):
     origin: PointLikeTuple | None = None  # span origin (x, y)
 
     model_config = ConfigDict(frozen=True, populate_by_name=True)
+
+    @classmethod
+    def from_texttrace_span(
+        cls,
+        span: TexttraceSpanDict,
+        block_id: int,
+        *,
+        include_metadata: bool = False,
+    ) -> Text:
+        """Create a Text block from a PyMuPDF texttrace span.
+
+        Args:
+            span: A span dict from page.get_texttrace()
+            block_id: Unique ID to assign to this block
+            include_metadata: If True, extract additional metadata (color, flags, etc.)
+
+        Returns:
+            A new Text block with the extracted data
+        """
+        bbox = span.get("bbox")
+        if not bbox:
+            raise ValueError("Span has no bbox")
+
+        nbbox = BBox.from_tuple(bbox)
+
+        # Assemble text from chars array
+        # Each char is (unicode, glyph_id, origin, bbox)
+        chars = span.get("chars", [])
+        text = "".join(chr(c[0]) for c in chars)
+
+        font_size: float | None = span.get("size")
+        font_name: str | None = span.get("font")
+
+        # seqno directly gives us the draw_order (bboxlog index)
+        draw_order = span.get("seqno")
+
+        # Extract additional metadata if requested
+        font_flags: int | None = None
+        color: int | None = None
+        ascender: float | None = None
+        descender: float | None = None
+        origin: PointLikeTuple | None = None
+
+        if include_metadata:
+            font_flags = span.get("flags")
+            # texttrace returns color as RGB tuple (0-1 range)
+            # Convert to int like get_text("dict") does
+            raw_color = span.get("color")
+            if isinstance(raw_color, tuple) and len(raw_color) >= 3:
+                r, g, b = raw_color[:3]
+                color = (int(r * 255) << 16) | (int(g * 255) << 8) | int(b * 255)
+            ascender = span.get("ascender")
+            descender = span.get("descender")
+            # Get origin from first char if available
+            if chars:
+                origin = chars[0][2]  # origin is 3rd element of char tuple
+
+        return cls(
+            id=block_id,
+            bbox=nbbox,
+            draw_order=draw_order,
+            text=text,
+            font_name=font_name,
+            font_size=font_size,
+            font_flags=font_flags,
+            color=color,
+            ascender=ascender,
+            descender=descender,
+            origin=origin,
+        )
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
@@ -158,6 +309,87 @@ class Image(Block):
     digest: bytes | None = None  # MD5 hash for duplicate detection
 
     model_config = ConfigDict(frozen=True, populate_by_name=True)
+
+    @classmethod
+    def from_image_info(
+        cls,
+        img_info: ImageInfoDict,
+        block_id: int,
+        draw_order: int | None = None,
+        *,
+        include_metadata: bool = False,
+    ) -> Image:
+        """Create an Image block from PyMuPDF image info.
+
+        Args:
+            img_info: An image info dict from page.get_image_info(xrefs=True)
+            block_id: Unique ID to assign to this block
+            draw_order: The draw order from bboxlog (determined by caller)
+            include_metadata: If True, extract additional metadata (dimensions, etc.)
+
+        Returns:
+            A new Image block with the extracted data
+        """
+        bbox: RectLikeTuple = img_info.get("bbox", (0.0, 0.0, 0.0, 0.0))
+        nbbox = BBox.from_tuple(bbox)
+
+        bi = img_info.get("number")
+
+        # Get the xref - 0 means inline image (no xref)
+        xref: int | None = img_info.get("xref")
+        if xref == 0:
+            xref = None  # Inline images have no xref
+
+        # Extract additional metadata if requested
+        width: int | None = None
+        height: int | None = None
+        colorspace: int | None = None
+        xres: int | None = None
+        yres: int | None = None
+        bpc: int | None = None
+        size: int | None = None
+        transform: TransformTuple | None = None
+        digest: bytes | None = None
+
+        if include_metadata:
+            width = img_info.get("width")
+            height = img_info.get("height")
+            colorspace = img_info.get("colorspace")
+            xres = img_info.get("xres")
+            yres = img_info.get("yres")
+            bpc = img_info.get("bpc")
+            size = img_info.get("size")
+            transform = img_info.get("transform")
+            digest = img_info.get("digest")
+
+        return cls(
+            bbox=nbbox,
+            image_id=f"image_{bi}",
+            width=width,
+            height=height,
+            colorspace=colorspace,
+            xres=xres,
+            yres=yres,
+            bpc=bpc,
+            size=size,
+            transform=transform,
+            xref=xref,
+            smask=None,  # smask is set separately via with_smask()
+            digest=digest,
+            id=block_id,
+            draw_order=draw_order,
+        )
+
+    def with_smask(self, smask: int) -> Image:
+        """Return a copy of this Image with the smask set.
+
+        Args:
+            smask: The xref of the soft mask
+
+        Returns:
+            A new Image with smask set
+        """
+        return self.model_copy(update={"smask": smask})
 
     @field_validator("digest", mode="before")
     @classmethod

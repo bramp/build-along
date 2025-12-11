@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from typing import Annotated, Protocol
+from typing import TYPE_CHECKING, Annotated, Protocol
 
 from annotated_types import Ge
 from pydantic import BaseModel, ConfigDict
+
+if TYPE_CHECKING:
+    from build_a_long.pdf_extract.extractor.pymupdf_types import RectLike
 
 # Type alias for non-negative floats
 NonNegativeFloat = Annotated[float, Ge(0)]
@@ -59,6 +62,18 @@ class BBox(BaseModel):
             x1=bbox_tuple[2],
             y1=bbox_tuple[3],
         )
+
+    @classmethod
+    def from_rect(cls, rect: RectLike) -> BBox:
+        """Create a BBox from a PyMuPDF Rect-like object.
+
+        Args:
+            rect: Any object with x0, y0, x1, y1 attributes (e.g., pymupdf.Rect)
+
+        Returns:
+            A new BBox with the coordinates from the rect
+        """
+        return cls(x0=rect.x0, y0=rect.y0, x1=rect.x1, y1=rect.y1)
 
     def equals(self, other: BBox) -> bool:
         """

@@ -165,3 +165,26 @@ class RawDict(TypedDict):
     """
 
     blocks: list[TextBlockDict | ImageBlockDict]
+
+
+# Type for a single character in texttrace: (unicode, glyph_id, origin, bbox)
+TexttraceChar = tuple[int, int, PointLikeTuple, RectLikeTuple]
+
+
+class TexttraceSpanDict(TypedDict):
+    """Type definition for a text span from page.get_texttrace().
+
+    See https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_texttrace
+
+    Each span represents a contiguous run of text with the same font and style.
+    """
+
+    bbox: RectLikeTuple  # span bounding box
+    chars: list[TexttraceChar]  # list of (unicode, glyph_id, origin, bbox) tuples
+    color: NotRequired[tuple[float, float, float]]  # RGB color (0-1 range)
+    font: NotRequired[str]  # font name
+    size: NotRequired[float]  # font size in points
+    flags: NotRequired[int]  # font flags bitmap
+    ascender: NotRequired[float]  # font ascender
+    descender: NotRequired[float]  # font descender
+    seqno: NotRequired[int]  # sequence number in bboxlog (draw order)

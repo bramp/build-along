@@ -5,6 +5,7 @@ import pymupdf
 from pydantic import BaseModel
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.drawing_utils import compute_visible_bbox
 
 # Note: We intentionally do not build hierarchy here to avoid syncing issues
 from build_a_long.pdf_extract.extractor.page_blocks import (
@@ -14,9 +15,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
     Text,
 )
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
-    DrawingDict,
     ImageInfoDict,
-    PointLikeTuple,
     RectLikeTuple,
 )
 from build_a_long.pdf_extract.utils import SerializationMixin
@@ -110,6 +109,7 @@ class Extractor:
         page_num: int,  # TODO I wonder if page_num is a property on page.
         *,
         include_metadata: bool = False,
+        include_smask: bool = False,
     ) -> None:
         """Initialize the extractor for a specific page.
 
@@ -118,10 +118,14 @@ class Extractor:
             page_num: Page number (1-indexed) for the PageData result.
             include_metadata: If True, extract additional metadata (colors, fonts,
                 dimensions, etc.). If False, only extract core fields.
+            include_smask: If True, extract soft mask (alpha/transparency) xrefs
+                for images. This requires an additional page.get_images() call.
+                Defaults to False.
         """
         self._page = page
         self._page_num = page_num
         self._include_metadata = include_metadata
+        self._include_smask = include_smask
         self._next_id = 0
 
         # Lazy-initialized BBoxLogTracker for draw order
@@ -177,68 +181,25 @@ class Extractor:
         text_blocks: list[Text] = []
 
         for span in texttrace:
-            bbox = span.get("bbox")
-            if not bbox:
+            if not span.get("bbox"):
                 continue
 
-            nbbox = BBox.from_tuple(bbox)
-
-            # Assemble text from chars array
-            # Each char is (unicode, glyph_id, origin, bbox)
-            chars = span.get("chars", [])
-            text = "".join(chr(c[0]) for c in chars)
-
-            font_size: float | None = span.get("size")
-            font_name: str | None = span.get("font")
-
-            # seqno directly gives us the draw_order (bboxlog index)
-            draw_order = span.get("seqno")
-
-            # Extract additional metadata if requested
-            font_flags: int | None = None
-            color: int | None = None
-            ascender: float | None = None
-            descender: float | None = None
-            origin: PointLikeTuple | None = None
-
-            if self._include_metadata:
-                font_flags = span.get("flags")
-                # texttrace returns color as RGB tuple (0-1 range)
-                # Convert to int like get_text("dict") does
-                raw_color = span.get("color")
-                if isinstance(raw_color, tuple) and len(raw_color) >= 3:
-                    r, g, b = raw_color[:3]
-                    color = (int(r * 255) << 16) | (int(g * 255) << 8) | int(b * 255)
-                ascender = span.get("ascender")
-                descender = span.get("descender")
-                # Get origin from first char if available
-                if chars:
-                    origin = chars[0][2]  # origin is 3rd element of char tuple
+            text_block = Text.from_texttrace_span(
+                span,  # type: ignore[arg-type]
+                block_id=self._get_next_id(),
+                include_metadata=self._include_metadata,
+            )
 
             logger.debug(
                 "Found text %r with bbox %s, font %s, size %s, draw_order %s",
-                text,
-                nbbox,
-                font_name,
-                font_size,
-                draw_order,
+                text_block.text,
+                text_block.bbox,
+                text_block.font_name,
+                text_block.font_size,
+                text_block.draw_order,
             )
 
-            text_blocks.append(
-                Text(
-                    id=self._get_next_id(),
-                    bbox=nbbox,
-                    draw_order=draw_order,
-                    text=text,
-                    font_name=font_name,
-                    font_size=font_size,
-                    font_flags=font_flags,
-                    color=color,
-                    ascender=ascender,
-                    descender=descender,
-                    origin=origin,
-                )
-            )
+            text_blocks.append(text_block)
 
         return text_blocks
 
@@ -262,74 +223,29 @@ class Extractor:
 
         for img_info in image_infos:
             bbox: RectLikeTuple = img_info.get("bbox", (0.0, 0.0, 0.0, 0.0))
-            nbbox = BBox.from_tuple(bbox)
-
-            bi = img_info.get("number")
 
             # Find draw order by matching bbox
             draw_order = tracker.find_image_draw_order(bbox)
 
-            # Get the xref - 0 means inline image (no xref)
-            xref: int | None = img_info.get("xref")
-            if xref == 0:
-                xref = None  # Inline images have no xref
-
-            # Get smask (soft mask) xref if present
-            # We need to look this up from page.get_images() for the full info
-            smask: int | None = None
-
-            # Extract additional metadata if requested
-            width: int | None = None
-            height: int | None = None
-            colorspace: int | None = None
-            xres: int | None = None
-            yres: int | None = None
-            bpc: int | None = None
-            size: int | None = None
-            transform: tuple[float, float, float, float, float, float] | None = None
-            digest: bytes | None = None
-
-            if self._include_metadata:
-                width = img_info.get("width")
-                height = img_info.get("height")
-                colorspace = img_info.get("colorspace")
-                xres = img_info.get("xres")
-                yres = img_info.get("yres")
-                bpc = img_info.get("bpc")
-                size = img_info.get("size")
-                transform = img_info.get("transform")
-                digest = img_info.get("digest")
-
-            image_blocks.append(
-                Image(
-                    bbox=nbbox,
-                    image_id=f"image_{bi}",
-                    width=width,
-                    height=height,
-                    colorspace=colorspace,
-                    xres=xres,
-                    yres=yres,
-                    bpc=bpc,
-                    size=size,
-                    transform=transform,
-                    xref=xref,
-                    smask=smask,
-                    digest=digest,
-                    id=self._get_next_id(),
-                    draw_order=draw_order,
-                )
+            image_block = Image.from_image_info(
+                img_info,
+                block_id=self._get_next_id(),
+                draw_order=draw_order,
+                include_metadata=self._include_metadata,
             )
+
+            image_blocks.append(image_block)
             logger.debug(
                 "Found image %s with %s, xref=%s, draw_order=%s",
-                bi,
-                nbbox,
-                xref,
-                draw_order,
+                image_block.image_id,
+                image_block.bbox,
+                image_block.xref,
+                image_block.draw_order,
             )
 
-        # Now get smask info from page.get_images() and update the image blocks
+        # Optionally get smask info from page.get_images() and update the image blocks
         # page.get_images() returns: (xref, smask, width, height, bpc, colorspace, ...)
-        if image_blocks:
+        if self._include_smask and image_blocks:
             page_images = self._page.get_images(full=True)
             xref_to_smask: dict[int, int] = {}
             for img_tuple in page_images:
@@ -342,136 +258,11 @@ class Extractor:
             updated_blocks: list[Image] = []
             for img in image_blocks:
                 if img.xref is not None and img.xref in xref_to_smask:
-                    # Create a new Image with smask set (since Image is frozen)
-                    img = img.model_copy(update={"smask": xref_to_smask[img.xref]})
+                    img = img.with_smask(xref_to_smask[img.xref])
                 updated_blocks.append(img)
             image_blocks = updated_blocks
 
         return image_blocks
-
-    def _convert_drawing_items(
-        self, items: list[tuple] | None
-    ) -> tuple[tuple, ...] | None:
-        """Convert PyMuPDF objects in drawing items to JSON-serializable tuples.
-
-        Drawing items can contain Rect, Point, and Quad objects which need
-        to be converted to tuples for JSON serialization.
-
-        Args:
-            items: List of drawing command tuples from PyMuPDF
-
-        Returns:
-            Tuple of tuples with PyMuPDF objects converted to tuples, or None
-        """
-        if items is None:
-            return None
-
-        converted_items: list[tuple] = []
-        for item in items:
-            if not isinstance(item, tuple) or len(item) == 0:
-                converted_items.append(item)
-                continue
-
-            # Convert tuple elements that are PyMuPDF objects
-            converted_elements: list = [item[0]]  # Keep the command string
-            for element in item[1:]:
-                # Check if element has x0, y0, x1, y1 (Rect-like)
-                if hasattr(element, "x0"):
-                    converted_elements.append(
-                        (element.x0, element.y0, element.x1, element.y1)
-                    )
-                # Check if element has x, y (Point-like)
-                elif hasattr(element, "x") and hasattr(element, "y"):
-                    converted_elements.append((element.x, element.y))
-                # Check if it's a Quad (has ul, ur, ll, lr)
-                elif hasattr(element, "ul"):
-                    converted_elements.append(
-                        (
-                            (element.ul.x, element.ul.y),
-                            (element.ur.x, element.ur.y),
-                            (element.ll.x, element.ll.y),
-                            (element.lr.x, element.lr.y),
-                        )
-                    )
-                else:
-                    # Keep as-is if not a recognized PyMuPDF object
-                    converted_elements.append(element)
-
-            converted_items.append(tuple(converted_elements))
-
-        return tuple(converted_items)
-
-    def _compute_visible_bbox(
-        self,
-        bbox: BBox,
-        level: int,
-        drawings: list[DrawingDict],
-        current_index: int,
-    ) -> BBox:
-        """Compute visible bbox by intersecting with applicable clip paths.
-
-        Args:
-            bbox: The original bounding box
-            level: The hierarchy level of this drawing
-            drawings: Full list of drawings (with extended=True)
-            current_index: Index of current drawing in the list
-
-        Returns:
-            The visible bbox after applying all relevant clips
-        """
-        visible = bbox
-
-        # Build the clip stack by walking backwards
-        # A clip at level L applies to drawings at level > L
-        # A clip's scope ends when we see a non-clip at level <= L
-        clip_stack: dict[int, BBox] = {}  # level -> clip bbox
-
-        for i in range(current_index - 1, -1, -1):
-            prev = drawings[i]
-            prev_level = prev.get("level", 0)
-            prev_type = prev.get("type")
-
-            # If we see a non-clip at or below our level, we can stop
-            # (we've exited all relevant clip scopes)
-            if prev_type != "clip" and prev_level < level:
-                logger.debug("  Stop at drawing %d (L%d non-clip)", i, prev_level)
-                break
-
-            # If it's a clip at a level less than ours, it applies
-            if prev_type == "clip" and prev_level < level:
-                # Only add if we haven't seen a clip at this level yet
-                # (we're walking backwards, so first encountered is most recent)
-                if prev_level not in clip_stack:
-                    scissor = prev.get("scissor")
-                    if scissor:
-                        # Skip inverted/invalid clip rectangles - they don't make
-                        # geometric sense as clipping regions and are likely PDF
-                        # artifacts
-                        if scissor.x0 > scissor.x1 or scissor.y0 > scissor.y1:
-                            logger.debug(
-                                "  Skipping inverted clip from drawing %d (L%d): %s",
-                                i,
-                                prev_level,
-                                scissor,
-                            )
-                            continue
-
-                        clip_bbox = BBox.from_tuple(
-                            (scissor.x0, scissor.y0, scissor.x1, scissor.y1)
-                        )
-                        clip_stack[prev_level] = clip_bbox
-                        logger.debug(
-                            "  Adding clip from drawing %d (L%d): %s",
-                            i,
-                            prev_level,
-                            clip_bbox,
-                        )
-
-        # Apply all clips by intersecting
-        for clip_bbox in clip_stack.values():
-            visible = visible.intersect(clip_bbox)
-
-        return visible
 
     def extract_drawing_blocks(self) -> list[Drawing]:
         """Extract drawing (vector path) blocks from the page.
@@ -497,43 +288,12 @@ class Extractor:
                 )
                 continue
 
-            nbbox = BBox.from_tuple(
-                (
-                    drect.x0,
-                    drect.y0,
-                    drect.x1,
-                    drect.y1,
-                )
-            )
-
-            # Extract additional metadata if requested
-            fill_color: tuple[float, ...] | None = None
-            stroke_color: tuple[float, ...] | None = None
-            line_width: float | None = None
-            fill_opacity: float | None = None
-            stroke_opacity: float | None = None
-            path_type: str | None = None
-            dashes: str | None = None
-            even_odd: bool | None = None
-            items: tuple[tuple, ...] | None = None
-
-            if self._include_metadata:
-                fill_color = d.get("fill")
-                stroke_color = d.get("color")
-                line_width = d.get("width")
-                fill_opacity = d.get("fill_opacity")
-                stroke_opacity = d.get("stroke_opacity")
-                path_type = d.get("type")
-                dashes = d.get("dashes")
-                even_odd = d.get("even_odd")
-                # Convert PyMuPDF objects to tuples for JSON serialization
-                items = self._convert_drawing_items(d.get("items"))
-
             # Compute visible bbox considering clipping
             visible_bbox: BBox | None = None
             if "level" in d:  # Only available with extended=True
                 level = d.get("level", 0)
-                visible_bbox = self._compute_visible_bbox(nbbox, level, drawings, idx)
+                nbbox = BBox.from_tuple((drect.x0, drect.y0, drect.x1, drect.y1))
+                visible_bbox = compute_visible_bbox(nbbox, level, drawings, idx)  # type: ignore[arg-type]
                 logger.debug(
                     "Drawing %d at level %d: bbox=%s, visible_bbox=%s",
                     idx,
@@ -542,33 +302,23 @@ class Extractor:
                     visible_bbox,
                 )
 
-            # Get draw order directly from seqno (corresponds to bboxlog index)
-            draw_order = d.get("seqno")
-
-            drawing_blocks.append(
-                Drawing(
-                    bbox=visible_bbox if visible_bbox else nbbox,
-                    fill_color=fill_color,
-                    stroke_color=stroke_color,
-                    line_width=line_width,
-                    fill_opacity=fill_opacity,
-                    stroke_opacity=stroke_opacity,
-                    path_type=path_type,
-                    dashes=dashes,
-                    even_odd=even_odd,
-                    items=items,
-                    original_bbox=nbbox
-                    if visible_bbox and visible_bbox != nbbox
-                    else None,
-                    id=self._get_next_id(),
-                    draw_order=draw_order,
+            try:
+                drawing_block = Drawing.from_drawing_dict(
+                    d,  # type: ignore[arg-type]
+                    block_id=self._get_next_id(),
+                    visible_bbox=visible_bbox,
+                    include_metadata=self._include_metadata,
                 )
-            )
+            except ValueError as e:
+                logger.warning("Drawing at index %d: %s, skipping", idx, e)
+                continue
+
+            drawing_blocks.append(drawing_block)
             logger.debug(
                 "Found drawing with bbox=%s, visible_bbox=%s, draw_order=%s",
-                nbbox,
-                visible_bbox,
-                draw_order,
+                drawing_block.unclipped_bbox,
+                drawing_block.bbox if drawing_block.is_clipped else None,
+                drawing_block.draw_order,
             )
 
         return drawing_blocks
