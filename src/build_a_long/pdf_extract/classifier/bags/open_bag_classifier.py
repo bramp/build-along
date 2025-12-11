@@ -1,24 +1,24 @@
 """
-New bag classifier.
+Open bag classifier.
 
 Purpose
 -------
-Identify "New Bag" elements on LEGO instruction pages. A NewBag element
+Identify "Open Bag" elements on LEGO instruction pages. An OpenBag element
 consists of an optional bag number (large text) surrounded by a cluster
 of images forming a bag icon graphic. This typically appears at the
 top-left of a page when a new numbered bag of pieces should be opened.
 
-Some sets use a NewBag graphic without a number, indicating that all
+Some sets use an OpenBag graphic without a number, indicating that all
 bags should be opened.
 
 Heuristic
 ---------
 1. Look for large circular drawings (the bag icon outline) - these are strong
-   signals for NewBag elements
+   signals for OpenBag elements
 2. Fall back to finding large, square-ish image clusters in the top-left area
 3. Score each cluster based on size, aspect ratio, and position
 4. Check if any BagNumber candidates are inside the cluster (bonus score)
-5. Best-scoring cluster becomes the NewBag candidate
+5. Best-scoring cluster becomes the OpenBag candidate
 
 Debugging
 ---------
@@ -44,7 +44,8 @@ from build_a_long.pdf_extract.extractor.bbox import (
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     BagNumber,
-    NewBag,
+    LoosePartSymbol,
+    OpenBag,
     Part,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
@@ -86,8 +87,8 @@ def _is_circular_drawing(drawing: Drawing, min_size: float = 100.0) -> bool:
     return curve_count >= 4
 
 
-class _NewBagScore(Score):
-    """Internal score representation for new bag classification.
+class _OpenBagScore(Score):
+    """Internal score representation for open bag classification.
 
     Scores based on circle properties (size, aspect ratio, position).
     Bag number discovery is deferred to build time.
@@ -120,16 +121,16 @@ class _NewBagScore(Score):
         return base_score
 
 
-class NewBagClassifier(LabelClassifier):
-    """Classifier for new bag elements.
+class OpenBagClassifier(LabelClassifier):
+    """Classifier for open bag elements.
 
     Identifies bag icons by finding large circular outline drawings.
     The circle surrounds the entire bag graphic, and all blocks inside
-    are claimed as part of the NewBag element.
+    are claimed as part of the OpenBag element.
     """
 
-    output = "new_bag"
-    requires = frozenset({"bag_number", "part"})
+    output = "open_bag"
+    requires = frozenset({"bag_number", "part", "loose_part_symbol"})
 
     def _score(self, result: ClassificationResult) -> None:
         """Find circular drawings and score them as potential bag icons."""
@@ -147,11 +148,11 @@ class NewBagClassifier(LabelClassifier):
             block
             for block in page_data.blocks
             if isinstance(block, Drawing)
-            and _is_circular_drawing(block, config.new_bag.min_circle_size)
+            and _is_circular_drawing(block, config.open_bag.min_circle_size)
         ]
 
         log.debug(
-            "[new_bag] page=%s bag_number_candidates=%d circle_drawings=%d",
+            "[open_bag] page=%s bag_number_candidates=%d circle_drawings=%d",
             page_data.page_number,
             len(bag_number_candidates),
             len(circle_drawings),
@@ -170,11 +171,11 @@ class NewBagClassifier(LabelClassifier):
                 continue
 
             combined = score_details.score()
-            if combined < config.new_bag.min_score:
+            if combined < config.open_bag.min_score:
                 log.debug(
-                    "[new_bag] Skipping circle score=%.2f (below %.2f) bbox=%s",
+                    "[open_bag] Skipping circle score=%.2f (below %.2f) bbox=%s",
                     combined,
-                    config.new_bag.min_score,
+                    config.open_bag.min_score,
                     circle.bbox,
                 )
                 continue
@@ -185,7 +186,7 @@ class NewBagClassifier(LabelClassifier):
             result.add_candidate(
                 Candidate(
                     bbox=circle.bbox,
-                    label="new_bag",
+                    label="open_bag",
                     score=combined,
                     score_details=score_details,
                     source_blocks=overlapping_blocks,
@@ -193,7 +194,7 @@ class NewBagClassifier(LabelClassifier):
             )
 
             log.debug(
-                "[new_bag] candidate size=%.2f aspect=%.2f position=%.2f "
+                "[open_bag] candidate size=%.2f aspect=%.2f position=%.2f "
                 "has_number=%s score=%.2f blocks=%d bbox=%s",
                 score_details.size_score,
                 score_details.aspect_score,
@@ -284,7 +285,7 @@ class NewBagClassifier(LabelClassifier):
 
             if len(containing_circles) > 1:
                 log.debug(
-                    "[new_bag] Block %s (draw_order=%s) contained by %d circles, "
+                    "[open_bag] Block %s (draw_order=%s) contained by %d circles, "
                     "assigned to circle with draw_order=%s",
                     block.bbox,
                     block_draw_order,
@@ -299,7 +300,7 @@ class NewBagClassifier(LabelClassifier):
         circle: Drawing,
         bag_number_candidates: list[Candidate],
         page_bbox: BBox,
-    ) -> _NewBagScore | None:
+    ) -> _OpenBagScore | None:
         """Score a circular drawing as a potential bag icon outline.
 
         Args:
@@ -317,7 +318,7 @@ class NewBagClassifier(LabelClassifier):
         max_y = page_bbox.height * 0.6  # Allow top 60% of page
         if bbox.y0 > max_y:
             log.debug(
-                "[new_bag] Circle at %s rejected: y=%.1f > max_y=%.1f",
+                "[open_bag] Circle at %s rejected: y=%.1f > max_y=%.1f",
                 bbox,
                 bbox.y0,
                 max_y,
@@ -344,7 +345,7 @@ class NewBagClassifier(LabelClassifier):
         has_bag_number = self._has_bag_number_in_cluster(bbox, bag_number_candidates)
 
         log.debug(
-            "[new_bag] Circle score details: size=%.2f (avg=%.1f/ideal=%.1f) "
+            "[open_bag] Circle score details: size=%.2f (avg=%.1f/ideal=%.1f) "
             "aspect=%.2f (ratio=%.2f) position=%.2f (x=%.2f y=%.2f) "
             "has_number=%s bbox=%s",
             size_score,
@@ -359,7 +360,7 @@ class NewBagClassifier(LabelClassifier):
             bbox,
         )
 
-        return _NewBagScore(
+        return _OpenBagScore(
             size_score=size_score,
             aspect_score=aspect_score,
             position_score=position_score,
@@ -381,27 +382,41 @@ class NewBagClassifier(LabelClassifier):
         """
         return any(filter_contained(bag_number_candidates, cluster_bbox))
 
-    def build(self, candidate: Candidate, result: ClassificationResult) -> NewBag:
-        """Construct a NewBag element from a single candidate.
+    def build(self, candidate: Candidate, result: ClassificationResult) -> OpenBag:
+        """Construct an OpenBag element from a single candidate.
 
         Discovers and builds the bag number at build time by finding
         the best-scoring bag number candidate inside the cluster.
 
         If no bag number is found, looks for a Part candidate instead
         (some bag icons contain a part rather than a bag number).
+
+        For OpenBags containing a Part, also looks for a loose part symbol
+        cluster to the right of the circle (from LoosePartSymbolClassifier).
         """
         detail_score = candidate.score_details
-        assert isinstance(detail_score, _NewBagScore)
+        assert isinstance(detail_score, _OpenBagScore)
 
         # Find and construct bag number at build time
         bag_number = self._find_and_build_bag_number(detail_score.cluster_bbox, result)
 
         # If no bag number found, look for a part inside the circle
         part: Part | None = None
+        loose_part_symbol: LoosePartSymbol | None = None
         if bag_number is None:
             part = self._find_and_build_part(detail_score.cluster_bbox, result)
+            # If we have a part, look for a loose part symbol to the right
+            if part is not None:
+                loose_part_symbol = self._find_and_build_loose_part_symbol(
+                    detail_score.cluster_bbox, result
+                )
 
-        return NewBag(bbox=detail_score.cluster_bbox, number=bag_number, part=part)
+        return OpenBag(
+            bbox=detail_score.cluster_bbox,
+            number=bag_number,
+            part=part,
+            loose_part_symbol=loose_part_symbol,
+        )
 
     def _find_and_build_bag_number(
         self, cluster_bbox: BBox, result: ClassificationResult
@@ -422,7 +437,7 @@ class NewBagClassifier(LabelClassifier):
         best_candidate = find_best_scoring(contained)
 
         log.debug(
-            "[new_bag] Build: looking for bag_number in %s, "
+            "[open_bag] Build: looking for bag_number in %s, "
             "found %d candidates, %d contained, best=%s",
             cluster_bbox,
             len(bag_number_candidates),
@@ -436,7 +451,7 @@ class NewBagClassifier(LabelClassifier):
         bag_number_elem = result.build(best_candidate)
         assert isinstance(bag_number_elem, BagNumber)
         log.debug(
-            "[new_bag] Built bag_number=%s at %s",
+            "[open_bag] Built bag_number=%s at %s",
             bag_number_elem.value,
             bag_number_elem.bbox,
         )
@@ -464,7 +479,7 @@ class NewBagClassifier(LabelClassifier):
         best_candidate = find_best_scoring(contained)
 
         log.debug(
-            "[new_bag] Build: looking for part in %s, "
+            "[open_bag] Build: looking for part in %s, "
             "found %d candidates, %d contained, best=%s",
             cluster_bbox,
             len(part_candidates),
@@ -478,7 +493,74 @@ class NewBagClassifier(LabelClassifier):
         part_elem = result.build(best_candidate)
         assert isinstance(part_elem, Part)
         log.debug(
-            "[new_bag] Built part at %s",
+            "[open_bag] Built part at %s",
             part_elem.bbox,
         )
         return part_elem
+
+    def _find_and_build_loose_part_symbol(
+        self,
+        cluster_bbox: BBox,
+        result: ClassificationResult,
+    ) -> LoosePartSymbol | None:
+        """Find and build a loose part symbol from the LoosePartSymbolClassifier.
+
+        Looks for loose part symbol candidates that are positioned to the right of
+        the OpenBag circle.
+
+        Args:
+            cluster_bbox: Bounding box of the OpenBag circle.
+            result: Classification result for accessing candidates.
+
+        Returns:
+            Built LoosePartSymbol element, or None if not found.
+        """
+        symbol_candidates = result.get_scored_candidates(
+            "loose_part_symbol", valid_only=False, exclude_failed=True
+        )
+
+        # Define search region: to the right of the circle
+        search_x_min = cluster_bbox.x0 + cluster_bbox.width * 0.5
+        search_x_max = cluster_bbox.x1 + cluster_bbox.width
+        search_y_min = cluster_bbox.y0 - cluster_bbox.height * 0.2
+        search_y_max = cluster_bbox.y0 + cluster_bbox.height * 0.8
+
+        # Find symbol candidates in the search region
+        matching: list[Candidate] = []
+        for candidate in symbol_candidates:
+            bbox = candidate.bbox
+            # Check if symbol overlaps with search region
+            if (
+                bbox.x0 >= search_x_min
+                and bbox.x1 <= search_x_max
+                and bbox.y0 >= search_y_min
+                and bbox.y1 <= search_y_max
+            ):
+                matching.append(candidate)
+
+        log.debug(
+            "[open_bag] Build: looking for loose_part_symbol in region "
+            "x=[%.1f, %.1f] y=[%.1f, %.1f], found %d candidates, %d matching",
+            search_x_min,
+            search_x_max,
+            search_y_min,
+            search_y_max,
+            len(symbol_candidates),
+            len(matching),
+        )
+
+        if not matching:
+            return None
+
+        # Take the best-scoring matching symbol
+        best_candidate = find_best_scoring(matching)
+        if best_candidate is None:
+            return None
+
+        symbol_elem = result.build(best_candidate)
+        assert isinstance(symbol_elem, LoosePartSymbol)
+        log.debug(
+            "[open_bag] Built loose_part_symbol at %s",
+            symbol_elem.bbox,
+        )
+        return symbol_elem

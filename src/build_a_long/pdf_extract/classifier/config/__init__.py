@@ -8,7 +8,10 @@ from build_a_long.pdf_extract.classifier.config.bag_number_config import (
     BagNumberConfig,
 )
 from build_a_long.pdf_extract.classifier.config.divider_config import DividerConfig
-from build_a_long.pdf_extract.classifier.config.new_bag_config import NewBagConfig
+from build_a_long.pdf_extract.classifier.config.loose_part_symbol_config import (
+    LoosePartSymbolConfig,
+)
+from build_a_long.pdf_extract.classifier.config.open_bag_config import OpenBagConfig
 from build_a_long.pdf_extract.classifier.config.page_number_config import (
     PageNumberConfig,
 )
@@ -49,7 +52,8 @@ __all__ = [
     "BackgroundConfig",
     "BagNumberConfig",
     "DividerConfig",
-    "NewBagConfig",
+    "LoosePartSymbolConfig",
+    "OpenBagConfig",
     "PageNumberConfig",
     "PartCountConfig",
     "PartNumberConfig",

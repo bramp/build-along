@@ -22,7 +22,8 @@ import logging
 
 from build_a_long.pdf_extract.classifier.bags import (
     BagNumberClassifier,
-    NewBagClassifier,
+    LoosePartSymbolClassifier,
+    OpenBagClassifier,
 )
 from build_a_long.pdf_extract.classifier.batch_classification_result import (
     BatchClassificationResult,
@@ -287,7 +288,8 @@ type Classifiers = (
     | PartsListClassifier
     | PartsImageClassifier
     | ShineClassifier
-    | NewBagClassifier
+    | OpenBagClassifier
+    | LoosePartSymbolClassifier
     | DiagramClassifier
     | ArrowClassifier
     | SubAssemblyClassifier
@@ -326,7 +328,8 @@ class Classifier:
                 ArrowClassifier(config=config),
                 PartsImageClassifier(config=config),
                 ShineClassifier(config=config),
-                NewBagClassifier(config=config),
+                OpenBagClassifier(config=config),
+                LoosePartSymbolClassifier(config=config),
                 PreviewClassifier(config=config),
                 SubAssemblyClassifier(config=config),
                 StepClassifier(config=config),

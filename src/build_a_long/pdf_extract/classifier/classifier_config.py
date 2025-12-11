@@ -9,7 +9,8 @@ from build_a_long.pdf_extract.classifier.config import (
     BackgroundConfig,
     BagNumberConfig,
     DividerConfig,
-    NewBagConfig,
+    LoosePartSymbolConfig,
+    OpenBagConfig,
     PageNumberConfig,
     PartCountConfig,
     PartNumberConfig,
@@ -87,9 +88,15 @@ class ClassifierConfig(BaseModel):
     divider: DividerConfig = Field(default_factory=DividerConfig)
     """Configuration for divider classification."""
 
-    # NewBag classifier settings (for numberless bag detection)
-    new_bag: NewBagConfig = Field(default_factory=NewBagConfig)
-    """Configuration for new bag classification."""
+    # OpenBag classifier settings (for bag icon detection)
+    open_bag: OpenBagConfig = Field(default_factory=OpenBagConfig)
+    """Configuration for open bag classification."""
+
+    # LoosePartSymbol classifier settings
+    loose_part_symbol: LoosePartSymbolConfig = Field(
+        default_factory=LoosePartSymbolConfig
+    )
+    """Configuration for loose part symbol classification."""
 
     # Step count classifier settings
     step_count: StepCountConfig = Field(default_factory=StepCountConfig)

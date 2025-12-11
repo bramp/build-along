@@ -1,4 +1,4 @@
-"""Configuration for new bag classification."""
+"""Configuration for open bag classification."""
 
 from __future__ import annotations
 
@@ -7,16 +7,16 @@ from pydantic import BaseModel, Field
 from build_a_long.pdf_extract.classifier.score import Weight
 
 
-class NewBagConfig(BaseModel):
-    """Configuration for new bag classification.
+class OpenBagConfig(BaseModel):
+    """Configuration for open bag classification.
 
-    NewBag elements mark when a new numbered bag of pieces should be opened.
+    OpenBag elements mark when a numbered bag of pieces should be opened.
     They consist of an optional bag number surrounded by a cluster of images
     forming a bag icon graphic, typically at the top-left of a page.
     """
 
     min_score: Weight = Field(
-        default=0.5, description="Minimum score threshold for new bag candidates."
+        default=0.5, description="Minimum score threshold for open bag candidates."
     )
 
     min_circle_size: float = Field(

@@ -761,8 +761,8 @@ def validate_content_no_metadata_overlap(
     content_elements: list[tuple[str, object]] = []
     for step in page.steps:
         content_elements.append((f"Step {step.step_number.value}", step))
-    for bag in page.new_bags:
-        content_elements.append(("NewBag", bag))
+    for bag in page.open_bags:
+        content_elements.append(("OpenBag", bag))
     for part in page.catalog:
         content_elements.append(("CatalogPart", part))
 

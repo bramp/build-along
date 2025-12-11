@@ -25,7 +25,8 @@ import os
 
 from build_a_long.pdf_extract.classifier.bags import (
     BagNumberClassifier,
-    NewBagClassifier,
+    LoosePartSymbolClassifier,
+    OpenBagClassifier,
 )
 from build_a_long.pdf_extract.classifier.pages import (
     PageHint,
@@ -80,7 +81,8 @@ __all__ = [
     "DiagramClassifier",
     "FontSizeHints",
     "LabelClassifier",
-    "NewBagClassifier",
+    "LoosePartSymbolClassifier",
+    "OpenBagClassifier",
     "PageHint",
     "PageHintCollection",
     "PageType",

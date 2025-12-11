@@ -74,9 +74,9 @@
       }
     }
   ],
-  "new_bags": [
+  "open_bags": [
     {
-      "__tag__": "NewBag",
+      "__tag__": "OpenBag",
       "bbox": {
         "x0": 15.67,
         "y0": 15.67,

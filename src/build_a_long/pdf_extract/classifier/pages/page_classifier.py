@@ -29,7 +29,7 @@ from build_a_long.pdf_extract.classifier.score import Score
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Background,
     Divider,
-    NewBag,
+    OpenBag,
     Page,
     PageNumber,
     Part,
@@ -65,7 +65,7 @@ class PageClassifier(LabelClassifier):
             "page_number",
             "preview",  # Built by StepClassifier alongside subassemblies
             "progress_bar",
-            "new_bag",
+            "open_bag",
             "step",
             "parts_list",
             "rotation_symbol",
@@ -93,7 +93,7 @@ class PageClassifier(LabelClassifier):
     def build(self, candidate: Candidate, result: ClassificationResult) -> Page:
         """Construct a Page by collecting all page components.
 
-        Gathers page_number, progress_bar, new_bags, steps, and catalog parts
+        Gathers page_number, progress_bar, open_bags, steps, and catalog parts
         to build the complete Page element.
         """
         page_data = result.page_data
@@ -146,22 +146,22 @@ class PageClassifier(LabelClassifier):
             trivia_text = result.build(best_cand)
             assert isinstance(trivia_text, TriviaText)
 
-        # Get new bags from candidates
-        new_bags: list[NewBag] = []
+        # Get open bags from candidates
+        open_bags: list[OpenBag] = []
 
-        # Construct ALL new_bag candidates
+        # Construct ALL open_bag candidates
         # TODO Consider pre-filtering based on runs of bag numbers
-        for nb_candidate in result.get_scored_candidates(
-            "new_bag", valid_only=False, exclude_failed=True
+        for ob_candidate in result.get_scored_candidates(
+            "open_bag", valid_only=False, exclude_failed=True
         ):
             try:
-                elem = result.build(nb_candidate)
-                assert isinstance(elem, NewBag)
-                new_bags.append(elem)
+                elem = result.build(ob_candidate)
+                assert isinstance(elem, OpenBag)
+                open_bags.append(elem)
             except Exception as e:
                 log.debug(
-                    "Failed to construct new_bag candidate at %s: %s",
-                    nb_candidate.bbox,
+                    "Failed to construct open_bag candidate at %s: %s",
+                    ob_candidate.bbox,
                     e,
                 )
 
@@ -238,7 +238,7 @@ class PageClassifier(LabelClassifier):
 
         log.debug(
             "[page] page=%s categories=%s page_number=%s progress_bar=%s "
-            "background=%s dividers=%d previews=%d new_bags=%d steps=%d catalog=%s",
+            "background=%s dividers=%d previews=%d open_bags=%d steps=%d catalog=%s",
             page_data.page_number,
             [c.name for c in categories],
             page_number.value if page_number else None,
@@ -246,7 +246,7 @@ class PageClassifier(LabelClassifier):
             background is not None,
             len(dividers),
             len(previews),
-            len(new_bags),
+            len(open_bags),
             len(steps),
             f"{len(catalog_parts)} parts" if catalog_parts else None,
         )
@@ -261,7 +261,7 @@ class PageClassifier(LabelClassifier):
             dividers=dividers,
             previews=previews,
             trivia_text=trivia_text,
-            new_bags=new_bags,
+            open_bags=open_bags,
             steps=steps,
             catalog=catalog_parts,
         )

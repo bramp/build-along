@@ -599,37 +599,62 @@ class BagNumber(LegoPageElement):
         return f"BagNumber(value={self.value})"
 
 
-class NewBag(LegoPageElement):
-    """The graphic showing a new bag icon on the page.
+class LoosePartSymbol(LegoPageElement):
+    """An indicator symbol for a loose part that is not in the main bag.
 
-    A NewBag can contain either:
+    This is a cluster of drawings that appears next to an OpenBag circle
+    when the bag contains a part instead of a bag number. The symbol indicates
+    that an extra part is needed that's not found in the main bag.
+
+    The symbol has a roughly square aspect ratio and consists of many small
+    drawing elements that form a recognizable icon.
+    """
+
+    tag: Literal["LoosePartSymbol"] = Field(
+        default="LoosePartSymbol", alias="__tag__", frozen=True
+    )
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"LoosePartSymbol(bbox={str(self.bbox)})"
+
+
+class OpenBag(LegoPageElement):
+    """The graphic showing an open bag icon on the page.
+
+    An OpenBag can contain either:
     - A bag number indicating which specific bag to open (e.g., "Bag 1", "Bag 2")
-    - A part indicating a specific piece to find/use
+    - A part indicating a specific loose piece to find/use
     - Nothing, indicating that all bags should be opened
 
     When both number and part are None, the bag graphic indicates that all
     bags should be opened (no specific number or part highlighted).
     """
 
-    tag: Literal["NewBag"] = Field(default="NewBag", alias="__tag__", frozen=True)
+    tag: Literal["OpenBag"] = Field(default="OpenBag", alias="__tag__", frozen=True)
     number: BagNumber | None = None
     part: Part | None = None
+    loose_part_symbol: LoosePartSymbol | None = None
+    """Optional symbol indicating a loose part not in the main bag."""
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         if self.number:
-            return f"NewBag(bag={self.number.value})"
+            return f"OpenBag(bag={self.number.value})"
         if self.part:
-            return f"NewBag(part={self.part.count.count}x)"
-        return "NewBag(all)"
+            symbol_str = ", loose_part" if self.loose_part_symbol else ""
+            return f"OpenBag(part={self.part.count.count}x{symbol_str})"
+        return "OpenBag(all)"
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
-        """Iterate over this Step and all child elements."""
+        """Iterate over this OpenBag and all child elements."""
         yield self
         if self.number:
             yield from self.number.iter_elements()
         if self.part:
             yield from self.part.iter_elements()
+        if self.loose_part_symbol:
+            yield from self.loose_part_symbol.iter_elements()
 
 
 class Diagram(LegoPageElement):
@@ -909,7 +934,7 @@ class Page(LegoPageElement):
     previews: list[Preview] = Field(default_factory=list)
     """List of preview elements showing model diagrams."""
 
-    new_bags: list[NewBag] = Field(default_factory=list)
+    open_bags: list[OpenBag] = Field(default_factory=list)
     steps: list[Step] = Field(default_factory=list)
     catalog: list[Part] = Field(default_factory=list)
     """List of parts for catalog pages. Empty list for non-catalog pages."""
@@ -937,7 +962,7 @@ class Page(LegoPageElement):
             if self.categories
             else ""
         )
-        bags_str = f", bags={len(self.new_bags)}" if self.new_bags else ""
+        bags_str = f", bags={len(self.open_bags)}" if self.open_bags else ""
         catalog_str = f", catalog={len(self.catalog)} parts" if self.catalog else ""
         steps_str = f", steps={len(self.steps)}" if self.steps else ""
         return (
@@ -968,8 +993,8 @@ class Page(LegoPageElement):
         for preview in self.previews:
             yield from preview.iter_elements()
 
-        for new_bag in self.new_bags:
-            yield from new_bag.iter_elements()
+        for open_bag in self.open_bags:
+            yield from open_bag.iter_elements()
 
         for part in self.catalog:
             yield from part.iter_elements()
@@ -997,7 +1022,8 @@ LegoPageElements = Annotated[
     | Part
     | PartsList
     | BagNumber
-    | NewBag
+    | OpenBag
+    | LoosePartSymbol
     | Diagram
     | Preview
     | SubAssemblyStep

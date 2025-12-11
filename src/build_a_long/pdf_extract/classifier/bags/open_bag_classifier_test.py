@@ -1,9 +1,9 @@
-"""Tests for the new bag classifier."""
+"""Tests for the open bag classifier."""
 
 from build_a_long.pdf_extract.classifier.classifier import classify_elements
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.lego_page_elements import NewBag
+from build_a_long.pdf_extract.extractor.lego_page_elements import OpenBag
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
 
@@ -37,11 +37,11 @@ def _make_circle_drawing(id: int, x: float, y: float, size: float) -> Drawing:
     )
 
 
-class TestNewBagClassification:
-    """Tests for new bag element detection."""
+class TestOpenBagClassification:
+    """Tests for open bag element detection."""
 
-    def test_new_bag_with_circle_and_number(self) -> None:
-        """Test identifying a new bag element with circular outline and number."""
+    def test_open_bag_with_circle_and_number(self) -> None:
+        """Test identifying an open bag element with circular outline and number."""
         page_bbox = BBox(0, 0, 552.76, 496.06)
 
         # Bag number text inside the circle
@@ -67,27 +67,27 @@ class TestNewBagClassification:
 
         result = classify_elements(page_data)
 
-        # Get new_bag candidates
-        new_bag_candidates = [
-            c for c in result.candidates.get("new_bag", []) if c.constructed
+        # Get open_bag candidates
+        open_bag_candidates = [
+            c for c in result.candidates.get("open_bag", []) if c.constructed
         ]
 
-        # Should have at least one new bag candidate
-        assert len(new_bag_candidates) > 0
+        # Should have at least one open bag candidate
+        assert len(open_bag_candidates) > 0
 
         # Check the first candidate
-        candidate = new_bag_candidates[0]
+        candidate = open_bag_candidates[0]
         assert candidate.constructed is not None
-        assert isinstance(candidate.constructed, NewBag)
-        new_bag = candidate.constructed
-        assert new_bag.number is not None
-        assert new_bag.number.value == 1
+        assert isinstance(candidate.constructed, OpenBag)
+        open_bag = candidate.constructed
+        assert open_bag.number is not None
+        assert open_bag.number.value == 1
 
         # Check that the circle claims the overlapping blocks
         assert len(candidate.source_blocks) >= 3  # circle + 2 images
 
-    def test_new_bag_without_bag_number(self) -> None:
-        """Test that circle without bag number creates a numberless new bag."""
+    def test_open_bag_without_bag_number(self) -> None:
+        """Test that circle without bag number creates a numberless open bag."""
         page_bbox = BBox(0, 0, 552.76, 496.06)
 
         # Large circular drawing (bag icon outline) without a bag number
@@ -104,21 +104,21 @@ class TestNewBagClassification:
 
         result = classify_elements(page_data)
 
-        # Should have a new bag candidate without a bag number
-        new_bag_candidates = [
-            c for c in result.candidates.get("new_bag", []) if c.constructed
+        # Should have an open bag candidate without a bag number
+        open_bag_candidates = [
+            c for c in result.candidates.get("open_bag", []) if c.constructed
         ]
-        assert len(new_bag_candidates) > 0
+        assert len(open_bag_candidates) > 0
 
-        # Check that the new bag has no bag number
-        candidate = new_bag_candidates[0]
+        # Check that the open bag has no bag number
+        candidate = open_bag_candidates[0]
         assert candidate.constructed is not None
-        assert isinstance(candidate.constructed, NewBag)
-        new_bag = candidate.constructed
-        assert new_bag.number is None
+        assert isinstance(candidate.constructed, OpenBag)
+        open_bag = candidate.constructed
+        assert open_bag.number is None
 
-    def test_small_circle_doesnt_create_new_bag(self) -> None:
-        """Test that small circles don't create a new bag."""
+    def test_small_circle_doesnt_create_open_bag(self) -> None:
+        """Test that small circles don't create an open bag."""
         page_bbox = BBox(0, 0, 552.76, 496.06)
 
         # Small circle below threshold (default min_circle_size is 150)
@@ -132,12 +132,12 @@ class TestNewBagClassification:
 
         result = classify_elements(page_data)
 
-        # Should have no new bag candidates
-        new_bag_candidates = result.candidates.get("new_bag", [])
-        assert len(new_bag_candidates) == 0
+        # Should have no open bag candidates
+        open_bag_candidates = result.candidates.get("open_bag", [])
+        assert len(open_bag_candidates) == 0
 
-    def test_no_circle_means_no_new_bag(self) -> None:
-        """Test that bag number alone (no circle) doesn't create a new bag."""
+    def test_no_circle_means_no_open_bag(self) -> None:
+        """Test that bag number alone (no circle) doesn't create an open bag."""
         page_bbox = BBox(0, 0, 552.76, 496.06)
 
         # Only bag number text, no circular outline
@@ -159,9 +159,9 @@ class TestNewBagClassification:
 
         result = classify_elements(page_data)
 
-        # Should have bag_number but no new_bag (requires circle)
+        # Should have bag_number but no open_bag (requires circle)
         bag_candidates = result.candidates.get("bag_number", [])
         assert len(bag_candidates) > 0
 
-        new_bag_candidates = result.candidates.get("new_bag", [])
-        assert len(new_bag_candidates) == 0
+        open_bag_candidates = result.candidates.get("open_bag", [])
+        assert len(open_bag_candidates) == 0

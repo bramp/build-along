@@ -339,7 +339,7 @@ def print_classification_debug(
         line = f"{color}{tree_prefix}"
 
         if node.synthetic_candidate:
-            # Synthetic candidate (Page, Step, NewBag, etc.)
+            # Synthetic candidate (Page, Step, OpenBag, etc.)
             candidate = node.synthetic_candidate
             elem_str = (
                 str(candidate.constructed)
@@ -558,11 +558,13 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
     if page.page_number:
         print(f"  ✓ Page Number: {page.page_number.value}")
 
-    if page.new_bags:
-        print(f"  ✓ New Bags: {len(page.new_bags)}")
-        for new_bag in page.new_bags:
-            bag_label = f"Bag {new_bag.number.value}" if new_bag.number else "Bag (all)"
-            print(f"    - {bag_label} at {new_bag.bbox}")
+    if page.open_bags:
+        print(f"  ✓ Open Bags: {len(page.open_bags)}")
+        for open_bag in page.open_bags:
+            bag_label = (
+                f"Bag {open_bag.number.value}" if open_bag.number else "Bag (all)"
+            )
+            print(f"    - {bag_label} at {open_bag.bbox}")
 
     if page.catalog:
         parts_count = len(page.catalog)
