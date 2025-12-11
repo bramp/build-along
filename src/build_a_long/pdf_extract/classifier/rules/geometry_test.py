@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
+from build_a_long.pdf_extract.classifier.rules.base import RuleContext
 from build_a_long.pdf_extract.classifier.rules.geometry import (
     AspectRatioRule,
     CornerDistanceScore,
@@ -18,7 +19,6 @@ from build_a_long.pdf_extract.classifier.rules.geometry import (
     TextContainerFitRule,
     TopLeftPositionScore,
 )
-from build_a_long.pdf_extract.classifier.rules.base import RuleContext
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
@@ -158,18 +158,24 @@ class TestEdgeProximityRule:
 
 class TestDividerRules:
     def test_vertical_divider(self, context: RuleContext):
-        rule = IsVerticalDividerRule(max_thickness=5, min_length_ratio=0.5, edge_margin=10)
+        rule = IsVerticalDividerRule(
+            max_thickness=5, min_length_ratio=0.5, edge_margin=10
+        )
         # Thin vertical line in center, 60% height
         block = Drawing(bbox=BBox(500, 200, 502, 800), id=1)
         assert rule.calculate(block, context) == 1.0
 
     def test_vertical_divider_too_thick(self, context: RuleContext):
-        rule = IsVerticalDividerRule(max_thickness=5, min_length_ratio=0.5, edge_margin=10)
+        rule = IsVerticalDividerRule(
+            max_thickness=5, min_length_ratio=0.5, edge_margin=10
+        )
         block = Drawing(bbox=BBox(500, 200, 510, 800), id=1)
         assert rule.calculate(block, context) == 0.0
 
     def test_horizontal_divider(self, context: RuleContext):
-        rule = IsHorizontalDividerRule(max_thickness=5, min_length_ratio=0.5, edge_margin=10)
+        rule = IsHorizontalDividerRule(
+            max_thickness=5, min_length_ratio=0.5, edge_margin=10
+        )
         # Thin horizontal line in center, 60% width
         block = Drawing(bbox=BBox(200, 500, 800, 502), id=1)
         assert rule.calculate(block, context) == 1.0
@@ -178,12 +184,12 @@ class TestDividerRules:
 class TestTextContainerFitRule:
     def test_perfect_fit(self, context: RuleContext):
         rule = TextContainerFitRule()
-        text = Text(bbox=BBox(10, 10, 20, 20), text="1", id=1) # Area 100
+        text = Text(bbox=BBox(10, 10, 20, 20), text="1", id=1)  # Area 100
         # Drawing 20x20 = 400 area. Ratio 4.0.
         # Logic: 2.0 <= ratio <= 4.0 -> score 1.0
         drawing = Drawing(bbox=BBox(5, 5, 25, 25), id=2)
         context.page_data.blocks = [text, drawing]
-        
+
         assert rule.calculate(text, context) == 1.0
 
     def test_no_container(self, context: RuleContext):
@@ -192,7 +198,7 @@ class TestTextContainerFitRule:
         # Drawing disjoint
         drawing = Drawing(bbox=BBox(100, 100, 120, 120), id=2)
         context.page_data.blocks = [text, drawing]
-        
+
         assert rule.calculate(text, context) == 0.0
 
 

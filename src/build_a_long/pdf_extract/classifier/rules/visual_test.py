@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
-from build_a_long.pdf_extract.classifier.rules.visual import StrokeColorScore
 from build_a_long.pdf_extract.classifier.rules.base import RuleContext
+from build_a_long.pdf_extract.classifier.rules.visual import StrokeColorScore
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
@@ -44,10 +44,14 @@ class TestStrokeColorScore:
     def test_white_fill_fallback(self, context: RuleContext):
         rule = StrokeColorScore()
         # No stroke, but white fill
-        block = Drawing(bbox=BBox(0, 0, 10, 10), fill_color=(1.0, 1.0, 1.0), stroke_color=None, id=1)
+        block = Drawing(
+            bbox=BBox(0, 0, 10, 10), fill_color=(1.0, 1.0, 1.0), stroke_color=None, id=1
+        )
         assert rule.calculate(block, context) == 0.8
 
     def test_no_color(self, context: RuleContext):
         rule = StrokeColorScore()
-        block = Drawing(bbox=BBox(0, 0, 10, 10), fill_color=None, stroke_color=None, id=1)
+        block = Drawing(
+            bbox=BBox(0, 0, 10, 10), fill_color=None, stroke_color=None, id=1
+        )
         assert rule.calculate(block, context) == 0.0

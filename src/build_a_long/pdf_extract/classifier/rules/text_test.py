@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
+from build_a_long.pdf_extract.classifier.rules.base import RuleContext
 from build_a_long.pdf_extract.classifier.rules.text import (
     BagNumberFontSizeRule,
     BagNumberTextRule,
@@ -18,7 +19,6 @@ from build_a_long.pdf_extract.classifier.rules.text import (
     RegexMatch,
     StepNumberTextRule,
 )
-from build_a_long.pdf_extract.classifier.rules.base import RuleContext
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Text
@@ -102,46 +102,79 @@ class TestPageNumberValueMatch:
 class TestTextPatternRules:
     def test_page_number_text(self, context: RuleContext):
         rule = PageNumberTextRule()
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="5", id=1), context) == 1.0
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="05", id=1), context) == 0.9
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="foo", id=1), context) == 0.0
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="5", id=1), context) == 1.0
+        )
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="05", id=1), context) == 0.9
+        )
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="foo", id=1), context)
+            == 0.0
+        )
 
     def test_part_count_text(self, context: RuleContext):
         rule = PartCountTextRule()
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="2x", id=1), context) == 1.0
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="2", id=1), context) == 0.0
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="2x", id=1), context) == 1.0
+        )
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="2", id=1), context) == 0.0
+        )
 
     def test_part_number_text(self, context: RuleContext):
         rule = PartNumberTextRule()
         # 7 digits is preferred
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="1234567", id=1), context) > 0.9
+        score = rule.calculate(
+            Text(bbox=BBox(0, 0, 0, 0), text="1234567", id=1), context
+        )
+        assert score is not None
+        assert score > 0.9
         # 4 digits is low score
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="1234", id=1), context) < 0.6
+        score = rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="1234", id=1), context)
+        assert score is not None
+        assert score < 0.6
 
     def test_bag_number_text(self, context: RuleContext):
         rule = BagNumberTextRule()
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="1", id=1), context) == 1.0
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="foo", id=1), context) == 0.0
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="1", id=1), context) == 1.0
+        )
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="foo", id=1), context)
+            == 0.0
+        )
 
     def test_step_number_text(self, context: RuleContext):
         rule = StepNumberTextRule()
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="1", id=1), context) == 1.0
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="foo", id=1), context) == 0.0
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="1", id=1), context) == 1.0
+        )
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="foo", id=1), context)
+            == 0.0
+        )
 
     def test_piece_length_value(self, context: RuleContext):
         rule = PieceLengthValueRule()
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="4", id=1), context) == 1.0
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="33", id=1), context) == 0.0
-        assert rule.calculate(Text(bbox=BBox(0,0,0,0), text="0", id=1), context) == 0.0
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="4", id=1), context) == 1.0
+        )
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="33", id=1), context) == 0.0
+        )
+        assert (
+            rule.calculate(Text(bbox=BBox(0, 0, 0, 0), text="0", id=1), context) == 0.0
+        )
 
 
 class TestBagNumberFontSizeRule:
     def test_large_font(self, context: RuleContext):
         rule = BagNumberFontSizeRule()
-        block = Text(bbox=BBox(0,0,0,0), text="1", font_size=40.0, id=1)
+        block = Text(bbox=BBox(0, 0, 0, 0), text="1", font_size=40.0, id=1)
         assert rule.calculate(block, context) == 1.0
 
     def test_small_font(self, context: RuleContext):
         rule = BagNumberFontSizeRule()
-        block = Text(bbox=BBox(0,0,0,0), text="1", font_size=20.0, id=1)
+        block = Text(bbox=BBox(0, 0, 0, 0), text="1", font_size=20.0, id=1)
         assert rule.calculate(block, context) == 0.0

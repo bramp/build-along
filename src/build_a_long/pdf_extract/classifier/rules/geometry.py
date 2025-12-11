@@ -5,6 +5,10 @@ from __future__ import annotations
 import math
 
 from build_a_long.pdf_extract.classifier.rules.base import Rule, RuleContext
+from build_a_long.pdf_extract.classifier.rules.scoring import (
+    score_linear,
+    score_triangular,
+)
 from build_a_long.pdf_extract.extractor.page_blocks import Block, Drawing, Text
 
 
@@ -205,8 +209,13 @@ class CoverageRule(Rule):
 
         # Score increases from min_ratio to 1.0
         # Map [min_ratio, 1.0] -> [0.5, 1.0]
-        normalized = (coverage_ratio - self.min_ratio) / (1.0 - self.min_ratio)
-        return min(1.0, normalized * 0.5 + 0.5)
+        return score_linear(
+            coverage_ratio,
+            min_val=self.min_ratio,
+            max_val=1.0,
+            min_score=0.5,
+            max_score=1.0,
+        )
 
 
 class EdgeProximityRule(Rule):
@@ -428,21 +437,10 @@ class SizeRatioRule(Rule):
         width_ratio = block.bbox.width / page_bbox.width
         height_ratio = block.bbox.height / page_bbox.height
 
-        def score_one_dim(ratio: float) -> float:
-            if ratio < self.min_ratio:
-                return 0.0
-            if ratio > self.max_ratio:
-                return 0.0
-
-            if ratio < self.ideal_ratio:
-                # From min to ideal: 0.0 -> 1.0
-                return (ratio - self.min_ratio) / (self.ideal_ratio - self.min_ratio)
-            else:
-                # From ideal to max: 1.0 -> 0.0
-                return 1.0 - (ratio - self.ideal_ratio) / (
-                    self.max_ratio - self.ideal_ratio
-                )
-
-        w_score = score_one_dim(width_ratio)
-        h_score = score_one_dim(height_ratio)
+        w_score = score_triangular(
+            width_ratio, self.min_ratio, self.ideal_ratio, self.max_ratio
+        )
+        h_score = score_triangular(
+            height_ratio, self.min_ratio, self.ideal_ratio, self.max_ratio
+        )
         return (w_score + h_score) / 2.0
