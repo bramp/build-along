@@ -45,6 +45,7 @@ from build_a_long.pdf_extract.extractor.bbox import (
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     BagNumber,
     NewBag,
+    Part,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Blocks,
@@ -128,7 +129,7 @@ class NewBagClassifier(LabelClassifier):
     """
 
     output = "new_bag"
-    requires = frozenset({"bag_number"})
+    requires = frozenset({"bag_number", "part"})
 
     def _score(self, result: ClassificationResult) -> None:
         """Find circular drawings and score them as potential bag icons."""
@@ -156,6 +157,12 @@ class NewBagClassifier(LabelClassifier):
             len(circle_drawings),
         )
 
+        # Pre-compute block assignments for all circles
+        # This ensures blocks are assigned to the correct circle when circles overlap
+        block_assignments = self._assign_blocks_to_circles(
+            circle_drawings, page_data.blocks, page_bbox
+        )
+
         # Process each circle as a potential bag icon
         for circle in circle_drawings:
             score_details = self._score_circle(circle, bag_number_candidates, page_bbox)
@@ -172,11 +179,8 @@ class NewBagClassifier(LabelClassifier):
                 )
                 continue
 
-            # Find all blocks that overlap with the circle
-            # These are the images/drawings inside the bag icon
-            overlapping_blocks = self._find_overlapping_blocks(
-                circle.bbox, page_data.bbox, page_data.blocks
-            )
+            # Get blocks assigned to this specific circle
+            overlapping_blocks = block_assignments.get(id(circle), [])
 
             result.add_candidate(
                 Candidate(
@@ -200,23 +204,27 @@ class NewBagClassifier(LabelClassifier):
                 circle.bbox,
             )
 
-    def _find_overlapping_blocks(
-        self, circle_bbox: BBox, page_bbox: BBox, blocks: list[Blocks]
-    ) -> list[Blocks]:
-        """Find all blocks that overlap with the circle bbox.
+    def _assign_blocks_to_circles(
+        self,
+        circles: list[Drawing],
+        blocks: list[Blocks],
+        page_bbox: BBox,
+    ) -> dict[int, list[Blocks]]:
+        """Assign blocks to circles based on spatial containment and draw order.
 
-        Filters out large blocks (>50% of page size) to avoid claiming
-        full-page backgrounds.
+        When multiple circles overlap, a block is assigned to the circle with
+        the closest higher draw_order (i.e., the circle drawn immediately after
+        the block). This ensures blocks are claimed by the correct circle.
 
         Args:
-            circle_bbox: The bounding box of the circle.
-            page_bbox: The page bounding box for size comparison.
+            circles: List of circular drawings (potential bag icons).
             blocks: All blocks on the page.
+            page_bbox: The page bounding box for size comparison.
 
         Returns:
-            List of Drawing/Image blocks that overlap with the circle.
+            Dictionary mapping circle id() to list of blocks assigned to it.
         """
-        # Only include drawings and images
+        # Only consider drawings and images
         drawing_image_blocks: list[Blocks] = [
             b for b in blocks if isinstance(b, Drawing | Image)
         ]
@@ -226,12 +234,65 @@ class NewBagClassifier(LabelClassifier):
             drawing_image_blocks, max_ratio=0.5, reference_bbox=page_bbox
         )
 
-        # Expand circle bbox slightly to catch blocks on the edge
-        # (circle bezier curves can be slightly inside the nominal bbox)
-        expanded_bbox = circle_bbox.expand(2.0)
+        # Build a mapping of circle id to its expanded bbox and draw_order
+        circle_info: list[tuple[int, BBox, int | None]] = []
+        for circle in circles:
+            # Expand circle bbox slightly to catch blocks on the edge
+            expanded_bbox = circle.bbox.expand(2.0)
+            circle_info.append((id(circle), expanded_bbox, circle.draw_order))
 
-        # Keep only blocks are within the expanded circle bbox
-        return filter_contained(small_blocks, expanded_bbox)
+        # Initialize result dictionary
+        result: dict[int, list[Blocks]] = {id(c): [] for c in circles}
+
+        # Assign each block to the appropriate circle
+        for block in small_blocks:
+            block_draw_order = block.draw_order
+
+            # Find all circles that contain this block and have higher draw_order
+            containing_circles: list[tuple[int, int | None]] = []
+            for circle_id, expanded_bbox, circle_draw_order in circle_info:
+                # Check if block is spatially contained in circle
+                if not expanded_bbox.contains(block.bbox):
+                    continue
+
+                # Block must be drawn before the circle (lower draw_order)
+                if (
+                    block_draw_order is not None
+                    and circle_draw_order is not None
+                    and block_draw_order > circle_draw_order
+                ):
+                    continue
+
+                containing_circles.append((circle_id, circle_draw_order))
+
+            if not containing_circles:
+                continue
+
+            # If block is contained by multiple circles, assign to the one
+            # with the closest (smallest) draw_order that's still >= block's
+            # This means the circle that was drawn immediately after the block
+            if len(containing_circles) == 1:
+                best_circle_id = containing_circles[0][0]
+            else:
+                # Sort by draw_order (None goes last)
+                containing_circles.sort(
+                    key=lambda x: (x[1] is None, x[1] if x[1] is not None else 0)
+                )
+                best_circle_id = containing_circles[0][0]
+
+            result[best_circle_id].append(block)
+
+            if len(containing_circles) > 1:
+                log.debug(
+                    "[new_bag] Block %s (draw_order=%s) contained by %d circles, "
+                    "assigned to circle with draw_order=%s",
+                    block.bbox,
+                    block_draw_order,
+                    len(containing_circles),
+                    containing_circles[0][1],
+                )
+
+        return result
 
     def _score_circle(
         self,
@@ -325,6 +386,9 @@ class NewBagClassifier(LabelClassifier):
 
         Discovers and builds the bag number at build time by finding
         the best-scoring bag number candidate inside the cluster.
+
+        If no bag number is found, looks for a Part candidate instead
+        (some bag icons contain a part rather than a bag number).
         """
         detail_score = candidate.score_details
         assert isinstance(detail_score, _NewBagScore)
@@ -332,7 +396,12 @@ class NewBagClassifier(LabelClassifier):
         # Find and construct bag number at build time
         bag_number = self._find_and_build_bag_number(detail_score.cluster_bbox, result)
 
-        return NewBag(bbox=detail_score.cluster_bbox, number=bag_number)
+        # If no bag number found, look for a part inside the circle
+        part: Part | None = None
+        if bag_number is None:
+            part = self._find_and_build_part(detail_score.cluster_bbox, result)
+
+        return NewBag(bbox=detail_score.cluster_bbox, number=bag_number, part=part)
 
     def _find_and_build_bag_number(
         self, cluster_bbox: BBox, result: ClassificationResult
@@ -372,3 +441,44 @@ class NewBagClassifier(LabelClassifier):
             bag_number_elem.bbox,
         )
         return bag_number_elem
+
+    def _find_and_build_part(
+        self, cluster_bbox: BBox, result: ClassificationResult
+    ) -> Part | None:
+        """Find and build a part inside the cluster.
+
+        Some bag icons contain a part instead of a bag number. This method
+        looks for part candidates inside the cluster bbox.
+
+        Args:
+            cluster_bbox: Bounding box of the cluster.
+            result: Classification result for accessing candidates.
+
+        Returns:
+            Built Part element, or None if not found.
+        """
+        part_candidates = result.get_scored_candidates(
+            "part", valid_only=False, exclude_failed=True
+        )
+        contained = list(filter_contained(part_candidates, cluster_bbox))
+        best_candidate = find_best_scoring(contained)
+
+        log.debug(
+            "[new_bag] Build: looking for part in %s, "
+            "found %d candidates, %d contained, best=%s",
+            cluster_bbox,
+            len(part_candidates),
+            len(contained),
+            best_candidate.bbox if best_candidate else None,
+        )
+
+        if best_candidate is None:
+            return None
+
+        part_elem = result.build(best_candidate)
+        assert isinstance(part_elem, Part)
+        log.debug(
+            "[new_bag] Built part at %s",
+            part_elem.bbox,
+        )
+        return part_elem
