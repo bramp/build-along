@@ -25,7 +25,6 @@ from build_a_long.pdf_extract.classifier.parts.parts_list_classifier import (
 )
 from build_a_long.pdf_extract.classifier.parts.piece_length_classifier import (
     PieceLengthClassifier,
-    _PieceLengthScore,
 )
 from build_a_long.pdf_extract.classifier.rule_based_classifier import RuleScore
 from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
@@ -172,12 +171,13 @@ class CandidateFactory:
         value: int = 0,
     ) -> Candidate:
         self._ensure_classifier_registered("piece_length")
-        score_details = _PieceLengthScore(
-            text_score=score,
-            context_score=1.0,
-            font_size_score=0.5,
-            value=value,
-            containing_drawing=drawing_block,
+        score_details = RuleScore(
+            components={
+                "Value": score,
+                "ContainerFit": score,
+                "FontSize": 0.5,
+            },
+            total_score=score,
         )
         candidate = Candidate(
             bbox=text_block.bbox.union(drawing_block.bbox),
