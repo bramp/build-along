@@ -72,10 +72,18 @@ class Filter(Rule):
 
 
 class IsInstanceFilter(Filter):
-    """Filter that checks if a block is of a specific type."""
+    """Filter that checks if a block is of a specific type or types."""
 
-    def __init__(self, block_type: type[Block], name: str = ""):
-        self.name = name if name else f"IsInstance({block_type.__name__})"
+    def __init__(
+        self, block_type: type[Block] | tuple[type[Block], ...], name: str = ""
+    ):
+        if isinstance(block_type, tuple):
+            names = "|".join(t.__name__ for t in block_type)
+            default_name = f"IsInstance({names})"
+        else:
+            default_name = f"IsInstance({block_type.__name__})"
+
+        self.name = name if name else default_name
         self.block_type = block_type
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
