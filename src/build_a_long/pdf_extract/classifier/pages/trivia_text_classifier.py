@@ -53,8 +53,7 @@ class _TriviaTextScore(Score):
     def score(self) -> Weight:
         """Calculate final weighted score from components.
 
-        Score based on character count. A single large text block
-        with many characters is just as valid as many small blocks.
+        Score based on character count.
         """
         # Score based on character count (max at 500 chars)
         return min(1.0, self.total_characters / 500.0)
@@ -121,17 +120,6 @@ class TriviaTextClassifier(LabelClassifier):
                     len(cluster),
                     total_chars,
                     config.min_character_count,
-                )
-                continue
-
-            # For multiple blocks, require minimum block count
-            # For single blocks, only require sufficient character content
-            if len(cluster) > 1 and len(cluster) < config.min_text_block_count:
-                log.debug(
-                    "[trivia_text] Multi-block cluster rejected: "
-                    "%d blocks < min %d blocks",
-                    len(cluster),
-                    config.min_text_block_count,
                 )
                 continue
 
