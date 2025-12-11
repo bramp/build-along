@@ -44,9 +44,6 @@ log = logging.getLogger(__name__)
 class _TriviaTextScore(Score):
     """Internal score representation for trivia text classification."""
 
-    text_block_count: int
-    """Number of text blocks in the cluster."""
-
     total_characters: int
     """Total number of characters across all text blocks."""
 
@@ -56,15 +53,11 @@ class _TriviaTextScore(Score):
     def score(self) -> Weight:
         """Calculate final weighted score from components.
 
-        Score based on having many text blocks with lots of content.
+        Score based on character count. A single large text block
+        with many characters is just as valid as many small blocks.
         """
-        # Score based on block count (max at 10 blocks)
-        block_score = min(1.0, self.text_block_count / 10.0)
-
         # Score based on character count (max at 500 chars)
-        char_score = min(1.0, self.total_characters / 500.0)
-
-        return (block_score + char_score) / 2
+        return min(1.0, self.total_characters / 500.0)
 
 
 class TriviaTextClassifier(LabelClassifier):
@@ -109,21 +102,14 @@ class TriviaTextClassifier(LabelClassifier):
             if isinstance(block, Text) and self._is_trivia_content(block.text)
         ]
 
-        if len(content_blocks) < config.min_text_block_count:
-            log.debug(
-                "[trivia_text] Not enough content text blocks: %d < %d",
-                len(content_blocks),
-                config.min_text_block_count,
-            )
+        if not content_blocks:
+            log.debug("[trivia_text] No content text blocks found")
             return
 
         # Find clusters of spatially close text blocks
         clusters = self._cluster_text_blocks(content_blocks, config.proximity_margin)
 
         for cluster in clusters:
-            if len(cluster) < config.min_text_block_count:
-                continue
-
             # Calculate total characters
             total_chars = sum(len(block.text) for block in cluster)
 
@@ -135,6 +121,17 @@ class TriviaTextClassifier(LabelClassifier):
                     len(cluster),
                     total_chars,
                     config.min_character_count,
+                )
+                continue
+
+            # For multiple blocks, require minimum block count
+            # For single blocks, only require sufficient character content
+            if len(cluster) > 1 and len(cluster) < config.min_text_block_count:
+                log.debug(
+                    "[trivia_text] Multi-block cluster rejected: "
+                    "%d blocks < min %d blocks",
+                    len(cluster),
+                    config.min_text_block_count,
                 )
                 continue
 
@@ -150,7 +147,6 @@ class TriviaTextClassifier(LabelClassifier):
             text_lines = [b.text for b in cluster]
 
             score_details = _TriviaTextScore(
-                text_block_count=len(cluster),
                 total_characters=total_chars,
                 text_lines=text_lines,
             )
