@@ -60,7 +60,7 @@ class TestPartsImageClassifier:
         assert built.shine is None
 
     def test_scores_too_small_image_low(self, classifier: PartsImageClassifier):
-        """Test that too small images score low."""
+        """Test that too small images are rejected."""
         page_size = 1000.0
         # 1% of page size (10x10) - too small
         image = Image(id=1, bbox=BBox(100, 100, 110, 110))
@@ -70,12 +70,11 @@ class TestPartsImageClassifier:
         classifier._score(result)
 
         candidate = result.get_candidate_for_block(image, "part_image")
-        assert candidate is not None
-        # Score logic: ratio < 0.02 -> linear from 0 to 0.3. 0.01 -> 0.15
-        assert candidate.score < 0.3
+        # Should be rejected (no candidate)
+        assert candidate is None
 
     def test_scores_too_large_image_low(self, classifier: PartsImageClassifier):
-        """Test that too large images score low."""
+        """Test that too large images are rejected."""
         page_size = 1000.0
         # 50% of page size (500x500) - too large
         image = Image(id=1, bbox=BBox(0, 0, 500, 500))
@@ -85,9 +84,8 @@ class TestPartsImageClassifier:
         classifier._score(result)
 
         candidate = result.get_candidate_for_block(image, "part_image")
-        assert candidate is not None
-        # Score logic: ratio > 0.40 -> decreases from 0.3 to 0.1
-        assert candidate.score < 0.4
+        # Should be rejected (no candidate)
+        assert candidate is None
 
     def test_builds_with_shine(self, classifier: PartsImageClassifier):
         """Test building part image with attached shine."""

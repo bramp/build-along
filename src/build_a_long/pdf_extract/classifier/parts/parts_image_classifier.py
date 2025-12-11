@@ -18,15 +18,21 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.label_classifier import (
-    LabelClassifier,
+from build_a_long.pdf_extract.classifier.rule_based_classifier import (
+    RuleBasedClassifier,
+    RuleScore,
 )
-from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.classifier.rules import (
+    IsInstanceFilter,
+    Rule,
+    SizeRatioRule,
+)
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartImage,
     Shine,
@@ -38,27 +44,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 log = logging.getLogger(__name__)
 
 
-class _PartImageScore(Score):
-    """Score details for a part image candidate.
-
-    Scores based on intrinsic size properties - part images are typically
-    small to medium sized (1/20 to 1/5 of page dimensions).
-
-    Attributes:
-        image: The source Image block being scored as a potential part image
-        size_score: Score based on image dimensions relative to page (0.0-1.0)
-    """
-
-    image: Image
-    size_score: float
-
-    def score(self) -> Weight:
-        """Return the overall score based on size."""
-        return self.size_score
-
-
-# TODO Should this be called PartImageClassifier instead?
-class PartsImageClassifier(LabelClassifier):
+class PartsImageClassifier(RuleBasedClassifier):
     """Classifier for part images based on size heuristics.
 
     Scores images based on their size relative to the page. Part images are
@@ -70,102 +56,25 @@ class PartsImageClassifier(LabelClassifier):
     Does NOT pair images with part counts - that's done by PartsClassifier.
     """
 
-    output = "part_image"
-    requires = frozenset({"shine"})
+    output: ClassVar[str] = "part_image"
+    requires: ClassVar[frozenset[str]] = frozenset({"shine"})
 
-    def _score(self, result: ClassificationResult) -> None:
-        """Create PartImage candidates from Image blocks with size-based scoring.
-
-        Scores images based on their dimensions relative to the page.
-        Shine discovery is deferred to build time.
-        """
-        page_data = result.page_data
-        page_width = page_data.bbox.width
-        page_height = page_data.bbox.height
-
-        # Get all images from the page
-        images: list[Image] = [e for e in page_data.blocks if isinstance(e, Image)]
-
-        if not images:
-            log.debug(
-                "[part_image] No images found on page %s",
-                page_data.page_number,
-            )
-            return
-
-        # Create a PartImage candidate for each Image with size-based score
-        for img in images:
-            size_score = self._compute_size_score(img, page_width, page_height)
-
-            score_details = _PartImageScore(image=img, size_score=size_score)
-
-            result.add_candidate(
-                Candidate(
-                    bbox=img.bbox,
-                    label="part_image",
-                    score=size_score,
-                    score_details=score_details,
-                    source_blocks=[img],
-                ),
-            )
-
-        if log.isEnabledFor(logging.DEBUG):
-            log.debug(
-                "[part_image] Created %d part_image candidates on page %s",
-                len(images),
-                page_data.page_number,
-            )
-
-    def _compute_size_score(
-        self, img: Image, page_width: float, page_height: float
-    ) -> float:
-        """Compute a score based on image size relative to page.
-
-        Part images are typically small to medium sized:
-        - Width: ~1/20 to ~1/5 of page width (25-100 pixels on a 500px page)
-        - Height: ~1/20 to ~1/5 of page height
-
-        Very small images (icons) and very large images (diagrams) score lower.
-
-        Args:
-            img: The image to score
-            page_width: Width of the page
-            page_height: Height of the page
-
-        Returns:
-            Score from 0.0 to 1.0
-        """
-        img_width = img.bbox.width
-        img_height = img.bbox.height
-
-        # Calculate size ratios
-        width_ratio = img_width / page_width if page_width > 0 else 0
-        height_ratio = img_height / page_height if page_height > 0 else 0
-
-        # Ideal range: 5% to 20% of page dimension
-        # Score peaks at ~10% (typical part image size)
-        def ratio_score(ratio: float) -> float:
-            if ratio < 0.02:
-                # Too small (icons, dots)
-                return ratio / 0.02 * 0.3
-            elif ratio < 0.05:
-                # Small but acceptable
-                return 0.3 + (ratio - 0.02) / 0.03 * 0.4
-            elif ratio <= 0.20:
-                # Ideal range
-                return 0.7 + (1.0 - abs(ratio - 0.10) / 0.10) * 0.3
-            elif ratio <= 0.40:
-                # Large but could still be a part
-                return 0.7 - (ratio - 0.20) / 0.20 * 0.4
-            else:
-                # Too large (likely a diagram)
-                return max(0.1, 0.3 - (ratio - 0.40) / 0.60 * 0.3)
-
-        width_score = ratio_score(width_ratio)
-        height_score = ratio_score(height_ratio)
-
-        # Average the two dimensions
-        return (width_score + height_score) / 2
+    @property
+    def rules(self) -> list[Rule]:
+        return [
+            # Only consider Image elements
+            IsInstanceFilter(Image),
+            # Score based on size relative to page dimensions
+            # Replicates the logic from _compute_size_score
+            SizeRatioRule(
+                ideal_ratio=0.10,  # Peak score at 10%
+                min_ratio=0.02,  # Start scoring
+                max_ratio=0.40,  # End scoring high
+                weight=1.0,
+                name="size_ratio",
+                required=True,
+            ),
+        ]
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> PartImage:
         """Construct a PartImage element from a single part_image candidate.
@@ -180,11 +89,15 @@ class PartsImageClassifier(LabelClassifier):
         Returns:
             PartImage: The constructed part image element
         """
-        assert isinstance(candidate.score_details, _PartImageScore)
-        ps = candidate.score_details
+        # Get score details (not strictly needed for logic but good for assertion)
+        assert isinstance(candidate.score_details, RuleScore)
+
+        # Get the image block
+        image_block = next(b for b in candidate.source_blocks if isinstance(b, Image))
+        assert isinstance(image_block, Image)
 
         # Find and build shine at build time (not pre-assigned during scoring)
-        shine = self._find_and_build_shine(ps.image, result)
+        shine = self._find_and_build_shine(image_block, result)
 
         # Compute final bbox - expand to include shine if found
         bbox = candidate.bbox
@@ -194,9 +107,9 @@ class PartsImageClassifier(LabelClassifier):
         return PartImage(
             bbox=bbox,
             shine=shine,
-            image_id=ps.image.image_id,
-            digest=ps.image.digest,
-            xref=ps.image.xref,
+            image_id=image_block.image_id,
+            digest=image_block.digest,
+            xref=image_block.xref,
         )
 
     def _find_and_build_shine(
