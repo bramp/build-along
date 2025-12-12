@@ -263,12 +263,6 @@ class PageClassifier(LabelClassifier):
             f"{len(catalog_parts)} parts" if catalog_parts else None,
         )
 
-        # Calculate unassigned blocks count
-        all_block_ids = {b.id for b in page_data.blocks}
-        removed_ids = set(result.removal_reasons.keys())
-        consumed_ids = result._consumed_blocks
-        unassigned_count = len(all_block_ids - removed_ids - consumed_ids)
-
         return Page(
             bbox=candidate.bbox,
             pdf_page_number=page_data.page_number,
@@ -280,7 +274,7 @@ class PageClassifier(LabelClassifier):
             scale=scale,
             previews=previews,
             trivia_text=trivia_text,
-            unassigned_blocks_count=unassigned_count,
+            unassigned_blocks_count=result.count_unassigned_blocks(),
             open_bags=open_bags,
             steps=steps,
             catalog=catalog_parts,
