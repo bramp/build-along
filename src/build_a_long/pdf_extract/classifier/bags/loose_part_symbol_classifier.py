@@ -24,13 +24,21 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
-from build_a_long.pdf_extract.classifier.label_classifier import (
-    LabelClassifier,
+from build_a_long.pdf_extract.classifier.rule_based_classifier import (
+    RuleBasedClassifier,
+)
+from build_a_long.pdf_extract.classifier.rules import (
+    AspectRatioRule,
+    CurveCountRule,
+    IsInstanceFilter,
+    Rule,
+    SizeRangeRule,
 )
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox
@@ -59,7 +67,7 @@ class _LoosePartSymbolScore(Score):
         return (self.aspect_score + self.size_score) / 2.0
 
 
-class LoosePartSymbolClassifier(LabelClassifier):
+class LoosePartSymbolClassifier(RuleBasedClassifier):
     """Classifier for loose part symbols.
 
     Identifies symbol clusters that appear in the upper portion of pages.
@@ -67,56 +75,80 @@ class LoosePartSymbolClassifier(LabelClassifier):
     The OpenBagClassifier will claim matching symbols during its build phase.
     """
 
-    output = "loose_part_symbol"
-    requires = frozenset()  # No dependencies - runs early
+    output: ClassVar[str] = "loose_part_symbol"
+    requires: ClassVar[frozenset[str]] = frozenset()  # No dependencies - runs early
+
+    @property
+    def rules(self) -> list[Rule]:
+        """Rules to identify the anchor block (small circle)."""
+        return [
+            IsInstanceFilter(Drawing),
+            # Max size 80 (individual block)
+            SizeRangeRule(
+                max_width=80.0,
+                max_height=80.0,
+                weight=0.0,
+                required=True,
+                name="max_size",
+            ),
+            # Min size 20
+            SizeRangeRule(
+                min_width=20.0,
+                min_height=20.0,
+                weight=0.0,
+                required=True,
+                name="min_size",
+            ),
+            # Aspect ratio 0.8 - 1.25 (circular)
+            AspectRatioRule(
+                min_ratio=0.8,
+                max_ratio=1.25,
+                weight=0.0,
+                required=True,
+                name="circular_aspect",
+            ),
+            # Curves >= 4 (circle)
+            CurveCountRule(min_count=4, weight=1.0, required=True),
+        ]
 
     def _score(self, result: ClassificationResult) -> None:
-        """Find symbol clusters that contain a circular drawing component.
+        """Find symbol clusters using anchor-and-cluster strategy.
 
-        The symbol icon consists of a circle with a LEGO brick inside,
-        plus a small symbol (like a plus sign) in the corner. We look for
-        small circular drawings as anchors and build clusters around them.
+        1. Use rules to find potential anchor blocks (small circles).
+        2. For each anchor, find nearby blocks to form a cluster.
+        3. Score the cluster and update the candidate.
         """
-        page_data = result.page_data
+        # 1. Find anchors using base rules
+        super()._score(result)
 
-        # Filter to small drawings/images (symbol elements are small)
-        # Exclude large blocks that are likely backgrounds or OpenBag circles
-        max_block_size = 80.0  # Individual blocks should be smaller than this
-        small_blocks = [
-            b
-            for b in page_data.blocks
-            if isinstance(b, Drawing | Image)
-            and b.bbox.width < max_block_size
-            and b.bbox.height < max_block_size
-        ]
+        # 2. Refine candidates (which currently represent just the anchors)
+        # Get all candidates including failed ones, but we only care about valid ones here
+        # actually super()._score only adds valid ones.
+        candidates = result.get_scored_candidates(self.output, valid_only=False)
 
-        if not small_blocks:
-            log.debug("[loose_part_symbol] No small blocks found")
-            return
+        # We need to iterate carefully as we might modify them
+        for candidate in candidates:
+            # Skip if already marked as failed by rules
+            if not candidate.is_valid:
+                continue
 
-        # Find small circular drawings as potential symbol anchors
-        # These are smaller than the OpenBag circles (which are ~200px)
-        circle_anchors = [
-            b
-            for b in small_blocks
-            if isinstance(b, Drawing) and self._is_small_circle(b)
-        ]
+            anchor = candidate.source_blocks[0]
+            if not isinstance(anchor, Drawing):
+                # Should be guaranteed by IsInstanceFilter, but safe check
+                candidate.failure_reason = "Anchor is not a Drawing"
+                continue
 
-        log.debug(
-            "[loose_part_symbol] page=%s small_blocks=%d circle_anchors=%d",
-            page_data.page_number,
-            len(small_blocks),
-            len(circle_anchors),
-        )
-
-        # For each circle anchor, find nearby blocks to form a cluster
-        for anchor in circle_anchors:
-            # Find blocks near this anchor
-            cluster_blocks = self._find_nearby_blocks(
-                anchor, small_blocks, max_distance=30.0
-            )
+            # Find blocks near this anchor (including images, which rules filtered out)
+            # Re-fetch small blocks for clustering context
+            # Optimization: filter only relevant blocks once?
+            # Or just iterate all blocks? `_find_nearby_blocks` iterates.
+            # Original code filtered `small_blocks` first.
+            cluster_blocks = self._find_cluster_blocks(anchor, result.page_data.blocks)
 
             if len(cluster_blocks) < 3:
+                candidate.failure_reason = (
+                    f"Cluster too small (found {len(cluster_blocks)} blocks, need 3)"
+                )
                 continue
 
             # Calculate combined bbox
@@ -125,15 +157,10 @@ class LoosePartSymbolClassifier(LabelClassifier):
             # Check aspect ratio - should be roughly square (0.6 to 1.6)
             aspect = symbol_bbox.width / symbol_bbox.height if symbol_bbox.height else 0
             if not (0.6 <= aspect <= 1.6):
-                log.debug(
-                    "[loose_part_symbol] Cluster rejected: aspect=%.2f bbox=%s",
-                    aspect,
-                    symbol_bbox,
-                )
+                candidate.failure_reason = f"Bad cluster aspect ratio: {aspect:.2f}"
                 continue
 
-            # Check total size - use config values for ideal size and tolerance
-            # Using average of width and height for size calculation
+            # Check total size
             config = self.config.loose_part_symbol
             ideal_size = config.ideal_size
             tolerance = config.size_tolerance
@@ -142,14 +169,7 @@ class LoosePartSymbolClassifier(LabelClassifier):
             avg_size = (symbol_bbox.width + symbol_bbox.height) / 2.0
 
             if not (min_size <= avg_size <= max_size):
-                log.debug(
-                    "[loose_part_symbol] Cluster rejected: "
-                    "size=%.1f not in [%.1f, %.1f] bbox=%s",
-                    avg_size,
-                    min_size,
-                    max_size,
-                    symbol_bbox,
-                )
+                candidate.failure_reason = f"Bad cluster size: {avg_size:.1f} (range {min_size:.1f}-{max_size:.1f})"
                 continue
 
             # Score based on aspect ratio (closer to 1.0 is better)
@@ -158,95 +178,55 @@ class LoosePartSymbolClassifier(LabelClassifier):
             size_deviation = abs(avg_size - ideal_size) / ideal_size
             size_score = 1.0 - size_deviation
 
-            score_details = _LoosePartSymbolScore(
+            new_score_details = _LoosePartSymbolScore(
                 aspect_score=aspect_score,
                 size_score=size_score,
             )
 
-            result.add_candidate(
-                Candidate(
-                    bbox=symbol_bbox,
-                    label="loose_part_symbol",
-                    score=score_details.score(),
-                    score_details=score_details,
-                    source_blocks=list(cluster_blocks),
-                ),
-            )
+            # Update candidate
+            candidate.bbox = symbol_bbox
+            candidate.source_blocks = list(cluster_blocks)
+            candidate.score_details = new_score_details
+            candidate.score = new_score_details.score()
 
             log.debug(
-                "[loose_part_symbol] Found candidate: bbox=%s aspect=%.2f "
-                "size=%.1f score=%.2f",
+                "[loose_part_symbol] Refined candidate: bbox=%s score=%.2f blocks=%d",
                 symbol_bbox,
-                aspect,
-                avg_size,
-                score_details.score(),
+                candidate.score,
+                len(cluster_blocks),
             )
 
-    def _is_small_circle(self, drawing: Drawing, max_size: float = 80.0) -> bool:
-        """Check if a drawing is a small circle (symbol circle component).
-
-        Args:
-            drawing: The drawing to check.
-            max_size: Maximum width/height for the circle.
-
-        Returns:
-            True if the drawing appears to be a small circular shape.
-        """
-        if not drawing.items or len(drawing.items) < 4:
-            return False
-
-        # Check size - must be small (not an OpenBag circle)
-        if drawing.bbox.width > max_size or drawing.bbox.height > max_size:
-            return False
-
-        # Must be at least some minimum size
-        if drawing.bbox.width < 20 or drawing.bbox.height < 20:
-            return False
-
-        # Check aspect ratio - circles should be close to 1:1
-        aspect = drawing.bbox.width / drawing.bbox.height if drawing.bbox.height else 0
-        if not (0.8 <= aspect <= 1.25):
-            return False
-
-        # Count bezier curves ('c' type items) - circles have 4+ curves
-        curve_count = sum(1 for item in drawing.items if item[0] == "c")
-        return curve_count >= 4
-
-    def _find_nearby_blocks(
+    def _find_cluster_blocks(
         self,
         anchor: Drawing,
-        blocks: list[Drawing | Image],
-        max_distance: float,
+        all_blocks: list,
     ) -> list[Drawing | Image]:
-        """Find blocks that are near the anchor block.
-
-        Args:
-            anchor: The anchor block to search around.
-            blocks: All candidate blocks.
-            max_distance: Maximum distance from anchor to include.
-
-        Returns:
-            List of blocks near the anchor (including the anchor itself).
-        """
+        """Find blocks that are near the anchor block."""
         result: list[Drawing | Image] = [anchor]
-        anchor_bbox = anchor.bbox
+        max_block_size = 80.0
+        max_distance = 30.0
 
-        for block in blocks:
+        for block in all_blocks:
             if block is anchor:
                 continue
 
+            # Only consider small Drawings or Images
+            if not isinstance(block, Drawing | Image):
+                continue
+
+            if (
+                block.bbox.width >= max_block_size
+                or block.bbox.height >= max_block_size
+            ):
+                continue
+
             # Check distance from anchor
-            if self._bbox_distance(anchor_bbox, block.bbox) <= max_distance:
+            # Use BBox.min_distance
+            dist = anchor.bbox.min_distance(block.bbox)
+            if dist <= max_distance:
                 result.append(block)
 
         return result
-
-    def _bbox_distance(self, bbox1: BBox, bbox2: BBox) -> float:
-        """Calculate minimum distance between two bboxes."""
-        # Calculate gap between boxes (0 if overlapping)
-        x_gap = max(0, max(bbox1.x0, bbox2.x0) - min(bbox1.x1, bbox2.x1))
-        y_gap = max(0, max(bbox1.y0, bbox2.y0) - min(bbox1.y1, bbox2.y1))
-        return (x_gap**2 + y_gap**2) ** 0.5
 
     def build(
         self, candidate: Candidate, result: ClassificationResult

@@ -6,7 +6,10 @@ import pytest
 
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.classifier.rules.base import RuleContext
-from build_a_long.pdf_extract.classifier.rules.visual import StrokeColorScore
+from build_a_long.pdf_extract.classifier.rules.visual import (
+    CurveCountRule,
+    StrokeColorScore,
+)
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
@@ -57,4 +60,24 @@ class TestStrokeColorScore:
         block = Drawing(
             bbox=BBox(0, 0, 10, 10), fill_color=None, stroke_color=None, id=1
         )
+        assert rule.calculate(block, context) == 0.0
+
+
+class TestCurveCountRule:
+    def test_enough_curves(self, context: RuleContext):
+        rule = CurveCountRule(min_count=4)
+        # Mock items with 4 curves
+        items = (("c",), ("c",), ("c",), ("c",))
+        block = Drawing(bbox=BBox(0, 0, 10, 10), items=items, id=1)
+        assert rule.calculate(block, context) == 1.0
+
+    def test_not_enough_curves(self, context: RuleContext):
+        rule = CurveCountRule(min_count=4)
+        items = (("c",), ("l",), ("c",))  # 2 curves + 1 line
+        block = Drawing(bbox=BBox(0, 0, 10, 10), items=items, id=1)
+        assert rule.calculate(block, context) == 0.0
+
+    def test_no_items(self, context: RuleContext):
+        rule = CurveCountRule(min_count=4)
+        block = Drawing(bbox=BBox(0, 0, 10, 10), items=None, id=1)
         assert rule.calculate(block, context) == 0.0

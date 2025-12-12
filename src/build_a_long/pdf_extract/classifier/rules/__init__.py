@@ -33,7 +33,10 @@ from build_a_long.pdf_extract.classifier.rules.text import (
     RegexMatch,
     StepNumberTextRule,
 )
-from build_a_long.pdf_extract.classifier.rules.visual import StrokeColorScore
+from build_a_long.pdf_extract.classifier.rules.visual import (
+    CurveCountRule,
+    StrokeColorScore,
+)
 
 __all__ = [
     "AspectRatioRule",
@@ -41,6 +44,7 @@ __all__ = [
     "BagNumberTextRule",
     "CornerDistanceScore",
     "CoverageRule",
+    "CurveCountRule",
     "EdgeProximityRule",
     "Filter",
     "FontSizeMatch",

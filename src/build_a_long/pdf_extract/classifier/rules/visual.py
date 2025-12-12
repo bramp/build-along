@@ -38,7 +38,6 @@ class StrokeColorScore(Rule):
             # Any other stroke color gets a lower score
             return 0.3
 
-        # No stroke color - could still be a divider via fill
         if drawing_block.fill_color is not None:
             r, g, b = drawing_block.fill_color
             if r > 0.9 and g > 0.9 and b > 0.9:
@@ -47,3 +46,34 @@ class StrokeColorScore(Rule):
                 return 0.5
 
         return 0.0
+
+
+class CurveCountRule(Rule):
+    """Rule that scores based on the number of bezier curves in a drawing.
+
+    Useful for detecting circles (which typically consist of 4 bezier curves).
+    """
+
+    def __init__(
+        self,
+        min_count: int,
+        weight: float = 1.0,
+        name: str = "CurveCount",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+        self.min_count = min_count
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        if not isinstance(block, Drawing):
+            return 0.0
+
+        if not block.items:
+            return 0.0
+
+        # 'c' indicates a curve operation in the drawing path
+        curve_count = sum(1 for item in block.items if item[0] == "c")
+
+        return 1.0 if curve_count >= self.min_count else 0.0
