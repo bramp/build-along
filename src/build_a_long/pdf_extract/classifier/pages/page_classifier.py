@@ -63,7 +63,7 @@ class PageClassifier(LabelClassifier):
             "background",
             "divider",
             "page_number",
-            "preview",  # Built by StepClassifier alongside subassemblies
+            "preview",
             "progress_bar",
             "open_bag",
             "step",

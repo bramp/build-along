@@ -117,6 +117,7 @@ class StepClassifier(LabelClassifier):
     output = "step"
     requires = frozenset(
         {
+            "arrow",
             "step_number",
             "parts_list",
             "diagram",
@@ -180,21 +181,30 @@ class StepClassifier(LabelClassifier):
         )
 
     def build_all(self, result: ClassificationResult) -> list[LegoPageElements]:
-        """Build all Step elements with coordinated rotation symbol assignment.
+        """Build all Step elements with coordinated element assignment.
 
-        This method:
-        1. Builds all rotation symbols first (so they claim their Drawing blocks)
-        2. Builds all parts lists (so they claim their blocks)
-        3. Builds Step candidates, deduplicating by step value at build time
-        4. Uses Hungarian matching to optimally assign rotation symbols to steps
+        Build Order (phases run sequentially):
+        - Phase 1: Rotation symbols - claim small circular arrow graphics
+        - Phase 2: Parts lists - claim part count blocks and part images
+        - Phase 3: Arrows - claim arrowhead triangles and shaft lines/rectangles
+        - Phase 4: Subassemblies & Previews - claim white callout boxes
+        - Phase 5: Steps - build step_number + parts_list pairs (no diagram yet)
+        - Phase 6: Diagrams - build remaining unclaimed diagram regions
+        - Phase 7: Assign diagrams to steps via Hungarian matching
+        - Phase 8: Assign subassemblies to steps via Hungarian matching
+        - Phase 9: Finalize steps - add arrows, compute final bboxes
+        - Phase 10: Assign rotation symbols to steps via Hungarian matching
 
-        Deduplication happens at build time (not scoring time) so that diagram
-        assignment can be re-evaluated as blocks get claimed by other elements.
+        The order matters because elements compete for the same Drawing blocks.
+        Earlier phases claim blocks first, preventing later phases from using them.
+        For example:
+        - Arrows must build before subassemblies so arrow shafts aren't consumed
+          by subassembly white boxes
+        - Rotation symbols must build before diagrams so small circular graphics
+          aren't incorrectly clustered into diagrams
 
-        This coordination ensures:
-        - Rotation symbols are built before diagrams, preventing incorrect clustering
-        - Each rotation symbol is assigned to at most one step
-        - Assignment is globally optimal based on distance to step diagrams
+        Deduplication of steps happens at build time (not scoring time) so that
+        diagram assignment can be re-evaluated as blocks get claimed.
 
         Returns:
             List of successfully constructed Step elements, sorted by step number
@@ -239,7 +249,29 @@ class StepClassifier(LabelClassifier):
                     e,
                 )
 
-        # Phase 3: Build subassemblies and previews BEFORE steps.
+        # Phase 3: Build all arrows BEFORE subassemblies.
+        # Arrows connect subassembly callout boxes to main diagrams. The arrow
+        # shaft may be a thin rectangle that overlaps the subassembly's white
+        # box. By building arrows first, they claim the shaft blocks before
+        # subassemblies can consume them.
+        for arrow_candidate in result.get_scored_candidates(
+            "arrow", valid_only=False, exclude_failed=True
+        ):
+            try:
+                result.build(arrow_candidate)
+                log.debug(
+                    "[step] Built arrow at %s (score=%.2f)",
+                    arrow_candidate.bbox,
+                    arrow_candidate.score,
+                )
+            except Exception as e:
+                log.debug(
+                    "[step] Failed to construct arrow candidate at %s: %s",
+                    arrow_candidate.bbox,
+                    e,
+                )
+
+        # Phase 4: Build subassemblies and previews BEFORE steps.
         # Both subassemblies and previews are white boxes with diagrams inside.
         # We combine them and build in score order so the higher-scoring
         # candidate claims the white box first. When a candidate is built,
@@ -276,7 +308,7 @@ class StepClassifier(LabelClassifier):
                     e,
                 )
 
-        # Phase 4: Build Step candidates with deduplication by step value
+        # Phase 5: Build Step candidates with deduplication by step value
         # Filter out subassembly steps, then build in score order, skipping
         # step values that have already been built.
         # Steps are built as "partial" - just step_number + parts_list.
@@ -334,7 +366,8 @@ class StepClassifier(LabelClassifier):
         # Sort steps by their step_number value
         steps.sort(key=lambda step: step.step_number.value)
 
-        # Phase 5: Assign diagrams to steps using Hungarian matching
+        # Phase 6: Build diagrams (not yet claimed by subassemblies)
+        # Phase 7: Assign diagrams to steps using Hungarian matching
         # Collect available diagram candidates (not yet claimed by subassemblies)
         available_diagrams: list[Diagram] = []
         for diag_candidate in result.get_scored_candidates(
@@ -364,7 +397,7 @@ class StepClassifier(LabelClassifier):
         # Assign diagrams to steps using Hungarian matching
         assign_diagrams_to_steps(steps, available_diagrams)
 
-        # Phase 6: Assign subassemblies to steps using Hungarian matching
+        # Phase 8: Assign subassemblies to steps using Hungarian matching
         # Collect built subassemblies
         subassemblies: list[SubAssembly] = []
         for sa_candidate in result.get_scored_candidates(
@@ -392,7 +425,7 @@ class StepClassifier(LabelClassifier):
         # Assign subassemblies to steps using Hungarian matching
         assign_subassemblies_to_steps(steps, subassemblies, dividers)
 
-        # Phase 7: Finalize steps - compute arrows and final bboxes
+        # Phase 9: Finalize steps - collect arrows and compute final bboxes
         page_bbox = result.page_data.bbox
         for step in steps:
             # Get arrows for this step
@@ -412,7 +445,7 @@ class StepClassifier(LabelClassifier):
             object.__setattr__(step, "arrows", arrows)
             object.__setattr__(step, "bbox", final_bbox)
 
-        # Phase 8: Assign rotation symbols to steps using Hungarian matching
+        # Phase 10: Assign rotation symbols to steps using Hungarian matching
         # Collect built rotation symbols
         rotation_symbols: list[RotationSymbol] = []
         for rs_candidate in result.get_scored_candidates(
@@ -800,11 +833,14 @@ class StepClassifier(LabelClassifier):
         diagram: Diagram | None,
         result: ClassificationResult,
     ) -> list[Arrow]:
-        """Find arrows associated with this step.
+        """Collect already-built arrows that belong to this step.
 
-        Looks for arrow candidates that are positioned near the step's diagram
-        or step number. Typically these are arrows pointing from subassembly
-        callout boxes to the main diagram.
+        Arrows are built in Phase 3 of build_all(), before subassemblies.
+        This method finds arrows that are positioned near the step's diagram
+        and assigns them to this step.
+
+        Typically these are arrows pointing from subassembly callout boxes
+        to the main diagram.
 
         Args:
             step_num: The step number element
@@ -814,12 +850,14 @@ class StepClassifier(LabelClassifier):
         Returns:
             List of Arrow elements for this step
         """
+        # Get already-built arrows (built in Phase 3)
         arrow_candidates = result.get_scored_candidates(
-            "arrow", valid_only=False, exclude_failed=True
+            "arrow",
+            valid_only=True,  # Only get successfully built arrows
         )
 
         log.debug(
-            "[step] Looking for arrows for step %d, found %d candidates",
+            "[step] Looking for arrows for step %d, found %d built arrows",
             step_num.value,
             len(arrow_candidates),
         )
@@ -845,23 +883,14 @@ class StepClassifier(LabelClassifier):
         overlapping_candidates = filter_overlapping(arrow_candidates, search_region)
 
         for candidate in overlapping_candidates:
+            assert candidate.constructed is not None
+            assert isinstance(candidate.constructed, Arrow)
             log.debug(
-                "[step]   Arrow candidate at %s, overlaps=True, score=%.2f",
+                "[step]   Arrow at %s overlaps search region (score=%.2f)",
                 candidate.bbox,
                 candidate.score,
             )
-            try:
-                arrow = result.build(candidate)
-                assert isinstance(arrow, Arrow)
-                arrows.append(arrow)
-            except CandidateFailedError:
-                # Arrow lost conflict to another arrow (they share source blocks)
-                # This is expected when multiple arrows overlap - skip it
-                log.debug(
-                    "[step]   Arrow candidate at %s failed (conflict), skipping",
-                    candidate.bbox,
-                )
-                continue
+            arrows.append(candidate.constructed)
 
         log.debug(
             "[step] Found %d arrows for step %d",

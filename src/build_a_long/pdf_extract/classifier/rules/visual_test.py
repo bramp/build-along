@@ -45,7 +45,10 @@ class TestStrokeColorScore:
         rule = StrokeColorScore()
         # No stroke, but white fill
         block = Drawing(
-            bbox=BBox(0, 0, 10, 10), fill_color=(1.0, 1.0, 1.0), stroke_color=None, id=1
+            bbox=BBox(0, 0, 10, 10),
+            fill_color=(1.0, 1.0, 1.0),
+            stroke_color=None,
+            id=1,
         )
         assert rule.calculate(block, context) == 0.8
 
