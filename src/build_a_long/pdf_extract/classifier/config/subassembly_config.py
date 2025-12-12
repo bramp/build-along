@@ -59,6 +59,16 @@ class SubAssemblyConfig(BaseModel):
         default=0.3, description="Weight for diagram/image presence inside box."
     )
 
+    bbox_group_tolerance: float = Field(
+        default=5.0,
+        description=(
+            "Maximum coordinate difference when grouping similar Drawing "
+            "blocks into a single subassembly candidate. Drawings with "
+            "bboxes that differ by at most this amount are treated as "
+            "representing the same logical box (e.g., fill and stroke layers)."
+        ),
+    )
+
     @property
     def min_subassembly_width(self) -> float:
         """Minimum width for a SubAssembly box."""

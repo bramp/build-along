@@ -157,7 +157,9 @@ class SubAssemblyClassifier(LabelClassifier):
 
         # Group drawings with similar bboxes (e.g., white-filled box and
         # black-bordered box for the same subassembly)
-        groups = group_by_similar_bbox(valid_drawings, tolerance=2.0)
+        groups = group_by_similar_bbox(
+            valid_drawings, tolerance=subassembly_config.bbox_group_tolerance
+        )
 
         # Process each group - create one candidate per unique bbox region
         for group in groups:
