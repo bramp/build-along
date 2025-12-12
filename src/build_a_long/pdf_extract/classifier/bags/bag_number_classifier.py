@@ -45,9 +45,12 @@ from build_a_long.pdf_extract.classifier.text import (
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     BagNumber,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
 log = logging.getLogger(__name__)
+
+# Margin to expand text bbox when looking for shadow/effect images
+_SHADOW_MARGIN = 10.0
 
 
 class BagNumberClassifier(RuleBasedClassifier):
@@ -92,6 +95,9 @@ class BagNumberClassifier(RuleBasedClassifier):
 
         The candidate may include additional source blocks (e.g., text outline
         effects) beyond the primary Text block.
+
+        Also claims nearby Images/Drawings that are likely drop shadows or
+        other text effects (within a small margin of the text bbox).
         """
         # Get the primary text block (first in source_blocks)
         assert len(candidate.source_blocks) >= 1
@@ -107,5 +113,51 @@ class BagNumberClassifier(RuleBasedClassifier):
         if value is None:
             raise ValueError(f"Could not parse bag number from text: '{block.text}'")
 
+        # Find and claim nearby shadow/effect images by adding them to source_blocks
+        shadow_blocks = self._find_shadow_blocks(block, result)
+        for shadow_block in shadow_blocks:
+            if shadow_block not in candidate.source_blocks:
+                candidate.source_blocks.append(shadow_block)
+                log.debug(
+                    "[bag_number] Claimed shadow/effect block: %s",
+                    shadow_block.bbox,
+                )
+
         # Successfully constructed
         return BagNumber(value=value, bbox=block.bbox)
+
+    def _find_shadow_blocks(
+        self, text_block: Text, result: ClassificationResult
+    ) -> list[Image | Drawing]:
+        """Find Images/Drawings that are likely drop shadows or text effects.
+
+        These are blocks that overlap significantly with the text bbox or
+        are contained within a slightly expanded version of it.
+
+        Args:
+            text_block: The primary text block.
+            result: Classification result for accessing page data.
+
+        Returns:
+            List of Image/Drawing blocks that should be claimed.
+        """
+        page_data = result.page_data
+        text_bbox = text_block.bbox
+        expanded_bbox = text_bbox.expand(_SHADOW_MARGIN)
+
+        shadow_blocks: list[Image | Drawing] = []
+
+        for block in page_data.blocks:
+            if not isinstance(block, Image | Drawing):
+                continue
+
+            # Skip the text block itself
+            if block is text_block:
+                continue
+
+            # Check if block overlaps significantly with text or is contained
+            # in the expanded bbox
+            if expanded_bbox.contains(block.bbox) or text_bbox.iou(block.bbox) > 0.3:
+                shadow_blocks.append(block)
+
+        return shadow_blocks
