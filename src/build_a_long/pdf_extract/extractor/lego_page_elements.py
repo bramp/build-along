@@ -934,6 +934,9 @@ class Page(LegoPageElement):
     previews: list[Preview] = Field(default_factory=list)
     """List of preview elements showing model diagrams."""
 
+    unassigned_blocks_count: int = 0
+    """Count of blocks on the page that were not assigned to any element or filtered out."""
+
     open_bags: list[OpenBag] = Field(default_factory=list)
     steps: list[Step] = Field(default_factory=list)
     catalog: list[Part] = Field(default_factory=list)

@@ -56,6 +56,7 @@
       "orientation": "vertical"
     }
   ],
+  "unassigned_blocks_count": 2,
   "steps": [
     {
       "__tag__": "Step",

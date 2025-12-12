@@ -54,6 +54,7 @@
       }
     }
   },
+  "unassigned_blocks_count": 13,
   "steps": [
     {
       "__tag__": "Step",

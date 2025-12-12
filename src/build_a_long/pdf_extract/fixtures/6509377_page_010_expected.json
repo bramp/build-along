@@ -54,6 +54,7 @@
       }
     }
   },
+  "unassigned_blocks_count": 1,
   "open_bags": [
     {
       "__tag__": "OpenBag",
