@@ -1,0 +1,77 @@
+{
+  "__tag__": "Page",
+  "bbox": {
+    "x0": 0.0,
+    "y0": 0.0,
+    "x1": 552.76,
+    "y1": 496.06
+  },
+  "pdf_page_number": 174,
+  "categories": [
+    "instruction"
+  ],
+  "background": {
+    "__tag__": "Background",
+    "bbox": {
+      "x0": 0.0,
+      "y0": 0.0,
+      "x1": 552.76,
+      "y1": 496.06
+    },
+    "fill_color": [
+      0.54,
+      0.56,
+      0.58
+    ]
+  },
+  "page_number": {
+    "__tag__": "PageNumber",
+    "bbox": {
+      "x0": 14.17,
+      "y0": 473.86,
+      "x1": 27.44,
+      "y1": 483.86
+    },
+    "value": 174
+  },
+  "progress_bar": {
+    "__tag__": "ProgressBar",
+    "bbox": {
+      "x0": 35.02,
+      "y0": 474.1,
+      "x1": 552.76,
+      "y1": 482.59
+    },
+    "full_width": 517.74
+  },
+  "steps": [
+    {
+      "__tag__": "Step",
+      "bbox": {
+        "x0": 0.0,
+        "y0": 69.64,
+        "x1": 518.69,
+        "y1": 454.0
+      },
+      "step_number": {
+        "__tag__": "StepNumber",
+        "bbox": {
+          "x0": 14.17,
+          "y0": 69.64,
+          "x1": 58.35,
+          "y1": 95.64
+        },
+        "value": 336
+      },
+      "diagram": {
+        "__tag__": "Diagram",
+        "bbox": {
+          "x0": 0.0,
+          "y0": 90.21,
+          "x1": 518.69,
+          "y1": 454.0
+        }
+      }
+    }
+  ]
+}
