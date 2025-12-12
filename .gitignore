@@ -23,3 +23,5 @@ dist/
 # Local copies of collected pdfs.
 data
 sets.txt
+
+profile.out
