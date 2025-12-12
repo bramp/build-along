@@ -37,7 +37,7 @@ class TestDiagramScoring:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_candidates("diagram")
+        candidates = result.get_scored_candidates("diagram", valid_only=False)
         assert len(candidates) == 1
         assert candidates[0].bbox == img.bbox
 
@@ -60,14 +60,15 @@ class TestDiagramScoring:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_candidates("diagram")
+        candidates = result.get_scored_candidates("diagram", valid_only=False)
         # Each image creates a separate candidate
         assert len(candidates) == 3
 
     def test_filters_out_full_page_images(self, classifier: DiagramClassifier) -> None:
         """Test that full-page images (>95% of page) are filtered out."""
         page_bbox = BBox(0, 0, 200, 300)
-        # Image covering 95% of page (background/border)
+        # Image covering 96% of page (background/border)
+        # 199 * 299 = 59501. 200 * 300 = 60000. Ratio = 0.99
         large_img = Image(id=1, bbox=BBox(0, 0, 199, 299))
         # Normal image
         normal_img = Image(id=2, bbox=BBox(50, 100, 100, 150))
@@ -81,7 +82,7 @@ class TestDiagramScoring:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_candidates("diagram")
+        candidates = result.get_scored_candidates("diagram", valid_only=False)
         # Should only have the normal image
         assert len(candidates) == 1
         assert candidates[0].bbox == normal_img.bbox
@@ -104,11 +105,11 @@ class TestDiagramBuilding:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_candidates("diagram")
+        candidates = result.get_scored_candidates("diagram", valid_only=False)
         assert len(candidates) == 1
 
         # Build the diagram
-        diagram = result.build(candidates[0])
+        diagram = classifier.build(candidates[0], result)
         assert isinstance(diagram, Diagram)
         assert diagram.bbox == img.bbox
 
@@ -131,10 +132,11 @@ class TestDiagramBuilding:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_candidates("diagram")
+        candidates = result.get_scored_candidates("diagram", valid_only=False)
         assert len(candidates) == 3  # Three candidates during scoring
 
         # Build the first candidate - should cluster all three
+        # Use result.build to ensure source blocks are marked as consumed
         diagram = result.build(candidates[0])
         assert isinstance(diagram, Diagram)
 
@@ -171,11 +173,12 @@ class TestDiagramBuilding:
         # Simulate another classifier consuming img2
         result._consumed_blocks.add(img2.id)
 
-        candidates = result.get_candidates("diagram")
+        candidates = result.get_scored_candidates("diagram", valid_only=False)
 
         # Build diagram from img1 - should only cluster with unclaimed images
         # Since img2 is consumed, img1 and img3 are not connected
         img1_candidate = next(c for c in candidates if img1 in c.source_blocks)
+        # Use result.build
         diagram = result.build(img1_candidate)
 
         assert isinstance(diagram, Diagram)
@@ -200,10 +203,10 @@ class TestDiagramBuilding:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_candidates("diagram")
+        candidates = result.get_scored_candidates("diagram", valid_only=False)
         assert len(candidates) == 2
 
-        # Build both diagrams
+        # Build both diagrams using result.build
         diagram1 = result.build(candidates[0])
         diagram2 = result.build(candidates[1])
 
