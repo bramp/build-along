@@ -35,6 +35,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
     Preview,
     ProgressBar,
+    Scale,
     Step,
     TriviaText,
 )
@@ -66,6 +67,7 @@ class PageClassifier(LabelClassifier):
             "preview",
             "progress_bar",
             "open_bag",
+            "scale",
             "step",
             "parts_list",
             "rotation_symbol",
@@ -145,6 +147,16 @@ class PageClassifier(LabelClassifier):
             best_cand = trivia_text_candidates[0]
             trivia_text = result.build(best_cand)
             assert isinstance(trivia_text, TriviaText)
+
+        # Build scale indicator (if any) - only one per page
+        scale = None
+        scale_candidates = result.get_scored_candidates(
+            "scale", valid_only=False, exclude_failed=True
+        )
+        if scale_candidates:
+            best_cand = scale_candidates[0]
+            scale = result.build(best_cand)
+            assert isinstance(scale, Scale)
 
         # Get open bags from candidates
         open_bags: list[OpenBag] = []
@@ -265,6 +277,7 @@ class PageClassifier(LabelClassifier):
             progress_bar=progress_bar,
             background=background,
             dividers=dividers,
+            scale=scale,
             previews=previews,
             trivia_text=trivia_text,
             unassigned_blocks_count=unassigned_count,

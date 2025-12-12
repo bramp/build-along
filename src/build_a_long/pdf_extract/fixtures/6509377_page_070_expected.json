@@ -54,7 +54,26 @@
       }
     }
   },
-  "unassigned_blocks_count": 32,
+  "scale": {
+    "__tag__": "Scale",
+    "bbox": {
+      "x0": 14.67,
+      "y0": 439.42,
+      "x1": 145.58,
+      "y1": 467.67
+    },
+    "length": {
+      "__tag__": "PieceLength",
+      "bbox": {
+        "x0": 92.87,
+        "y0": 447.15,
+        "x1": 105.66,
+        "y1": 459.94
+      },
+      "value": 3
+    }
+  },
+  "unassigned_blocks_count": 3,
   "steps": [
     {
       "__tag__": "Step",

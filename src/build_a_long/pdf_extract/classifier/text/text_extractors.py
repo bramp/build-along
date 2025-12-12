@@ -190,3 +190,28 @@ def extract_element_id(text: str) -> str | None:
         return stripped_text
 
     return None
+
+
+def is_scale_text(text: str) -> bool:
+    """Check if text represents a 1:1 scale indicator.
+
+    Scale indicators show that the printed size matches the actual LEGO piece
+    size. The format is "1:1" with optional whitespace around the colon.
+
+    Args:
+        text: Text to check
+
+    Returns:
+        True if the text is a scale indicator, False otherwise
+
+    Examples:
+        >>> is_scale_text("1:1")
+        True
+        >>> is_scale_text("1 : 1")
+        True
+        >>> is_scale_text("1:2")
+        False
+        >>> is_scale_text("abc")
+        False
+    """
+    return bool(re.fullmatch(r"1\s*:\s*1", text.strip()))

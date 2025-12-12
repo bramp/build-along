@@ -7,6 +7,7 @@ from build_a_long.pdf_extract.classifier.text.text_extractors import (
     extract_page_number_value,
     extract_part_count_value,
     extract_step_number_value,
+    is_scale_text,
 )
 from build_a_long.pdf_extract.classifier.text.text_histogram import TextHistogram
 
@@ -16,6 +17,7 @@ __all__ = [
     "extract_page_number_value",
     "extract_part_count_value",
     "extract_step_number_value",
+    "is_scale_text",
     "FontSizeHints",
     "TextHistogram",
 ]

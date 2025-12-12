@@ -529,6 +529,44 @@ def filter_by_max_area[T: HasBBox](
     return [item for item in items if item.bbox.area <= threshold]
 
 
+def find_smallest_containing_box[T: HasBBox](
+    inner_bbox: BBox,
+    containers: list[T],
+) -> T | None:
+    """Find the smallest container that fully contains the inner bbox.
+
+    Useful for finding bounding boxes around elements like scale indicators,
+    where you want to find the tightest-fitting container.
+
+    Args:
+        inner_bbox: The bounding box that must be contained
+        containers: List of items with bbox property to search
+
+    Returns:
+        The smallest container that contains inner_bbox, or None if not found
+
+    Example:
+        >>> # Find the smallest Drawing box that contains some text
+        >>> box = find_smallest_containing_box(text.bbox, drawings)
+    """
+    best_container: T | None = None
+    best_area = float("inf")
+
+    for container in containers:
+        # Must contain the inner bbox
+        if not container.bbox.contains(inner_bbox):
+            continue
+
+        container_area = container.bbox.area
+
+        # Track smallest
+        if container_area < best_area:
+            best_area = container_area
+            best_container = container
+
+    return best_container
+
+
 def group_by_similar_bbox[T: HasBBox](
     items: list[T],
     tolerance: float = 2.0,

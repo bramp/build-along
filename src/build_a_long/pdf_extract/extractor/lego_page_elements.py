@@ -219,6 +219,38 @@ class Shine(LegoPageElement):
         return f"Shine(bbox={self.bbox})"
 
 
+class Scale(LegoPageElement):
+    """A 1:1 scale indicator showing the actual size of a piece.
+
+    Positional context: Typically appears at the bottom of the page, showing
+    a piece bar/ruler with a piece length indicator, part image, and "1:1" text
+    to indicate the printed scale matches the actual LEGO piece size.
+
+    This helps builders verify piece lengths by measuring against the printed
+    instruction manual.
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["Scale"] = Field(default="Scale", alias="__tag__", frozen=True)
+
+    length: PieceLength
+    """The piece length indicator showing the measurement (e.g., 3 studs)."""
+
+    # Note: Scale elements often contain a part image, but it's typically composed
+    # of vector Drawing blocks rather than a raster Image. These drawings are
+    # captured in the Scale's source_blocks rather than as a separate PartImage.
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"Scale(length={self.length.value})"
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over this Scale and all child elements."""
+        yield self
+        yield from self.length.iter_elements()
+
+
 class PartImage(LegoPageElement):
     """A candidate image that could represent a LEGO part.
 
@@ -931,6 +963,9 @@ class Page(LegoPageElement):
     dividers: list[Divider] = Field(default_factory=list)
     """List of divider lines on the page separating sections."""
 
+    scale: Scale | None = None
+    """Scale indicator showing 1:1 printed size reference for piece lengths."""
+
     previews: list[Preview] = Field(default_factory=list)
     """List of preview elements showing model diagrams."""
 
@@ -993,6 +1028,9 @@ class Page(LegoPageElement):
         for divider in self.dividers:
             yield from divider.iter_elements()
 
+        if self.scale:
+            yield from self.scale.iter_elements()
+
         for preview in self.previews:
             yield from preview.iter_elements()
 
@@ -1015,6 +1053,7 @@ LegoPageElements = Annotated[
     | PieceLength
     | PartImage
     | Shine
+    | Scale
     | ProgressBar
     | ProgressBarIndicator
     | Background

@@ -750,6 +750,23 @@ class ClassificationResult(BaseModel):
         """
         return block.id in self.removal_reasons
 
+    def count_unassigned_blocks(self) -> int:
+        """Count blocks that were neither removed nor consumed by a classifier.
+
+        A block is considered "unassigned" if it:
+        - Was not marked for removal (not in removal_reasons)
+        - Was not consumed during construction (not in _consumed_blocks)
+
+        This is useful for tracking classification completeness and
+        identifying blocks that were not recognized.
+
+        Returns:
+            Number of blocks that remain unassigned
+        """
+        all_block_ids = {b.id for b in self.page_data.blocks}
+        removed_ids = set(self.removal_reasons.keys())
+        return len(all_block_ids - removed_ids - self._consumed_blocks)
+
     def get_removal_reason(self, block: Blocks) -> RemovalReason | None:
         """Get the reason why a block was removed.
 
