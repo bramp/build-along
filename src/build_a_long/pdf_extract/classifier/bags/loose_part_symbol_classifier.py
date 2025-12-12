@@ -83,26 +83,20 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
         """Rules to identify the anchor block (small circle)."""
         return [
             IsInstanceFilter(Drawing),
-            # Max size 80 (individual block)
+            # Size 20-80 (individual block)
             SizeRangeRule(
+                min_width=20.0,
+                min_height=20.0,
                 max_width=80.0,
                 max_height=80.0,
                 weight=0.0,
                 required=True,
-                name="max_size",
+                name="size",
             ),
-            # Min size 20
-            SizeRangeRule(
-                min_width=20.0,
-                min_height=20.0,
-                weight=0.0,
-                required=True,
-                name="min_size",
-            ),
-            # Aspect ratio 0.8 - 1.25 (circular)
+            # Aspect ratio 0.9 - 1.1 (circular)
             AspectRatioRule(
-                min_ratio=0.8,
-                max_ratio=1.25,
+                min_ratio=0.9,
+                max_ratio=1.1,
                 weight=0.0,
                 required=True,
                 name="circular_aspect",
@@ -129,7 +123,7 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
         # We need to iterate carefully as we might modify them
         for candidate in candidates:
             # Skip if already marked as failed by rules
-            if not candidate.is_valid:
+            if candidate.failure_reason is not None:
                 continue
 
             anchor = candidate.source_blocks[0]
@@ -139,10 +133,8 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
                 continue
 
             # Find blocks near this anchor (including images, which rules filtered out)
-            # Re-fetch small blocks for clustering context
-            # Optimization: filter only relevant blocks once?
-            # Or just iterate all blocks? `_find_nearby_blocks` iterates.
-            # Original code filtered `small_blocks` first.
+
+            # Find blocks near this anchor (including images, which rules filtered out)
             cluster_blocks = self._find_cluster_blocks(anchor, result.page_data.blocks)
 
             if len(cluster_blocks) < 3:
@@ -154,9 +146,9 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
             # Calculate combined bbox
             symbol_bbox = BBox.union_all([b.bbox for b in cluster_blocks])
 
-            # Check aspect ratio - should be roughly square (0.6 to 1.6)
+            # Check aspect ratio - should be roughly square (0.9 to 1.1)
             aspect = symbol_bbox.width / symbol_bbox.height if symbol_bbox.height else 0
-            if not (0.6 <= aspect <= 1.6):
+            if not (0.9 <= aspect <= 1.1):
                 candidate.failure_reason = f"Bad cluster aspect ratio: {aspect:.2f}"
                 continue
 
