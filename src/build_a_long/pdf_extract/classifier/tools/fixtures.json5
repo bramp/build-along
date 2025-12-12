@@ -15,7 +15,7 @@
     {
       description: "Star Wars Millennium Falcon (75375) - Individual page fixtures",
       pdf: "data/75375/6509377.pdf",
-      pages: "10-17,45,149,172-175,180",
+      pages: "10-17,45,70,149,172-175,180",
     },
     {
       description: "Ideas Christmas Tree (40573) - Individual page fixtures",
