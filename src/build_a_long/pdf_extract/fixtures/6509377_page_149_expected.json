@@ -45,7 +45,7 @@
     },
     "full_width": 517.74
   },
-  "unassigned_blocks_count": 90,
+  "unassigned_blocks_count": 1,
   "open_bags": [
     {
       "__tag__": "OpenBag",
@@ -106,10 +106,10 @@
       "loose_part_symbol": {
         "__tag__": "LoosePartSymbol",
         "bbox": {
-          "x0": 356.67,
-          "y0": 83.1,
-          "x1": 423.06,
-          "y1": 149.49
+          "x0": 355.44,
+          "y0": 81.73,
+          "x1": 423.88,
+          "y1": 150.3
         }
       }
     }
