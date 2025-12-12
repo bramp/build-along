@@ -284,6 +284,20 @@ HTTP caching (VCR):
 
 Note: We do not commit cassettes to the repo. In CI, you can add a cache step to persist the cassette directory between runs for faster tests and fewer network calls.
 
+## Profiling
+
+I can't figure out how to get pants to run cProfile directly, so use this workaround:
+
+```shell
+pip install -r 3rdparty/requirements.txt
+pip install -r 3rdparty/requirements-dev.txt
+
+python -m cProfile -o profile.out -m build_a_long.pdf_extract.main --output-dir debug/all data/75375/6509377.pdf
+
+# Then analyze with SnakeViz:
+snakeviz profile.out
+```
+
 ## Contributing
 
 Contributions are welcome! Please refer to the `TODO.md` file for a list of

@@ -608,6 +608,8 @@ class ClassificationResult(BaseModel):
         """
         return sum(1 for c in self.get_candidates(label) if c.constructed is not None)
 
+    # TODO This is one of the slowest methods. I wonder if we can change
+    # the internal data structures to make this faster.
     def get_all_candidates_for_block(self, block: Blocks) -> list[Candidate]:
         """Get all candidates for a block across all labels.
 

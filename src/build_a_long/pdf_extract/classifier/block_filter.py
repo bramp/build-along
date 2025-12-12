@@ -100,6 +100,7 @@ def filter_duplicate_blocks(
         if root_i != root_j:
             parent[root_j] = root_i
 
+    # TODO This is one of the slowest parts of processing.
     # Compare all pairs of blocks (O(n²))
     for i in range(n):
         for j in range(i + 1, n):

@@ -7,3 +7,4 @@ pytest-randomly~=4.0.1
 pytest-recording~=0.13.4
 vcrpy~=8.1.0
 PyYAML~=6.0.3
+snakeviz~=2.2.2
