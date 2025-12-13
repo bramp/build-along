@@ -25,8 +25,8 @@ class RotationSymbolConfig(BaseModel):
     )
 
     min_size: float = Field(
-        default=41.4,
-        description="Minimum width/height in points for rotation symbols (~41.4px).",
+        default=25.0,
+        description="Minimum width/height in points for rotation symbols.",
     )
 
     max_size: float = Field(

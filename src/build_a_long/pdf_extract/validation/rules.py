@@ -742,6 +742,11 @@ def validate_content_no_metadata_overlap(
     that should be distinct from actual content (steps, parts, etc.).
     Any overlap indicates a classification error.
 
+    Note: For steps, we check the core structural components (step_number,
+    parts_list) but NOT diagrams, because diagrams are large visual elements
+    that may legitimately extend into the page metadata area. Subassemblies
+    are also excluded since they may contain large diagrams.
+
     Args:
         validation: ValidationResult to add issues to
         page: The classified Page object
@@ -758,9 +763,21 @@ def validate_content_no_metadata_overlap(
         return
 
     # Collect content elements (top-level only)
+    # For steps, check structural components (step_number, parts_list) but not
+    # diagrams or subassemblies, as those are large visual elements that may
+    # legitimately extend into the metadata area
     content_elements: list[tuple[str, object]] = []
     for step in page.steps:
-        content_elements.append((f"Step {step.step_number.value}", step))
+        # Check step_number (should never overlap metadata)
+        content_elements.append(
+            (f"Step {step.step_number.value} number", step.step_number)
+        )
+        # Check parts_list if present (should never overlap metadata)
+        if step.parts_list:
+            content_elements.append(
+                (f"Step {step.step_number.value} parts_list", step.parts_list)
+            )
+        # Diagrams are intentionally NOT checked - they may extend into metadata area
     for bag in page.open_bags:
         content_elements.append(("OpenBag", bag))
     for part in page.catalog:

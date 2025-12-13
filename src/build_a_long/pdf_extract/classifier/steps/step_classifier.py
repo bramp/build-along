@@ -1121,7 +1121,8 @@ def _has_divider_between(
     """Check if there is a divider line between two bboxes.
 
     A divider is considered "between" if it crosses the line connecting
-    the centers of the two bboxes.
+    the centers of the two bboxes. Dividers that are contained within
+    either bbox are ignored (they are internal dividers, not separating).
 
     Args:
         bbox1: First bounding box
@@ -1136,6 +1137,11 @@ def _has_divider_between(
 
     for divider in dividers:
         div_bbox = divider.bbox
+
+        # Skip dividers that are fully contained within either bbox
+        # (these are internal dividers within a container, not separating)
+        if bbox1.contains(div_bbox) or bbox2.contains(div_bbox):
+            continue
 
         # Check if divider is vertical (separates left/right)
         if div_bbox.width < div_bbox.height * 0.2:  # Vertical line

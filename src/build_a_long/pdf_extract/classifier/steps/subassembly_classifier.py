@@ -452,7 +452,14 @@ class SubAssemblyClassifier(LabelClassifier):
 
         for step_num_candidate in sorted_step_nums:
             # Build the step number element
-            step_num_elem = result.build(step_num_candidate)
+            # This may fail if the candidate is a duplicate (e.g., two text blocks
+            # with the same text at the same location, sharing the same outline
+            # effect blocks). In that case, skip this candidate and continue.
+            try:
+                step_num_elem = result.build(step_num_candidate)
+            except CandidateFailedError:
+                # This candidate was claimed by a duplicate - skip it
+                continue
             assert isinstance(step_num_elem, StepNumber)
 
             # Find the best matching diagram for this step

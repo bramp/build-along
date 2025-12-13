@@ -89,18 +89,25 @@ class RotationSymbolClassifier(LabelClassifier):
         config = self.config
         page_bbox = page_data.bbox
         assert page_bbox is not None
+        rs_config = config.rotation_symbol
 
         # Filter out page-spanning drawings (>90% of page width or height).
         # These are typically background/border elements that would connect
         # unrelated symbols together during clustering.
         max_width = page_bbox.width * 0.9
         max_height = page_bbox.height * 0.9
+
+        # Filter out drawings larger than the max rotation symbol size.
+        max_drawing_size = rs_config.max_size
+
         drawings: list[Drawing] = [
             block
             for block in page_data.blocks
             if isinstance(block, Drawing)
             and block.bbox.width <= max_width
             and block.bbox.height <= max_height
+            and block.bbox.width <= max_drawing_size
+            and block.bbox.height <= max_drawing_size
         ]
 
         if not drawings:

@@ -37,12 +37,12 @@ class SubAssemblyConfig(BaseModel):
     )
 
     max_page_width_ratio: float = Field(
-        default=0.5,
+        default=0.7,
         description="Maximum width of a SubAssembly as a ratio of the page width.",
     )
 
     max_page_height_ratio: float = Field(
-        default=0.5,
+        default=0.7,
         description="Maximum height of a SubAssembly as a ratio of the page height.",
     )
 
