@@ -10,7 +10,7 @@
 //   ],
 //   "generated_with_requirements": [
 //     "Pillow~=12.0.0",
-//     "PyMuPDF~=1.26.6",
+//     "PyMuPDF~=1.26.7",
 //     "PyYAML~=6.0.3",
 //     "annotated-types~=0.7.0",
 //     "beautifulsoup4~=4.14.3",
@@ -19,12 +19,14 @@
 //     "limits~=5.6.0",
 //     "numpy~=2.3.5",
 //     "pydantic~=2.12.5",
+//     "pytesseract~=0.3.13",
 //     "pytest-cov~=7.0.0",
 //     "pytest-randomly~=4.0.1",
 //     "pytest-recording~=0.13.4",
 //     "pytest~=9.0.2",
 //     "pytimeparse2~=1.7.1",
 //     "scipy~=1.16.3",
+//     "snakeviz~=2.2.2",
 //     "tqdm~=4.67.1",
 //     "vcrpy~=8.1.0"
 //   ],
@@ -887,34 +889,60 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "7777d0b7124c2ebc94849536b6a1fb85d158df3b9d873935e63036559391534c",
-              "url": "https://files.pythonhosted.org/packages/4f/bf/6e02e3d84b32c137c71a0a3dcdba8f2f6e9950619a3bc272245c7c06a051/pymupdf-1.26.6-cp310-abi3-manylinux_2_28_x86_64.whl"
+              "hash": "1d5106f46e1ca0d64d46bd51892372a4f82076bdc14a9678d33d630702abca36",
+              "url": "https://files.pythonhosted.org/packages/62/9b/f86224847949577a523be2207315ae0fd3155b5d909cd66c274d095349a3/pymupdf-1.26.7-cp310-abi3-musllinux_1_2_x86_64.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "e46f320a136ad55e5219e8f0f4061bdf3e4c12b126d2740d5a49f73fae7ea176",
-              "url": "https://files.pythonhosted.org/packages/9e/5c/dec354eee5fe4966c715f33818ed4193e0e6c986cf8484de35b6c167fb8e/pymupdf-1.26.6-cp310-abi3-macosx_10_9_x86_64.whl"
+              "hash": "69dfc78f206a96e5b3ac22741263ebab945fdf51f0dbe7c5757c3511b23d9d72",
+              "url": "https://files.pythonhosted.org/packages/2a/6b/3de1714d734ff949be1e90a22375d0598d3540b22ae73eb85c2d7d1f36a9/pymupdf-1.26.7-cp310-abi3-manylinux_2_28_x86_64.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "617ba69e02c44f0da1c0e039ea4a26cf630849fd570e169c71daeb8ac52a81d6",
-              "url": "https://files.pythonhosted.org/packages/e4/c8/377cf20e31f58d4c243bfcf2d3cb7466d5b97003b10b9f1161f11eb4a994/pymupdf-1.26.6-cp310-abi3-manylinux_2_28_aarch64.whl"
+              "hash": "71add8bdc8eb1aaa207c69a13400693f06ad9b927bea976f5d5ab9df0bb489c3",
+              "url": "https://files.pythonhosted.org/packages/48/d6/09b28f027b510838559f7748807192149c419b30cb90e6d5f0cf916dc9dc/pymupdf-1.26.7.tar.gz"
             },
             {
               "algorithm": "sha256",
-              "hash": "6844cd2396553c0fa06de4869d5d5ecb1260e6fc3b9d85abe8fa35f14dd9d688",
-              "url": "https://files.pythonhosted.org/packages/ec/a0/11adb742d18142bd623556cd3b5d64649816decc5eafd30efc9498657e76/pymupdf-1.26.6-cp310-abi3-macosx_11_0_arm64.whl"
+              "hash": "e419b609996434a14a80fa060adec72c434a1cca6a511ec54db9841bc5d51b3c",
+              "url": "https://files.pythonhosted.org/packages/65/e7/47af26f3ac76be7ac3dd4d6cc7ee105948a8355d774e5ca39857bf91c11c/pymupdf-1.26.7-cp310-abi3-manylinux_2_28_aarch64.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "a2b4531cd4ab36d6f1f794bb6d3c33b49bda22f36d58bb1f3e81cbc10183bd2b",
-              "url": "https://files.pythonhosted.org/packages/ec/d7/a6f0e03a117fa2ad79c4b898203bb212b17804f92558a6a339298faca7bb/pymupdf-1.26.6.tar.gz"
+              "hash": "31aa9c8377ea1eea02934b92f4dcf79fb2abba0bf41f8a46d64c3e31546a3c02",
+              "url": "https://files.pythonhosted.org/packages/72/74/448b6172927c829c6a3fba80078d7b0a016ebbe2c9ee528821f5ea21677a/pymupdf-1.26.7-cp310-abi3-macosx_11_0_arm64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "07085718dfdae5ab83b05eb5eb397f863bcc538fe05135318a01ea353e7a1353",
+              "url": "https://files.pythonhosted.org/packages/94/35/cd74cea1787b2247702ef8522186bdef32e9cb30a099e6bb864627ef6045/pymupdf-1.26.7-cp310-abi3-macosx_10_9_x86_64.whl"
             }
           ],
           "project_name": "pymupdf",
           "requires_dists": [],
           "requires_python": ">=3.10",
-          "version": "1.26.6"
+          "version": "1.26.7"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
+              "hash": "7a99c6c2ac598360693d83a416e36e0b33a67638bb9d77fdcac094a3589d4b34",
+              "url": "https://files.pythonhosted.org/packages/7a/33/8312d7ce74670c9d39a532b2c246a853861120486be9443eebf048043637/pytesseract-0.3.13-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "4bf5f880c99406f52a3cfc2633e42d9dc67615e69d8a509d74867d3baddb5db9",
+              "url": "https://files.pythonhosted.org/packages/9f/a6/7d679b83c285974a7cb94d739b461fa7e7a9b17a3abfd7bf6cbc5c2394b0/pytesseract-0.3.13.tar.gz"
+            }
+          ],
+          "project_name": "pytesseract",
+          "requires_dists": [
+            "Pillow>=8.0.0",
+            "packaging>=21.3"
+          ],
+          "requires_python": ">=3.8",
+          "version": "0.3.13"
         },
         {
           "artifacts": [
@@ -1263,6 +1291,26 @@
           "artifacts": [
             {
               "algorithm": "sha256",
+              "hash": "77e7b9c82f6152edc330040319b97612351cd9b48c706434c535c2df31d10ac5",
+              "url": "https://files.pythonhosted.org/packages/cd/f7/83b00cdf4f114f10750a18b64c27dc34636d0ac990ccac98282f5c0fbb43/snakeviz-2.2.2-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "08028c6f8e34a032ff14757a38424770abb8662fb2818985aeea0d9bc13a7d83",
+              "url": "https://files.pythonhosted.org/packages/04/06/82f56563b16d33c2586ac2615a3034a83a4ff1969b84c8d79339e5d07d73/snakeviz-2.2.2.tar.gz"
+            }
+          ],
+          "project_name": "snakeviz",
+          "requires_dists": [
+            "tornado>=2.0"
+          ],
+          "requires_python": ">=3.9",
+          "version": "2.2.2"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
               "hash": "0cc76456a30e20f5d7f2e14a98a4ae2ee4e5abdc7c5ea0aafe795f344bc7984c",
               "url": "https://files.pythonhosted.org/packages/14/a0/bb38d3b76b8cae341dad93a2dd83ab7462e6dbcdd84d43f54ee60a8dc167/soupsieve-2.8-py3-none-any.whl"
             },
@@ -1276,6 +1324,59 @@
           "requires_dists": [],
           "requires_python": ">=3.9",
           "version": "2.8"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
+              "hash": "892595c100cd9b53a768cbfc109dfc55dec884afe2de5290611a566078d9692d",
+              "url": "https://files.pythonhosted.org/packages/70/b1/1d03ae4526a393b0b839472a844397337f03c7f3a1e6b5c82241f0e18281/tornado-6.5.3-cp39-abi3-musllinux_1_2_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "dbc4b4c32245b952566e17a20d5c1648fbed0e16aec3fc7e19f3974b36e0e47c",
+              "url": "https://files.pythonhosted.org/packages/58/e2/7a7535d23133443552719dba526dacbb7415f980157da9f14950ddb88ad6/tornado-6.5.3-cp39-abi3-musllinux_1_2_aarch64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "f72ac800be2ac73ddc1504f7aa21069a4137e8d70c387172c063d363d04f2208",
+              "url": "https://files.pythonhosted.org/packages/78/f6/685b869f5b5b9d9547571be838c6106172082751696355b60fc32a4988ed/tornado-6.5.3-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "16abdeb0211796ffc73765bc0a20119712d68afeeaf93d1a3f2edf6b3aee8d5a",
+              "url": "https://files.pythonhosted.org/packages/7f/2e/3d22d478f27cb4b41edd4db7f10cd7846d0a28ea443342de3dba97035166/tornado-6.5.3.tar.gz"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "c43c4fc4f5419c6561cfb8b884a8f6db7b142787d47821e1a0e1296253458265",
+              "url": "https://files.pythonhosted.org/packages/91/4c/f0d19edf24912b7f21ae5e941f7798d132ad4d9b71441c1e70917a297265/tornado-6.5.3-cp39-abi3-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "db238e8a174b4bfd0d0238b8cfcff1c14aebb4e2fcdafbf0ea5da3b81caceb4c",
+              "url": "https://files.pythonhosted.org/packages/a0/1f/9ff92eca81ff17a86286ec440dcd5eab0400326eb81761aa9a4eecb1ffb9/tornado-6.5.3-cp39-abi3-musllinux_1_2_i686.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "5977a396f83496657779f59a48c38096ef01edfe4f42f1c0634b791dde8165d0",
+              "url": "https://files.pythonhosted.org/packages/ca/9c/594b631f0b8dc5977080c7093d1e96f1377c10552577d2c31bb0208c9362/tornado-6.5.3-cp39-abi3-macosx_10_9_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "2dd7d7e8d3e4635447a8afd4987951e3d4e8d1fb9ad1908c54c4002aabab0520",
+              "url": "https://files.pythonhosted.org/packages/d3/e9/bf22f66e1d5d112c0617974b5ce86666683b32c09b355dfcd59f8d5c8ef6/tornado-6.5.3-cp39-abi3-macosx_10_9_universal2.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "de8b3fed4b3afb65d542d7702ac8767b567e240f6a43020be8eaef59328f117b",
+              "url": "https://files.pythonhosted.org/packages/eb/2b/e02da94f4a4aef2bb3b923c838ef284a77548a5f06bac2a8682b36b4eead/tornado-6.5.3-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+            }
+          ],
+          "project_name": "tornado",
+          "requires_dists": [],
+          "requires_python": ">=3.9",
+          "version": "6.5.3"
         },
         {
           "artifacts": [
@@ -1506,7 +1607,7 @@
   "prefer_older_binary": false,
   "requirements": [
     "Pillow~=12.0.0",
-    "PyMuPDF~=1.26.6",
+    "PyMuPDF~=1.26.7",
     "PyYAML~=6.0.3",
     "annotated-types~=0.7.0",
     "beautifulsoup4~=4.14.3",
@@ -1515,12 +1616,14 @@
     "limits~=5.6.0",
     "numpy~=2.3.5",
     "pydantic~=2.12.5",
+    "pytesseract~=0.3.13",
     "pytest-cov~=7.0.0",
     "pytest-randomly~=4.0.1",
     "pytest-recording~=0.13.4",
     "pytest~=9.0.2",
     "pytimeparse2~=1.7.1",
     "scipy~=1.16.3",
+    "snakeviz~=2.2.2",
     "tqdm~=4.67.1",
     "vcrpy~=8.1.0"
   ],
