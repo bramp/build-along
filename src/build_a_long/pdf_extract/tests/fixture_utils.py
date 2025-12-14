@@ -95,28 +95,62 @@ def load_fixture_definitions(index_path: Path | None = None) -> list[FixtureDefi
     if not index_path.exists():
         return []
 
-    data = json5.loads(index_path.read_text())
-    return [FixtureDefinition.model_validate(f) for f in data.get("fixtures", [])]
+    data: dict = json5.loads(index_path.read_text())  # type: ignore[assignment]
+    fixtures = data.get("fixtures", [])
+    if not isinstance(fixtures, list):
+        return []
+    return [FixtureDefinition.model_validate(f) for f in fixtures]
+
+
+class ExtractionResult:
+    """Result of extracting pages from a PDF.
+
+    Attributes:
+        pages: Dict mapping page number to PageData
+        total_pages: Total number of pages in the PDF
+        page_numbers: List of page numbers that were extracted
+    """
+
+    def __init__(
+        self,
+        pages: dict[int, PageData],
+        total_pages: int,
+        page_numbers: list[int],
+    ) -> None:
+        self.pages = pages
+        self.total_pages = total_pages
+        self.page_numbers = page_numbers
 
 
 def extract_pages_from_pdf(
-    pdf_path: Path, page_numbers: list[int]
-) -> dict[int, PageData]:
-    """Extract specific pages from a PDF.
+    pdf_path: Path, page_range: str | None = None
+) -> ExtractionResult:
+    """Extract pages from a PDF.
+
+    Opens the PDF once and extracts the specified pages.
 
     Args:
         pdf_path: Path to PDF file
-        page_numbers: 1-indexed page numbers to extract
+        page_range: Page range string (e.g., '10-17,180'). None means all pages.
 
     Returns:
-        Dict mapping page number to PageData
+        ExtractionResult with pages dict, total page count, and extracted page numbers
     """
     result: dict[int, PageData] = {}
 
     with pymupdf.open(str(pdf_path)) as doc:
+        total_pages = len(doc)
+
+        # Resolve page range to actual page numbers
+        if page_range is None:
+            page_numbers = list(range(1, total_pages + 1))
+        else:
+            page_ranges = parse_page_ranges(page_range)
+            page_numbers = list(page_ranges.page_numbers(total_pages))
+
         for page_num in page_numbers:
             page_index = page_num - 1
-            if page_index < 0 or page_index >= len(doc):
+            if page_index < 0 or page_index >= total_pages:
                 continue
 
             page = doc[page_index]
@@ -124,17 +158,4 @@ def extract_pages_from_pdf(
             page_data = extractor.extract_page_data()
             result[page_num] = page_data
 
-    return result
-
-
-def get_pdf_page_count(pdf_path: Path) -> int:
-    """Get the total number of pages in a PDF.
-
-    Args:
-        pdf_path: Path to PDF file
-
-    Returns:
-        Number of pages
-    """
-    with pymupdf.open(str(pdf_path)) as doc:
-        return len(doc)
+    return ExtractionResult(result, total_pages, page_numbers)

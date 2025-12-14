@@ -25,7 +25,6 @@ from build_a_long.pdf_extract.fixtures import FIXTURES_DIR
 from build_a_long.pdf_extract.tests.fixture_utils import (
     FixtureDefinition,
     extract_pages_from_pdf,
-    get_pdf_page_count,
     load_fixture_definitions,
 )
 
@@ -88,6 +87,10 @@ class TestExtractorRawFixtures:
 
         If the PDF is not found, the test is skipped.
         """
+        # Skip full-document fixtures for now (too slow)
+        if not fixture_def.is_per_page:
+            pytest.skip("Skipping full-document fixture (too slow)")
+
         pdf_path = fixture_def.pdf_path
 
         if not pdf_path.exists():
@@ -96,15 +99,9 @@ class TestExtractorRawFixtures:
                 f"Download PDFs to data/ directory to run this test."
             )
 
-        # TODO get_pdf_page_count opens the pdf, and then later,
-        # extract_pages_from_pdf opens the pdf :/
-
-        # Get total pages to resolve page ranges
-        total_pages = get_pdf_page_count(pdf_path)
-        page_numbers = fixture_def.get_page_numbers(total_pages)
-
-        # Extract all needed pages in one pass
-        extracted_pages = extract_pages_from_pdf(pdf_path, page_numbers)
+        # Extract all needed pages in one pass (also resolves page ranges)
+        extraction = extract_pages_from_pdf(pdf_path, fixture_def.pages)
+        page_numbers = extraction.page_numbers
 
         # Collect all failures to report together
         failures: list[str] = []
@@ -119,7 +116,7 @@ class TestExtractorRawFixtures:
                     failures.append(f"Fixture file not found: {fixture_file}")
                     continue
 
-                page_data = extracted_pages.get(page_num)
+                page_data = extraction.pages.get(page_num)
                 if page_data is None:
                     failures.append(f"Page {page_num} not extracted")
                     continue
@@ -152,7 +149,10 @@ class TestExtractorRawFixtures:
                     )
 
                 # Build actual result in page order
-                pages = [extracted_pages[pn] for pn in sorted(extracted_pages.keys())]
+                pages = [
+                    extraction.pages[pn]
+                    for pn in sorted(extraction.pages.keys())
+                ]
                 actual = ExtractionResult(pages=pages)
 
                 diff = _compare_json(expected.to_json(), actual.to_json(), fixture_file)

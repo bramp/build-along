@@ -17,10 +17,10 @@ import sys
 from pathlib import Path
 
 from build_a_long.pdf_extract.extractor import ExtractionResult
+from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.tests.fixture_utils import (
     FixtureDefinition,
     extract_pages_from_pdf,
-    get_pdf_page_count,
     load_fixture_definitions,
 )
 
@@ -33,7 +33,7 @@ FIXTURES_DIR = Path("src/build_a_long/pdf_extract/fixtures")
 
 def save_fixture(
     fixture_def: FixtureDefinition,
-    extracted_pages: dict[int, object],
+    extracted_pages: dict[int, PageData],
     output_dir: Path,
 ) -> None:
     """Save extracted pages as fixture files.
@@ -97,21 +97,17 @@ def main() -> int:
             errors.append(str(pdf_path))
             continue
 
-        # Get page count and resolve page numbers
-        total_pages = get_pdf_page_count(pdf_path)
-        page_numbers = fixture_def.get_page_numbers(total_pages)
-
         if fixture_def.pages:
             log.info(f"  Extracting pages: {fixture_def.pages}")
         else:
             log.info("  Extracting all pages")
 
-        # Extract all needed pages in one pass
-        extracted_pages = extract_pages_from_pdf(pdf_path, page_numbers)
-        log.info(f"  Extracted {len(extracted_pages)} page(s)")
+        # Extract all needed pages in one pass (also resolves page ranges)
+        extraction = extract_pages_from_pdf(pdf_path, fixture_def.pages)
+        log.info(f"  Extracted {len(extraction.pages)} page(s)")
 
         # Save fixture(s)
-        save_fixture(fixture_def, extracted_pages, FIXTURES_DIR)
+        save_fixture(fixture_def, extraction.pages, FIXTURES_DIR)
 
         log.info("")
 
