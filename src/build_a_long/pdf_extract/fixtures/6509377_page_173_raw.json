@@ -13,12 +13,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 34.02,
-						"y0": 69.64,
+						"y0": 64.51,
 						"x1": 78.28,
-						"y1": 95.64
+						"y1": 96.9
 					},
 					"id": 0,
-					"draw_order": 5,
+					"draw_order": 1000000,
 					"text": "335",
 					"font_name": "CeraPro-Light",
 					"font_size": 26.0,
@@ -35,12 +35,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 524.69,
-						"y0": 473.86,
+						"y0": 471.89,
 						"x1": 538.59,
-						"y1": 483.86
+						"y1": 484.35
 					},
 					"id": 1,
-					"draw_order": 28,
+					"draw_order": 1000000,
 					"text": "173",
 					"font_name": "CeraPro-Light",
 					"font_size": 10.0,

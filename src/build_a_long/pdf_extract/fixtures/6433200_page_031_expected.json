@@ -28,9 +28,9 @@
     "__tag__": "PageNumber",
     "bbox": {
       "x0": 529.29,
-      "y0": 473.84,
+      "y0": 471.89,
       "x1": 538.59,
-      "y1": 483.84
+      "y1": 484.32
     },
     "value": 31
   },
@@ -44,7 +44,7 @@
     },
     "full_width": 517.74
   },
-  "unassigned_blocks_count": 0,
+  "unassigned_blocks_count": 1,
   "steps": [
     {
       "__tag__": "Step",
@@ -58,9 +58,9 @@
         "__tag__": "StepNumber",
         "bbox": {
           "x0": 34.02,
-          "y0": 21.35,
+          "y0": 16.27,
           "x1": 63.24,
-          "y1": 47.35
+          "y1": 48.59
         },
         "value": 43
       },

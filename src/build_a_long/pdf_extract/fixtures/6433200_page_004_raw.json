@@ -13,12 +13,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 473.84,
+						"y0": 471.89,
 						"x1": 19.79,
-						"y1": 483.84
+						"y1": 484.32
 					},
 					"id": 0,
-					"draw_order": 377,
+					"draw_order": 1000000,
 					"text": "4",
 					"font_name": "CeraPro-Medium",
 					"font_size": 10.0,

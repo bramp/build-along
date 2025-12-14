@@ -12,18 +12,18 @@
 				{
 					"__tag__": "Text",
 					"bbox": {
-						"x0": 116.42,
-						"y0": 114.28,
-						"x1": 148.01,
-						"y1": 167.59
+						"x0": 113.93,
+						"y0": 104.82,
+						"x1": 148.61,
+						"y1": 169.89
 					},
 					"id": 0,
-					"draw_order": 365,
+					"draw_order": 1000000,
 					"text": "1",
 					"font_name": "CeraPro-Medium",
 					"font_size": 50.0,
 					"font_flags": 4,
-					"color": 1578517,
+					"color": 0,
 					"ascender": 1.0,
 					"descender": -0.24,
 					"origin": [
@@ -35,12 +35,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 316.2,
-						"y0": 60.44,
+						"y0": 58.86,
 						"x1": 325.08,
-						"y1": 68.44
+						"y1": 68.83
 					},
 					"id": 1,
-					"draw_order": 373,
+					"draw_order": 1000000,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -57,12 +57,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 268.34,
-						"y0": 83.13,
+						"y0": 78.0,
 						"x1": 277.96,
-						"y1": 109.13
+						"y1": 110.39
 					},
 					"id": 2,
-					"draw_order": 375,
+					"draw_order": 1000000,
 					"text": "1",
 					"font_name": "CeraPro-Light",
 					"font_size": 26.0,
@@ -79,12 +79,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 321.96,
-						"y0": 270.25,
+						"y0": 268.67,
 						"x1": 330.84,
-						"y1": 278.25
+						"y1": 278.64
 					},
 					"id": 3,
-					"draw_order": 381,
+					"draw_order": 1000000,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -101,12 +101,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 268.34,
-						"y0": 292.94,
+						"y0": 287.81,
 						"x1": 282.62,
-						"y1": 318.94
+						"y1": 320.2
 					},
 					"id": 4,
-					"draw_order": 383,
+					"draw_order": 1000000,
 					"text": "2",
 					"font_name": "CeraPro-Light",
 					"font_size": 26.0,
@@ -123,12 +123,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 473.86,
+						"y0": 471.89,
 						"x1": 23.88,
-						"y1": 483.86
+						"y1": 484.35
 					},
 					"id": 5,
-					"draw_order": 398,
+					"draw_order": 1000000,
 					"text": "10",
 					"font_name": "CeraPro-Light",
 					"font_size": 10.0,

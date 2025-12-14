@@ -13,12 +13,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 53.38,
-						"y0": 49.4,
+						"y0": 47.82,
 						"x1": 62.26,
-						"y1": 57.4
+						"y1": 57.79
 					},
 					"id": 0,
-					"draw_order": 7,
+					"draw_order": 1000000,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -35,12 +35,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 86.31,
-						"y0": 49.4,
+						"y0": 47.82,
 						"x1": 95.19,
-						"y1": 57.4
+						"y1": 57.79
 					},
 					"id": 1,
-					"draw_order": 11,
+					"draw_order": 1000000,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -57,12 +57,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 144.45,
-						"y0": 49.4,
+						"y0": 47.82,
 						"x1": 153.33,
-						"y1": 57.4
+						"y1": 57.79
 					},
 					"id": 2,
-					"draw_order": 15,
+					"draw_order": 1000000,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -79,12 +79,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 34.02,
-						"y0": 72.09,
+						"y0": 66.96,
 						"x1": 58.56,
-						"y1": 98.09
+						"y1": 99.35
 					},
 					"id": 3,
-					"draw_order": 18,
+					"draw_order": 1000000,
 					"text": "15",
 					"font_name": "CeraPro-Light",
 					"font_size": 26.0,
@@ -101,12 +101,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 100.71,
-						"y0": 276.03,
+						"y0": 274.46,
 						"x1": 109.18,
-						"y1": 284.03
+						"y1": 284.42
 					},
 					"id": 4,
-					"draw_order": 25,
+					"draw_order": 1000000,
 					"text": "3x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -123,12 +123,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 34.02,
-						"y0": 303.5,
+						"y0": 298.37,
 						"x1": 58.34,
-						"y1": 329.5
+						"y1": 330.76
 					},
 					"id": 5,
-					"draw_order": 28,
+					"draw_order": 1000000,
 					"text": "16",
 					"font_name": "CeraPro-Light",
 					"font_size": 26.0,
@@ -145,17 +145,17 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 90.18,
-						"y0": 111.67,
+						"y0": 108.51,
 						"x1": 96.1,
-						"y1": 127.67
+						"y1": 128.45
 					},
 					"id": 6,
-					"draw_order": 42,
+					"draw_order": 1000000,
 					"text": "1",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578517,
+					"color": 1578774,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -166,79 +166,79 @@
 				{
 					"__tag__": "Text",
 					"bbox": {
-						"x0": 90.18,
-						"y0": 111.67,
-						"x1": 96.1,
-						"y1": 127.67
+						"x0": 181.12,
+						"y0": 108.51,
+						"x1": 189.91,
+						"y1": 128.45
 					},
 					"id": 7,
-					"draw_order": 44,
-					"text": "1",
+					"draw_order": 1000000,
+					"text": "2",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578517,
+					"color": 1578774,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
-						90.18,
+						181.12,
 						124.51
 					]
 				},
 				{
 					"__tag__": "Text",
 					"bbox": {
-						"x0": 181.12,
-						"y0": 111.67,
-						"x1": 189.91,
-						"y1": 127.67
+						"x0": 245.4,
+						"y0": 151.74,
+						"x1": 262.88,
+						"y1": 171.68
 					},
 					"id": 8,
-					"draw_order": 49,
-					"text": "2",
+					"draw_order": 1000000,
+					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578517,
+					"color": 0,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
-						181.12,
-						124.51
+						245.4,
+						167.74
 					]
 				},
 				{
 					"__tag__": "Text",
 					"bbox": {
-						"x0": 181.12,
-						"y0": 111.67,
-						"x1": 189.91,
-						"y1": 127.67
+						"x0": 245.4,
+						"y0": 151.74,
+						"x1": 262.88,
+						"y1": 171.68
 					},
 					"id": 9,
-					"draw_order": 53,
-					"text": "2",
+					"draw_order": 1000000,
+					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578517,
+					"color": 0,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
-						181.12,
-						124.51
+						245.4,
+						167.74
 					]
 				},
 				{
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 529.49,
-						"y0": 473.86,
+						"y0": 471.89,
 						"x1": 538.58,
-						"y1": 483.86
+						"y1": 484.35
 					},
 					"id": 10,
-					"draw_order": 72,
+					"draw_order": 1000000,
 					"text": "15",
 					"font_name": "CeraPro-Light",
 					"font_size": 10.0,

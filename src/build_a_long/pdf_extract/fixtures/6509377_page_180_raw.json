@@ -13,12 +13,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 22.57,
+						"y0": 21.4,
 						"x1": 22.21,
-						"y1": 28.57
+						"y1": 28.85
 					},
 					"id": 0,
-					"draw_order": 2,
+					"draw_order": 1000000,
 					"text": "5x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -35,12 +35,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 29.79,
+						"y0": 28.6,
 						"x1": 30.86,
-						"y1": 35.79
+						"y1": 36.08
 					},
 					"id": 1,
-					"draw_order": 2,
+					"draw_order": 1000000,
 					"text": "614101",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -57,12 +57,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 57.82,
+						"y0": 56.65,
 						"x1": 21.18,
-						"y1": 63.82
+						"y1": 64.11
 					},
 					"id": 2,
-					"draw_order": 4,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -79,12 +79,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 65.04,
+						"y0": 63.85,
 						"x1": 34.27,
-						"y1": 71.04
+						"y1": 71.33
 					},
 					"id": 3,
-					"draw_order": 4,
+					"draw_order": 1000000,
 					"text": "300501",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -101,12 +101,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 90.56,
+						"y0": 89.39,
 						"x1": 21.18,
-						"y1": 96.56
+						"y1": 96.84
 					},
 					"id": 4,
-					"draw_order": 6,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -123,12 +123,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 97.77,
+						"y0": 96.59,
 						"x1": 33.75,
-						"y1": 103.77
+						"y1": 104.06
 					},
 					"id": 5,
-					"draw_order": 6,
+					"draw_order": 1000000,
 					"text": "302301",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -145,12 +145,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 126.89,
+						"y0": 125.72,
 						"x1": 22.42,
-						"y1": 132.89
+						"y1": 133.17
 					},
 					"id": 6,
-					"draw_order": 8,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -167,12 +167,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 134.11,
+						"y0": 132.92,
 						"x1": 36.4,
-						"y1": 140.11
+						"y1": 140.4
 					},
 					"id": 7,
-					"draw_order": 8,
+					"draw_order": 1000000,
 					"text": "6469441",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -189,12 +189,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 179.78,
+						"y0": 178.61,
 						"x1": 21.18,
-						"y1": 185.78
+						"y1": 186.07
 					},
 					"id": 8,
-					"draw_order": 10,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -211,12 +211,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 187.0,
+						"y0": 185.81,
 						"x1": 32.97,
-						"y1": 193.0
+						"y1": 193.29
 					},
 					"id": 9,
-					"draw_order": 10,
+					"draw_order": 1000000,
 					"text": "447701",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -233,12 +233,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 212.16,
+						"y0": 210.99,
 						"x1": 22.42,
-						"y1": 218.16
+						"y1": 218.44
 					},
 					"id": 10,
-					"draw_order": 12,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -255,12 +255,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 219.37,
+						"y0": 218.19,
 						"x1": 37.83,
-						"y1": 225.37
+						"y1": 225.66
 					},
 					"id": 11,
-					"draw_order": 12,
+					"draw_order": 1000000,
 					"text": "6092587",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -277,12 +277,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 247.41,
+						"y0": 246.24,
 						"x1": 22.23,
-						"y1": 253.41
+						"y1": 253.69
 					},
 					"id": 12,
-					"draw_order": 14,
+					"draw_order": 1000000,
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -299,12 +299,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 254.63,
+						"y0": 253.44,
 						"x1": 36.35,
-						"y1": 260.63
+						"y1": 260.92
 					},
 					"id": 13,
-					"draw_order": 14,
+					"draw_order": 1000000,
 					"text": "6251252",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -321,12 +321,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 282.66,
+						"y0": 281.49,
 						"x1": 22.42,
-						"y1": 288.66
+						"y1": 288.95
 					},
 					"id": 14,
-					"draw_order": 16,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -343,12 +343,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 289.88,
+						"y0": 288.69,
 						"x1": 34.11,
-						"y1": 295.88
+						"y1": 296.17
 					},
 					"id": 15,
-					"draw_order": 16,
+					"draw_order": 1000000,
 					"text": "4121921",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -365,12 +365,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 318.46,
+						"y0": 317.29,
 						"x1": 21.18,
-						"y1": 324.46
+						"y1": 324.74
 					},
 					"id": 16,
-					"draw_order": 18,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -387,12 +387,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 325.67,
+						"y0": 324.49,
 						"x1": 37.79,
-						"y1": 331.67
+						"y1": 331.96
 					},
 					"id": 17,
-					"draw_order": 18,
+					"draw_order": 1000000,
 					"text": "4666999",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -409,12 +409,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 358.75,
+						"y0": 357.58,
 						"x1": 22.23,
-						"y1": 364.75
+						"y1": 365.03
 					},
 					"id": 18,
-					"draw_order": 20,
+					"draw_order": 1000000,
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -431,12 +431,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 365.97,
+						"y0": 364.78,
 						"x1": 36.5,
-						"y1": 371.97
+						"y1": 372.26
 					},
 					"id": 19,
-					"draw_order": 20,
+					"draw_order": 1000000,
 					"text": "6273851",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -453,12 +453,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 400.12,
+						"y0": 398.95,
 						"x1": 22.42,
-						"y1": 406.12
+						"y1": 406.41
 					},
 					"id": 20,
-					"draw_order": 22,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -475,12 +475,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 407.34,
+						"y0": 406.15,
 						"x1": 35.56,
-						"y1": 413.34
+						"y1": 413.63
 					},
 					"id": 21,
-					"draw_order": 22,
+					"draw_order": 1000000,
 					"text": "4114309",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -497,12 +497,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 451.58,
+						"y0": 450.41,
 						"x1": 21.18,
-						"y1": 457.58
+						"y1": 457.86
 					},
 					"id": 22,
-					"draw_order": 24,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -519,12 +519,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 458.79,
+						"y0": 457.61,
 						"x1": 34.15,
-						"y1": 464.79
+						"y1": 465.08
 					},
 					"id": 23,
-					"draw_order": 24,
+					"draw_order": 1000000,
 					"text": "4181134",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -541,12 +541,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 167.52,
-						"y0": 468.51,
+						"y0": 467.34,
 						"x1": 175.74,
-						"y1": 474.51
+						"y1": 474.79
 					},
 					"id": 24,
-					"draw_order": 26,
+					"draw_order": 1000000,
 					"text": "8x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -563,12 +563,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 167.52,
-						"y0": 475.72,
+						"y0": 474.54,
 						"x1": 190.34,
-						"y1": 481.72
+						"y1": 482.01
 					},
 					"id": 25,
-					"draw_order": 26,
+					"draw_order": 1000000,
 					"text": "6344819",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -585,12 +585,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 25.63,
+						"y0": 24.46,
 						"x1": 178.07,
-						"y1": 31.63
+						"y1": 31.91
 					},
 					"id": 26,
-					"draw_order": 28,
+					"draw_order": 1000000,
 					"text": "23x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -607,12 +607,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 32.85,
+						"y0": 31.66,
 						"x1": 189.27,
-						"y1": 38.85
+						"y1": 39.14
 					},
 					"id": 27,
-					"draw_order": 28,
+					"draw_order": 1000000,
 					"text": "6210270",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -629,12 +629,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 56.17,
+						"y0": 55.0,
 						"x1": 174.87,
-						"y1": 62.17
+						"y1": 62.45
 					},
 					"id": 28,
-					"draw_order": 30,
+					"draw_order": 1000000,
 					"text": "8x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -651,12 +651,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 63.38,
+						"y0": 62.2,
 						"x1": 186.98,
-						"y1": 69.38
+						"y1": 69.67
 					},
 					"id": 29,
-					"draw_order": 30,
+					"draw_order": 1000000,
 					"text": "403226",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -673,12 +673,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 83.46,
+						"y0": 82.29,
 						"x1": 177.24,
-						"y1": 89.46
+						"y1": 89.75
 					},
 					"id": 30,
-					"draw_order": 32,
+					"draw_order": 1000000,
 					"text": "12x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -695,12 +695,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 90.68,
+						"y0": 89.49,
 						"x1": 189.45,
-						"y1": 96.68
+						"y1": 96.97
 					},
 					"id": 31,
-					"draw_order": 32,
+					"draw_order": 1000000,
 					"text": "6279875",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -717,12 +717,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 112.56,
+						"y0": 111.39,
 						"x1": 174.38,
-						"y1": 118.56
+						"y1": 118.84
 					},
 					"id": 32,
-					"draw_order": 34,
+					"draw_order": 1000000,
 					"text": "7x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -739,12 +739,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 119.78,
+						"y0": 118.59,
 						"x1": 186.84,
-						"y1": 125.78
+						"y1": 126.07
 					},
 					"id": 33,
-					"draw_order": 34,
+					"draw_order": 1000000,
 					"text": "302326",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -761,12 +761,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 146.7,
+						"y0": 145.53,
 						"x1": 174.58,
-						"y1": 152.7
+						"y1": 152.98
 					},
 					"id": 34,
-					"draw_order": 36,
+					"draw_order": 1000000,
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -783,12 +783,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 153.91,
+						"y0": 152.73,
 						"x1": 187.29,
-						"y1": 159.91
+						"y1": 160.2
 					},
 					"id": 35,
-					"draw_order": 36,
+					"draw_order": 1000000,
 					"text": "300426",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -805,12 +805,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 174.71,
+						"y0": 173.54,
 						"x1": 174.58,
-						"y1": 180.71
+						"y1": 181.0
 					},
 					"id": 36,
-					"draw_order": 38,
+					"draw_order": 1000000,
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -827,12 +827,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 181.93,
+						"y0": 180.74,
 						"x1": 187.78,
-						"y1": 187.93
+						"y1": 188.22
 					},
 					"id": 37,
-					"draw_order": 38,
+					"draw_order": 1000000,
 					"text": "6156991",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -849,12 +849,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 207.77,
+						"y0": 206.6,
 						"x1": 174.9,
-						"y1": 213.77
+						"y1": 214.05
 					},
 					"id": 38,
-					"draw_order": 40,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -871,12 +871,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 214.99,
+						"y0": 213.8,
 						"x1": 187.18,
-						"y1": 220.99
+						"y1": 221.28
 					},
 					"id": 39,
-					"draw_order": 40,
+					"draw_order": 1000000,
 					"text": "6114987",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -893,12 +893,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 249.29,
+						"y0": 248.12,
 						"x1": 174.9,
-						"y1": 255.29
+						"y1": 255.57
 					},
 					"id": 40,
-					"draw_order": 42,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -915,12 +915,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 256.5,
+						"y0": 255.32,
 						"x1": 189.53,
-						"y1": 262.5
+						"y1": 262.79
 					},
 					"id": 41,
-					"draw_order": 42,
+					"draw_order": 1000000,
 					"text": "4593678",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -937,12 +937,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 298.54,
+						"y0": 297.37,
 						"x1": 174.9,
-						"y1": 304.54
+						"y1": 304.83
 					},
 					"id": 42,
-					"draw_order": 44,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -959,12 +959,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 305.76,
+						"y0": 304.57,
 						"x1": 190.7,
-						"y1": 311.76
+						"y1": 312.05
 					},
 					"id": 43,
-					"draw_order": 44,
+					"draw_order": 1000000,
 					"text": "6228588",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -981,12 +981,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 328.18,
+						"y0": 327.01,
 						"x1": 175.97,
-						"y1": 334.18
+						"y1": 334.46
 					},
 					"id": 44,
-					"draw_order": 46,
+					"draw_order": 1000000,
 					"text": "11x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1003,12 +1003,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 335.4,
+						"y0": 334.21,
 						"x1": 186.68,
-						"y1": 341.4
+						"y1": 341.69
 					},
 					"id": 45,
-					"draw_order": 46,
+					"draw_order": 1000000,
 					"text": "6313116",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1025,12 +1025,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 364.12,
+						"y0": 362.95,
 						"x1": 173.66,
-						"y1": 370.12
+						"y1": 370.4
 					},
 					"id": 46,
-					"draw_order": 48,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1047,12 +1047,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 371.33,
+						"y0": 370.15,
 						"x1": 191.76,
-						"y1": 377.33
+						"y1": 377.62
 					},
 					"id": 47,
-					"draw_order": 48,
+					"draw_order": 1000000,
 					"text": "6000650",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1069,12 +1069,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 397.35,
+						"y0": 396.18,
 						"x1": 173.66,
-						"y1": 403.35
+						"y1": 403.64
 					},
 					"id": 48,
-					"draw_order": 50,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1091,12 +1091,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 404.57,
+						"y0": 403.38,
 						"x1": 187.63,
-						"y1": 410.57
+						"y1": 410.86
 					},
 					"id": 49,
-					"draw_order": 50,
+					"draw_order": 1000000,
 					"text": "6016172",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1113,12 +1113,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 436.89,
+						"y0": 435.72,
 						"x1": 173.66,
-						"y1": 442.89
+						"y1": 443.17
 					},
 					"id": 50,
-					"draw_order": 52,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1135,12 +1135,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 166.65,
-						"y0": 444.11,
+						"y0": 442.92,
 						"x1": 186.94,
-						"y1": 450.11
+						"y1": 450.4
 					},
 					"id": 51,
-					"draw_order": 52,
+					"draw_order": 1000000,
 					"text": "6117973",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1157,12 +1157,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 25.45,
+						"y0": 24.28,
 						"x1": 238.44,
-						"y1": 31.45
+						"y1": 31.73
 					},
 					"id": 52,
-					"draw_order": 54,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1179,12 +1179,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 32.67,
+						"y0": 31.48,
 						"x1": 252.77,
-						"y1": 38.67
+						"y1": 38.96
 					},
 					"id": 53,
-					"draw_order": 54,
+					"draw_order": 1000000,
 					"text": "6121485",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1201,12 +1201,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 61.95,
+						"y0": 60.79,
 						"x1": 238.44,
-						"y1": 67.95
+						"y1": 68.24
 					},
 					"id": 54,
-					"draw_order": 56,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1223,12 +1223,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 69.17,
+						"y0": 67.99,
 						"x1": 253.68,
-						"y1": 75.17
+						"y1": 75.46
 					},
 					"id": 55,
-					"draw_order": 56,
+					"draw_order": 1000000,
 					"text": "6271346",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1245,12 +1245,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 94.5,
+						"y0": 93.33,
 						"x1": 239.49,
-						"y1": 100.5
+						"y1": 100.78
 					},
 					"id": 56,
-					"draw_order": 58,
+					"draw_order": 1000000,
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1267,12 +1267,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 101.71,
+						"y0": 100.53,
 						"x1": 251.93,
-						"y1": 107.71
+						"y1": 108.01
 					},
 					"id": 57,
-					"draw_order": 58,
+					"draw_order": 1000000,
 					"text": "302226",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1289,12 +1289,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 124.52,
+						"y0": 123.35,
 						"x1": 239.65,
-						"y1": 130.52
+						"y1": 130.81
 					},
 					"id": 58,
-					"draw_order": 60,
+					"draw_order": 1000000,
 					"text": "8x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1311,12 +1311,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 131.74,
+						"y0": 130.55,
 						"x1": 251.58,
-						"y1": 137.74
+						"y1": 138.03
 					},
 					"id": 59,
-					"draw_order": 60,
+					"draw_order": 1000000,
 					"text": "242026",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1333,12 +1333,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 155.27,
+						"y0": 154.1,
 						"x1": 239.68,
-						"y1": 161.27
+						"y1": 161.55
 					},
 					"id": 60,
-					"draw_order": 62,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1355,12 +1355,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 162.48,
+						"y0": 161.3,
 						"x1": 253.74,
-						"y1": 168.48
+						"y1": 168.77
 					},
 					"id": 61,
-					"draw_order": 62,
+					"draw_order": 1000000,
 					"text": "4124096",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1377,12 +1377,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 187.81,
+						"y0": 186.64,
 						"x1": 238.44,
-						"y1": 193.81
+						"y1": 194.09
 					},
 					"id": 62,
-					"draw_order": 64,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1399,12 +1399,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 195.03,
+						"y0": 193.84,
 						"x1": 252.0,
-						"y1": 201.03
+						"y1": 201.32
 					},
 					"id": 63,
-					"draw_order": 64,
+					"draw_order": 1000000,
 					"text": "368026",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1421,12 +1421,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 222.88,
+						"y0": 221.71,
 						"x1": 238.44,
-						"y1": 228.88
+						"y1": 229.16
 					},
 					"id": 64,
-					"draw_order": 66,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1443,12 +1443,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 230.09,
+						"y0": 228.91,
 						"x1": 251.81,
-						"y1": 236.09
+						"y1": 236.38
 					},
 					"id": 65,
-					"draw_order": 66,
+					"draw_order": 1000000,
 					"text": "6211476",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1465,12 +1465,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 252.72,
+						"y0": 251.55,
 						"x1": 239.68,
-						"y1": 258.72
+						"y1": 259.0
 					},
 					"id": 66,
-					"draw_order": 68,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1487,12 +1487,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 259.94,
+						"y0": 258.75,
 						"x1": 253.19,
-						"y1": 265.94
+						"y1": 266.23
 					},
 					"id": 67,
-					"draw_order": 68,
+					"draw_order": 1000000,
 					"text": "6089119",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1509,12 +1509,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 284.19,
+						"y0": 283.02,
 						"x1": 239.68,
-						"y1": 290.19
+						"y1": 290.47
 					},
 					"id": 68,
-					"draw_order": 70,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1531,12 +1531,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 291.4,
+						"y0": 290.22,
 						"x1": 251.21,
-						"y1": 297.4
+						"y1": 297.69
 					},
 					"id": 69,
-					"draw_order": 70,
+					"draw_order": 1000000,
 					"text": "362326",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1553,12 +1553,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 320.69,
+						"y0": 319.52,
 						"x1": 239.49,
-						"y1": 326.69
+						"y1": 326.97
 					},
 					"id": 70,
-					"draw_order": 72,
+					"draw_order": 1000000,
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1575,12 +1575,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 327.9,
+						"y0": 326.72,
 						"x1": 251.51,
-						"y1": 333.9
+						"y1": 334.2
 					},
 					"id": 71,
-					"draw_order": 72,
+					"draw_order": 1000000,
 					"text": "362226",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1597,12 +1597,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 364.75,
+						"y0": 363.58,
 						"x1": 239.68,
-						"y1": 370.75
+						"y1": 371.04
 					},
 					"id": 72,
-					"draw_order": 74,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1619,12 +1619,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 371.97,
+						"y0": 370.78,
 						"x1": 254.34,
-						"y1": 377.97
+						"y1": 378.26
 					},
 					"id": 73,
-					"draw_order": 74,
+					"draw_order": 1000000,
 					"text": "6154860",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1641,12 +1641,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 400.36,
+						"y0": 399.19,
 						"x1": 238.44,
-						"y1": 406.36
+						"y1": 406.64
 					},
 					"id": 74,
-					"draw_order": 76,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1663,12 +1663,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 407.57,
+						"y0": 406.39,
 						"x1": 253.97,
-						"y1": 413.57
+						"y1": 413.87
 					},
 					"id": 75,
-					"draw_order": 76,
+					"draw_order": 1000000,
 					"text": "6168620",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1685,12 +1685,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 433.44,
+						"y0": 432.27,
 						"x1": 239.49,
-						"y1": 439.44
+						"y1": 439.73
 					},
 					"id": 76,
-					"draw_order": 78,
+					"draw_order": 1000000,
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1707,12 +1707,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 440.66,
+						"y0": 439.47,
 						"x1": 254.94,
-						"y1": 446.66
+						"y1": 446.95
 					},
 					"id": 77,
-					"draw_order": 78,
+					"draw_order": 1000000,
 					"text": "6327548",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1729,12 +1729,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 468.51,
+						"y0": 467.34,
 						"x1": 239.68,
-						"y1": 474.51
+						"y1": 474.79
 					},
 					"id": 78,
-					"draw_order": 80,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1751,12 +1751,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 231.43,
-						"y0": 475.72,
+						"y0": 474.54,
 						"x1": 250.63,
-						"y1": 481.72
+						"y1": 482.01
 					},
 					"id": 79,
-					"draw_order": 80,
+					"draw_order": 1000000,
 					"text": "302126",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1773,12 +1773,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 22.03,
+						"y0": 20.86,
 						"x1": 302.35,
-						"y1": 28.03
+						"y1": 28.31
 					},
 					"id": 80,
-					"draw_order": 82,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1795,12 +1795,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 29.25,
+						"y0": 28.06,
 						"x1": 318.67,
-						"y1": 35.25
+						"y1": 35.54
 					},
 					"id": 81,
-					"draw_order": 82,
+					"draw_order": 1000000,
 					"text": "6426359",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1817,12 +1817,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 56.52,
+						"y0": 55.35,
 						"x1": 302.35,
-						"y1": 62.52
+						"y1": 62.8
 					},
 					"id": 82,
-					"draw_order": 84,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1839,12 +1839,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 63.73,
+						"y0": 62.55,
 						"x1": 317.47,
-						"y1": 69.73
+						"y1": 70.02
 					},
 					"id": 83,
-					"draw_order": 84,
+					"draw_order": 1000000,
 					"text": "6162892",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1861,12 +1861,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 90.46,
+						"y0": 89.29,
 						"x1": 303.27,
-						"y1": 96.46
+						"y1": 96.74
 					},
 					"id": 84,
-					"draw_order": 86,
+					"draw_order": 1000000,
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1883,12 +1883,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 97.68,
+						"y0": 96.49,
 						"x1": 314.44,
-						"y1": 103.68
+						"y1": 103.97
 					},
 					"id": 85,
-					"draw_order": 86,
+					"draw_order": 1000000,
 					"text": "371026",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1905,12 +1905,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 129.45,
+						"y0": 128.28,
 						"x1": 302.35,
-						"y1": 135.45
+						"y1": 135.73
 					},
 					"id": 86,
-					"draw_order": 88,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1927,12 +1927,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 136.66,
+						"y0": 135.48,
 						"x1": 314.89,
-						"y1": 142.66
+						"y1": 142.95
 					},
 					"id": 87,
-					"draw_order": 88,
+					"draw_order": 1000000,
 					"text": "301026",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1949,12 +1949,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 163.03,
+						"y0": 161.86,
 						"x1": 303.27,
-						"y1": 169.03
+						"y1": 169.31
 					},
 					"id": 88,
-					"draw_order": 90,
+					"draw_order": 1000000,
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -1971,12 +1971,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 170.25,
+						"y0": 169.06,
 						"x1": 314.3,
-						"y1": 176.25
+						"y1": 176.54
 					},
 					"id": 89,
-					"draw_order": 90,
+					"draw_order": 1000000,
 					"text": "243126",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -1993,12 +1993,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 217.14,
+						"y0": 215.97,
 						"x1": 302.35,
-						"y1": 223.14
+						"y1": 223.42
 					},
 					"id": 90,
-					"draw_order": 92,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2015,12 +2015,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 224.35,
+						"y0": 223.17,
 						"x1": 320.11,
-						"y1": 230.35
+						"y1": 230.64
 					},
 					"id": 91,
-					"draw_order": 92,
+					"draw_order": 1000000,
 					"text": "6483080",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2037,12 +2037,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 250.72,
+						"y0": 249.55,
 						"x1": 303.59,
-						"y1": 256.72
+						"y1": 257.0
 					},
 					"id": 92,
-					"draw_order": 94,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2059,12 +2059,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 257.94,
+						"y0": 256.75,
 						"x1": 317.5,
-						"y1": 263.94
+						"y1": 264.23
 					},
 					"id": 93,
-					"draw_order": 94,
+					"draw_order": 1000000,
 					"text": "6439175",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2081,12 +2081,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 293.31,
+						"y0": 292.14,
 						"x1": 302.35,
-						"y1": 299.31
+						"y1": 299.59
 					},
 					"id": 94,
-					"draw_order": 96,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2103,12 +2103,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 300.52,
+						"y0": 299.34,
 						"x1": 314.93,
-						"y1": 306.52
+						"y1": 306.81
 					},
 					"id": 95,
-					"draw_order": 96,
+					"draw_order": 1000000,
 					"text": "300126",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2125,12 +2125,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 330.31,
+						"y0": 329.14,
 						"x1": 302.35,
-						"y1": 336.31
+						"y1": 336.59
 					},
 					"id": 96,
-					"draw_order": 98,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2147,12 +2147,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 337.53,
+						"y0": 336.34,
 						"x1": 318.36,
-						"y1": 343.53
+						"y1": 343.82
 					},
 					"id": 97,
-					"draw_order": 98,
+					"draw_order": 1000000,
 					"text": "4560182",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2169,12 +2169,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 367.86,
+						"y0": 366.69,
 						"x1": 303.36,
-						"y1": 373.86
+						"y1": 374.14
 					},
 					"id": 98,
-					"draw_order": 100,
+					"draw_order": 1000000,
 					"text": "6x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2191,12 +2191,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 375.07,
+						"y0": 373.89,
 						"x1": 315.92,
-						"y1": 381.07
+						"y1": 381.36
 					},
 					"id": 99,
-					"draw_order": 100,
+					"draw_order": 1000000,
 					"text": "302026",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2213,12 +2213,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 404.32,
+						"y0": 403.15,
 						"x1": 303.07,
-						"y1": 410.32
+						"y1": 410.6
 					},
 					"id": 100,
-					"draw_order": 102,
+					"draw_order": 1000000,
 					"text": "7x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2235,12 +2235,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 411.54,
+						"y0": 410.35,
 						"x1": 317.92,
-						"y1": 417.54
+						"y1": 417.83
 					},
 					"id": 101,
-					"draw_order": 102,
+					"draw_order": 1000000,
 					"text": "6350415",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2257,12 +2257,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 468.51,
+						"y0": 467.34,
 						"x1": 303.59,
-						"y1": 474.51
+						"y1": 474.79
 					},
 					"id": 102,
-					"draw_order": 104,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2279,12 +2279,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 295.34,
-						"y0": 475.72,
+						"y0": 474.54,
 						"x1": 316.61,
-						"y1": 481.72
+						"y1": 482.01
 					},
 					"id": 103,
-					"draw_order": 104,
+					"draw_order": 1000000,
 					"text": "4116854",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2301,12 +2301,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 36.79,
+						"y0": 35.62,
 						"x1": 367.49,
-						"y1": 42.79
+						"y1": 43.07
 					},
 					"id": 104,
-					"draw_order": 106,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2323,12 +2323,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 44.01,
+						"y0": 42.82,
 						"x1": 379.25,
-						"y1": 50.01
+						"y1": 50.3
 					},
 					"id": 105,
-					"draw_order": 106,
+					"draw_order": 1000000,
 					"text": "366626",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2345,12 +2345,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 88.17,
+						"y0": 87.0,
 						"x1": 366.26,
-						"y1": 94.17
+						"y1": 94.45
 					},
 					"id": 106,
-					"draw_order": 108,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2367,12 +2367,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 95.38,
+						"y0": 94.2,
 						"x1": 379.09,
-						"y1": 101.38
+						"y1": 101.67
 					},
 					"id": 107,
-					"draw_order": 108,
+					"draw_order": 1000000,
 					"text": "389426",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2389,12 +2389,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 139.54,
+						"y0": 138.38,
 						"x1": 367.49,
-						"y1": 145.54
+						"y1": 145.83
 					},
 					"id": 108,
-					"draw_order": 110,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2411,12 +2411,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 146.76,
+						"y0": 145.58,
 						"x1": 380.03,
-						"y1": 152.76
+						"y1": 153.05
 					},
 					"id": 109,
-					"draw_order": 110,
+					"draw_order": 1000000,
 					"text": "300926",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2433,12 +2433,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 191.64,
+						"y0": 190.47,
 						"x1": 366.26,
-						"y1": 197.64
+						"y1": 197.92
 					},
 					"id": 110,
-					"draw_order": 112,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2455,12 +2455,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 198.86,
+						"y0": 197.67,
 						"x1": 383.76,
-						"y1": 204.86
+						"y1": 205.15
 					},
 					"id": 111,
-					"draw_order": 112,
+					"draw_order": 1000000,
 					"text": "6484084",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2477,12 +2477,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 241.58,
+						"y0": 240.41,
 						"x1": 366.26,
-						"y1": 247.58
+						"y1": 247.86
 					},
 					"id": 112,
-					"draw_order": 114,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2499,12 +2499,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 248.79,
+						"y0": 247.61,
 						"x1": 378.72,
-						"y1": 254.79
+						"y1": 255.09
 					},
 					"id": 113,
-					"draw_order": 114,
+					"draw_order": 1000000,
 					"text": "379526",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2521,12 +2521,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 292.24,
+						"y0": 291.07,
 						"x1": 367.49,
-						"y1": 298.24
+						"y1": 298.52
 					},
 					"id": 114,
-					"draw_order": 116,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2543,12 +2543,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 299.45,
+						"y0": 298.27,
 						"x1": 381.07,
-						"y1": 305.45
+						"y1": 305.74
 					},
 					"id": 115,
-					"draw_order": 116,
+					"draw_order": 1000000,
 					"text": "6170702",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2565,12 +2565,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 347.21,
+						"y0": 346.04,
 						"x1": 367.18,
-						"y1": 353.21
+						"y1": 353.5
 					},
 					"id": 116,
-					"draw_order": 118,
+					"draw_order": 1000000,
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2587,12 +2587,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 354.43,
+						"y0": 353.24,
 						"x1": 379.46,
-						"y1": 360.43
+						"y1": 360.72
 					},
 					"id": 117,
-					"draw_order": 118,
+					"draw_order": 1000000,
 					"text": "303426",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2609,12 +2609,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 407.23,
+						"y0": 406.06,
 						"x1": 366.26,
-						"y1": 413.23
+						"y1": 413.51
 					},
 					"id": 118,
-					"draw_order": 120,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2631,12 +2631,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 414.45,
+						"y0": 413.26,
 						"x1": 382.99,
-						"y1": 420.45
+						"y1": 420.74
 					},
 					"id": 119,
-					"draw_order": 120,
+					"draw_order": 1000000,
 					"text": "6037390",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2653,12 +2653,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 468.51,
+						"y0": 467.34,
 						"x1": 367.49,
-						"y1": 474.51
+						"y1": 474.79
 					},
 					"id": 120,
-					"draw_order": 122,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2675,12 +2675,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 359.25,
-						"y0": 475.72,
+						"y0": 474.54,
 						"x1": 382.2,
-						"y1": 481.72
+						"y1": 482.01
 					},
 					"id": 121,
-					"draw_order": 122,
+					"draw_order": 1000000,
 					"text": "4514845",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2697,12 +2697,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 65.41,
+						"y0": 64.24,
 						"x1": 467.25,
-						"y1": 71.41
+						"y1": 71.69
 					},
 					"id": 122,
-					"draw_order": 124,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2719,12 +2719,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 72.63,
+						"y0": 71.44,
 						"x1": 482.91,
-						"y1": 78.63
+						"y1": 78.92
 					},
 					"id": 123,
-					"draw_order": 124,
+					"draw_order": 1000000,
 					"text": "6240515",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2741,12 +2741,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 100.23,
+						"y0": 99.06,
 						"x1": 467.25,
-						"y1": 106.23
+						"y1": 106.51
 					},
 					"id": 124,
-					"draw_order": 126,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2763,12 +2763,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 107.44,
+						"y0": 106.26,
 						"x1": 483.36,
-						"y1": 113.44
+						"y1": 113.73
 					},
 					"id": 125,
-					"draw_order": 126,
+					"draw_order": 1000000,
 					"text": "4527943",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2785,12 +2785,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 142.24,
+						"y0": 141.07,
 						"x1": 467.25,
-						"y1": 148.24
+						"y1": 148.52
 					},
 					"id": 126,
-					"draw_order": 128,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2807,12 +2807,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 149.46,
+						"y0": 148.27,
 						"x1": 481.65,
-						"y1": 155.46
+						"y1": 155.75
 					},
 					"id": 127,
-					"draw_order": 128,
+					"draw_order": 1000000,
 					"text": "4165967",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2829,12 +2829,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 184.26,
+						"y0": 183.09,
 						"x1": 467.25,
-						"y1": 190.26
+						"y1": 190.54
 					},
 					"id": 128,
-					"draw_order": 130,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2851,12 +2851,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 191.47,
+						"y0": 190.29,
 						"x1": 482.93,
-						"y1": 197.47
+						"y1": 197.76
 					},
 					"id": 129,
-					"draw_order": 130,
+					"draw_order": 1000000,
 					"text": "4621548",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2873,12 +2873,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 462.4,
-						"y0": 305.05,
+						"y0": 303.88,
 						"x1": 469.41,
-						"y1": 311.05
+						"y1": 311.33
 					},
 					"id": 130,
-					"draw_order": 132,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2895,12 +2895,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 462.4,
-						"y0": 312.27,
+						"y0": 311.08,
 						"x1": 483.48,
-						"y1": 318.27
+						"y1": 318.56
 					},
 					"id": 131,
-					"draw_order": 132,
+					"draw_order": 1000000,
 					"text": "6315781",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2917,12 +2917,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 462.4,
-						"y0": 337.71,
+						"y0": 336.54,
 						"x1": 470.64,
-						"y1": 343.71
+						"y1": 343.99
 					},
 					"id": 132,
-					"draw_order": 134,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2939,12 +2939,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 462.4,
-						"y0": 344.92,
+						"y0": 343.74,
 						"x1": 483.84,
-						"y1": 350.92
+						"y1": 351.21
 					},
 					"id": 133,
-					"draw_order": 134,
+					"draw_order": 1000000,
 					"text": "6167936",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -2961,12 +2961,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 208.27,
+						"y0": 207.1,
 						"x1": 467.25,
-						"y1": 214.27
+						"y1": 214.55
 					},
 					"id": 134,
-					"draw_order": 136,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -2983,12 +2983,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 215.49,
+						"y0": 214.3,
 						"x1": 482.76,
-						"y1": 221.49
+						"y1": 221.78
 					},
 					"id": 135,
-					"draw_order": 136,
+					"draw_order": 1000000,
 					"text": "6021623",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3005,12 +3005,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 232.29,
+						"y0": 231.12,
 						"x1": 468.48,
-						"y1": 238.29
+						"y1": 238.57
 					},
 					"id": 136,
-					"draw_order": 138,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3027,12 +3027,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 239.5,
+						"y0": 238.32,
 						"x1": 482.02,
-						"y1": 245.5
+						"y1": 245.79
 					},
 					"id": 137,
-					"draw_order": 138,
+					"draw_order": 1000000,
 					"text": "6314247",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3049,12 +3049,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 255.76,
+						"y0": 254.59,
 						"x1": 468.17,
-						"y1": 261.76
+						"y1": 262.04
 					},
 					"id": 138,
-					"draw_order": 140,
+					"draw_order": 1000000,
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3071,12 +3071,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 262.98,
+						"y0": 261.79,
 						"x1": 481.98,
-						"y1": 268.98
+						"y1": 269.27
 					},
 					"id": 139,
-					"draw_order": 140,
+					"draw_order": 1000000,
 					"text": "6311890",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3093,12 +3093,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 281.04,
+						"y0": 279.87,
 						"x1": 468.27,
-						"y1": 287.04
+						"y1": 287.32
 					},
 					"id": 140,
-					"draw_order": 142,
+					"draw_order": 1000000,
 					"text": "5x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3115,12 +3115,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 288.25,
+						"y0": 287.07,
 						"x1": 482.96,
-						"y1": 294.25
+						"y1": 294.54
 					},
 					"id": 141,
-					"draw_order": 142,
+					"draw_order": 1000000,
 					"text": "4550169",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3137,12 +3137,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 377.38,
+						"y0": 376.21,
 						"x1": 467.25,
-						"y1": 383.38
+						"y1": 383.66
 					},
 					"id": 142,
-					"draw_order": 144,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3159,12 +3159,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 384.6,
+						"y0": 383.41,
 						"x1": 482.61,
-						"y1": 390.6
+						"y1": 390.89
 					},
 					"id": 143,
-					"draw_order": 144,
+					"draw_order": 1000000,
 					"text": "6267492",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3181,12 +3181,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 404.64,
+						"y0": 403.47,
 						"x1": 467.25,
-						"y1": 410.64
+						"y1": 410.92
 					},
 					"id": 144,
-					"draw_order": 146,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3203,12 +3203,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 411.85,
+						"y0": 410.67,
 						"x1": 483.13,
-						"y1": 417.85
+						"y1": 418.14
 					},
 					"id": 145,
-					"draw_order": 146,
+					"draw_order": 1000000,
 					"text": "6448315",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3225,12 +3225,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 436.57,
+						"y0": 435.4,
 						"x1": 467.25,
-						"y1": 442.57
+						"y1": 442.85
 					},
 					"id": 146,
-					"draw_order": 148,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3247,12 +3247,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 443.79,
+						"y0": 442.6,
 						"x1": 482.11,
-						"y1": 449.79
+						"y1": 450.08
 					},
 					"id": 147,
-					"draw_order": 148,
+					"draw_order": 1000000,
 					"text": "6210310",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3269,12 +3269,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 468.51,
+						"y0": 467.34,
 						"x1": 468.48,
-						"y1": 474.51
+						"y1": 474.79
 					},
 					"id": 148,
-					"draw_order": 150,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3291,12 +3291,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 460.24,
-						"y0": 475.72,
+						"y0": 474.54,
 						"x1": 483.75,
-						"y1": 481.72
+						"y1": 482.01
 					},
 					"id": 149,
-					"draw_order": 150,
+					"draw_order": 1000000,
 					"text": "4585479",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3313,12 +3313,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 31.03,
+						"y0": 29.86,
 						"x1": 110.8,
-						"y1": 37.03
+						"y1": 37.31
 					},
 					"id": 150,
-					"draw_order": 152,
+					"draw_order": 1000000,
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3335,12 +3335,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 38.25,
+						"y0": 37.06,
 						"x1": 126.38,
-						"y1": 44.25
+						"y1": 44.54
 					},
 					"id": 151,
-					"draw_order": 152,
+					"draw_order": 1000000,
 					"text": "6249809",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3357,12 +3357,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 69.37,
+						"y0": 68.2,
 						"x1": 110.76,
-						"y1": 75.37
+						"y1": 75.65
 					},
 					"id": 152,
-					"draw_order": 154,
+					"draw_order": 1000000,
 					"text": "6x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3379,12 +3379,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 76.59,
+						"y0": 75.4,
 						"x1": 124.08,
-						"y1": 82.59
+						"y1": 82.88
 					},
 					"id": 153,
-					"draw_order": 154,
+					"draw_order": 1000000,
 					"text": "6174925",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3401,12 +3401,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 101.77,
+						"y0": 100.6,
 						"x1": 109.75,
-						"y1": 107.77
+						"y1": 108.06
 					},
 					"id": 154,
-					"draw_order": 156,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3423,12 +3423,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 108.99,
+						"y0": 107.8,
 						"x1": 125.38,
-						"y1": 114.99
+						"y1": 115.28
 					},
 					"id": 155,
-					"draw_order": 156,
+					"draw_order": 1000000,
 					"text": "6321305",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3445,12 +3445,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 129.49,
+						"y0": 128.33,
 						"x1": 110.96,
-						"y1": 135.49
+						"y1": 135.78
 					},
 					"id": 156,
-					"draw_order": 158,
+					"draw_order": 1000000,
 					"text": "8x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3467,12 +3467,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 136.71,
+						"y0": 135.53,
 						"x1": 125.2,
-						"y1": 142.71
+						"y1": 143.0
 					},
 					"id": 157,
-					"draw_order": 158,
+					"draw_order": 1000000,
 					"text": "6378120",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3489,12 +3489,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 158.66,
+						"y0": 157.49,
 						"x1": 109.75,
-						"y1": 164.66
+						"y1": 164.94
 					},
 					"id": 158,
-					"draw_order": 160,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3511,12 +3511,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 165.87,
+						"y0": 164.69,
 						"x1": 125.84,
-						"y1": 171.87
+						"y1": 172.16
 					},
 					"id": 159,
-					"draw_order": 160,
+					"draw_order": 1000000,
 					"text": "6360104",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3533,12 +3533,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 188.36,
+						"y0": 187.19,
 						"x1": 110.99,
-						"y1": 194.36
+						"y1": 194.64
 					},
 					"id": 160,
-					"draw_order": 162,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3555,12 +3555,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 195.57,
+						"y0": 194.39,
 						"x1": 124.91,
-						"y1": 201.57
+						"y1": 201.86
 					},
 					"id": 161,
-					"draw_order": 162,
+					"draw_order": 1000000,
 					"text": "4142865",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3577,12 +3577,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 224.9,
+						"y0": 223.73,
 						"x1": 110.99,
-						"y1": 230.9
+						"y1": 231.18
 					},
 					"id": 162,
-					"draw_order": 164,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3599,12 +3599,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 232.11,
+						"y0": 230.93,
 						"x1": 124.45,
-						"y1": 238.11
+						"y1": 238.41
 					},
 					"id": 163,
-					"draw_order": 164,
+					"draw_order": 1000000,
 					"text": "6019155",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3621,12 +3621,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 267.38,
+						"y0": 266.21,
 						"x1": 110.99,
-						"y1": 273.38
+						"y1": 273.66
 					},
 					"id": 164,
-					"draw_order": 166,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3643,12 +3643,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 274.6,
+						"y0": 273.41,
 						"x1": 122.58,
-						"y1": 280.6
+						"y1": 280.89
 					},
 					"id": 165,
-					"draw_order": 166,
+					"draw_order": 1000000,
 					"text": "300221",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3665,12 +3665,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 335.45,
+						"y0": 334.28,
 						"x1": 109.75,
-						"y1": 341.45
+						"y1": 341.73
 					},
 					"id": 166,
-					"draw_order": 168,
+					"draw_order": 1000000,
 					"text": "1x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3687,12 +3687,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 342.67,
+						"y0": 341.48,
 						"x1": 120.08,
-						"y1": 348.67
+						"y1": 348.96
 					},
 					"id": 167,
-					"draw_order": 168,
+					"draw_order": 1000000,
 					"text": "614123",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3709,12 +3709,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 365.33,
+						"y0": 364.16,
 						"x1": 110.67,
-						"y1": 371.33
+						"y1": 371.62
 					},
 					"id": 168,
-					"draw_order": 170,
+					"draw_order": 1000000,
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3731,12 +3731,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 372.55,
+						"y0": 371.36,
 						"x1": 126.68,
-						"y1": 378.55
+						"y1": 378.84
 					},
 					"id": 169,
-					"draw_order": 170,
+					"draw_order": 1000000,
 					"text": "4206482",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3753,12 +3753,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 402.95,
+						"y0": 401.79,
 						"x1": 110.8,
-						"y1": 408.95
+						"y1": 409.24
 					},
 					"id": 170,
-					"draw_order": 172,
+					"draw_order": 1000000,
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3775,12 +3775,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 410.17,
+						"y0": 408.99,
 						"x1": 126.07,
-						"y1": 416.17
+						"y1": 416.46
 					},
 					"id": 171,
-					"draw_order": 172,
+					"draw_order": 1000000,
 					"text": "6307924",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3797,12 +3797,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 430.14,
+						"y0": 428.97,
 						"x1": 110.8,
-						"y1": 436.14
+						"y1": 436.42
 					},
 					"id": 172,
-					"draw_order": 174,
+					"draw_order": 1000000,
 					"text": "4x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3819,12 +3819,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 437.35,
+						"y0": 436.17,
 						"x1": 120.06,
-						"y1": 443.35
+						"y1": 443.64
 					},
 					"id": 173,
-					"draw_order": 174,
+					"draw_order": 1000000,
 					"text": "614124",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3841,12 +3841,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 308.27,
+						"y0": 307.1,
 						"x1": 110.99,
-						"y1": 314.27
+						"y1": 314.55
 					},
 					"id": 174,
-					"draw_order": 176,
+					"draw_order": 1000000,
 					"text": "2x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3863,12 +3863,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 315.49,
+						"y0": 314.3,
 						"x1": 124.93,
-						"y1": 321.49
+						"y1": 321.78
 					},
 					"id": 175,
-					"draw_order": 176,
+					"draw_order": 1000000,
 					"text": "6129995",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3885,39 +3885,17 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 136.38,
-						"y0": 289.27,
+						"y0": 287.69,
 						"x1": 140.65,
-						"y1": 297.27
+						"y1": 297.66
 					},
 					"id": 176,
-					"draw_order": 182,
+					"draw_order": 1000000,
 					"text": "4",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
 					"font_flags": 4,
-					"color": 1578517,
-					"ascender": 1.0,
-					"descender": -0.25,
-					"origin": [
-						136.38,
-						295.69
-					]
-				},
-				{
-					"__tag__": "Text",
-					"bbox": {
-						"x0": 136.38,
-						"y0": 289.27,
-						"x1": 140.65,
-						"y1": 297.27
-					},
-					"id": 177,
-					"draw_order": 184,
-					"text": "4",
-					"font_name": "CeraPro-Light",
-					"font_size": 8.0,
-					"font_flags": 4,
-					"color": 1578517,
+					"color": 1578774,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -3929,12 +3907,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 468.51,
+						"y0": 467.34,
 						"x1": 110.67,
-						"y1": 474.51
+						"y1": 474.79
 					},
-					"id": 178,
-					"draw_order": 186,
+					"id": 177,
+					"draw_order": 1000000,
 					"text": "3x ",
 					"font_name": "CeraPro-Regular",
 					"font_size": 6.0,
@@ -3951,12 +3929,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 102.74,
-						"y0": 475.72,
+						"y0": 474.54,
 						"x1": 125.57,
-						"y1": 481.72
+						"y1": 482.01
 					},
-					"id": 179,
-					"draw_order": 186,
+					"id": 178,
+					"draw_order": 1000000,
 					"text": "6130007",
 					"font_name": "CeraPro-Light",
 					"font_size": 6.0,
@@ -3973,39 +3951,17 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 130.09,
-						"y0": 452.03,
+						"y0": 450.45,
 						"x1": 134.34,
-						"y1": 460.03
+						"y1": 460.41
 					},
-					"id": 180,
-					"draw_order": 192,
+					"id": 179,
+					"draw_order": 1000000,
 					"text": "3",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
 					"font_flags": 4,
-					"color": 1578517,
-					"ascender": 1.0,
-					"descender": -0.25,
-					"origin": [
-						130.09,
-						458.45
-					]
-				},
-				{
-					"__tag__": "Text",
-					"bbox": {
-						"x0": 130.09,
-						"y0": 452.03,
-						"x1": 134.34,
-						"y1": 460.03
-					},
-					"id": 181,
-					"draw_order": 194,
-					"text": "3",
-					"font_name": "CeraPro-Light",
-					"font_size": 8.0,
-					"font_flags": 4,
-					"color": 1578517,
+					"color": 1578774,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -4017,12 +3973,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 14.17,
-						"y0": 473.86,
+						"y0": 471.89,
 						"x1": 29.59,
-						"y1": 483.86
+						"y1": 484.35
 					},
-					"id": 182,
-					"draw_order": 198,
+					"id": 180,
+					"draw_order": 1000000,
 					"text": "180",
 					"font_name": "CeraPro-Light",
 					"font_size": 10.0,
@@ -4043,7 +3999,7 @@
 						"x1": 22.56,
 						"y1": 22.01
 					},
-					"id": 183,
+					"id": 181,
 					"draw_order": 1,
 					"image_id": "image_0",
 					"width": 19,
@@ -4072,7 +4028,7 @@
 						"x1": 25.8,
 						"y1": 57.28
 					},
-					"id": 184,
+					"id": 182,
 					"draw_order": 3,
 					"image_id": "image_2",
 					"width": 26,
@@ -4101,7 +4057,7 @@
 						"x1": 32.11,
 						"y1": 90.01
 					},
-					"id": 185,
+					"id": 183,
 					"draw_order": 5,
 					"image_id": "image_4",
 					"width": 39,
@@ -4130,7 +4086,7 @@
 						"x1": 36.97,
 						"y1": 126.35
 					},
-					"id": 186,
+					"id": 184,
 					"draw_order": 7,
 					"image_id": "image_6",
 					"width": 49,
@@ -4159,7 +4115,7 @@
 						"x1": 81.79,
 						"y1": 179.24
 					},
-					"id": 187,
+					"id": 185,
 					"draw_order": 9,
 					"image_id": "image_8",
 					"width": 142,
@@ -4188,7 +4144,7 @@
 						"x1": 32.11,
 						"y1": 211.61
 					},
-					"id": 188,
+					"id": 186,
 					"draw_order": 11,
 					"image_id": "image_10",
 					"width": 39,
@@ -4217,7 +4173,7 @@
 						"x1": 32.11,
 						"y1": 246.87
 					},
-					"id": 189,
+					"id": 187,
 					"draw_order": 13,
 					"image_id": "image_12",
 					"width": 39,
@@ -4246,7 +4202,7 @@
 						"x1": 38.41,
 						"y1": 282.12
 					},
-					"id": 190,
+					"id": 188,
 					"draw_order": 15,
 					"image_id": "image_14",
 					"width": 52,
@@ -4275,7 +4231,7 @@
 						"x1": 42.91,
 						"y1": 317.92
 					},
-					"id": 191,
+					"id": 189,
 					"draw_order": 17,
 					"image_id": "image_16",
 					"width": 61,
@@ -4304,7 +4260,7 @@
 						"x1": 44.71,
 						"y1": 358.2
 					},
-					"id": 192,
+					"id": 190,
 					"draw_order": 19,
 					"image_id": "image_18",
 					"width": 65,
@@ -4333,7 +4289,7 @@
 						"x1": 49.03,
 						"y1": 399.58
 					},
-					"id": 193,
+					"id": 191,
 					"draw_order": 21,
 					"image_id": "image_20",
 					"width": 74,
@@ -4362,7 +4318,7 @@
 						"x1": 61.45,
 						"y1": 451.04
 					},
-					"id": 194,
+					"id": 192,
 					"draw_order": 23,
 					"image_id": "image_22",
 					"width": 100,
@@ -4391,7 +4347,7 @@
 						"x1": 179.15,
 						"y1": 467.96
 					},
-					"id": 195,
+					"id": 193,
 					"draw_order": 25,
 					"image_id": "image_24",
 					"width": 26,
@@ -4420,7 +4376,7 @@
 						"x1": 181.7,
 						"y1": 25.09
 					},
-					"id": 196,
+					"id": 194,
 					"draw_order": 27,
 					"image_id": "image_26",
 					"width": 33,
@@ -4449,7 +4405,7 @@
 						"x1": 182.79,
 						"y1": 55.62
 					},
-					"id": 197,
+					"id": 195,
 					"draw_order": 29,
 					"image_id": "image_28",
 					"width": 35,
@@ -4478,7 +4434,7 @@
 						"x1": 182.79,
 						"y1": 82.92
 					},
-					"id": 198,
+					"id": 196,
 					"draw_order": 31,
 					"image_id": "image_30",
 					"width": 35,
@@ -4507,7 +4463,7 @@
 						"x1": 184.58,
 						"y1": 112.01
 					},
-					"id": 199,
+					"id": 197,
 					"draw_order": 33,
 					"image_id": "image_32",
 					"width": 39,
@@ -4536,7 +4492,7 @@
 						"x1": 184.58,
 						"y1": 146.16
 					},
-					"id": 200,
+					"id": 198,
 					"draw_order": 35,
 					"image_id": "image_34",
 					"width": 39,
@@ -4565,7 +4521,7 @@
 						"x1": 184.58,
 						"y1": 174.16
 					},
-					"id": 201,
+					"id": 199,
 					"draw_order": 37,
 					"image_id": "image_36",
 					"width": 39,
@@ -4594,7 +4550,7 @@
 						"x1": 184.58,
 						"y1": 207.23
 					},
-					"id": 202,
+					"id": 200,
 					"draw_order": 39,
 					"image_id": "image_38",
 					"width": 39,
@@ -4623,7 +4579,7 @@
 						"x1": 184.58,
 						"y1": 248.74
 					},
-					"id": 203,
+					"id": 201,
 					"draw_order": 41,
 					"image_id": "image_40",
 					"width": 39,
@@ -4652,7 +4608,7 @@
 						"x1": 184.58,
 						"y1": 298.0
 					},
-					"id": 204,
+					"id": 202,
 					"draw_order": 43,
 					"image_id": "image_42",
 					"width": 39,
@@ -4681,7 +4637,7 @@
 						"x1": 184.58,
 						"y1": 327.63
 					},
-					"id": 205,
+					"id": 203,
 					"draw_order": 45,
 					"image_id": "image_44",
 					"width": 39,
@@ -4710,7 +4666,7 @@
 						"x1": 185.48,
 						"y1": 363.58
 					},
-					"id": 206,
+					"id": 204,
 					"draw_order": 47,
 					"image_id": "image_46",
 					"width": 41,
@@ -4739,7 +4695,7 @@
 						"x1": 185.48,
 						"y1": 396.8
 					},
-					"id": 207,
+					"id": 205,
 					"draw_order": 49,
 					"image_id": "image_48",
 					"width": 41,
@@ -4768,7 +4724,7 @@
 						"x1": 185.48,
 						"y1": 436.34
 					},
-					"id": 208,
+					"id": 206,
 					"draw_order": 51,
 					"image_id": "image_50",
 					"width": 41,
@@ -4797,7 +4753,7 @@
 						"x1": 242.51,
 						"y1": 24.9
 					},
-					"id": 209,
+					"id": 207,
 					"draw_order": 53,
 					"image_id": "image_52",
 					"width": 25,
@@ -4826,7 +4782,7 @@
 						"x1": 250.62,
 						"y1": 61.41
 					},
-					"id": 210,
+					"id": 208,
 					"draw_order": 55,
 					"image_id": "image_54",
 					"width": 42,
@@ -4855,7 +4811,7 @@
 						"x1": 253.69,
 						"y1": 93.96
 					},
-					"id": 211,
+					"id": 209,
 					"draw_order": 57,
 					"image_id": "image_56",
 					"width": 48,
@@ -4884,7 +4840,7 @@
 						"x1": 253.69,
 						"y1": 123.98
 					},
-					"id": 212,
+					"id": 210,
 					"draw_order": 59,
 					"image_id": "image_58",
 					"width": 48,
@@ -4913,7 +4869,7 @@
 						"x1": 253.69,
 						"y1": 154.72
 					},
-					"id": 213,
+					"id": 211,
 					"draw_order": 61,
 					"image_id": "image_60",
 					"width": 48,
@@ -4942,7 +4898,7 @@
 						"x1": 253.69,
 						"y1": 187.27
 					},
-					"id": 214,
+					"id": 212,
 					"draw_order": 63,
 					"image_id": "image_62",
 					"width": 48,
@@ -4971,7 +4927,7 @@
 						"x1": 253.87,
 						"y1": 222.33
 					},
-					"id": 215,
+					"id": 213,
 					"draw_order": 65,
 					"image_id": "image_64",
 					"width": 48,
@@ -5000,7 +4956,7 @@
 						"x1": 254.04,
 						"y1": 252.17
 					},
-					"id": 216,
+					"id": 214,
 					"draw_order": 67,
 					"image_id": "image_66",
 					"width": 49,
@@ -5029,7 +4985,7 @@
 						"x1": 255.67,
 						"y1": 283.64
 					},
-					"id": 217,
+					"id": 215,
 					"draw_order": 69,
 					"image_id": "image_68",
 					"width": 52,
@@ -5058,7 +5014,7 @@
 						"x1": 255.67,
 						"y1": 320.14
 					},
-					"id": 218,
+					"id": 216,
 					"draw_order": 71,
 					"image_id": "image_70",
 					"width": 52,
@@ -5087,7 +5043,7 @@
 						"x1": 255.67,
 						"y1": 364.22
 					},
-					"id": 219,
+					"id": 217,
 					"draw_order": 73,
 					"image_id": "image_72",
 					"width": 52,
@@ -5116,7 +5072,7 @@
 						"x1": 258.55,
 						"y1": 399.81
 					},
-					"id": 220,
+					"id": 218,
 					"draw_order": 75,
 					"image_id": "image_74",
 					"width": 58,
@@ -5145,7 +5101,7 @@
 						"x1": 258.91,
 						"y1": 432.89
 					},
-					"id": 221,
+					"id": 219,
 					"draw_order": 77,
 					"image_id": "image_76",
 					"width": 59,
@@ -5174,7 +5130,7 @@
 						"x1": 259.99,
 						"y1": 467.96
 					},
-					"id": 222,
+					"id": 220,
 					"draw_order": 79,
 					"image_id": "image_78",
 					"width": 61,
@@ -5203,7 +5159,7 @@
 						"x1": 303.73,
 						"y1": 21.47
 					},
-					"id": 223,
+					"id": 221,
 					"draw_order": 81,
 					"image_id": "image_80",
 					"width": 19,
@@ -5232,7 +5188,7 @@
 						"x1": 323.9,
 						"y1": 55.97
 					},
-					"id": 224,
+					"id": 222,
 					"draw_order": 83,
 					"image_id": "image_82",
 					"width": 61,
@@ -5261,7 +5217,7 @@
 						"x1": 325.88,
 						"y1": 89.92
 					},
-					"id": 225,
+					"id": 223,
 					"draw_order": 85,
 					"image_id": "image_84",
 					"width": 65,
@@ -5290,7 +5246,7 @@
 						"x1": 325.88,
 						"y1": 128.9
 					},
-					"id": 226,
+					"id": 224,
 					"draw_order": 87,
 					"image_id": "image_86",
 					"width": 65,
@@ -5319,7 +5275,7 @@
 						"x1": 325.88,
 						"y1": 162.48
 					},
-					"id": 227,
+					"id": 225,
 					"draw_order": 89,
 					"image_id": "image_88",
 					"width": 65,
@@ -5348,7 +5304,7 @@
 						"x1": 326.05,
 						"y1": 216.6
 					},
-					"id": 228,
+					"id": 226,
 					"draw_order": 91,
 					"image_id": "image_90",
 					"width": 66,
@@ -5377,7 +5333,7 @@
 						"x1": 328.4,
 						"y1": 250.17
 					},
-					"id": 229,
+					"id": 227,
 					"draw_order": 93,
 					"image_id": "image_92",
 					"width": 70,
@@ -5406,7 +5362,7 @@
 						"x1": 330.2,
 						"y1": 292.77
 					},
-					"id": 230,
+					"id": 228,
 					"draw_order": 95,
 					"image_id": "image_94",
 					"width": 74,
@@ -5435,7 +5391,7 @@
 						"x1": 330.2,
 						"y1": 329.77
 					},
-					"id": 231,
+					"id": 229,
 					"draw_order": 97,
 					"image_id": "image_96",
 					"width": 74,
@@ -5464,7 +5420,7 @@
 						"x1": 330.2,
 						"y1": 367.31
 					},
-					"id": 232,
+					"id": 230,
 					"draw_order": 99,
 					"image_id": "image_98",
 					"width": 74,
@@ -5493,7 +5449,7 @@
 						"x1": 332.0,
 						"y1": 403.77
 					},
-					"id": 233,
+					"id": 231,
 					"draw_order": 101,
 					"image_id": "image_100",
 					"width": 78,
@@ -5522,7 +5478,7 @@
 						"x1": 332.18,
 						"y1": 467.97
 					},
-					"id": 234,
+					"id": 232,
 					"draw_order": 103,
 					"image_id": "image_102",
 					"width": 78,
@@ -5551,7 +5507,7 @@
 						"x1": 402.21,
 						"y1": 36.24
 					},
-					"id": 235,
+					"id": 233,
 					"draw_order": 105,
 					"image_id": "image_104",
 					"width": 91,
@@ -5580,7 +5536,7 @@
 						"x1": 402.21,
 						"y1": 87.63
 					},
-					"id": 236,
+					"id": 234,
 					"draw_order": 107,
 					"image_id": "image_106",
 					"width": 91,
@@ -5609,7 +5565,7 @@
 						"x1": 402.21,
 						"y1": 139.01
 					},
-					"id": 237,
+					"id": 235,
 					"draw_order": 109,
 					"image_id": "image_108",
 					"width": 91,
@@ -5638,7 +5594,7 @@
 						"x1": 402.93,
 						"y1": 191.1
 					},
-					"id": 238,
+					"id": 236,
 					"draw_order": 111,
 					"image_id": "image_110",
 					"width": 93,
@@ -5667,7 +5623,7 @@
 						"x1": 406.53,
 						"y1": 241.04
 					},
-					"id": 239,
+					"id": 237,
 					"draw_order": 113,
 					"image_id": "image_112",
 					"width": 100,
@@ -5696,7 +5652,7 @@
 						"x1": 413.91,
 						"y1": 291.69
 					},
-					"id": 240,
+					"id": 238,
 					"draw_order": 115,
 					"image_id": "image_114",
 					"width": 115,
@@ -5725,7 +5681,7 @@
 						"x1": 418.95,
 						"y1": 346.67
 					},
-					"id": 241,
+					"id": 239,
 					"draw_order": 117,
 					"image_id": "image_116",
 					"width": 126,
@@ -5754,7 +5710,7 @@
 						"x1": 418.95,
 						"y1": 406.69
 					},
-					"id": 242,
+					"id": 240,
 					"draw_order": 119,
 					"image_id": "image_118",
 					"width": 126,
@@ -5783,7 +5739,7 @@
 						"x1": 439.29,
 						"y1": 467.97
 					},
-					"id": 243,
+					"id": 241,
 					"draw_order": 121,
 					"image_id": "image_120",
 					"width": 168,
@@ -5812,7 +5768,7 @@
 						"x1": 519.22,
 						"y1": 64.87
 					},
-					"id": 244,
+					"id": 242,
 					"draw_order": 123,
 					"image_id": "image_122",
 					"width": 124,
@@ -5841,7 +5797,7 @@
 						"x1": 476.55,
 						"y1": 99.69
 					},
-					"id": 245,
+					"id": 243,
 					"draw_order": 125,
 					"image_id": "image_124",
 					"width": 36,
@@ -5870,7 +5826,7 @@
 						"x1": 495.1,
 						"y1": 141.7
 					},
-					"id": 246,
+					"id": 244,
 					"draw_order": 127,
 					"image_id": "image_126",
 					"width": 74,
@@ -5899,7 +5855,7 @@
 						"x1": 507.52,
 						"y1": 183.72
 					},
-					"id": 247,
+					"id": 245,
 					"draw_order": 129,
 					"image_id": "image_128",
 					"width": 100,
@@ -5928,7 +5884,7 @@
 						"x1": 470.79,
 						"y1": 304.5
 					},
-					"id": 248,
+					"id": 246,
 					"draw_order": 131,
 					"image_id": "image_130",
 					"width": 19,
@@ -5957,7 +5913,7 @@
 						"x1": 492.94,
 						"y1": 337.16
 					},
-					"id": 249,
+					"id": 247,
 					"draw_order": 133,
 					"image_id": "image_132",
 					"width": 65,
@@ -5986,7 +5942,7 @@
 						"x1": 468.63,
 						"y1": 207.71
 					},
-					"id": 250,
+					"id": 248,
 					"draw_order": 135,
 					"image_id": "image_134",
 					"width": 19,
@@ -6015,7 +5971,7 @@
 						"x1": 468.63,
 						"y1": 231.73
 					},
-					"id": 251,
+					"id": 249,
 					"draw_order": 137,
 					"image_id": "image_136",
 					"width": 19,
@@ -6044,7 +6000,7 @@
 						"x1": 471.87,
 						"y1": 255.2
 					},
-					"id": 252,
+					"id": 250,
 					"draw_order": 139,
 					"image_id": "image_138",
 					"width": 26,
@@ -6073,7 +6029,7 @@
 						"x1": 471.87,
 						"y1": 280.47
 					},
-					"id": 253,
+					"id": 251,
 					"draw_order": 141,
 					"image_id": "image_140",
 					"width": 26,
@@ -6102,7 +6058,7 @@
 						"x1": 475.48,
 						"y1": 376.83
 					},
-					"id": 254,
+					"id": 252,
 					"draw_order": 143,
 					"image_id": "image_142",
 					"width": 33,
@@ -6131,7 +6087,7 @@
 						"x1": 478.17,
 						"y1": 404.08
 					},
-					"id": 255,
+					"id": 253,
 					"draw_order": 145,
 					"image_id": "image_144",
 					"width": 39,
@@ -6160,7 +6116,7 @@
 						"x1": 478.17,
 						"y1": 436.03
 					},
-					"id": 256,
+					"id": 254,
 					"draw_order": 147,
 					"image_id": "image_146",
 					"width": 39,
@@ -6189,7 +6145,7 @@
 						"x1": 482.49,
 						"y1": 467.97
 					},
-					"id": 257,
+					"id": 255,
 					"draw_order": 149,
 					"image_id": "image_148",
 					"width": 48,
@@ -6218,7 +6174,7 @@
 						"x1": 121.57,
 						"y1": 30.48
 					},
-					"id": 258,
+					"id": 256,
 					"draw_order": 151,
 					"image_id": "image_150",
 					"width": 41,
@@ -6247,7 +6203,7 @@
 						"x1": 121.57,
 						"y1": 68.83
 					},
-					"id": 259,
+					"id": 257,
 					"draw_order": 153,
 					"image_id": "image_152",
 					"width": 41,
@@ -6276,7 +6232,7 @@
 						"x1": 125.0,
 						"y1": 101.22
 					},
-					"id": 260,
+					"id": 258,
 					"draw_order": 155,
 					"image_id": "image_154",
 					"width": 48,
@@ -6305,7 +6261,7 @@
 						"x1": 114.01,
 						"y1": 128.94
 					},
-					"id": 261,
+					"id": 259,
 					"draw_order": 157,
 					"image_id": "image_156",
 					"width": 25,
@@ -6334,7 +6290,7 @@
 						"x1": 117.25,
 						"y1": 158.11
 					},
-					"id": 262,
+					"id": 260,
 					"draw_order": 159,
 					"image_id": "image_158",
 					"width": 32,
@@ -6363,7 +6319,7 @@
 						"x1": 118.88,
 						"y1": 187.81
 					},
-					"id": 263,
+					"id": 261,
 					"draw_order": 161,
 					"image_id": "image_160",
 					"width": 35,
@@ -6392,7 +6348,7 @@
 						"x1": 120.67,
 						"y1": 224.36
 					},
-					"id": 264,
+					"id": 262,
 					"draw_order": 163,
 					"image_id": "image_162",
 					"width": 39,
@@ -6421,7 +6377,7 @@
 						"x1": 131.3,
 						"y1": 266.84
 					},
-					"id": 265,
+					"id": 263,
 					"draw_order": 165,
 					"image_id": "image_164",
 					"width": 61,
@@ -6450,7 +6406,7 @@
 						"x1": 111.13,
 						"y1": 334.9
 					},
-					"id": 266,
+					"id": 264,
 					"draw_order": 167,
 					"image_id": "image_166",
 					"width": 19,
@@ -6479,7 +6435,7 @@
 						"x1": 118.88,
 						"y1": 364.77
 					},
-					"id": 267,
+					"id": 265,
 					"draw_order": 169,
 					"image_id": "image_168",
 					"width": 35,
@@ -6508,7 +6464,7 @@
 						"x1": 125.18,
 						"y1": 402.41
 					},
-					"id": 268,
+					"id": 266,
 					"draw_order": 171,
 					"image_id": "image_170",
 					"width": 48,
@@ -6537,7 +6493,7 @@
 						"x1": 111.13,
 						"y1": 429.58
 					},
-					"id": 269,
+					"id": 267,
 					"draw_order": 173,
 					"image_id": "image_172",
 					"width": 19,
@@ -6566,7 +6522,7 @@
 						"x1": 131.48,
 						"y1": 307.73
 					},
-					"id": 270,
+					"id": 268,
 					"draw_order": 175,
 					"image_id": "image_174",
 					"width": 61,
@@ -6595,7 +6551,7 @@
 						"x1": 125.18,
 						"y1": 467.96
 					},
-					"id": 271,
+					"id": 269,
 					"draw_order": 185,
 					"image_id": "image_177",
 					"width": 48,
@@ -6624,7 +6580,7 @@
 						"x1": 552.76,
 						"y1": 496.06
 					},
-					"id": 272,
+					"id": 270,
 					"draw_order": 0,
 					"fill_color": [
 						0.54,
@@ -6655,7 +6611,7 @@
 						"x1": 144.61,
 						"y1": 298.65
 					},
-					"id": 273,
+					"id": 271,
 					"draw_order": 177,
 					"fill_color": [
 						1.0,
@@ -6752,7 +6708,7 @@
 						"x1": 144.91,
 						"y1": 298.95
 					},
-					"id": 274,
+					"id": 272,
 					"draw_order": 178,
 					"fill_color": [
 						0.09,
@@ -6947,7 +6903,7 @@
 						"x1": 144.61,
 						"y1": 298.65
 					},
-					"id": 275,
+					"id": 273,
 					"draw_order": 179,
 					"fill_color": [
 						0.09,
@@ -7218,7 +7174,7 @@
 						"x1": 140.55,
 						"y1": 295.79
 					},
-					"id": 276,
+					"id": 274,
 					"draw_order": 180,
 					"fill_color": [
 						0.09,
@@ -7470,7 +7426,7 @@
 						"x1": 140.45,
 						"y1": 295.69
 					},
-					"id": 277,
+					"id": 275,
 					"draw_order": 181,
 					"fill_color": [
 						1.0,
@@ -7507,7 +7463,7 @@
 						"x1": 140.45,
 						"y1": 295.69
 					},
-					"id": 278,
+					"id": 276,
 					"draw_order": 183,
 					"fill_color": [
 						0.09,
@@ -7544,7 +7500,7 @@
 						"x1": 138.31,
 						"y1": 461.41
 					},
-					"id": 279,
+					"id": 277,
 					"draw_order": 187,
 					"fill_color": [
 						1.0,
@@ -7641,7 +7597,7 @@
 						"x1": 138.61,
 						"y1": 461.71
 					},
-					"id": 280,
+					"id": 278,
 					"draw_order": 188,
 					"fill_color": [
 						0.09,
@@ -7836,7 +7792,7 @@
 						"x1": 138.31,
 						"y1": 461.41
 					},
-					"id": 281,
+					"id": 279,
 					"draw_order": 189,
 					"fill_color": [
 						0.09,
@@ -8107,7 +8063,7 @@
 						"x1": 133.98,
 						"y1": 458.63
 					},
-					"id": 282,
+					"id": 280,
 					"draw_order": 190,
 					"fill_color": [
 						0.09,
@@ -8299,7 +8255,7 @@
 						"x1": 133.89,
 						"y1": 458.53
 					},
-					"id": 283,
+					"id": 281,
 					"draw_order": 191,
 					"fill_color": [
 						1.0,
@@ -8336,7 +8292,7 @@
 						"x1": 133.89,
 						"y1": 458.53
 					},
-					"id": 284,
+					"id": 282,
 					"draw_order": 193,
 					"fill_color": [
 						0.09,
@@ -8373,7 +8329,7 @@
 						"x1": 16.7,
 						"y1": 481.89
 					},
-					"id": 285,
+					"id": 283,
 					"draw_order": 195,
 					"stroke_color": [
 						1.0,
@@ -8472,7 +8428,7 @@
 						"x1": 22.9,
 						"y1": 481.99
 					},
-					"id": 286,
+					"id": 284,
 					"draw_order": 196,
 					"stroke_color": [
 						1.0,
@@ -8798,7 +8754,7 @@
 						"x1": 28.87,
 						"y1": 481.99
 					},
-					"id": 287,
+					"id": 285,
 					"draw_order": 197,
 					"stroke_color": [
 						1.0,

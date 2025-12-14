@@ -13,12 +13,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 74.3,
-						"y0": 43.14,
+						"y0": 41.56,
 						"x1": 82.87,
-						"y1": 51.14
+						"y1": 51.53
 					},
 					"id": 0,
-					"draw_order": 7,
+					"draw_order": 1000000,
 					"text": "4x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -35,12 +35,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 123.52,
-						"y0": 43.14,
+						"y0": 41.56,
 						"x1": 132.1,
-						"y1": 51.14
+						"y1": 51.53
 					},
 					"id": 1,
-					"draw_order": 11,
+					"draw_order": 1000000,
 					"text": "4x",
 					"font_name": "CeraPro-Light",
 					"font_size": 8.0,
@@ -57,12 +57,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 34.02,
-						"y0": 69.64,
+						"y0": 64.51,
 						"x1": 60.2,
-						"y1": 95.64
+						"y1": 96.9
 					},
 					"id": 2,
-					"draw_order": 14,
+					"draw_order": 1000000,
 					"text": "10",
 					"font_name": "CeraPro-Light",
 					"font_size": 26.0,
@@ -79,17 +79,17 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 454.77,
-						"y0": 354.82,
+						"y0": 351.67,
 						"x1": 472.24,
-						"y1": 370.82
+						"y1": 371.6
 					},
 					"id": 3,
-					"draw_order": 27,
+					"draw_order": 1000000,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578517,
+					"color": 1578774,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -101,17 +101,17 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 454.77,
-						"y0": 354.82,
+						"y0": 351.67,
 						"x1": 472.24,
-						"y1": 370.82
+						"y1": 371.6
 					},
 					"id": 4,
-					"draw_order": 29,
+					"draw_order": 1000000,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578517,
+					"color": 1578774,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -123,17 +123,17 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 328.16,
-						"y0": 109.08,
+						"y0": 105.93,
 						"x1": 345.64,
-						"y1": 125.08
+						"y1": 125.86
 					},
 					"id": 5,
-					"draw_order": 43,
+					"draw_order": 1000000,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578517,
+					"color": 1578774,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -145,17 +145,17 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 328.16,
-						"y0": 109.08,
+						"y0": 105.93,
 						"x1": 345.64,
-						"y1": 125.08
+						"y1": 125.86
 					},
 					"id": 6,
-					"draw_order": 45,
+					"draw_order": 1000000,
 					"text": "2x",
 					"font_name": "CeraPro-Light",
 					"font_size": 16.0,
 					"font_flags": 4,
-					"color": 1578517,
+					"color": 1578774,
 					"ascender": 1.0,
 					"descender": -0.25,
 					"origin": [
@@ -167,12 +167,12 @@
 					"__tag__": "Text",
 					"bbox": {
 						"x0": 529.7,
-						"y0": 473.86,
+						"y0": 471.89,
 						"x1": 538.59,
-						"y1": 483.86
+						"y1": 484.35
 					},
 					"id": 7,
-					"draw_order": 50,
+					"draw_order": 1000000,
 					"text": "13",
 					"font_name": "CeraPro-Light",
 					"font_size": 10.0,
