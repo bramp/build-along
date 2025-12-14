@@ -33,13 +33,10 @@ config = "pyproject.toml"
 [test]
 # Pass through selected environment variables to tests so sandboxed runs can
 # toggle integration tests and cassette behavior.
-# PATH is needed for OCR tests to find tesseract.
-extra_env_vars = [
-    "ENABLE_INTEGRATION_TESTS",
-    "CASSETTE_DIR",
-    "XDG_CACHE_HOME",
-    "PATH",
-]
+# - ENABLE_INTEGRATION_TESTS: Enable integration tests that make real HTTP requests
+# - CASSETTE_DIR: Override where VCR cassettes are stored
+# - XDG_CACHE_HOME: Used by conftest.py to determine the default cassette cache directory
+extra_env_vars = ["ENABLE_INTEGRATION_TESTS", "CASSETTE_DIR", "XDG_CACHE_HOME"]
 
 [pytest]
 config = "pyproject.toml"
