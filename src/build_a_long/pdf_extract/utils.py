@@ -4,27 +4,6 @@ import json
 from typing import Any
 
 
-def round_floats(obj: Any, decimals: int = 2) -> Any:
-    """Recursively round all floats in a nested structure to specified decimals.
-
-    Args:
-        obj: Any Python object (dict, list, tuple, float, or other)
-        decimals: Number of decimal places to round to (default: 2)
-
-    Returns:
-        The same structure with all floats rounded
-    """
-    if isinstance(obj, float):
-        return round(obj, decimals)
-    elif isinstance(obj, dict):
-        return {k: round_floats(v, decimals) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [round_floats(item, decimals) for item in obj]
-    elif isinstance(obj, tuple):
-        return tuple(round_floats(item, decimals) for item in obj)
-    return obj
-
-
 def remove_empty_lists(obj: Any) -> Any:
     """Recursively remove empty lists from a nested structure.
 
@@ -45,28 +24,33 @@ def remove_empty_lists(obj: Any) -> Any:
     return obj
 
 
-def reorder_tag_first(obj: Any) -> Any:
-    """Recursively reorder dicts so __tag__ appears first if present.
+def transform_for_json(obj: Any, decimals: int = 2) -> Any:
+    """Transform data for JSON serialization in a single pass.
 
-    This ensures consistent serialization where the type discriminator
-    appears at the beginning of each object for readability.
+    Combines rounding floats and reordering __tag__ to first position
+    into one recursive traversal for better performance.
 
     Args:
-        obj: Any Python object (dict, list, or other)
+        obj: Any Python object (dict, list, tuple, float, or other)
+        decimals: Number of decimal places to round floats to (default: 2)
 
     Returns:
-        The same structure with __tag__ as the first key in all dicts
+        The transformed structure ready for JSON serialization
     """
-    if isinstance(obj, dict):
-        # Recursively process values first
-        processed = {k: reorder_tag_first(v) for k, v in obj.items()}
+    if isinstance(obj, float):
+        return round(obj, decimals)
+    elif isinstance(obj, dict):
+        # Process all values recursively
+        processed = {k: transform_for_json(v, decimals) for k, v in obj.items()}
         # If __tag__ exists, put it first
         if "__tag__" in processed:
             tag_value = processed.pop("__tag__")
             return {"__tag__": tag_value, **processed}
         return processed
     elif isinstance(obj, list):
-        return [reorder_tag_first(item) for item in obj]
+        return [transform_for_json(item, decimals) for item in obj]
+    elif isinstance(obj, tuple):
+        return tuple(transform_for_json(item, decimals) for item in obj)
     return obj
 
 
@@ -99,8 +83,7 @@ class SerializationMixin:
         defaults: dict[str, Any] = {"by_alias": True, "exclude_none": True}
         defaults.update(kwargs)
         data = self.model_dump(**defaults)  # type: ignore[attr-defined]
-        data = round_floats(data)
-        return reorder_tag_first(data)
+        return transform_for_json(data)
 
     def to_json(self, *, indent: str | int | None = "\t", **kwargs: Any) -> str:
         """Serialize to JSON with proper defaults.

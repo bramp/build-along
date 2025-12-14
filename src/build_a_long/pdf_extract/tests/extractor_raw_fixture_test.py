@@ -48,6 +48,7 @@ def _compare_json(
     if expected_json == actual_json:
         return None
 
+    # Only split into lines when we need to generate a diff
     diff_lines = list(
         difflib.unified_diff(
             expected_json.splitlines(keepends=True),
@@ -122,12 +123,11 @@ class TestExtractorRawFixtures:
                     failures.append(f"Page {page_num} not extracted")
                     continue
 
-                expected = ExtractionResult.model_validate_json(
-                    fixture_path.read_text()
-                )
+                # Compare JSON directly - fixture is already serialized
+                expected_json = fixture_path.read_text()
                 actual = ExtractionResult(pages=[page_data])
 
-                diff = _compare_json(expected.to_json(), actual.to_json(), fixture_file)
+                diff = _compare_json(expected_json, actual.to_json(), fixture_file)
                 if diff:
                     failures.append(f"Mismatch in {fixture_file}:\n{diff}")
         else:
@@ -138,22 +138,19 @@ class TestExtractorRawFixtures:
             if not fixture_path.exists():
                 failures.append(f"Fixture file not found: {fixture_file}")
             else:
-                # Load fixture (may be compressed)
+                # Read fixture JSON directly (may be compressed)
                 if fixture_def.compress:
-                    json_bytes = bz2.decompress(fixture_path.read_bytes())
-                    expected = ExtractionResult.model_validate_json(
-                        json_bytes.decode("utf-8")
+                    expected_json = bz2.decompress(fixture_path.read_bytes()).decode(
+                        "utf-8"
                     )
                 else:
-                    expected = ExtractionResult.model_validate_json(
-                        fixture_path.read_text()
-                    )
+                    expected_json = fixture_path.read_text()
 
                 # Build actual result in page order
                 pages = [extraction.pages[pn] for pn in sorted(extraction.pages.keys())]
                 actual = ExtractionResult(pages=pages)
 
-                diff = _compare_json(expected.to_json(), actual.to_json(), fixture_file)
+                diff = _compare_json(expected_json, actual.to_json(), fixture_file)
                 if diff:
                     failures.append(f"Mismatch in {fixture_file}:\n{diff}")
 

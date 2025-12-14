@@ -14,7 +14,7 @@ from build_a_long.pdf_extract.cli.output_models import DebugOutput
 from build_a_long.pdf_extract.drawing import draw_and_save_bboxes
 from build_a_long.pdf_extract.extractor import ExtractionResult, PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import Manual
-from build_a_long.pdf_extract.utils import round_floats
+from build_a_long.pdf_extract.utils import transform_for_json
 
 logger = logging.getLogger(__name__)
 
@@ -170,9 +170,9 @@ def save_raw_json(
         data: dict[str, Any], output_path: Path, page_desc: str
     ) -> None:
         with opener(output_path, "wt", encoding="utf-8") as f:  # type: ignore[operator]
-            # Round floats to 2 decimal places before serializing
-            rounded_data = round_floats(data)
-            json.dump(rounded_data, f, indent="\t")
+            # Transform data (round floats, reorder __tag__) before serializing
+            transformed_data = transform_for_json(data)
+            json.dump(transformed_data, f, indent="\t")
 
         logger.info(
             "Saved %sraw JSON for %s to %s",
