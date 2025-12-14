@@ -5,7 +5,7 @@ This script extracts pages from the source PDFs to create the raw fixture files
 used by tests. Run this when you need to update fixtures after changes to the
 extraction logic.
 
-Fixtures are defined in fixtures.json5 (JSON5 format to allow comments).
+Fixtures are defined in index.json5 (JSON5 format to allow comments).
 
 Usage:
     pants run src/build_a_long/pdf_extract/classifier/tools/regenerate_fixtures.py
@@ -15,119 +15,56 @@ import bz2
 import logging
 import sys
 from pathlib import Path
-from typing import cast
-
-import json5
-import pymupdf
-from pydantic import BaseModel
 
 from build_a_long.pdf_extract.extractor import ExtractionResult
-from build_a_long.pdf_extract.extractor.extractor import Extractor
-from build_a_long.pdf_extract.parser import parse_page_ranges
+from build_a_long.pdf_extract.tests.fixture_utils import (
+    FixtureDefinition,
+    extract_pages_from_pdf,
+    get_pdf_page_count,
+    load_fixture_definitions,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger(__name__)
 
-
-class Fixture(BaseModel):
-    """Definition of a fixture to generate."""
-
-    pdf: str
-    """Path to the source PDF file."""
-
-    description: str
-    """Human-readable description of the fixture."""
-
-    pages: str | None = None
-    """Page range to extract (e.g., '10-17,180'). None means all pages."""
-
-    compress: bool = False
-    """Whether to compress the output with bz2."""
-
-
-def load_fixtures(fixtures_path: Path) -> list[Fixture]:
-    """Load fixture definitions from JSON5 file.
-
-    Args:
-        fixtures_path: Path to fixtures.json5
-
-    Returns:
-        List of Fixture objects
-    """
-    data = cast(dict, json5.loads(fixtures_path.read_text()))
-    return [Fixture.model_validate(f) for f in data["fixtures"]]
-
-
-def extract_pages(pdf_path: Path, page_numbers: list[int] | None) -> list:
-    """Extract page data from a PDF.
-
-    Args:
-        pdf_path: Path to PDF file
-        page_numbers: 1-indexed page numbers to extract, or None for all pages
-
-    Returns:
-        List of PageData objects
-    """
-    pages = []
-    with pymupdf.open(str(pdf_path)) as doc:
-        if page_numbers is None:
-            page_numbers = list(range(1, len(doc) + 1))
-
-        for page_num in page_numbers:
-            page_index = page_num - 1
-            if page_index < 0 or page_index >= len(doc):
-                log.warning(f"  Skipping page {page_num} (out of range)")
-                continue
-
-            page = doc[page_index]
-            extractor = Extractor(page=page, page_num=page_num, include_metadata=True)
-            page_data = extractor.extract_page_data()
-            pages.append(page_data)
-
-    return pages
+# Output directory for fixtures (relative to repo root when running outside sandbox)
+FIXTURES_DIR = Path("src/build_a_long/pdf_extract/fixtures")
 
 
 def save_fixture(
-    pages: list,
+    fixture_def: FixtureDefinition,
+    extracted_pages: dict[int, object],
     output_dir: Path,
-    pdf_path: Path,
-    *,
-    compress: bool,
-    per_page: bool,
 ) -> None:
     """Save extracted pages as fixture files.
 
     Args:
-        pages: List of PageData objects
+        fixture_def: The fixture definition
+        extracted_pages: Dict mapping page number to PageData
         output_dir: Directory to save fixtures
-        pdf_path: Original PDF path (for naming)
-        compress: Whether to compress with bz2
-        per_page: Whether to save one file per page
     """
-    element_id = pdf_path.stem
-
-    if per_page:
+    if fixture_def.is_per_page:
         # Save each page as a separate file
-        for page in pages:
-            extraction = ExtractionResult(pages=[page])
+        for page_num, page_data in sorted(extracted_pages.items()):
+            extraction = ExtractionResult(pages=[page_data])
             json_str = extraction.to_json()
 
-            filename = f"{element_id}_page_{page.page_number:03d}_raw.json"
+            filename = fixture_def.get_fixture_filename(page_num)
             output_path = output_dir / filename
             output_path.write_text(json_str)
             log.info(f"  Wrote {output_path}")
     else:
         # Save all pages in a single file
+        pages = [extracted_pages[pn] for pn in sorted(extracted_pages.keys())]
         extraction = ExtractionResult(pages=pages)
         json_str = extraction.to_json()
 
-        if compress:
-            filename = f"{element_id}_raw.json.bz2"
-            output_path = output_dir / filename
+        filename = fixture_def.get_fixture_filename()
+        output_path = output_dir / filename
+
+        if fixture_def.compress:
             output_path.write_bytes(bz2.compress(json_str.encode("utf-8")))
         else:
-            filename = f"{element_id}_raw.json"
-            output_path = output_dir / filename
             output_path.write_text(json_str)
 
         log.info(f"  Wrote {output_path}")
@@ -135,61 +72,46 @@ def save_fixture(
 
 def main() -> int:
     """Regenerate all fixture files."""
-    # Locate fixtures.json5 relative to this script
-    script_dir = Path(__file__).parent
-    fixtures_json_path = script_dir / "fixtures.json5"
-
-    if not fixtures_json_path.exists():
-        log.error(f"Fixtures config not found: {fixtures_json_path}")
-        return 1
-
-    # TODO maybe be explicit with the full path of the directory
-    fixtures_dir = Path("src/build_a_long/pdf_extract/fixtures")
-
-    if not fixtures_dir.exists():
-        log.error(f"Fixtures directory not found: {fixtures_dir}")
+    if not FIXTURES_DIR.exists():
+        log.error(f"Fixtures directory not found: {FIXTURES_DIR}")
         return 1
 
     # Load fixture definitions
-    fixtures = load_fixtures(fixtures_json_path)
-    log.info(f"Loaded {len(fixtures)} fixture definitions from {fixtures_json_path}")
+    index_path = FIXTURES_DIR / "index.json5"
+    if not index_path.exists():
+        log.error(f"Index file not found: {index_path}")
+        return 1
+
+    fixtures = load_fixture_definitions(index_path)
+    log.info(f"Loaded {len(fixtures)} fixture definitions from {index_path}")
     log.info("")
 
     errors: list[str] = []
 
-    for fixture in fixtures:
-        log.info(f"=== {fixture.description} ===")
+    for fixture_def in fixtures:
+        log.info(f"=== {fixture_def.description} ===")
 
-        pdf_path = Path(fixture.pdf)
+        pdf_path = fixture_def.pdf_path
         if not pdf_path.exists():
             log.error(f"  PDF not found: {pdf_path}")
             errors.append(str(pdf_path))
             continue
 
-        # Parse page numbers using the existing parser
-        page_numbers: list[int] | None = None
-        if fixture.pages:
-            page_ranges = parse_page_ranges(fixture.pages)
-            # We need a document length for page_numbers(), but we don't have
-            # it yet. Use a large number and filter later in extract_pages.
-            page_numbers = list(page_ranges.page_numbers(10000))
-            log.info(f"  Extracting pages: {fixture.pages}")
+        # Get page count and resolve page numbers
+        total_pages = get_pdf_page_count(pdf_path)
+        page_numbers = fixture_def.get_page_numbers(total_pages)
+
+        if fixture_def.pages:
+            log.info(f"  Extracting pages: {fixture_def.pages}")
         else:
             log.info("  Extracting all pages")
 
-        # Extract pages
-        pages = extract_pages(pdf_path, page_numbers)
-        log.info(f"  Extracted {len(pages)} page(s)")
+        # Extract all needed pages in one pass
+        extracted_pages = extract_pages_from_pdf(pdf_path, page_numbers)
+        log.info(f"  Extracted {len(extracted_pages)} page(s)")
 
-        # Save fixture
-        per_page = fixture.pages is not None
-        save_fixture(
-            pages,
-            fixtures_dir,
-            pdf_path,
-            compress=fixture.compress,
-            per_page=per_page,
-        )
+        # Save fixture(s)
+        save_fixture(fixture_def, extracted_pages, FIXTURES_DIR)
 
         log.info("")
 
