@@ -6,7 +6,7 @@ from PIL import Image as PILImage
 from pydantic import BaseModel
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.drawing_utils import compute_visible_bbox
+from build_a_long.pdf_extract.extractor.clip import iterate_drawings_with_clips
 from build_a_long.pdf_extract.extractor.ocr import OCR
 
 # Note: We intentionally do not build hierarchy here to avoid syncing issues
@@ -414,42 +414,26 @@ class Extractor:
         # Use extended=True to get clipping hierarchy
         drawings = self._page.get_drawings(extended=True)
 
-        # def callback(a, b):
-        #    pprint("callback", a, b)
-
-        # print("CALLBACK TEST")
-        # self._page.get_cdrawings(extended=True, callback=callback)
-        # print("CALLBACK DONE")
-
         drawing_blocks: list[Drawing] = []
-        for idx, d in enumerate(drawings):
-            assert isinstance(d, dict)
 
-            # Skip clip paths - they're not visible drawings, just clipping regions
-            if d.get("type") == "clip":
-                logger.debug("Skip clip path at index %d, skipping: %s", idx, d)
-                continue
-
-            drect = d.get("rect")
-            if not drect:
+        # Use efficient O(n) iteration with clip tracking
+        for idx, d, visible_bbox in iterate_drawings_with_clips(drawings):
+            if visible_bbox is None:
                 logger.warning(
                     "Drawing at index %d has no 'rect' field, skipping: %s", idx, d
                 )
                 continue
 
-            # Compute visible bbox considering clipping
-            visible_bbox: BBox | None = None
-            if "level" in d:  # Only available with extended=True
-                level = d.get("level", 0)
-                nbbox = BBox.from_tuple((drect.x0, drect.y0, drect.x1, drect.y1))
-                visible_bbox = compute_visible_bbox(nbbox, level, drawings, idx)  # type: ignore[arg-type]
-                logger.debug(
-                    "Drawing %d at level %d: bbox=%s, visible_bbox=%s",
-                    idx,
-                    level,
-                    nbbox,
-                    visible_bbox,
-                )
+            level = d.get("level", 0)
+            drect = d.get("rect")
+            nbbox = BBox.from_rect(drect)
+            logger.debug(
+                "Drawing %d at level %d: bbox=%s, visible_bbox=%s",
+                idx,
+                level,
+                nbbox,
+                visible_bbox,
+            )
 
             try:
                 drawing_block = Drawing.from_drawing_dict(

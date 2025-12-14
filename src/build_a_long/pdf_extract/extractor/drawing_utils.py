@@ -1,16 +1,12 @@
 """Utilities for processing PyMuPDF drawing data.
 
-This module contains functions for:
-- Converting PyMuPDF drawing items to JSON-serializable tuples
-- Computing visible bounding boxes considering clip paths
+This module contains functions for converting PyMuPDF drawing items
+to JSON-serializable tuples.
+
+For clip path computation, use the clip module.
 """
 
-import logging
-
-from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.pymupdf_types import DrawingDict
-
-logger = logging.getLogger(__name__)
+from build_a_long.pdf_extract.extractor.pymupdf_types import DrawingDict  # noqa: F401
 
 
 def convert_drawing_items(items: list[tuple] | None) -> tuple[tuple, ...] | None:
@@ -62,79 +58,3 @@ def convert_drawing_items(items: list[tuple] | None) -> tuple[tuple, ...] | None
         converted_items.append(tuple(converted_elements))
 
     return tuple(converted_items)
-
-
-def compute_visible_bbox(
-    bbox: BBox,
-    level: int,
-    drawings: list[DrawingDict],
-    current_index: int,
-) -> BBox:
-    """Compute visible bbox by intersecting with applicable clip paths.
-
-    In PyMuPDF's drawing hierarchy:
-    - A clip at level L applies to all subsequent drawings at level > L
-    - A clip's scope ends when we see a non-clip at level <= L
-    - We walk backwards to find all clips that apply to the current drawing
-
-    Args:
-        bbox: The original bounding box
-        level: The hierarchy level of this drawing
-        drawings: Full list of drawings (with extended=True)
-        current_index: Index of current drawing in the list
-
-    Returns:
-        The visible bbox after applying all relevant clips
-    """
-    visible = bbox
-
-    # Build the clip stack by walking backwards
-    # A clip at level L applies to drawings at level > L
-    # A clip's scope ends when we see a non-clip at level <= L
-    clip_stack: dict[int, BBox] = {}  # level -> clip bbox
-
-    for i in range(current_index - 1, -1, -1):
-        prev = drawings[i]
-        prev_level = prev.get("level", 0)
-        prev_type = prev.get("type")
-
-        # If we see a non-clip at or below our level, we can stop
-        # (we've exited all relevant clip scopes)
-        if prev_type != "clip" and prev_level < level:
-            logger.debug("  Stop at drawing %d (L%d non-clip)", i, prev_level)
-            break
-
-        # If it's a clip at a level less than ours, it applies
-        # Only add if we haven't seen a clip at this level yet
-        # (we're walking backwards, so first encountered is most recent)
-        if prev_type == "clip" and prev_level < level and prev_level not in clip_stack:
-            scissor = prev.get("scissor")
-            if scissor:
-                # Skip inverted/invalid clip rectangles - they don't make
-                # geometric sense as clipping regions and are likely PDF
-                # artifacts
-                if scissor.x0 > scissor.x1 or scissor.y0 > scissor.y1:
-                    logger.debug(
-                        "  Skipping inverted clip from drawing %d (L%d): %s",
-                        i,
-                        prev_level,
-                        scissor,
-                    )
-                    continue
-
-                clip_bbox = BBox.from_tuple(
-                    (scissor.x0, scissor.y0, scissor.x1, scissor.y1)
-                )
-                clip_stack[prev_level] = clip_bbox
-                logger.debug(
-                    "  Adding clip from drawing %d (L%d): %s",
-                    i,
-                    prev_level,
-                    clip_bbox,
-                )
-
-    # Apply all clips by intersecting
-    for clip_bbox in clip_stack.values():
-        visible = visible.intersect(clip_bbox)
-
-    return visible

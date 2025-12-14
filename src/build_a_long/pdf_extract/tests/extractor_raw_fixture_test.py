@@ -87,9 +87,10 @@ class TestExtractorRawFixtures:
 
         If the PDF is not found, the test is skipped.
         """
-        # Skip full-document fixtures for now (too slow)
-        if not fixture_def.is_per_page:
-            pytest.skip("Skipping full-document fixture (too slow)")
+        # TODO: Re-enable skip if performance regresses
+        # # Skip full-document fixtures for now (too slow)
+        # if not fixture_def.is_per_page:
+        #     pytest.skip("Skipping full-document fixture (too slow)")
 
         pdf_path = fixture_def.pdf_path
 
@@ -149,10 +150,7 @@ class TestExtractorRawFixtures:
                     )
 
                 # Build actual result in page order
-                pages = [
-                    extraction.pages[pn]
-                    for pn in sorted(extraction.pages.keys())
-                ]
+                pages = [extraction.pages[pn] for pn in sorted(extraction.pages.keys())]
                 actual = ExtractionResult(pages=pages)
 
                 diff = _compare_json(expected.to_json(), actual.to_json(), fixture_file)
