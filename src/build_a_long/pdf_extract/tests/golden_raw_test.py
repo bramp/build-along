@@ -1,4 +1,4 @@
-"""Tests to validate extractor output against _raw.json fixtures.
+"""Golden tests to validate extractor output against _raw.json fixtures.
 
 These tests verify that the extractor output matches the committed _raw.json
 fixtures. This ensures changes to the extractor don't inadvertently break
@@ -16,7 +16,7 @@ If a test fails, the extractor output has changed. To update fixtures:
 """
 
 import bz2
-import difflib
+import os
 
 import pytest
 
@@ -24,6 +24,7 @@ from build_a_long.pdf_extract.extractor import ExtractionResult
 from build_a_long.pdf_extract.fixtures import FIXTURES_DIR
 from build_a_long.pdf_extract.tests.fixture_utils import (
     FixtureDefinition,
+    compare_json,
     extract_pages_from_pdf,
     load_fixture_definitions,
 )
@@ -32,41 +33,7 @@ from build_a_long.pdf_extract.tests.fixture_utils import (
 FIXTURE_DEFINITIONS = load_fixture_definitions()
 
 
-def _compare_json(
-    expected_json: str, actual_json: str, fixture_name: str
-) -> str | None:
-    """Compare two JSON strings and return diff if different.
-
-    Args:
-        expected_json: Expected JSON content
-        actual_json: Actual JSON content
-        fixture_name: Name for diff output
-
-    Returns:
-        Diff string if different, None if identical
-    """
-    if expected_json == actual_json:
-        return None
-
-    # Only split into lines when we need to generate a diff
-    diff_lines = list(
-        difflib.unified_diff(
-            expected_json.splitlines(keepends=True),
-            actual_json.splitlines(keepends=True),
-            fromfile=f"{fixture_name} (expected)",
-            tofile=f"{fixture_name} (actual)",
-            lineterm="",
-        )
-    )
-
-    # Limit diff to first 100 lines
-    if len(diff_lines) > 100:
-        diff_lines = diff_lines[:100] + ["\n... (diff truncated) ...\n"]
-
-    return "".join(diff_lines)
-
-
-class TestExtractorRawFixtures:
+class TestGoldenRaw:
     """Tests comparing extractor output against _raw.json fixtures.
 
     Tests are organized by PDF file (from index.json5) to efficiently
@@ -88,10 +55,13 @@ class TestExtractorRawFixtures:
 
         If the PDF is not found, the test is skipped.
         """
-        # TODO: Re-enable skip if performance regresses
-        # # Skip full-document fixtures for now (too slow)
-        # if not fixture_def.is_per_page:
-        #     pytest.skip("Skipping full-document fixture (too slow)")
+        # Skip full-document fixtures unless integration tests are enabled (too slow)
+        if not fixture_def.is_per_page and not os.environ.get(
+            "ENABLE_INTEGRATION_TESTS"
+        ):
+            pytest.skip(
+                "Skipping full-document fixture (set ENABLE_INTEGRATION_TESTS=1 to run)"
+            )
 
         pdf_path = fixture_def.pdf_path
 
@@ -127,7 +97,7 @@ class TestExtractorRawFixtures:
                 expected_json = fixture_path.read_text()
                 actual = ExtractionResult(pages=[page_data])
 
-                diff = _compare_json(expected_json, actual.to_json(), fixture_file)
+                diff = compare_json(expected_json, actual.to_json(), fixture_file)
                 if diff:
                     failures.append(f"Mismatch in {fixture_file}:\n{diff}")
         else:
@@ -150,7 +120,7 @@ class TestExtractorRawFixtures:
                 pages = [extraction.pages[pn] for pn in sorted(extraction.pages.keys())]
                 actual = ExtractionResult(pages=pages)
 
-                diff = _compare_json(expected_json, actual.to_json(), fixture_file)
+                diff = compare_json(expected_json, actual.to_json(), fixture_file)
                 if diff:
                     failures.append(f"Mismatch in {fixture_file}:\n{diff}")
 

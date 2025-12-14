@@ -8,12 +8,12 @@ python_test_utils(
 
 python_tests(
     name="tests",
-    sources=["*_test.py", "!extractor_raw_fixture_test.py"],
+    sources=["*_test.py", "!golden_raw_test.py"],
 )
 
 python_tests(
-    name="raw_fixture_tests",
-    sources=["extractor_raw_fixture_test.py"],
+    name="golden_raw_tests",
+    sources=["golden_raw_test.py"],
     dependencies=[
         ":fixture_utils",
         "//src/build_a_long/pdf_extract/fixtures:data",

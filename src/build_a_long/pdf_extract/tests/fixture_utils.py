@@ -5,6 +5,7 @@ and extracting pages from PDFs. It is used by both the test suite and the
 regenerate_fixtures.py script.
 """
 
+import difflib
 from pathlib import Path
 
 import json5
@@ -78,6 +79,38 @@ class FixtureDefinition(BaseModel):
     def is_per_page(self) -> bool:
         """Whether this fixture generates per-page files."""
         return self.pages is not None
+
+
+def compare_json(expected_json: str, actual_json: str, fixture_name: str) -> str | None:
+    """Compare two JSON strings and return diff if different.
+
+    Args:
+        expected_json: Expected JSON content
+        actual_json: Actual JSON content
+        fixture_name: Name for diff output
+
+    Returns:
+        Diff string if different, None if identical
+    """
+    if expected_json == actual_json:
+        return None
+
+    # Only split into lines when we need to generate a diff
+    diff_lines = list(
+        difflib.unified_diff(
+            expected_json.splitlines(keepends=True),
+            actual_json.splitlines(keepends=True),
+            fromfile=f"{fixture_name} (expected)",
+            tofile=f"{fixture_name} (actual)",
+            lineterm="",
+        )
+    )
+
+    # Limit diff to first 100 lines
+    if len(diff_lines) > 100:
+        diff_lines = diff_lines[:100] + ["\n... (diff truncated) ...\n"]
+
+    return "".join(diff_lines)
 
 
 def load_fixture_definitions(index_path: Path | None = None) -> list[FixtureDefinition]:

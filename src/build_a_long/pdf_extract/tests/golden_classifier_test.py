@@ -18,7 +18,6 @@ To update golden files:
     pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
 """
 
-import difflib
 import logging
 
 import pytest
@@ -31,48 +30,12 @@ from build_a_long.pdf_extract.fixtures import (
     extract_element_id,
     load_classifier_config,
 )
+from build_a_long.pdf_extract.tests.fixture_utils import compare_json
 
 log = logging.getLogger(__name__)
 
 
-def _compare_json(
-    actual_json: str,
-    expected_json: str,
-    fixture_name: str,
-) -> list[str]:
-    """Compare actual and expected JSON outputs.
-
-    Returns a list of error messages (empty list if they match).
-
-    This performs a comparison of the JSON strings and shows
-    a unified diff when they don't match.
-    """
-    errors: list[str] = []
-
-    # Compare the JSON strings
-    if actual_json != expected_json:
-        # Generate a unified diff showing the differences
-        diff_lines = list(
-            difflib.unified_diff(
-                expected_json.splitlines(keepends=True),
-                actual_json.splitlines(keepends=True),
-                fromfile=f"{fixture_name} (expected)",
-                tofile=f"{fixture_name} (actual)",
-                lineterm="",
-            )
-        )
-
-        # Limit diff to first 100 lines to avoid overwhelming output
-        if len(diff_lines) > 100:
-            diff_lines = diff_lines[:100] + ["\n... (diff truncated) ...\n"]
-
-        diff_output = "".join(diff_lines)
-        errors.append(f"JSON outputs don't match:\n{diff_output}")
-
-    return errors
-
-
-class TestClassifierGolden:
+class TestGoldenClassifier:
     """Golden file tests validating Page output."""
 
     @pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
@@ -127,13 +90,12 @@ class TestClassifierGolden:
         expected_json = golden_path.read_text()
 
         # Compare the JSON strings
-        comparison_errors = _compare_json(actual_json, expected_json, fixture_file)
+        diff = compare_json(expected_json, actual_json, fixture_file)
 
         # Report errors if any
-        if comparison_errors:
+        if diff:
             pytest.fail(
-                f"Page test failed for {fixture_file}:\n"
-                + "\n".join(f"  - {e}" for e in comparison_errors)
+                f"Page test failed for {fixture_file}:\n{diff}"
                 + "\n\nTo update golden files, run: "
                 "pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py",
                 pytrace=False,
