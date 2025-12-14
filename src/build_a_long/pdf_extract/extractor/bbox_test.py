@@ -483,6 +483,74 @@ def test_expand_zero():
     assert expanded == bbox
 
 
+def test_to_int_tuple():
+    """Test converting bbox to integer tuple."""
+    bbox = BBox(10.3, 20.7, 30.9, 40.1)
+    result = bbox.to_int_tuple()
+
+    assert result == (10, 20, 30, 40)
+    assert all(isinstance(v, int) for v in result)
+
+
+def test_to_int_tuple_negative():
+    """Test converting bbox with negative coords to integer tuple."""
+    bbox = BBox(-5.9, -3.1, 10.5, 20.8)
+    result = bbox.to_int_tuple()
+
+    assert result == (-5, -3, 10, 20)
+
+
+def test_mul_scale():
+    """Test scaling bbox with multiplication."""
+    bbox = BBox(10, 20, 30, 40)
+    scaled = bbox * 2.0
+
+    assert scaled.x0 == 20.0
+    assert scaled.y0 == 40.0
+    assert scaled.x1 == 60.0
+    assert scaled.y1 == 80.0
+
+
+def test_mul_scale_fractional():
+    """Test scaling bbox with fractional multiplier."""
+    bbox = BBox(10, 20, 30, 40)
+    scaled = bbox * 0.5
+
+    assert scaled.x0 == 5.0
+    assert scaled.y0 == 10.0
+    assert scaled.x1 == 15.0
+    assert scaled.y1 == 20.0
+
+
+def test_rmul_scale():
+    """Test reverse multiplication (scale * bbox)."""
+    bbox = BBox(10, 20, 30, 40)
+    scaled = 2.0 * bbox
+
+    assert scaled.x0 == 20.0
+    assert scaled.y0 == 40.0
+    assert scaled.x1 == 60.0
+    assert scaled.y1 == 80.0
+
+
+def test_mul_scale_one():
+    """Test scaling bbox by 1.0 returns equivalent bbox."""
+    bbox = BBox(10, 20, 30, 40)
+    scaled = bbox * 1.0
+
+    assert scaled == bbox
+
+
+def test_mul_combined_with_to_int_tuple():
+    """Test typical OCR use case: scale then convert to int tuple."""
+    bbox = BBox(10.5, 20.3, 30.7, 40.9)
+    scale = 4.0
+
+    result = (bbox * scale).to_int_tuple()
+
+    assert result == (42, 81, 122, 163)
+
+
 class TestGroupBySimilarBbox:
     """Tests for group_by_similar_bbox function."""
 

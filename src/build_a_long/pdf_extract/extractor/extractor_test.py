@@ -34,13 +34,56 @@ def make_texttrace_span(
     }
 
 
+def make_rawdict_span(
+    text: str,
+    bbox: tuple[float, float, float, float],
+    font: str = "Arial",
+    size: float = 12.0,
+) -> dict:
+    """Helper to create a rawdict span dict for testing.
+
+    The rawdict format has chars as list of dicts with 'c' (char) and 'bbox' keys.
+    """
+    chars = [
+        {"c": c, "bbox": (bbox[0] + i * 4, bbox[1], bbox[0] + (i + 1) * 4, bbox[3])}
+        for i, c in enumerate(text)
+    ]
+    return {
+        "bbox": bbox,
+        "font": font,
+        "size": size,
+        "chars": chars,
+        "origin": (bbox[0], bbox[3] - 5),
+    }
+
+
+def make_rawdict(spans: list[dict]) -> dict:
+    """Helper to create a rawdict structure from a list of span dicts.
+
+    The rawdict structure is: {"blocks": [{"type": 0, "lines": [{"spans": [...]}]}]}
+    Each span becomes its own line for simplicity.
+    """
+    lines = [{"spans": [span], "bbox": span["bbox"]} for span in spans]
+    return {
+        "blocks": [
+            {
+                "type": 0,  # text block
+                "lines": lines,
+            }
+        ]
+    }
+
+
 class TestBoundingBoxExtractor:
     def test_extract_page_data_basic(self):
-        # Build a fake document with 1 page and simple texttrace content
+        # Build a fake document with 1 page and simple rawdict content
         fake_page = MagicMock()
-        fake_page.get_texttrace.return_value = [
-            make_texttrace_span("1", (10.0, 20.0, 30.0, 40.0), seqno=0),
-        ]
+        # Mock get_text for rawdict extraction (default path)
+        fake_page.get_text.return_value = make_rawdict(
+            [
+                make_rawdict_span("1", (10.0, 20.0, 30.0, 40.0)),
+            ]
+        )
         fake_page.get_bboxlog.return_value = [
             ("fill-text", (10.0, 20.0, 30.0, 40.0)),
             ("fill-image", (50.0, 60.0, 150.0, 200.0)),
@@ -95,9 +138,12 @@ class TestBoundingBoxExtractor:
     def test_extract_page_data_with_output(self):
         """Test that extractor does NOT write images/json (that's in main.py now)."""
         mock_page = MagicMock()
-        mock_page.get_texttrace.return_value = [
-            make_texttrace_span("1", (10.0, 20.0, 30.0, 40.0), seqno=0),
-        ]
+        # Mock get_text for rawdict extraction (default path)
+        mock_page.get_text.return_value = make_rawdict(
+            [
+                make_rawdict_span("1", (10.0, 20.0, 30.0, 40.0)),
+            ]
+        )
         mock_page.get_bboxlog.return_value = [
             ("fill-text", (10.0, 20.0, 30.0, 40.0)),
         ]
@@ -123,21 +169,13 @@ class TestBoundingBoxExtractor:
     def test_extract_text_blocks(self):
         """Test that regular text is extracted as Text elements with content."""
         mock_page = MagicMock()
-        # Convert "Build Step Instructions" to chars
+        # Mock get_text for rawdict extraction (default path)
         text = "Build Step Instructions"
-        chars = [
-            (ord(c), i, (10.0 + i * 4, 35.0), (10.0 + i * 4, 20.0, 14.0 + i * 4, 40.0))
-            for i, c in enumerate(text)
-        ]
-        mock_page.get_texttrace.return_value = [
-            {
-                "bbox": (10.0, 20.0, 100.0, 40.0),
-                "font": "Arial",
-                "size": 12.0,
-                "seqno": 0,
-                "chars": chars,
-            },
-        ]
+        mock_page.get_text.return_value = make_rawdict(
+            [
+                make_rawdict_span(text, (10.0, 20.0, 100.0, 40.0)),
+            ]
+        )
         mock_page.get_bboxlog.return_value = [
             ("fill-text", (10.0, 20.0, 100.0, 40.0)),
         ]
@@ -164,11 +202,13 @@ class TestBoundingBoxExtractor:
     def test_sequential_id_assignment(self):
         """Test that IDs are assigned sequentially within a page."""
         mock_page = MagicMock()
-        # Two text spans in texttrace
-        mock_page.get_texttrace.return_value = [
-            make_texttrace_span("First", (10.0, 20.0, 30.0, 40.0), seqno=0),
-            make_texttrace_span("Second", (35.0, 20.0, 55.0, 40.0), seqno=1),
-        ]
+        # Mock get_text for rawdict extraction (default path)
+        mock_page.get_text.return_value = make_rawdict(
+            [
+                make_rawdict_span("First", (10.0, 20.0, 30.0, 40.0)),
+                make_rawdict_span("Second", (35.0, 20.0, 55.0, 40.0)),
+            ]
+        )
         mock_page.get_bboxlog.return_value = [
             ("fill-text", (10.0, 20.0, 30.0, 40.0)),
             ("fill-text", (35.0, 20.0, 55.0, 40.0)),
@@ -219,9 +259,12 @@ class TestBoundingBoxExtractor:
     def test_id_reset_across_pages(self):
         """Test that IDs reset to 0 for each new page."""
         mock_page1 = MagicMock()
-        mock_page1.get_texttrace.return_value = [
-            make_texttrace_span("Page 1", (10.0, 20.0, 30.0, 40.0), seqno=0),
-        ]
+        # Mock get_text for rawdict extraction (default path)
+        mock_page1.get_text.return_value = make_rawdict(
+            [
+                make_rawdict_span("Page 1", (10.0, 20.0, 30.0, 40.0)),
+            ]
+        )
         mock_page1.get_bboxlog.return_value = [
             ("fill-text", (10.0, 20.0, 30.0, 40.0)),
         ]
@@ -231,9 +274,12 @@ class TestBoundingBoxExtractor:
         mock_page1.rect = MagicMock(x0=0, y0=0, x1=612, y1=792)
 
         mock_page2 = MagicMock()
-        mock_page2.get_texttrace.return_value = [
-            make_texttrace_span("Page 2", (10.0, 20.0, 30.0, 40.0), seqno=0),
-        ]
+        # Mock get_text for rawdict extraction (default path)
+        mock_page2.get_text.return_value = make_rawdict(
+            [
+                make_rawdict_span("Page 2", (10.0, 20.0, 30.0, 40.0)),
+            ]
+        )
         mock_page2.get_bboxlog.return_value = [
             ("fill-text", (10.0, 20.0, 30.0, 40.0)),
         ]

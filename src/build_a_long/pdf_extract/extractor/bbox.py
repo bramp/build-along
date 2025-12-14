@@ -256,6 +256,42 @@ class BBox(BaseModel):
         """
         return (self.x0, self.y0, self.x1, self.y1)
 
+    def to_int_tuple(self) -> tuple[int, int, int, int]:
+        """Convert BBox to integer tuple (x0, y0, x1, y1).
+
+        Useful for PIL crop() which expects integer coordinates.
+        """
+        return (int(self.x0), int(self.y0), int(self.x1), int(self.y1))
+
+    def __mul__(self, scale: float) -> BBox:
+        """Scale the bounding box by a factor.
+
+        Args:
+            scale: The factor to multiply all coordinates by.
+
+        Returns:
+            A new BBox with all coordinates scaled.
+
+        Example:
+            >>> bbox = BBox(10, 20, 30, 40)
+            >>> scaled = bbox * 2.0
+            >>> scaled.to_tuple()
+            (20.0, 40.0, 60.0, 80.0)
+        """
+        return BBox(
+            x0=self.x0 * scale,
+            y0=self.y0 * scale,
+            x1=self.x1 * scale,
+            y1=self.y1 * scale,
+        )
+
+    def __rmul__(self, scale: float) -> BBox:
+        """Scale the bounding box by a factor (reverse multiplication).
+
+        Allows `2.0 * bbox` syntax in addition to `bbox * 2.0`.
+        """
+        return self.__mul__(scale)
+
     def union(self, other: BBox) -> BBox:
         """Return the bounding box that encompasses both this bbox and another.
 

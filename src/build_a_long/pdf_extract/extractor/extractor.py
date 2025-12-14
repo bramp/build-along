@@ -2,10 +2,12 @@ import logging
 from collections.abc import Sequence
 
 import pymupdf
+from PIL import Image as PILImage
 from pydantic import BaseModel
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.drawing_utils import compute_visible_bbox
+from build_a_long.pdf_extract.extractor.ocr import OCR
 
 # Note: We intentionally do not build hierarchy here to avoid syncing issues
 from build_a_long.pdf_extract.extractor.page_blocks import (
@@ -16,7 +18,11 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 )
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
     ImageInfoDict,
+    RawDict,
     RectLikeTuple,
+    SpanDict,
+    TextBlockDict,
+    TexttraceSpanDict,
 )
 from build_a_long.pdf_extract.utils import SerializationMixin
 
@@ -110,6 +116,8 @@ class Extractor:
         *,
         include_metadata: bool = False,
         include_smask: bool = False,
+        perform_ocr: bool = False,
+        use_rawdict: bool = True,
     ) -> None:
         """Initialize the extractor for a specific page.
 
@@ -121,15 +129,30 @@ class Extractor:
             include_smask: If True, extract soft mask (alpha/transparency) xrefs
                 for images. This requires an additional page.get_images() call.
                 Defaults to False.
+            perform_ocr: If True, attempt to OCR images to extract text.
+                Defaults to False.
+            use_rawdict: If True, use page.get_text('rawdict') for text extraction
+                instead of page.get_texttrace(). The rawdict method provides text
+                in reading order but lacks draw_order information. Defaults to True.
         """
         self._page = page
         self._page_num = page_num
         self._include_metadata = include_metadata
         self._include_smask = include_smask
+        self._perform_ocr = perform_ocr
+        self._use_rawdict = use_rawdict
+        self._draw_order_counts: dict[int, int] = {}
         self._next_id = 0
 
         # Lazy-initialized BBoxLogTracker for draw order
         self._bboxlog_tracker: BBoxLogTracker | None = None
+
+        # Lazy-initialized rendered page image for OCR (cached)
+        self._page_image: PILImage.Image | None = None
+        self._page_image_scale: float = 4.0  # Render at 4x for better OCR quality
+
+        # Initialize OCR engine if needed
+        self._ocr_engine = OCR() if perform_ocr else None
 
     @property
     def page(self) -> pymupdf.Page:
@@ -152,6 +175,65 @@ class Extractor:
             self._bboxlog_tracker = BBoxLogTracker(bboxlog)
         return self._bboxlog_tracker
 
+    def _get_page_image(self) -> PILImage.Image:
+        """Get or create the cached rendered page image for OCR.
+
+        The page is rendered at a higher resolution (4x scale) for better
+        OCR accuracy. The rendered image is cached for reuse across multiple
+        image block OCR operations on the same page.
+
+        Returns:
+            PIL Image of the rendered page
+        """
+        if self._page_image is None:
+            # Render page at higher resolution for OCR quality
+            mat = pymupdf.Matrix(self._page_image_scale, self._page_image_scale)
+            pix = self._page.get_pixmap(matrix=mat)
+
+            # Convert to PIL Image
+            self._page_image = pix.pil_image()
+
+            logger.debug(
+                "Rendered page %d at scale %.1fx: %dx%d pixels",
+                self._page_num,
+                self._page_image_scale,
+                pix.width,
+                pix.height,
+            )
+        return self._page_image
+
+    def _ocr_image(self, bbox: RectLikeTuple) -> str | None:
+        """Extract text from an image region using OCR.
+
+        Crops the specified bounding box from the rendered page image and
+        performs OCR to extract any text content.
+
+        TODO: Cache OCR results based on the cropped image content hash to avoid
+        re-OCRing identical images that appear multiple times across pages.
+
+        Args:
+            bbox: The bounding box of the image region to OCR (in page coordinates).
+
+        Returns:
+            Extracted text string if successful and non-empty, None otherwise.
+        """
+        if not self._ocr_engine:
+            return None
+
+        try:
+            full_page_img = self._get_page_image()
+            img_bbox = BBox.from_tuple(bbox) * self._page_image_scale
+            block_img = full_page_img.crop(img_bbox.to_int_tuple())
+            return self._ocr_engine.extract_text(block_img)
+        except Exception as e:
+            logger.warning(
+                "Failed to OCR image on page %s bbox=%s: %s",
+                self._page_num,
+                bbox,
+                e,
+            )
+            return None
+
     # TODO Maybe the ID should be based on the draw_order (which is also unique)
     def _get_next_id(self) -> int:
         """Get the next sequential ID and increment the counter."""
@@ -166,7 +248,9 @@ class Extractor:
         """
         self._next_id = 0
 
-    def _extract_text_blocks_from_texttrace(self, texttrace: list[dict]) -> list[Text]:
+    def _extract_text_blocks_from_texttrace(
+        self, texttrace: list[TexttraceSpanDict]
+    ) -> list[Text]:
         """Extract text blocks from texttrace spans.
 
         Uses get_texttrace() which provides text in render order with seqno
@@ -185,7 +269,7 @@ class Extractor:
                 continue
 
             text_block = Text.from_texttrace_span(
-                span,  # type: ignore[arg-type]
+                span,
                 block_id=self._get_next_id(),
                 include_metadata=self._include_metadata,
             )
@@ -200,6 +284,58 @@ class Extractor:
             )
 
             text_blocks.append(text_block)
+
+        return text_blocks
+
+    def _extract_text_blocks_from_rawdict(self, rawdict: RawDict) -> list[Text]:
+        """Extract text blocks from rawdict structure.
+
+        Uses get_text('rawdict') which provides text in reading order with
+        a hierarchical block → line → span structure.
+
+        Note:
+            This method does not provide draw_order information (it will be None).
+            The rawdict/dict API doesn't expose sequence numbers like get_texttrace().
+            For most use cases, text can be assumed to be rendered on top of other
+            content, so consuming code should treat None draw_order as "on top".
+
+        Args:
+            rawdict: Dict from page.get_text('rawdict')
+
+        Returns:
+            List of Text blocks with assigned IDs
+        """
+        text_blocks: list[Text] = []
+
+        for block in rawdict.get("blocks", []):
+            # Skip image blocks (type 1), only process text blocks (type 0)
+            if block.get("type") != 0:
+                continue
+
+            # Cast to TextBlockDict for type checking
+            text_block_dict: TextBlockDict = block  # type: ignore[assignment]
+
+            for line in text_block_dict.get("lines", []):
+                for span in line.get("spans", []):
+                    span_dict: SpanDict = span  # type: ignore[assignment]
+                    if not span_dict.get("bbox"):
+                        continue
+
+                    text_block = Text.from_span_dict(
+                        span_dict,
+                        block_id=self._get_next_id(),
+                        include_metadata=self._include_metadata,
+                    )
+
+                    logger.debug(
+                        "Found text %r with bbox %s, font %s, size %s",
+                        text_block.text,
+                        text_block.bbox,
+                        text_block.font_name,
+                        text_block.font_size,
+                    )
+
+                    text_blocks.append(text_block)
 
         return text_blocks
 
@@ -227,11 +363,16 @@ class Extractor:
             # Find draw order by matching bbox
             draw_order = tracker.find_image_draw_order(bbox)
 
+            text: str | None = None
+            if self._perform_ocr:
+                text = self._ocr_image(bbox)
+
             image_block = Image.from_image_info(
                 img_info,
                 block_id=self._get_next_id(),
                 draw_order=draw_order,
                 include_metadata=self._include_metadata,
+                text=text,
             )
 
             image_blocks.append(image_block)
@@ -273,12 +414,20 @@ class Extractor:
         # Use extended=True to get clipping hierarchy
         drawings = self._page.get_drawings(extended=True)
 
+        # def callback(a, b):
+        #    pprint("callback", a, b)
+
+        # print("CALLBACK TEST")
+        # self._page.get_cdrawings(extended=True, callback=callback)
+        # print("CALLBACK DONE")
+
         drawing_blocks: list[Drawing] = []
         for idx, d in enumerate(drawings):
             assert isinstance(d, dict)
 
             # Skip clip paths - they're not visible drawings, just clipping regions
             if d.get("type") == "clip":
+                logger.debug("Skip clip path at index %d, skipping: %s", idx, d)
                 continue
 
             drect = d.get("rect")
@@ -326,17 +475,28 @@ class Extractor:
     def extract_text_blocks(self) -> list[Text]:
         """Extract text blocks from the page.
 
-        Uses get_texttrace() which provides text in render order with seqno
-        for direct draw_order mapping.
+        Uses either get_texttrace() or get_text('rawdict') depending on the
+        use_rawdict flag set during initialization.
+
+        get_texttrace() provides text in render order with seqno for direct
+        draw_order mapping.
+
+        get_text('rawdict') provides text in reading order with a hierarchical
+        structure, but without draw_order information.
 
         Returns:
             List of Text blocks with assigned IDs
         """
+        if self._use_rawdict:
+            # TODO Change flags to the default TEXTFLAGS_DICT - TEXT_MEDIABOX_CLIP
+            rawdict: RawDict = self._page.get_text("rawdict", flags=0)  # type: ignore[assignment]
+            return self._extract_text_blocks_from_rawdict(rawdict)
+
         # Use get_texttrace() for text extraction - it provides:
         # - Text in render order (not reading order)
         # - seqno field that directly maps to bboxlog index for draw_order
         # - All font/style information we need
-        texttrace = self._page.get_texttrace()
+        texttrace: list[TexttraceSpanDict] = self._page.get_texttrace()  # type: ignore[assignment]
         return self._extract_text_blocks_from_texttrace(texttrace)
 
     def extract_page_data(
@@ -385,6 +545,7 @@ def extract_page_data(
     include_types: set[str] | None = None,
     *,
     include_metadata: bool = False,
+    perform_ocr: bool = False,
 ) -> list[PageData]:
     """
     Extract bounding boxes for the selected pages of a PDF document.
@@ -397,6 +558,8 @@ def extract_page_data(
             If None, defaults to all types.
         include_metadata: If True, extract additional metadata (colors, fonts,
             dimensions, etc.). If False, only extract core fields.
+        perform_ocr: If True, attempt to OCR images to extract text.
+            Defaults to False.
 
     Returns:
         List of PageData containing all pages with their blocks
@@ -422,6 +585,7 @@ def extract_page_data(
             page=page,
             page_num=page_num,
             include_metadata=include_metadata,
+            perform_ocr=perform_ocr,
         )
         page_data = extractor.extract_page_data(include_types=include_types)
         pages.append(page_data)

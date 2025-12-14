@@ -40,14 +40,17 @@ class CharDict(TypedDict):
 
 
 class SpanDict(TypedDict):
-    """Type definition for a text span in PyMuPDF rawdict.
+    """Type definition for a text span in PyMuPDF rawdict/dict.
 
     See https://pymupdf.readthedocs.io/en/latest/textpage.html#dictionary-structure-of-extractdict-and-extractrawdict
+
+    Note: 'text' is only present in extractDICT() output.
+          'chars' is only present in extractRAWDICT() output.
     """
 
     bbox: RectLikeTuple
-    text: str
-    chars: list[CharDict]
+    text: NotRequired[str]  # only in extractDICT()
+    chars: NotRequired[list[CharDict]]  # only in extractRAWDICT()
     font: NotRequired[str]  # font name
     size: NotRequired[float]  # font size in points
     flags: NotRequired[int]  # font flags (bitmap: superscript, italic, serif, etc.)

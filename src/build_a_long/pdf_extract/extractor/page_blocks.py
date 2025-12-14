@@ -32,10 +32,16 @@ from build_a_long.pdf_extract.extractor.pymupdf_types import (
     ImageInfoDict,
     PointLikeTuple,
     RectLikeTuple,
+    SpanDict,
     TexttraceSpanDict,
     TransformTuple,
 )
 from build_a_long.pdf_extract.utils import SerializationMixin
+
+# Default draw_order for text blocks when sequence information is not available.
+# Text is typically rendered on top in PDFs, so we use a high value to place
+# it above other elements (images, drawings) in the z-order.
+DEFAULT_TEXT_DRAW_ORDER = 1_000_000
 
 
 class Block(SerializationMixin, BaseModel, ABC):
@@ -280,6 +286,85 @@ class Text(Block):
             origin=origin,
         )
 
+    @classmethod
+    def from_span_dict(
+        cls,
+        span: SpanDict,
+        block_id: int,
+        *,
+        include_metadata: bool = False,
+    ) -> Text:
+        """Create a Text block from a PyMuPDF dict or rawdict span.
+
+        Args:
+            span: A span dict from page.get_text('dict') or page.get_text('rawdict')
+            block_id: Unique ID to assign to this block
+            include_metadata: If True, extract additional metadata (color, flags, etc.)
+
+        Returns:
+            A new Text block with the extracted data
+
+        Note:
+            Unlike from_texttrace_span, dict/rawdict does not provide sequence number
+            information. This method sets draw_order to TEXT_DEFAULT_DRAW_ORDER (a high
+            value) assuming text is typically rendered on top of other content.
+
+            This method handles both formats:
+            - 'dict' spans have a 'text' field with the string directly
+            - 'rawdict' spans have a 'chars' list with character dicts containing 'c'
+        """
+        bbox = span.get("bbox")
+        if not bbox:
+            raise ValueError("Span has no bbox")
+
+        nbbox = BBox.from_tuple(bbox)
+
+        # Handle both dict (has 'text') and rawdict (has 'chars') formats
+        if "text" in span:
+            # dict format: text is directly available
+            text = span.get("text", "")
+        else:
+            # rawdict format: assemble text from chars array
+            # Each char dict has 'c' for the character, 'origin', and 'bbox'
+            chars = span.get("chars", [])
+            text = "".join(c.get("c", "") for c in chars)
+
+        font_size: float | None = span.get("size")
+        font_name: str | None = span.get("font")
+
+        # dict/rawdict does not provide seqno, so we use a high default value
+        # since text is typically rendered on top in PDFs
+        draw_order = DEFAULT_TEXT_DRAW_ORDER
+
+        # Extract additional metadata if requested
+        font_flags: int | None = None
+        color: int | None = None
+        ascender: float | None = None
+        descender: float | None = None
+        origin: PointLikeTuple | None = None
+
+        if include_metadata:
+            font_flags = span.get("flags")
+            # dict/rawdict returns color as RGB integer (already in the format we need)
+            color = span.get("color")
+            ascender = span.get("ascender")
+            descender = span.get("descender")
+            origin = span.get("origin")
+
+        return cls(
+            id=block_id,
+            bbox=nbbox,
+            draw_order=draw_order,
+            text=text,
+            font_name=font_name,
+            font_size=font_size,
+            font_flags=font_flags,
+            color=color,
+            ascender=ascender,
+            descender=descender,
+            origin=origin,
+        )
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         text_preview = self.text[:30] + "..." if len(self.text) > 30 else self.text
@@ -294,6 +379,7 @@ class Image(Block):
 
     tag: Literal["Image"] = Field(default="Image", alias="__tag__", frozen=True)
     image_id: str | None = None
+    text: str | None = None
 
     width: int | None = None  # image width in pixels
     height: int | None = None  # image height in pixels
@@ -318,6 +404,7 @@ class Image(Block):
         draw_order: int | None = None,
         *,
         include_metadata: bool = False,
+        text: str | None = None,
     ) -> Image:
         """Create an Image block from PyMuPDF image info.
 
@@ -326,6 +413,7 @@ class Image(Block):
             block_id: Unique ID to assign to this block
             draw_order: The draw order from bboxlog (determined by caller)
             include_metadata: If True, extract additional metadata (dimensions, etc.)
+            text: Optional OCR text content extracted from the image.
 
         Returns:
             A new Image block with the extracted data
@@ -365,6 +453,7 @@ class Image(Block):
         return cls(
             bbox=nbbox,
             image_id=f"image_{bi}",
+            text=text,
             width=width,
             height=height,
             colorspace=colorspace,
@@ -411,7 +500,8 @@ class Image(Block):
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         image_str = f", image_id={self.image_id}" if self.image_id else ""
-        return f"Image(bbox={str(self.bbox)}{image_str})"
+        text_str = f", text={self.text!r}" if self.text else ""
+        return f"Image(bbox={str(self.bbox)}{image_str}{text_str})"
 
 
 # Discriminated union type for polymorphic deserialization
