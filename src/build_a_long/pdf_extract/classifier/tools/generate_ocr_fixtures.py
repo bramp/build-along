@@ -51,7 +51,7 @@ def extract_images_from_page(
 
     # Render the full page at high resolution
     mat = pymupdf.Matrix(scale, scale)
-    pix = page.get_pixmap(matrix=mat)
+    pix = page.get_pixmap(matrix=mat, colorspace=pymupdf.csRGB)
     page_img = pix.pil_image()
 
     log.info(f"Page {page_num}: Found {len(image_infos)} images")

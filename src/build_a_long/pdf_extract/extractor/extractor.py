@@ -188,7 +188,7 @@ class Extractor:
         if self._page_image is None:
             # Render page at higher resolution for OCR quality
             mat = pymupdf.Matrix(self._page_image_scale, self._page_image_scale)
-            pix = self._page.get_pixmap(matrix=mat)
+            pix = self._page.get_pixmap(matrix=mat, colorspace=pymupdf.csRGB)
 
             # Convert to PIL Image
             self._page_image = pix.pil_image()

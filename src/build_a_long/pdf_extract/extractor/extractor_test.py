@@ -12,7 +12,11 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
     Image,
     Text,
 )
-from build_a_long.pdf_extract.extractor.pymupdf_types import DrawingDict
+from build_a_long.pdf_extract.extractor.pymupdf_types import (
+    DrawingDict,
+    TexttraceChar,
+    TexttraceSpanDict,
+)
 
 
 def make_texttrace_span(
@@ -21,10 +25,12 @@ def make_texttrace_span(
     seqno: int,
     font: str = "Arial",
     size: float = 12.0,
-) -> dict:
+) -> TexttraceSpanDict:
     """Helper to create a texttrace span dict for testing."""
     # Each char is (unicode, glyph_id, origin, bbox)
-    chars = [(ord(c), i, (bbox[0], bbox[3] - 5), bbox) for i, c in enumerate(text)]
+    chars: list[TexttraceChar] = [
+        (ord(c), i, (bbox[0], bbox[3] - 5), bbox) for i, c in enumerate(text)
+    ]
     return {
         "bbox": bbox,
         "font": font,
