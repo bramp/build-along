@@ -1,0 +1,10 @@
+# Ignore all PDF files and subdirectories (downloaded, not committed)
+*
+
+# But don't ignore this .gitignore or the BUILD file
+!.gitignore
+!BUILD
+
+# Track the placeholder directory (ensures tests don't fail on fresh checkouts)
+!.placeholder
+!.placeholder/**
