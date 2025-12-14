@@ -4,10 +4,13 @@ python_sources(
         # Use: pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
         "generate_golden_files.py": {"run_goal_use_sandbox": False},
         "generate_golden_hints.py": {"run_goal_use_sandbox": False},
+        "generate_ocr_fixtures.py": {"run_goal_use_sandbox": False},
         "regenerate_fixtures.py": {"run_goal_use_sandbox": False},
         "tune_config.py": {"run_goal_use_sandbox": False},
     },
 )
+
+
 
 python_tests(
     name="tests",
