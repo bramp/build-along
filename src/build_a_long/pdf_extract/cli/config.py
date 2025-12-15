@@ -35,6 +35,7 @@ class ProcessingConfig(BaseModel):
     debug_classification: bool = False
     debug_candidates: bool = False
     debug_candidates_label: str | None = None
+    debug_unassigned: bool = False
     print_histogram: bool = False
     print_font_hints: bool = False
 
@@ -70,6 +71,7 @@ class ProcessingConfig(BaseModel):
             debug_classification=args.debug_classification,
             debug_candidates=args.debug_candidates,
             debug_candidates_label=args.debug_candidates_label,
+            debug_unassigned=args.debug_unassigned,
             print_histogram=args.print_histogram,
             print_font_hints=args.print_font_hints,
         )
@@ -226,6 +228,14 @@ def parse_arguments() -> argparse.Namespace:
         help=(
             "Limit --debug-candidates output to a specific label "
             "(e.g., 'step_number', 'page_number'). If not specified, shows all labels."
+        ),
+    )
+    debug_group.add_argument(
+        "--debug-unassigned",
+        action="store_true",
+        help=(
+            "Print detailed diagnostics for unassigned blocks, including "
+            "categorization, reasons, and recommendations for fixing."
         ),
     )
     debug_group.add_argument(

@@ -28,6 +28,9 @@ from build_a_long.pdf_extract.cli.reporting import (
     build_and_print_page_hierarchy,
     print_summary,
 )
+from build_a_long.pdf_extract.cli.unassigned_diagnostics import (
+    print_unassigned_diagnostics,
+)
 from build_a_long.pdf_extract.extractor.extractor import (
     ExtractionResult,
     Extractor,
@@ -396,6 +399,9 @@ def _print_debug_output(
                 show_hierarchy=False,
                 label=config.debug_candidates_label,
             )
+
+    if config.debug_unassigned:
+        print_unassigned_diagnostics(results)
 
 
 def main() -> int:
