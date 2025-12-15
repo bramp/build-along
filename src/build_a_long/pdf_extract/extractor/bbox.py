@@ -395,6 +395,8 @@ class HasBBox(Protocol):
 def build_connected_cluster[T: HasBBox](
     seed_item: T,
     candidate_items: list[T],
+    *,
+    tolerance: float = 1e-6,
 ) -> list[T]:
     """Build a connected cluster of items based on bbox overlap.
 
@@ -404,6 +406,9 @@ def build_connected_cluster[T: HasBBox](
     Args:
         seed_item: Initial item to start the cluster
         candidate_items: Items to consider adding to the cluster
+        tolerance: Amount to expand bboxes before checking overlap.
+            A small positive value (e.g., 0.1) will include adjacent/touching
+            blocks. Default 1e-6 catches floating point rounding issues.
 
     Returns:
         List of items in the connected cluster (includes seed item)
@@ -411,6 +416,8 @@ def build_connected_cluster[T: HasBBox](
     Example:
         >>> # Find images that form a connected cluster with a bag number
         >>> cluster = build_connected_cluster(bag_image, images)
+        >>> # Include adjacent blocks that are touching
+        >>> cluster = build_connected_cluster(bag_image, images, tolerance=0.1)
     """
     # Build index mapping for quick lookup
     candidate_set = set(range(len(candidate_items)))
@@ -435,11 +442,13 @@ def build_connected_cluster[T: HasBBox](
         processed.add(current_idx)
 
         current_item = candidate_items[current_idx]
+        # Expand the current item's bbox by tolerance for overlap check.
+        current_bbox = current_item.bbox.expand(tolerance)
 
-        # Find candidates that overlap with current item
+        # Find candidates that overlap with current item (expanded by tolerance)
         for idx in list(candidate_set):
             candidate = candidate_items[idx]
-            if candidate.bbox.overlaps(current_item.bbox):
+            if candidate.bbox.overlaps(current_bbox):
                 cluster_indices.add(idx)
                 to_process.append(idx)
                 candidate_set.discard(idx)
@@ -448,7 +457,11 @@ def build_connected_cluster[T: HasBBox](
     return [candidate_items[idx] for idx in sorted(cluster_indices)]
 
 
-def build_all_connected_clusters[T: HasBBox](items: list[T]) -> list[list[T]]:
+def build_all_connected_clusters[T: HasBBox](
+    items: list[T],
+    *,
+    tolerance: float = 1e-6,
+) -> list[list[T]]:
     """Build all connected clusters from a list of items based on bbox overlap.
 
     Groups all items into clusters where items in each cluster are
@@ -456,6 +469,9 @@ def build_all_connected_clusters[T: HasBBox](items: list[T]) -> list[list[T]]:
 
     Args:
         items: List of items with bbox property
+        tolerance: Amount to expand bboxes before checking overlap.
+            A small positive value (e.g., 0.1) will include adjacent/touching
+            blocks. Default 1e-6 catches floating point rounding issues.
 
     Returns:
         List of clusters, where each cluster is a list of connected items
@@ -480,7 +496,7 @@ def build_all_connected_clusters[T: HasBBox](items: list[T]) -> list[list[T]]:
         remaining.remove(seed_idx)
 
         # Build a cluster starting from this seed
-        cluster = build_connected_cluster(seed_item, items)
+        cluster = build_connected_cluster(seed_item, items, tolerance=tolerance)
 
         # Remove clustered items from remaining set
         for item in cluster:
