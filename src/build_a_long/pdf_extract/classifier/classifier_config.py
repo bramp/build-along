@@ -22,6 +22,7 @@ from build_a_long.pdf_extract.classifier.config import (
     StepCountConfig,
     StepNumberConfig,
     SubAssemblyConfig,
+    SubStepNumberConfig,
     TriviaTextConfig,
 )
 from build_a_long.pdf_extract.classifier.pages.page_hint_collection import (
@@ -45,6 +46,10 @@ class ClassifierConfig(BaseModel):
     # Step number classifier settings
     step_number: StepNumberConfig = Field(default_factory=StepNumberConfig)
     """Configuration for step number classification."""
+
+    # Substep number classifier settings
+    substep_number: SubStepNumberConfig = Field(default_factory=SubStepNumberConfig)
+    """Configuration for substep number classification."""
 
     # Part count classifier settings
     part_count: PartCountConfig = Field(default_factory=PartCountConfig)

@@ -43,6 +43,9 @@ from build_a_long.pdf_extract.classifier.config.step_number_config import (
 from build_a_long.pdf_extract.classifier.config.subassembly_config import (
     SubAssemblyConfig,
 )
+from build_a_long.pdf_extract.classifier.config.substep_number_config import (
+    SubStepNumberConfig,
+)
 from build_a_long.pdf_extract.classifier.config.trivia_text_config import (
     TriviaTextConfig,
 )
@@ -65,5 +68,6 @@ __all__ = [
     "StepCountConfig",
     "StepNumberConfig",
     "SubAssemblyConfig",
+    "SubStepNumberConfig",
     "TriviaTextConfig",
 ]
