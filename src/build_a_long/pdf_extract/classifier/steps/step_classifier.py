@@ -21,6 +21,7 @@ Set environment variables to aid investigation without code changes:
 """
 
 import logging
+from collections.abc import Callable, Sequence
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -38,6 +39,11 @@ from build_a_long.pdf_extract.classifier.score import (
     Weight,
     find_best_scoring,
 )
+from build_a_long.pdf_extract.classifier.steps.pairing import (
+    PairingConfig,
+    find_optimal_pairings,
+    has_divider_between,
+)
 from build_a_long.pdf_extract.classifier.text import (
     extract_step_number_value,
 )
@@ -52,6 +58,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Step,
     StepNumber,
     SubAssembly,
+    SubStep,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
@@ -123,6 +130,7 @@ class StepClassifier(LabelClassifier):
             "diagram",
             "rotation_symbol",
             "subassembly",
+            "substep",
             "preview",
         }
     )
@@ -309,8 +317,9 @@ class StepClassifier(LabelClassifier):
                 )
 
         # Phase 5: Build Step candidates with deduplication by step value
-        # Filter out subassembly steps, then build in score order, skipping
-        # step values that have already been built.
+        # Filter out candidates that look like substeps (small step numbers with
+        # a significant gap from main step numbers). These are handled by
+        # SubStepClassifier instead.
         # Steps are built as "partial" - just step_number + parts_list.
         # Diagrams and subassemblies are assigned later via Hungarian matching.
         all_step_candidates = result.get_scored_candidates(
@@ -394,8 +403,16 @@ class StepClassifier(LabelClassifier):
             len(available_diagrams),
         )
 
+        # Collect divider bboxes for obstruction checking (used by multiple phases)
+        divider_bboxes: list[BBox] = []
+        for div_candidate in result.get_scored_candidates("divider", valid_only=True):
+            assert div_candidate.constructed is not None
+            assert isinstance(div_candidate.constructed, Divider)
+            divider_bboxes.append(div_candidate.constructed.bbox)
+
         # Assign diagrams to steps using Hungarian matching
-        assign_diagrams_to_steps(steps, available_diagrams)
+        # Dividers prevent pairing across page divisions
+        assign_diagrams_to_steps(steps, available_diagrams, divider_bboxes)
 
         # Phase 8: Assign subassemblies to steps using Hungarian matching
         # Collect built subassemblies
@@ -407,23 +424,34 @@ class StepClassifier(LabelClassifier):
             assert isinstance(sa_candidate.constructed, SubAssembly)
             subassemblies.append(sa_candidate.constructed)
 
-        # Collect built dividers for obstruction checking
-        dividers: list[Divider] = []
-        for div_candidate in result.get_scored_candidates("divider", valid_only=True):
-            assert div_candidate.constructed is not None
-            assert isinstance(div_candidate.constructed, Divider)
-            dividers.append(div_candidate.constructed)
-
         log.debug(
             "[step] Assigning %d subassemblies to %d steps (%d dividers for "
             "obstruction checking)",
             len(subassemblies),
             len(steps),
-            len(dividers),
+            len(divider_bboxes),
         )
 
         # Assign subassemblies to steps using Hungarian matching
-        assign_subassemblies_to_steps(steps, subassemblies, dividers)
+        assign_subassemblies_to_steps(steps, subassemblies, divider_bboxes)
+
+        # Phase 8b: Get unclaimed SubSteps as naked substeps
+        # SubStepClassifier found small step number + diagram pairs.
+        # SubAssemblyClassifier claimed those inside callout boxes.
+        # The remaining ones become "naked" substeps for the main step.
+        if steps:
+            substeps = self._get_unclaimed_substeps(result)
+            if substeps:
+                # Assign all substeps to the single main step on the page
+                # (In the future, we could use Hungarian matching if there are
+                # multiple main steps, but for now this covers the common case)
+                main_step = steps[0]  # Usually only one main step when substeps exist
+                object.__setattr__(main_step, "substeps", substeps)
+                log.debug(
+                    "[step] Assigned %d substeps to step %d",
+                    len(substeps),
+                    main_step.step_number.value,
+                )
 
         # Phase 9: Finalize steps - collect arrows and compute final bboxes
         page_bbox = result.page_data.bbox
@@ -469,16 +497,18 @@ class StepClassifier(LabelClassifier):
     def _filter_page_level_step_candidates(
         self, candidates: list[Candidate]
     ) -> list[Candidate]:
-        """Filter step candidates to exclude likely subassembly steps.
+        """Filter step candidates to exclude likely substep candidates.
 
-        Extracts step number values from candidates and uses the generic
-        filter_subassembly_values function to filter out subassembly steps.
+        When a page has both low-numbered steps (1, 2, 3, 4) and high-numbered
+        steps (338), with a significant gap between them, the low numbers are
+        likely substeps rather than main steps. These are handled by
+        SubStepClassifier instead.
 
         Args:
             candidates: All step candidates to filter
 
         Returns:
-            Filtered list of candidates likely to be page-level steps
+            Page-level step candidates (excluding substep candidates)
         """
         # Extract step number values from candidates
         items_with_values: list[tuple[int, Candidate]] = []
@@ -488,21 +518,98 @@ class StepClassifier(LabelClassifier):
                 continue
             items_with_values.append((score.step_value, candidate))
 
-        # Use generic filtering function
+        # Use generic filtering function to find page-level steps
         filtered_items = filter_subassembly_values(items_with_values)
 
-        # If filtering occurred, return only the filtered candidates
+        # If filtering occurred, return only page-level candidates
         if len(filtered_items) != len(items_with_values):
-            filtered_values = [v for v, _ in filtered_items]
+            page_level_values = {v for v, _ in filtered_items}
+            page_level_candidates = [
+                item for v, item in items_with_values if v in page_level_values
+            ]
             log.debug(
-                "[step] Filtered out likely subassembly steps, keeping values: %s",
-                sorted(filtered_values),
+                "[step] Filtered to page-level candidates: %s (excluded substeps: %s)",
+                sorted(page_level_values),
+                sorted(v for v, _ in items_with_values if v not in page_level_values),
             )
-            return [item for _, item in filtered_items]
+            return page_level_candidates
 
-        # No filtering occurred, return original candidates
-        # (includes any candidates that couldn't have their value extracted)
+        # No filtering occurred, return all as page-level
         return candidates
+
+    def _get_unclaimed_substeps(
+        self,
+        result: ClassificationResult,
+    ) -> list[SubStep]:
+        """Get SubStep elements that weren't claimed by a SubAssembly.
+
+        SubStepClassifier creates candidates for all small step number +
+        diagram pairs. SubAssemblyClassifier then claims those inside callout boxes.
+        This method returns the remaining unclaimed SubSteps for use as
+        "naked" substeps in a Step.
+
+        The substeps are filtered to only include valid sequences starting from 1.
+        This helps filter out PieceLengths or other misidentified elements.
+
+        Args:
+            result: Classification result
+
+        Returns:
+            List of SubStep elements that weren't claimed by any SubAssembly,
+            sorted by step number value, and filtered to valid sequences from 1.
+        """
+        from build_a_long.pdf_extract.classifier.steps.substep_classifier import (
+            _SubStepScore,
+        )
+
+        # Get all substep candidates
+        substep_candidates = result.get_scored_candidates(
+            "substep", valid_only=False, exclude_failed=True
+        )
+
+        # Filter to only unclaimed candidates (not yet built)
+        unclaimed_candidates = [c for c in substep_candidates if c.constructed is None]
+
+        if not unclaimed_candidates:
+            return []
+
+        # Extract step values from candidates to filter BEFORE building
+        def get_step_value(candidate: Candidate) -> int:
+            """Get step value from a substep candidate's score."""
+            score = candidate.score_details
+            assert isinstance(score, _SubStepScore)
+
+            return score.step_value
+
+        # Filter candidates to valid sequential substeps (must start from 1)
+        valid_candidates = filter_valid_substep_sequence(
+            unclaimed_candidates, get_step_value
+        )
+
+        if not valid_candidates:
+            log.debug("[step] No valid substep sequence found (no step 1)")
+            return []
+
+        # Now build only the filtered candidates
+        substeps: list[SubStep] = []
+        for candidate in valid_candidates:
+            try:
+                substep_elem = result.build(candidate)
+                assert isinstance(substep_elem, SubStep)
+                substeps.append(substep_elem)
+            except CandidateFailedError:
+                # Already claimed - skip
+                continue
+
+        # Sort by step number value
+        substeps.sort(key=lambda s: s.step_number.value)
+
+        log.debug(
+            "[step] Found %d unclaimed substeps (after sequence filtering)",
+            len(substeps),
+        )
+
+        return substeps
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> Step:
         """Construct a partial Step element from a single candidate.
@@ -1015,14 +1122,16 @@ class StepClassifier(LabelClassifier):
 def assign_diagrams_to_steps(
     steps: list[Step],
     diagrams: list[Diagram],
+    divider_bboxes: Sequence[BBox] = (),
     max_distance: float = 500.0,
 ) -> None:
     """Assign diagrams to steps using Hungarian algorithm.
 
-    Uses optimal bipartite matching to pair diagrams with steps based on
-    a scoring function that considers:
-    - Distance from step_number to diagram (closer is better)
-    - Relative position (diagram typically below/right of step_number)
+    Uses the shared pairing module to find optimal step number to diagram
+    pairings based on:
+    - Position: step number should be in top-left of diagram
+    - Distance: closer is better
+    - Dividers: pairings should not cross divider lines
 
     This function mutates the Step objects in place, setting their diagram
     attribute.
@@ -1030,8 +1139,8 @@ def assign_diagrams_to_steps(
     Args:
         steps: List of Step objects to assign diagrams to
         diagrams: List of Diagram objects to assign
-        max_distance: Maximum distance for a valid assignment. Pairs with distance
-            greater than this will not be matched.
+        divider_bboxes: Sequence of divider bounding boxes to check for crossing
+        max_distance: Maximum distance for a valid assignment.
     """
     if not steps or not diagrams:
         log.debug(
@@ -1041,141 +1150,48 @@ def assign_diagrams_to_steps(
         )
         return
 
-    n_steps = len(steps)
-    n_diagrams = len(diagrams)
-
     log.debug(
         "[step] Running Hungarian matching for diagrams: %d steps, %d diagrams",
-        n_steps,
-        n_diagrams,
+        len(steps),
+        len(diagrams),
     )
 
-    # Build cost matrix: rows = diagrams, cols = steps
-    # Lower cost = better match
-    cost_matrix = np.zeros((n_diagrams, n_steps))
-
-    for i, diag in enumerate(diagrams):
-        diag_center = diag.bbox.center
-        for j, step in enumerate(steps):
-            step_num_center = step.step_number.bbox.center
-
-            # Base cost is distance from step_number to diagram center
-            distance = (
-                (step_num_center[0] - diag_center[0]) ** 2
-                + (step_num_center[1] - diag_center[1]) ** 2
-            ) ** 0.5
-
-            # Apply position penalty: prefer diagrams that are below or to the
-            # right of the step_number (typical LEGO instruction layout)
-            # If diagram is above the step_number, add penalty
-            if diag_center[1] < step_num_center[1] - 50:  # Diagram above step
-                distance *= 1.5  # Penalty for being above
-
-            cost_matrix[i, j] = distance
-            log.debug(
-                "[step]   Cost diagram[%d] at %s to step[%d]: %.1f",
-                i,
-                diag.bbox,
-                step.step_number.value,
-                distance,
-            )
-
-    # Apply max_distance threshold
-    high_cost = max_distance * 10
-    cost_matrix_thresholded = np.where(
-        cost_matrix > max_distance, high_cost, cost_matrix
+    # Configure pairing
+    config = PairingConfig(
+        max_distance=max_distance,
+        position_weight=0.5,
+        distance_weight=0.5,
+        check_dividers=True,
+        top_left_tolerance=100.0,
     )
 
-    # Run Hungarian algorithm
-    row_indices, col_indices = linear_sum_assignment(cost_matrix_thresholded)
+    # Extract bboxes
+    step_bboxes = [s.step_number.bbox for s in steps]
+    diagram_bboxes = [d.bbox for d in diagrams]
+
+    # Find optimal pairings using shared logic
+    pairings = find_optimal_pairings(
+        step_bboxes, diagram_bboxes, config, divider_bboxes
+    )
 
     # Assign diagrams to steps based on the matching
-    for row_idx, col_idx in zip(row_indices, col_indices, strict=True):
-        if cost_matrix[row_idx, col_idx] <= max_distance:
-            diag = diagrams[row_idx]
-            step = steps[col_idx]
-            # Use object.__setattr__ because Step is a frozen Pydantic model
-            object.__setattr__(step, "diagram", diag)
-            log.debug(
-                "[step] Assigned diagram at %s to step %d (cost=%.1f)",
-                diag.bbox,
-                step.step_number.value,
-                cost_matrix[row_idx, col_idx],
-            )
-        else:
-            log.debug(
-                "[step] Skipped diagram assignment: diagram[%d] to step[%d] "
-                "cost=%.1f > max_distance=%.1f",
-                row_idx,
-                col_idx,
-                cost_matrix[row_idx, col_idx],
-                max_distance,
-            )
-
-
-def _has_divider_between(
-    bbox1: BBox,
-    bbox2: BBox,
-    dividers: list[Divider],
-) -> bool:
-    """Check if there is a divider line between two bboxes.
-
-    A divider is considered "between" if it crosses the line connecting
-    the centers of the two bboxes. Dividers that are contained within
-    either bbox are ignored (they are internal dividers, not separating).
-
-    Args:
-        bbox1: First bounding box
-        bbox2: Second bounding box
-        dividers: List of dividers to check
-
-    Returns:
-        True if a divider is between the two bboxes
-    """
-    center1 = bbox1.center
-    center2 = bbox2.center
-
-    for divider in dividers:
-        div_bbox = divider.bbox
-
-        # Skip dividers that are fully contained within either bbox
-        # (these are internal dividers within a container, not separating)
-        if bbox1.contains(div_bbox) or bbox2.contains(div_bbox):
-            continue
-
-        # Check if divider is vertical (separates left/right)
-        if div_bbox.width < div_bbox.height * 0.2:  # Vertical line
-            # Check if divider x is between the two centers
-            min_x = min(center1[0], center2[0])
-            max_x = max(center1[0], center2[0])
-            div_x = div_bbox.center[0]
-            if min_x < div_x < max_x:
-                # Check if divider spans the y range
-                min_y = min(center1[1], center2[1])
-                max_y = max(center1[1], center2[1])
-                if div_bbox.y0 <= max_y and div_bbox.y1 >= min_y:
-                    return True
-
-        # Check if divider is horizontal (separates top/bottom)
-        elif div_bbox.height < div_bbox.width * 0.2:  # Horizontal line
-            # Check if divider y is between the two centers
-            min_y = min(center1[1], center2[1])
-            max_y = max(center1[1], center2[1])
-            div_y = div_bbox.center[1]
-            if min_y < div_y < max_y:
-                # Check if divider spans the x range
-                min_x = min(center1[0], center2[0])
-                max_x = max(center1[0], center2[0])
-                if div_bbox.x0 <= max_x and div_bbox.x1 >= min_x:
-                    return True
-
-    return False
+    for pairing in pairings:
+        step = steps[pairing.step_index]
+        diag = diagrams[pairing.diagram_index]
+        # Use object.__setattr__ because Step is a frozen Pydantic model
+        object.__setattr__(step, "diagram", diag)
+        log.debug(
+            "[step] Assigned diagram at %s to step %d (cost=%.2f)",
+            diag.bbox,
+            step.step_number.value,
+            pairing.cost,
+        )
 
 
 def assign_subassemblies_to_steps(
     steps: list[Step],
     subassemblies: list[SubAssembly],
-    dividers: list[Divider],
+    divider_bboxes: Sequence[BBox] = (),
     max_distance: float = 400.0,
 ) -> None:
     """Assign subassemblies to steps using Hungarian algorithm.
@@ -1190,7 +1206,7 @@ def assign_subassemblies_to_steps(
     Args:
         steps: List of Step objects to assign subassemblies to
         subassemblies: List of SubAssembly objects to assign
-        dividers: List of Divider objects for obstruction checking
+        divider_bboxes: Sequence of divider bounding boxes for obstruction checking
         max_distance: Maximum distance for a valid assignment
     """
     if not steps or not subassemblies:
@@ -1233,7 +1249,7 @@ def assign_subassemblies_to_steps(
             ) ** 0.5
 
             # Check for divider between subassembly and step's diagram
-            if _has_divider_between(sa.bbox, target_bbox, dividers):
+            if has_divider_between(sa.bbox, target_bbox, divider_bboxes):
                 # High cost if there's a divider between
                 distance = high_cost
                 log.debug(
@@ -1474,3 +1490,68 @@ def filter_subassembly_values[T](
             return [(v, item) for v, item in sorted_items if v >= threshold]
 
     return items
+
+
+def filter_valid_substep_sequence[T](
+    items: list[T],
+    get_value: Callable[[T], int],
+) -> list[T]:
+    """Filter substeps to only include valid sequential values starting from 1.
+
+    Substeps within a subassembly or page must form a valid sequence:
+    - Must start from 1
+    - Values must be consecutive (1, 2, 3, ... not 1, 3, 5)
+
+    This filters out isolated numbers that are likely PieceLengths or other
+    misidentified elements.
+
+    Args:
+        items: List of substep items to filter
+        get_value: Function to extract the step number value from an item
+
+    Returns:
+        Filtered list containing only items that form a valid sequence from 1.
+        Returns empty list if no valid sequence starting from 1 is found.
+
+    Examples:
+        >>> filter_valid_substep_sequence([1, 2, 3], lambda x: x)
+        [1, 2, 3]
+
+        >>> filter_valid_substep_sequence([3, 5], lambda x: x)
+        []  # No item with value 1
+
+        >>> filter_valid_substep_sequence([1, 2, 5], lambda x: x)
+        [1, 2]  # 5 breaks the sequence
+    """
+    if not items:
+        return []
+
+    # Build a map from value to items
+    value_to_items: dict[int, list[T]] = {}
+    for item in items:
+        value = get_value(item)
+        if value not in value_to_items:
+            value_to_items[value] = []
+        value_to_items[value].append(item)
+
+    # Must have step 1 to be a valid sequence
+    if 1 not in value_to_items:
+        log.debug("[substep_filter] No substep with value 1 found - rejecting all")
+        return []
+
+    # Collect items in sequence starting from 1
+    result: list[T] = []
+    expected_value = 1
+
+    while expected_value in value_to_items:
+        result.extend(value_to_items[expected_value])
+        expected_value += 1
+
+    log.debug(
+        "[substep_filter] Filtered %d items to %d valid sequential substeps (1-%d)",
+        len(items),
+        len(result),
+        expected_value - 1,
+    )
+
+    return result
