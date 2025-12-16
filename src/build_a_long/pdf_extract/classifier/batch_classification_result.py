@@ -11,6 +11,7 @@ from build_a_long.pdf_extract.classifier.text import TextHistogram
 from build_a_long.pdf_extract.extractor.lego_page_elements import Manual
 
 
+# TODO I don't like the name of this class
 class BatchClassificationResult(BaseModel):
     """Results from classifying multiple pages together.
 

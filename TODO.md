@@ -65,14 +65,6 @@ This file outlines the tasks required to build the Lego instructions project.
 - [ ] Write unit and integration tests.
 - [ ] Document the code and usage.
 
-## Testing Improvements
-
-- [x] Refactor `extractor_test.py` with a Declarative Builder (`PageBuilder`)
-- [ ] Improve `ocr_test.py` by Mocking the Engine
-- [x] Adopt Property-Based Testing for `bbox_test.py` using `hypothesis`
-- [x] Consolidate Serialization Tests
-- [ ] Decouple `Extractor` Logic
-
 ## Data Storage Optimization
 
 - [ ] Compress all PDF files in the `data` directory and its subdirectories using `zstd -19`. This will create `.pdf.zst` files, and the original `.pdf` files should be deleted after successful compression. Decompression will be required to view the PDFs.
