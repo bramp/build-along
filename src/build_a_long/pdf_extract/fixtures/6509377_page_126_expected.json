@@ -353,7 +353,7 @@
           },
           "steps": [
             {
-              "__tag__": "SubAssemblyStep",
+              "__tag__": "SubStep",
               "bbox": {
                 "x0": 191.89,
                 "y0": 173.85,
@@ -381,7 +381,7 @@
               }
             },
             {
-              "__tag__": "SubAssemblyStep",
+              "__tag__": "SubStep",
               "bbox": {
                 "x0": 298.88,
                 "y0": 22.95,
@@ -409,7 +409,7 @@
               }
             },
             {
-              "__tag__": "SubAssemblyStep",
+              "__tag__": "SubStep",
               "bbox": {
                 "x0": 298.88,
                 "y0": 193.5,
@@ -437,7 +437,7 @@
               }
             },
             {
-              "__tag__": "SubAssemblyStep",
+              "__tag__": "SubStep",
               "bbox": {
                 "x0": 405.85,
                 "y0": 67.83,
@@ -465,7 +465,7 @@
               }
             },
             {
-              "__tag__": "SubAssemblyStep",
+              "__tag__": "SubStep",
               "bbox": {
                 "x0": 405.85,
                 "y0": 192.09,

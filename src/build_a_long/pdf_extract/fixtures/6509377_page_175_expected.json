@@ -245,7 +245,7 @@
           },
           "steps": [
             {
-              "__tag__": "SubAssemblyStep",
+              "__tag__": "SubStep",
               "bbox": {
                 "x0": 213.71,
                 "y0": 22.95,
@@ -273,7 +273,7 @@
               }
             },
             {
-              "__tag__": "SubAssemblyStep",
+              "__tag__": "SubStep",
               "bbox": {
                 "x0": 289.31,
                 "y0": 53.34,
