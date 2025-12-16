@@ -17,6 +17,12 @@ from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
 from build_a_long.pdf_extract.classifier.steps.subassembly_classifier import (
     SubAssemblyClassifier,
 )
+from build_a_long.pdf_extract.classifier.steps.substep_classifier import (
+    SubStepClassifier,
+)
+from build_a_long.pdf_extract.classifier.steps.substep_number_classifier import (
+    SubStepNumberClassifier,
+)
 
 __all__ = [
     "ArrowClassifier",
@@ -26,4 +32,6 @@ __all__ = [
     "StepCountClassifier",
     "StepNumberClassifier",
     "SubAssemblyClassifier",
+    "SubStepClassifier",
+    "SubStepNumberClassifier",
 ]

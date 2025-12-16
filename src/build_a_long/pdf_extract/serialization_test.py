@@ -39,7 +39,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     StepCount,
     StepNumber,
     SubAssembly,
-    SubAssemblyStep,
+    SubStep,
     TriviaText,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
@@ -166,8 +166,12 @@ TEST_CASES = [
     (Diagram(bbox=BBOX), "Diagram"),
     (Preview(bbox=BBOX), "Preview"),
     (
-        SubAssemblyStep(bbox=BBOX, step_number=StepNumber(bbox=BBOX, value=1)),
-        "SubAssemblyStep",
+        SubStep(
+            bbox=BBOX,
+            step_number=StepNumber(bbox=BBOX, value=1),
+            diagram=Diagram(bbox=BBOX),
+        ),
+        "SubStep",
     ),
     (SubAssembly(bbox=BBOX, diagram=Diagram(bbox=BBOX)), "SubAssembly"),
     (_make_step(), "Step"),
@@ -180,8 +184,9 @@ TEST_CASES = [
 def test_round_trip_serialization(instance: BaseModel, expected_tag: str | None):
     """Test that the model can be serialized and deserialized without data loss."""
     # Serialize
-    if hasattr(instance, "to_json"):
-        json_str = instance.to_json()
+    to_json = getattr(instance, "to_json", None)
+    if to_json is not None:
+        json_str = to_json()
     else:
         # Fallback for standard Pydantic models (like PageData)
         json_str = instance.model_dump_json(by_alias=True, exclude_none=True)
@@ -199,8 +204,9 @@ def test_round_trip_serialization(instance: BaseModel, expected_tag: str | None)
 @pytest.mark.parametrize("instance, expected_tag", TEST_CASES)
 def test_json_structure(instance: BaseModel, expected_tag: str | None):
     """Test that the serialized JSON has the expected structure (tags, aliases)."""
-    if hasattr(instance, "to_dict"):
-        data = instance.to_dict()
+    to_dict = getattr(instance, "to_dict", None)
+    if to_dict is not None:
+        data = to_dict()
     else:
         data = instance.model_dump(by_alias=True, exclude_none=True)
 

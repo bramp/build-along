@@ -706,38 +706,34 @@ class Diagram(LegoPageElement):
         return f"Diagram(bbox={str(self.bbox)})"
 
 
-class SubAssemblyStep(LegoPageElement):
-    """A single step within a sub-assembly callout box.
+class SubStep(LegoPageElement):
+    """A single sub-step within a step or sub-assembly callout box.
 
-    SubAssemblies can contain multiple mini-steps, each with its own step number
-    (typically starting at 1) and diagram showing that sub-step's construction.
+    SubSteps are mini-steps that appear either:
+    - Inside SubAssembly callout boxes (numbered 1, 2, 3 within the box)
+    - As "naked" substeps on the page alongside a main step
 
-    Positional context: Within a SubAssembly box, steps are arranged horizontally
-    or in a grid, with step numbers positioned above or beside their corresponding
-    diagrams.
+    Each has its own step number (typically starting at 1) and diagram showing
+    that sub-step's construction.
     """
 
-    tag: Literal["SubAssemblyStep"] = Field(
-        default="SubAssemblyStep", alias="__tag__", frozen=True
-    )
+    tag: Literal["SubStep"] = Field(default="SubStep", alias="__tag__", frozen=True)
 
     step_number: StepNumber
-    """The step number for this sub-assembly step (typically 1, 2, 3, etc.)."""
+    """The step number for this sub-step (typically 1, 2, 3, etc.)."""
 
-    diagram: Diagram | None = None
+    diagram: Diagram
     """The diagram showing this sub-step's construction."""
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
-        diagram_str = ", diagram" if self.diagram else ""
-        return f"SubAssemblyStep(number={self.step_number.value}{diagram_str})"
+        return f"SubStep(number={self.step_number.value}, diagram)"
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
-        """Iterate over this SubAssemblyStep and all child elements."""
+        """Iterate over this SubStep and all child elements."""
         yield self
         yield from self.step_number.iter_elements()
-        if self.diagram:
-            yield from self.diagram.iter_elements()
+        yield from self.diagram.iter_elements()
 
 
 class Preview(LegoPageElement):
@@ -802,7 +798,7 @@ class SubAssembly(LegoPageElement):
         default="SubAssembly", alias="__tag__", frozen=True
     )
 
-    steps: list[SubAssemblyStep] = Field(default_factory=list)
+    steps: list[SubStep] = Field(default_factory=list)
     """The steps within this sub-assembly, each with a step number and diagram."""
 
     diagram: Diagram | None = None
@@ -871,6 +867,14 @@ class Step(LegoPageElement):
     multiple times before being attached to the main assembly.
     """
 
+    substeps: list[SubStep] = Field(default_factory=list)
+    """Sub-steps within this step that don't have a callout box.
+    
+    These are mini-steps (typically numbered 1, 2, 3, 4) that break down
+    the main step into smaller pieces. Unlike subassemblies, these are not
+    contained in a white callout box - they appear directly on the page.
+    """
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         rotation_str = ", rotation" if self.rotation_symbol else ""
@@ -878,10 +882,11 @@ class Step(LegoPageElement):
         subassemblies_str = (
             f", subassemblies={len(self.subassemblies)}" if self.subassemblies else ""
         )
+        substeps_str = f", substeps={len(self.substeps)}" if self.substeps else ""
         parts_count = len(self.parts_list.parts) if self.parts_list else 0
         return (
             f"Step(number={self.step_number.value}, "
-            f"parts={parts_count}{rotation_str}{arrows_str}{subassemblies_str})"
+            f"parts={parts_count}{rotation_str}{arrows_str}{subassemblies_str}{substeps_str})"
         )
 
     @property
@@ -903,6 +908,8 @@ class Step(LegoPageElement):
             yield from arrow.iter_elements()
         for subassembly in self.subassemblies:
             yield from subassembly.iter_elements()
+        for substep in self.substeps:
+            yield from substep.iter_elements()
 
 
 class Page(LegoPageElement):
@@ -1068,7 +1075,7 @@ LegoPageElements = Annotated[
     | LoosePartSymbol
     | Diagram
     | Preview
-    | SubAssemblyStep
+    | SubStep
     | SubAssembly
     | Step
     | Page,

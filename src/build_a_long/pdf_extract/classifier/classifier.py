@@ -80,6 +80,8 @@ from build_a_long.pdf_extract.classifier.steps import (
     StepCountClassifier,
     StepNumberClassifier,
     SubAssemblyClassifier,
+    SubStepClassifier,
+    SubStepNumberClassifier,
 )
 from build_a_long.pdf_extract.classifier.text import FontSizeHints, TextHistogram
 from build_a_long.pdf_extract.classifier.topological_sort import topological_sort
@@ -321,6 +323,7 @@ class Classifier:
                 PartCountClassifier(config=config),
                 PartNumberClassifier(config=config),
                 StepNumberClassifier(config=config),
+                SubStepNumberClassifier(config=config),
                 StepCountClassifier(config=config),
                 PieceLengthClassifier(config=config),
                 ScaleClassifier(config=config),
@@ -334,6 +337,7 @@ class Classifier:
                 OpenBagClassifier(config=config),
                 LoosePartSymbolClassifier(config=config),
                 PreviewClassifier(config=config),
+                SubStepClassifier(config=config),
                 SubAssemblyClassifier(config=config),
                 StepClassifier(config=config),
                 TriviaTextClassifier(config=config),
@@ -365,6 +369,15 @@ class Classifier:
             c for c in self.classifiers if isinstance(c, PageClassifier)
         )
         page_classifier.build_all(result)
+
+        # 3. Validate that all page elements are tracked via candidates
+        # This catches programming errors where elements are created directly
+        # instead of via result.build()
+        from build_a_long.pdf_extract.validation.rules import (
+            assert_page_elements_tracked,
+        )
+
+        assert_page_elements_tracked(result)
 
         # TODO Do we actualy ever add warnings?
         warnings = self._log_post_classification_warnings(page_data, result)

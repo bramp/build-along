@@ -72,6 +72,7 @@ class Candidate(BaseModel):
             "page",
             "step",
             "part",
+            "substep",
         }
 
         # Non-composite labels are those that correspond to LegoPageElements

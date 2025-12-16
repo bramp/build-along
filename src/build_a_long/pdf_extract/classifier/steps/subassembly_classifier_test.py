@@ -106,8 +106,8 @@ class TestSubAssemblyScore:
         score = _SubAssemblyScore(
             box_score=0.8,
             has_step_count=True,
-            has_diagram_or_images=True,
-            has_step_numbers=False,
+            has_substeps=True,
+            has_images=False,
             config=config,
         )
         # 0.8 * 0.4 + 1.0 * 0.3 + 1.0 * 0.3 = 0.32 + 0.3 + 0.3 = 0.92
@@ -123,8 +123,8 @@ class TestSubAssemblyScore:
         score = _SubAssemblyScore(
             box_score=1.0,
             has_step_count=True,
-            has_diagram_or_images=True,
-            has_step_numbers=False,
+            has_substeps=True,
+            has_images=False,
             config=config,
         )
         assert score.score() == pytest.approx(1.0)
@@ -139,8 +139,8 @@ class TestSubAssemblyScore:
         score = _SubAssemblyScore(
             box_score=0.8,
             has_step_count=False,
-            has_diagram_or_images=False,
-            has_step_numbers=False,
+            has_substeps=False,
+            has_images=False,
             config=config,
         )
         # 0.8 * 0.4 + 0.0 * 0.3 + 0.0 * 0.3 = 0.32
@@ -155,10 +155,9 @@ class TestSubAssemblyClassifier:
         assert subassembly_classifier.output == "subassembly"
 
     def test_requires_dependencies(self, subassembly_classifier: SubAssemblyClassifier):
-        """Test classifier requires step_count, step_number, and diagram."""
+        """Test classifier requires step_count and substep."""
         assert "step_count" in subassembly_classifier.requires
-        assert "step_number" in subassembly_classifier.requires
-        assert "diagram" in subassembly_classifier.requires
+        assert "substep" in subassembly_classifier.requires
         # Arrow is no longer required (removed from scoring)
         assert "arrow" not in subassembly_classifier.requires
 
@@ -201,16 +200,22 @@ class TestSubAssemblyClassifier:
         config: ClassifierConfig,
     ):
         """Test building a SubAssembly element from a candidate."""
+        from build_a_long.pdf_extract.classifier.score import Score, Weight
+        from build_a_long.pdf_extract.classifier.steps.diagram_classifier import (
+            DiagramClassifier,
+        )
+
         box_bbox = BBox(x0=100.0, y0=100.0, x1=200.0, y1=160.0)
         box_drawing = make_drawing(box_bbox, id=1)
         # Add an image inside the box to serve as the diagram
-        diagram_image = make_image(BBox(x0=120.0, y0=110.0, x1=180.0, y1=150.0), id=2)
+        diagram_bbox = BBox(x0=120.0, y0=110.0, x1=180.0, y1=150.0)
+        diagram_image = make_image(diagram_bbox, id=2)
 
         score_details = _SubAssemblyScore(
             box_score=0.9,
             has_step_count=False,
-            has_diagram_or_images=True,  # Now has an image inside
-            has_step_numbers=False,
+            has_substeps=False,
+            has_images=True,  # Now has an image inside
             config=config.subassembly,
         )
         candidate = Candidate(
@@ -221,8 +226,25 @@ class TestSubAssemblyClassifier:
             source_blocks=[box_drawing],
         )
 
+        class SimpleScore(Score):
+            """Simple score for testing."""
+
+            def score(self) -> Weight:
+                return 1.0
+
+        diagram_candidate = Candidate(
+            bbox=diagram_bbox,
+            label="diagram",
+            score=0.9,
+            score_details=SimpleScore(),
+            source_blocks=[diagram_image],
+        )
+
         page_data = make_page_data([box_drawing, diagram_image])
         result = ClassificationResult(page_data=page_data)
+        # Register diagram classifier and add the diagram candidate
+        result._register_classifier("diagram", DiagramClassifier(config=config))
+        result.add_candidate(diagram_candidate)
 
         subassembly = subassembly_classifier.build(candidate, result)
 
