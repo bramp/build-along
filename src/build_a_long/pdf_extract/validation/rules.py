@@ -1,8 +1,10 @@
 """Individual validation rules for classification results."""
 
-import statistics
+from __future__ import annotations
 
-from build_a_long.pdf_extract.classifier import ClassificationResult
+import statistics
+from typing import TYPE_CHECKING
+
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Background,
@@ -14,6 +16,58 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 )
 
 from .types import ValidationIssue, ValidationResult, ValidationSeverity
+
+if TYPE_CHECKING:
+    from build_a_long.pdf_extract.classifier import ClassificationResult
+
+# =============================================================================
+# Programming Error Detection (assertions)
+# =============================================================================
+
+
+def assert_page_elements_tracked(result: ClassificationResult) -> None:
+    """Assert that all page elements are tracked via candidates.
+
+    This validation checks that all elements in the Page hierarchy were
+    properly constructed via candidates (using result.build()), rather than
+    being created directly. Elements created directly bypass the candidate
+    tracking system and won't appear in debugging/visualization tools.
+
+    This is an assertion because untracked elements indicate a programming
+    error in the classifier code.
+
+    Args:
+        result: The classification result to validate
+
+    Raises:
+        AssertionError: If any elements are not tracked via candidates.
+    """
+    page = result.page
+    if page is None:
+        return  # No page built yet, nothing to validate
+
+    # Build set of all constructed element ids from candidates
+    constructed_ids: set[int] = set()
+    for _, candidates in result.candidates.items():
+        for candidate in candidates:
+            if candidate.constructed is not None:
+                constructed_ids.add(id(candidate.constructed))
+
+    # Check all elements in the page hierarchy
+    untracked: list[str] = []
+    for element in page.iter_elements():
+        if id(element) not in constructed_ids:
+            untracked.append(f"{element.__class__.__name__} at {element.bbox}")
+
+    if untracked:
+        untracked_summary = "; ".join(untracked[:5])
+        if len(untracked) > 5:
+            untracked_summary += f" ... and {len(untracked) - 5} more"
+        raise AssertionError(
+            f"Page {result.page_data.page_number}: {len(untracked)} elements not "
+            f"constructed via candidates (programming error): {untracked_summary}"
+        )
+
 
 # =============================================================================
 # Sequence Validation Rules (cross-page)
