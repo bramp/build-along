@@ -9,11 +9,9 @@ from build_a_long.pdf_extract.classifier import (
 from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
     StepNumberClassifier,
 )
+from build_a_long.pdf_extract.classifier.test_utils import PageBuilder
 from build_a_long.pdf_extract.classifier.text import FontSizeHints
-from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import StepNumber
-from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
 @pytest.fixture
@@ -29,20 +27,14 @@ class TestStepNumberClassification:
 
         Verifies that step numbers with different font sizes are detected.
         """
-        page_bbox = BBox(0, 0, 200, 300)
+        builder = PageBuilder(page_number=5, width=200, height=300)
+        builder.add_text("12", 50, 100, 20, 20, id=1)  # big_step height 20
+        builder.add_text("3", 80, 100, 8, 8, id=2)  # small_step height 8
+        builder.add_text("abc", 10, 10, 10, 10, id=3)  # text_block
 
-        # Candidate step numbers
-        big_step = Text(id=1, bbox=BBox(50, 100, 70, 120), text="12")  # height 20
-        small_step = Text(id=2, bbox=BBox(80, 100, 88, 108), text="3")  # height 8
-
-        # Non-step text
-        text_block = Text(id=3, bbox=BBox(10, 10, 20, 20), text="abc")
-
-        page = PageData(
-            page_number=5,
-            blocks=[big_step, small_step, text_block],
-            bbox=page_bbox,
-        )
+        page = builder.build()
+        big_step = page.blocks[0]
+        small_step = page.blocks[1]
 
         result = ClassificationResult(page_data=page)
         classifier.score(result)
@@ -83,14 +75,13 @@ class TestStepNumberClassification:
         config = ClassifierConfig(font_size_hints=hints)
         classifier = StepNumberClassifier(config=config)
 
-        matching_text = Text(text="1", bbox=BBox(10, 10, 25, 25), id=1)
-        different_text = Text(text="2", bbox=BBox(10, 40, 30, 60), id=2)
+        builder = PageBuilder(page_number=1, width=100, height=100)
+        builder.add_text("1", 10, 10, 15, 15, id=1)  # matching_text
+        builder.add_text("2", 10, 40, 20, 20, id=2)  # different_text (larger)
 
-        page_data = PageData(
-            page_number=1,
-            bbox=BBox(0, 0, 100, 100),
-            blocks=[matching_text, different_text],
-        )
+        page_data = builder.build()
+        matching_text = page_data.blocks[0]
+        different_text = page_data.blocks[1]
 
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)

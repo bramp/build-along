@@ -9,11 +9,9 @@ from build_a_long.pdf_extract.classifier import (
 from build_a_long.pdf_extract.classifier.parts.part_count_classifier import (
     PartCountClassifier,
 )
+from build_a_long.pdf_extract.classifier.test_utils import PageBuilder
 from build_a_long.pdf_extract.classifier.text import FontSizeHints
-from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import PartCount
-from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
 @pytest.fixture
@@ -32,19 +30,18 @@ class TestPartCountClassification:
         Verifies that part counts with different notations (2x, 2X, 3×) are
         recognized as valid candidates.
         """
-        page_bbox = BBox(0, 0, 100, 200)
-
+        builder = PageBuilder(page_number=1, width=100, height=200)
         # Part counts below images (different x/X variations)
-        t1 = Text(id=3, bbox=BBox(10, 50, 20, 60), text="2x")
-        t2 = Text(id=4, bbox=BBox(30, 50, 40, 60), text="2X")  # uppercase X
-        t3 = Text(id=5, bbox=BBox(50, 50, 60, 60), text="3×")  # times symbol
-        t4 = Text(id=6, bbox=BBox(70, 50, 90, 60), text="hello")  # not a count
+        builder.add_text("2x", 10, 50, 10, 10, id=3)  # t1
+        builder.add_text("2X", 30, 50, 10, 10, id=4)  # t2 uppercase X
+        builder.add_text("3×", 50, 50, 10, 10, id=5)  # t3 times symbol
+        builder.add_text("hello", 70, 50, 20, 10, id=6)  # t4 not a count
 
-        page = PageData(
-            page_number=1,
-            blocks=[t1, t2, t3, t4],
-            bbox=page_bbox,
-        )
+        page = builder.build()
+        t1 = page.blocks[0]
+        t2 = page.blocks[1]
+        t3 = page.blocks[2]
+        t4 = page.blocks[3]
 
         result = ClassificationResult(page_data=page)
         classifier.score(result)
@@ -73,13 +70,6 @@ class TestPartCountClassification:
 
         # The invalid text should either have no candidate or failed construction
         if t4_candidate is not None:
-            # It might be scored low, but if construction is attempted it should fail?
-            # PartCountClassifier construction checks score and text parsing.
-            # _score_part_count_text checks extract_part_count_value.
-            # "hello" returns None, so text_score is 0.0.
-            # _construct_single checks text_score == 0.0 -> raise ValueError.
-            # So result.construct_candidate should raise or return None if we handle it?
-            # construct_candidate raises ValueError on failure.
             with pytest.raises(ValueError):
                 result.build(t4_candidate)
 
@@ -98,16 +88,15 @@ class TestPartCountClassification:
         config = ClassifierConfig(font_size_hints=hints)
         classifier = PartCountClassifier(config=config)
 
-        matching_text = Text(text="2x", bbox=BBox(0, 0, 10, 10), id=1)
-        different_text = Text(text="3x", bbox=BBox(0, 0, 15, 15), id=2)
+        builder = PageBuilder(page_number=1, width=100, height=100)
+        builder.add_text("2x", 0, 0, 10, 10, id=1)  # matching_text
+        builder.add_text("3x", 0, 0, 15, 15, id=2)  # different_text
 
-        page_data = PageData(
-            page_number=1,
-            bbox=BBox(0, 0, 100, 100),
-            blocks=[matching_text, different_text],
-        )
+        page = builder.build()
+        matching_text = page.blocks[0]
+        different_text = page.blocks[1]
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
         classifier.score(result)
 
         # Construct all candidates

@@ -12,11 +12,9 @@ from build_a_long.pdf_extract.classifier.rule_based_classifier import RuleScore
 from build_a_long.pdf_extract.classifier.steps.step_count_classifier import (
     StepCountClassifier,
 )
+from build_a_long.pdf_extract.classifier.test_utils import PageBuilder
 from build_a_long.pdf_extract.classifier.text import FontSizeHints
-from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import StepCount
-from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
 @pytest.fixture
@@ -54,31 +52,6 @@ def step_count_classifier_with_hints(
     return StepCountClassifier(config=config_with_font_hints)
 
 
-def make_page_data(blocks: list) -> PageData:
-    """Create a PageData with given blocks."""
-    return PageData(
-        page_number=1,
-        bbox=BBox(x0=0, y0=0, x1=600, y1=500),
-        blocks=blocks,
-    )
-
-
-def make_text(
-    bbox: BBox,
-    text: str,
-    font_size: float = 16.0,
-    id: int = 1,
-) -> Text:
-    """Create a Text block."""
-    return Text(
-        bbox=bbox,
-        text=text,
-        font_name="CeraPro-Light",
-        font_size=font_size,
-        id=id,
-    )
-
-
 class TestStepCountClassifier:
     """Tests for StepCountClassifier."""
 
@@ -94,10 +67,11 @@ class TestStepCountClassifier:
         self, step_count_classifier: StepCountClassifier, config: ClassifierConfig
     ):
         """Test scoring a valid count text (e.g., '2x')."""
-        count_bbox = BBox(x0=100.0, y0=100.0, x1=130.0, y1=120.0)
-        count_text = make_text(count_bbox, "2x", font_size=16.0, id=1)
-
-        page_data = make_page_data([count_text])
+        page_data = (
+            PageBuilder(width=600, height=500)
+            .add_text("2x", 100.0, 100.0, 30.0, 20.0, font_size=16.0, id=1)
+            .build()
+        )
         result = ClassificationResult(page_data=page_data)
 
         step_count_classifier._score(result)
@@ -112,11 +86,13 @@ class TestStepCountClassifier:
         self, step_count_classifier: StepCountClassifier
     ):
         """Test scoring multiple count texts."""
-        text1 = make_text(BBox(x0=100.0, y0=100.0, x1=130.0, y1=120.0), "2x", id=1)
-        text2 = make_text(BBox(x0=200.0, y0=100.0, x1=230.0, y1=120.0), "4x", id=2)
-        text3 = make_text(BBox(x0=300.0, y0=100.0, x1=340.0, y1=120.0), "10x", id=3)
-
-        page_data = make_page_data([text1, text2, text3])
+        page_data = (
+            PageBuilder(width=600, height=500)
+            .add_text("2x", 100.0, 100.0, 30.0, 20.0, id=1)
+            .add_text("4x", 200.0, 100.0, 30.0, 20.0, id=2)
+            .add_text("10x", 300.0, 100.0, 40.0, 20.0, id=3)
+            .build()
+        )
         result = ClassificationResult(page_data=page_data)
 
         step_count_classifier._score(result)
@@ -128,9 +104,11 @@ class TestStepCountClassifier:
         self, step_count_classifier: StepCountClassifier
     ):
         """Test that count value is correctly extracted when building."""
-        count_text = make_text(BBox(x0=100.0, y0=100.0, x1=130.0, y1=120.0), "5x", id=1)
-
-        page_data = make_page_data([count_text])
+        page_data = (
+            PageBuilder(width=600, height=500)
+            .add_text("5x", 100.0, 100.0, 30.0, 20.0, id=1)
+            .build()
+        )
         result = ClassificationResult(page_data=page_data)
 
         step_count_classifier._score(result)
@@ -147,11 +125,13 @@ class TestStepCountClassifier:
         self, step_count_classifier: StepCountClassifier
     ):
         """Test that non-count text is rejected."""
-        text1 = make_text(BBox(x0=100.0, y0=100.0, x1=200.0, y1=120.0), "Step 1", id=1)
-        text2 = make_text(BBox(x0=100.0, y0=150.0, x1=200.0, y1=170.0), "LEGO", id=2)
-        text3 = make_text(BBox(x0=100.0, y0=200.0, x1=200.0, y1=220.0), "Page 5", id=3)
-
-        page_data = make_page_data([text1, text2, text3])
+        page_data = (
+            PageBuilder(width=600, height=500)
+            .add_text("Step 1", 100.0, 100.0, 100.0, 20.0, id=1)
+            .add_text("LEGO", 100.0, 150.0, 100.0, 20.0, id=2)
+            .add_text("Page 5", 100.0, 200.0, 100.0, 20.0, id=3)
+            .build()
+        )
         result = ClassificationResult(page_data=page_data)
 
         step_count_classifier._score(result)
@@ -161,9 +141,11 @@ class TestStepCountClassifier:
 
     def test_score_with_lowercase_x(self, step_count_classifier: StepCountClassifier):
         """Test that lowercase 'x' is accepted."""
-        count_text = make_text(BBox(x0=100.0, y0=100.0, x1=130.0, y1=120.0), "3x", id=1)
-
-        page_data = make_page_data([count_text])
+        page_data = (
+            PageBuilder(width=600, height=500)
+            .add_text("3x", 100.0, 100.0, 30.0, 20.0, id=1)
+            .build()
+        )
         result = ClassificationResult(page_data=page_data)
 
         step_count_classifier._score(result)
@@ -175,11 +157,14 @@ class TestStepCountClassifier:
         self, step_count_classifier: StepCountClassifier, config: ClassifierConfig
     ):
         """Test building a StepCount element from a candidate."""
-        count_bbox = BBox(x0=100.0, y0=100.0, x1=130.0, y1=120.0)
-        count_text = make_text(count_bbox, "2x", font_size=16.0, id=1)
+        page = (
+            PageBuilder(width=600, height=500)
+            .add_text("2x", 100.0, 100.0, 30.0, 20.0, font_size=16.0, id=1)
+            .build()
+        )
+        count_text = page.blocks[0]
 
-        page_data = make_page_data([count_text])
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
 
         step_count_classifier._score(result)
         candidates = result.get_scored_candidates("step_count", valid_only=False)
@@ -188,7 +173,7 @@ class TestStepCountClassifier:
         step_count = step_count_classifier.build(candidates[0], result)
 
         assert isinstance(step_count, StepCount)
-        assert step_count.bbox == count_bbox
+        assert step_count.bbox == count_text.bbox
         assert step_count.count == 2
 
 
@@ -201,11 +186,11 @@ class TestFontSizeScoring:
         """Test that font size in valid range scores 1.0."""
         # Font size between part_count_size (10.0) and step_number_size (48.0)
         # and greater than part_count_size + tolerance (11.0)
-        count_text = make_text(
-            BBox(x0=100.0, y0=100.0, x1=130.0, y1=120.0), "2x", font_size=24.0, id=1
+        page_data = (
+            PageBuilder(width=600, height=500)
+            .add_text("2x", 100.0, 100.0, 30.0, 20.0, font_size=24.0, id=1)
+            .build()
         )
-
-        page_data = make_page_data([count_text])
         result = ClassificationResult(page_data=page_data)
 
         step_count_classifier_with_hints._score(result)
@@ -221,11 +206,11 @@ class TestFontSizeScoring:
     ):
         """Test that font size below part_count_size scores 0.0."""
         # part_count_size is 10.0, tolerance is 1.0, so <9.0 should score 0.0
-        count_text = make_text(
-            BBox(x0=100.0, y0=100.0, x1=130.0, y1=120.0), "2x", font_size=8.0, id=1
+        page_data = (
+            PageBuilder(width=600, height=500)
+            .add_text("2x", 100.0, 100.0, 30.0, 20.0, font_size=8.0, id=1)
+            .build()
         )
-
-        page_data = make_page_data([count_text])
         result = ClassificationResult(page_data=page_data)
 
         step_count_classifier_with_hints._score(result)
@@ -245,11 +230,11 @@ class TestFontSizeScoring:
     ):
         """Test that font size above step_number_size scores 0.0."""
         # step_number_size is 48.0, tolerance is 1.0, so >49.0 should score 0.0
-        count_text = make_text(
-            BBox(x0=100.0, y0=100.0, x1=130.0, y1=120.0), "2x", font_size=60.0, id=1
+        page_data = (
+            PageBuilder(width=600, height=500)
+            .add_text("2x", 100.0, 100.0, 30.0, 20.0, font_size=60.0, id=1)
+            .build()
         )
-
-        page_data = make_page_data([count_text])
         result = ClassificationResult(page_data=page_data)
 
         step_count_classifier_with_hints._score(result)
@@ -265,11 +250,11 @@ class TestFontSizeScoring:
     ):
         """Test that font size close to part_count_size scores 0.7."""
         # Font size within tolerance of part_count_size (10.0 +/- 1.0)
-        count_text = make_text(
-            BBox(x0=100.0, y0=100.0, x1=130.0, y1=120.0), "2x", font_size=10.5, id=1
+        page_data = (
+            PageBuilder(width=600, height=500)
+            .add_text("2x", 100.0, 100.0, 30.0, 20.0, font_size=10.5, id=1)
+            .build()
         )
-
-        page_data = make_page_data([count_text])
         result = ClassificationResult(page_data=page_data)
 
         step_count_classifier_with_hints._score(result)
@@ -284,11 +269,11 @@ class TestFontSizeScoring:
         self, step_count_classifier: StepCountClassifier
     ):
         """Test that font size without hints scores 0.5 (neutral)."""
-        count_text = make_text(
-            BBox(x0=100.0, y0=100.0, x1=130.0, y1=120.0), "2x", font_size=16.0, id=1
+        page_data = (
+            PageBuilder(width=600, height=500)
+            .add_text("2x", 100.0, 100.0, 30.0, 20.0, font_size=16.0, id=1)
+            .build()
         )
-
-        page_data = make_page_data([count_text])
         result = ClassificationResult(page_data=page_data)
 
         step_count_classifier._score(result)

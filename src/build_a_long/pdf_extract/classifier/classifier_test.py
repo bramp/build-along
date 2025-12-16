@@ -5,9 +5,9 @@ from build_a_long.pdf_extract.classifier import (
     classify_pages,
 )
 from build_a_long.pdf_extract.classifier.classifier import Classifier
-from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.classifier.test_utils import PageBuilder
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 
 class TestClassifier:
@@ -73,17 +73,10 @@ class TestClassifyElements:
         """Test classification across multiple pages."""
         pages = []
         for i in range(1, 4):
-            page_bbox = BBox(0, 0, 100, 200)
-            page_number_text = Text(
-                id=0,
-                bbox=BBox(5, 190, 15, 198),
-                text=str(i),
-            )
-
-            page_data = PageData(
-                page_number=i,
-                blocks=[page_number_text],
-                bbox=page_bbox,
+            page_data = (
+                PageBuilder(page_number=i, width=100, height=200)
+                .add_text(str(i), 5, 190, 10, 8, id=0)
+                .build()
             )
             pages.append(page_data)
 
@@ -119,18 +112,18 @@ class TestClassifyElements:
         rather than physically removing blocks from PageData.
         """
         # Create a page with duplicate blocks
-        page_bbox = BBox(0, 0, 100, 200)
         # Two identical blocks (duplicates) - one should be marked as removed
-        # Use Drawing blocks because Text blocks with same bbox are filtered by
-        # filter_overlapping_text_blocks first (reason='overlapping_text')
-        block1 = Drawing(id=0, bbox=BBox(10, 10, 50, 30))
-        block2 = Drawing(id=1, bbox=BBox(10, 10, 50, 30))
-        # A unique block
-        block3 = Text(id=2, bbox=BBox(5, 190, 15, 198), text="10")
-
-        original_page = PageData(
-            page_number=10, blocks=[block1, block2, block3], bbox=page_bbox
+        builder = (
+            PageBuilder(page_number=10, width=100, height=200)
+            .add_drawing(10, 10, 40, 20, id=0)  # bbox 10,10,50,30
+            .add_drawing(10, 10, 40, 20, id=1)  # Same bbox
+            .add_text("10", 5, 190, 10, 8, id=2)  # Unique block
         )
+        original_page = builder.build()
+
+        block1 = original_page.blocks[0]
+        block2 = original_page.blocks[1]
+        block3 = original_page.blocks[2]
 
         batch_result = classify_pages([original_page])
 
@@ -185,19 +178,15 @@ class TestClassifyElements:
         """Test that pages with too many blocks are skipped."""
         from build_a_long.pdf_extract.classifier.classifier import MAX_BLOCKS_PER_PAGE
 
-        page_bbox = BBox(0, 0, 100, 200)
-
         # Create a page with more blocks than the threshold
-        blocks: list[Drawing] = [
+        # PageBuilder handles appending blocks efficiently
+        builder = PageBuilder(page_number=1, width=100, height=200)
+        builder.blocks = [
             Drawing(id=i, bbox=BBox(i % 10, i // 10, i % 10 + 1, i // 10 + 1))
             for i in range(MAX_BLOCKS_PER_PAGE + 100)
         ]
 
-        page_data = PageData(
-            page_number=1,
-            blocks=list(blocks),  # type: ignore[arg-type]
-            bbox=page_bbox,
-        )
+        page_data = builder.build()
 
         batch_result = classify_pages([page_data])
 

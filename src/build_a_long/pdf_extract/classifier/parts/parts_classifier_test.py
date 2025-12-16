@@ -1,6 +1,7 @@
 """Tests for the parts classifier (Part pairing logic)."""
 
 from collections.abc import Callable
+from typing import cast
 
 import pytest
 
@@ -19,8 +20,7 @@ from build_a_long.pdf_extract.classifier.parts.parts_image_classifier import (
 from build_a_long.pdf_extract.classifier.parts.piece_length_classifier import (
     PieceLengthClassifier,
 )
-from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.classifier.test_utils import PageBuilder
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Part,
 )
@@ -46,20 +46,20 @@ class TestPartsClassification:
         shadows, overlapping detections), both create PartCount candidates,
         but only one should pair with any given image to create a Part.
         """
-        page_bbox = BBox(0, 0, 100, 200)
-
-        img1 = Image(id=0, bbox=BBox(10, 30, 20, 45))
-        img2 = Image(id=1, bbox=BBox(30, 30, 40, 45))
-
-        t1 = Text(id=2, bbox=BBox(10, 50, 20, 60), text="2x")
-        t2 = Text(id=3, bbox=BBox(10, 50, 20, 60), text="2x")  # duplicate
-        t3 = Text(id=4, bbox=BBox(30, 50, 40, 60), text="3x")
-
-        page = PageData(
-            page_number=1,
-            blocks=[img1, img2, t1, t2, t3],
-            bbox=page_bbox,
+        builder = (
+            PageBuilder(page_number=1, width=100, height=200)
+            .add_image(10, 30, 10, 15, id=0)  # img1
+            .add_image(30, 30, 10, 15, id=1)  # img2
+            .add_text("2x", 10, 50, 10, 10, id=2)  # t1
+            .add_text("2x", 10, 50, 10, 10, id=3)  # t2 (duplicate bbox)
+            .add_text("3x", 30, 50, 10, 10, id=4)  # t3
         )
+        page = builder.build()
+        img1 = cast(Image, page.blocks[0])
+        img2 = cast(Image, page.blocks[1])
+        t1 = cast(Text, page.blocks[2])
+        t2 = cast(Text, page.blocks[3])
+        t3 = cast(Text, page.blocks[4])
 
         result = ClassificationResult(page_data=page)
         # Register classifiers so result.construct_candidate works
@@ -99,16 +99,14 @@ class TestPartsClassification:
         candidate_factory: Callable[[ClassificationResult], CandidateFactory],
     ) -> None:
         """Test that part counts are not paired if no images are above them."""
-        page_bbox = BBox(0, 0, 200, 200)
-
-        t1 = Text(id=0, bbox=BBox(10, 10, 20, 20), text="2x")
-        img1 = Image(id=1, bbox=BBox(10, 50, 20, 65))  # Image below part count
-
-        page = PageData(
-            page_number=1,
-            blocks=[img1, t1],
-            bbox=page_bbox,
+        builder = (
+            PageBuilder(page_number=1, width=200, height=200)
+            .add_text("2x", 10, 10, 10, 10, id=0)  # t1
+            .add_image(10, 50, 10, 15, id=1)  # Image below part count
         )
+        page = builder.build()
+        t1 = cast(Text, page.blocks[0])
+        img1 = cast(Image, page.blocks[1])
 
         result = ClassificationResult(page_data=page)
         PartsImageClassifier(config=classifier.config).score(result)
@@ -134,17 +132,16 @@ class TestPartsClassification:
         candidate_factory: Callable[[ClassificationResult], CandidateFactory],
     ) -> None:
         """Test that when multiple images are above a count, the closest is picked."""
-        page_bbox = BBox(0, 0, 100, 200)
-
-        img_far = Image(id=0, bbox=BBox(10, 20, 20, 35))
-        img_near = Image(id=1, bbox=BBox(10, 40, 20, 55))
-        t1 = Text(id=2, bbox=BBox(10, 60, 20, 70), text="2x")
-
-        page = PageData(
-            page_number=1,
-            blocks=[img_far, img_near, t1],
-            bbox=page_bbox,
+        builder = (
+            PageBuilder(page_number=1, width=100, height=200)
+            .add_image(10, 20, 10, 15, id=0)  # img_far (y=20..35)
+            .add_image(10, 40, 10, 15, id=1)  # img_near (y=40..55)
+            .add_text("2x", 10, 60, 10, 10, id=2)  # t1 (y=60..70)
         )
+        page = builder.build()
+        img_far = cast(Image, page.blocks[0])
+        img_near = cast(Image, page.blocks[1])
+        t1 = cast(Text, page.blocks[2])
 
         result = ClassificationResult(page_data=page)
         PartsImageClassifier(config=classifier.config).score(result)
@@ -181,16 +178,14 @@ class TestPartsClassification:
         candidate_factory: Callable[[ClassificationResult], CandidateFactory],
     ) -> None:
         """Test that images must be roughly left-aligned with part counts."""
-        page_bbox = BBox(0, 0, 200, 200)
-
-        img1 = Image(id=0, bbox=BBox(10, 30, 20, 45))
-        t1 = Text(id=1, bbox=BBox(150, 50, 160, 60), text="2x")  # Not aligned
-
-        page = PageData(
-            page_number=1,
-            blocks=[img1, t1],
-            bbox=page_bbox,
+        builder = (
+            PageBuilder(page_number=1, width=200, height=200)
+            .add_image(10, 30, 10, 15, id=0)  # img1
+            .add_text("2x", 150, 50, 10, 10, id=1)  # t1 (Not aligned)
         )
+        page = builder.build()
+        img1 = cast(Image, page.blocks[0])
+        t1 = cast(Text, page.blocks[1])
 
         result = ClassificationResult(page_data=page)
         PartsImageClassifier(config=classifier.config).score(result)
@@ -214,17 +209,16 @@ class TestPartsClassification:
         candidate_factory: Callable[[ClassificationResult], CandidateFactory],
     ) -> None:
         """Test that one-to-one pairing is enforced (no image/count reuse)."""
-        page_bbox = BBox(0, 0, 100, 200)
-
-        img1 = Image(id=0, bbox=BBox(10, 30, 20, 45))
-        t1 = Text(id=1, bbox=BBox(10, 50, 20, 60), text="2x")  # closer
-        t2 = Text(id=2, bbox=BBox(10, 70, 20, 80), text="3x")  # farther
-
-        page = PageData(
-            page_number=1,
-            blocks=[img1, t1, t2],
-            bbox=page_bbox,
+        builder = (
+            PageBuilder(page_number=1, width=100, height=200)
+            .add_image(10, 30, 10, 15, id=0)  # img1
+            .add_text("2x", 10, 50, 10, 10, id=1)  # t1 (closer)
+            .add_text("3x", 10, 70, 10, 10, id=2)  # t2 (farther)
         )
+        page = builder.build()
+        img1 = cast(Image, page.blocks[0])
+        t1 = cast(Text, page.blocks[1])
+        t2 = cast(Text, page.blocks[2])
 
         result = ClassificationResult(page_data=page)
         PartsImageClassifier(config=classifier.config).score(result)

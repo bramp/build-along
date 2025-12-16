@@ -10,8 +10,7 @@ from build_a_long.pdf_extract.classifier import (
     RemovalReason,
 )
 from build_a_long.pdf_extract.classifier.config import PageNumberConfig
-from build_a_long.pdf_extract.classifier.test_utils import TestScore
-from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.classifier.test_utils import PageBuilder, TestScore
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PageNumber,
@@ -57,11 +56,7 @@ class TestClassificationResult:
 
     def test_add_and_get_warnings(self) -> None:
         """Test adding and retrieving warnings."""
-        page_data = PageData(
-            page_number=1,
-            blocks=[],
-            bbox=BBox(0, 0, 100, 100),
-        )
+        page_data = PageBuilder(page_number=1, width=100, height=100).build()
         result = ClassificationResult(page_data=page_data)
         result.add_warning("Warning 1")
         result.add_warning("Warning 2")
@@ -73,12 +68,13 @@ class TestClassificationResult:
 
     def test_add_and_get_candidate(self) -> None:
         """Test adding and retrieving candidates."""
-        block = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
-        page_data = PageData(
-            page_number=1,
-            blocks=[block],
-            bbox=BBox(0, 0, 100, 100),
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("1", 0, 0, 10, 10, id=1)
+            .build()
         )
+        block = page.blocks[0]
+
         constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
         candidate = Candidate(
             bbox=BBox(0, 0, 10, 10),
@@ -89,7 +85,7 @@ class TestClassificationResult:
             source_blocks=[block],
         )
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
         result.add_candidate(candidate)
 
         candidates = result.get_candidates("page_number")
@@ -98,16 +94,18 @@ class TestClassificationResult:
 
     def test_mark_and_check_removed(self) -> None:
         """Test marking blocks as removed and checking removal status."""
-        block1 = Text(bbox=BBox(0, 0, 10, 10), text="test", id=1)
-        block2 = Text(bbox=BBox(20, 20, 30, 30), text="target", id=2)
-        page_data = PageData(
-            page_number=1,
-            blocks=[block1, block2],
-            bbox=BBox(0, 0, 100, 100),
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("test", 0, 0, 10, 10, id=1)
+            .add_text("target", 20, 20, 10, 10, id=2)
+            .build()
         )
+        block1 = page.blocks[0]
+        block2 = page.blocks[1]
+
         reason = RemovalReason(reason_type="child_bbox", target_block=block2)
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
         result.mark_removed(block1, reason)
 
         assert result.is_removed(block1) is True
@@ -124,30 +122,29 @@ class TestClassificationResultValidation:
 
     def test_post_init_validates_unique_block_ids(self) -> None:
         """Test that __post_init__ validates PageData blocks have unique IDs."""
-        block1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
-        block2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=1)  # Duplicate ID!
-
-        page_data = PageData(
-            page_number=1,
-            blocks=[block1, block2],
-            bbox=BBox(0, 0, 100, 100),
+        # PageBuilder handles IDs automatically if not provided, but here we force duplicates
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("1", 0, 0, 10, 10, id=1)
+            .add_text("2", 20, 20, 10, 10, id=1)  # Duplicate ID!
+            .build()
         )
 
         with pytest.raises(
             ValueError, match=r"must have unique IDs.*duplicates.*\{1\}"
         ):
-            ClassificationResult(page_data=page_data)
+            ClassificationResult(page_data=page)
 
     def test_add_candidate_validates_source_block_in_page_data(self) -> None:
         """Test that add_candidate validates source_blocks are in PageData."""
-        block1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
-        block2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)  # Not in PageData
-
-        page_data = PageData(
-            page_number=1,
-            blocks=[block1],
-            bbox=BBox(0, 0, 100, 100),
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("1", 0, 0, 10, 10, id=1)
+            .build()
         )
+        block1 = page.blocks[0]
+        # Create a block not in PageData
+        block2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)
 
         candidate = Candidate(
             bbox=BBox(20, 20, 30, 30),
@@ -157,19 +154,18 @@ class TestClassificationResultValidation:
             source_blocks=[block2],  # Not in PageData!
         )
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
         with pytest.raises(ValueError, match="must be in PageData.blocks"):
             result.add_candidate(candidate)
 
     def test_add_candidate_allows_source_block_in_page_data(self) -> None:
         """Test that add_candidate succeeds when source_blocks are in PageData."""
-        block = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
-
-        page_data = PageData(
-            page_number=1,
-            blocks=[block],
-            bbox=BBox(0, 0, 100, 100),
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("1", 0, 0, 10, 10, id=1)
+            .build()
         )
+        block = page.blocks[0]
 
         candidate = Candidate(
             bbox=BBox(0, 0, 10, 10),
@@ -179,17 +175,13 @@ class TestClassificationResultValidation:
             source_blocks=[block],
         )
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
         result.add_candidate(candidate)
         assert len(result.get_candidates("page_number")) == 1
 
     def test_add_candidate_allows_none_source_block(self) -> None:
         """Test that add_candidate allows empty source_blocks (synthetic candidates)."""
-        page_data = PageData(
-            page_number=1,
-            blocks=[],
-            bbox=BBox(0, 0, 100, 100),
-        )
+        page = PageBuilder(page_number=1, width=100, height=100).build()
 
         candidate = Candidate(
             bbox=BBox(0, 0, 10, 10),
@@ -199,41 +191,41 @@ class TestClassificationResultValidation:
             source_blocks=[],  # Synthetic candidate
         )
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
         result.add_candidate(candidate)
         assert len(result.get_candidates("step")) == 1
 
     def test_mark_removed_validates_block_in_page_data(self) -> None:
         """Test that mark_removed validates block is in PageData."""
-        block1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
-        block2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)  # Not in PageData
-
-        page_data = PageData(
-            page_number=1,
-            blocks=[block1],
-            bbox=BBox(0, 0, 100, 100),
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("1", 0, 0, 10, 10, id=1)
+            .build()
         )
+        block1 = page.blocks[0]
+        # Create a block not in PageData
+        block2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)
 
         reason = RemovalReason(reason_type="child_bbox", target_block=block1)
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
         with pytest.raises(ValueError, match="must be in PageData.blocks"):
             result.mark_removed(block2, reason)
 
     def test_mark_removed_allows_block_in_page_data(self) -> None:
         """Test that mark_removed succeeds when block is in PageData."""
-        block1 = Text(bbox=BBox(0, 0, 10, 10), text="1", id=1)
-        block2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)
-
-        page_data = PageData(
-            page_number=1,
-            blocks=[block1, block2],
-            bbox=BBox(0, 0, 100, 100),
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("1", 0, 0, 10, 10, id=1)
+            .add_text("2", 20, 20, 10, 10, id=2)
+            .build()
         )
+        block1 = page.blocks[0]
+        block2 = page.blocks[1]
 
         reason = RemovalReason(reason_type="child_bbox", target_block=block1)
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
         result.mark_removed(block2, reason)
         assert result.is_removed(block2)
 
@@ -247,17 +239,14 @@ class TestGetScoredCandidates:
 
     def test_returns_sorted_by_score(self) -> None:
         """Test that get_scored_candidates returns candidates sorted by score."""
-        # Create a simple page with one text block
-        text = Text(
-            id=1, bbox=BBox(0, 0, 10, 10), text="42", font_size=12.0, font_name="Arial"
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("42", 0, 0, 10, 10, id=1, font_size=12.0, font_name="Arial")
+            .build()
         )
-        page_data = PageData(
-            page_number=1,
-            blocks=[text],
-            bbox=BBox(0, 0, 100, 100),
-        )
+        text = page.blocks[0]
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
 
         # Add some candidates with different scores (all valid)
         result.add_candidate(
@@ -302,16 +291,14 @@ class TestGetScoredCandidates:
 
     def test_filters_by_min_score(self) -> None:
         """Test that get_scored_candidates filters by minimum score."""
-        text = Text(
-            id=1, bbox=BBox(0, 0, 10, 10), text="42", font_size=12.0, font_name="Arial"
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("42", 0, 0, 10, 10, id=1, font_size=12.0, font_name="Arial")
+            .build()
         )
-        page_data = PageData(
-            page_number=1,
-            blocks=[text],
-            bbox=BBox(0, 0, 100, 100),
-        )
+        text = page.blocks[0]
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
 
         # Add candidates with different scores (all valid)
         result.add_candidate(
@@ -344,16 +331,14 @@ class TestGetScoredCandidates:
 
     def test_excludes_unscored(self) -> None:
         """Test that get_scored_candidates excludes candidates without score_details."""
-        text = Text(
-            id=1, bbox=BBox(0, 0, 10, 10), text="42", font_size=12.0, font_name="Arial"
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("42", 0, 0, 10, 10, id=1, font_size=12.0, font_name="Arial")
+            .build()
         )
-        page_data = PageData(
-            page_number=1,
-            blocks=[text],
-            bbox=BBox(0, 0, 100, 100),
-        )
+        text = page.blocks[0]
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
 
         # Add a candidate with score_details
         result.add_candidate(
@@ -390,16 +375,14 @@ class TestGetScoredCandidates:
         By default, get_scored_candidates returns only valid candidates.
         Use valid_only=False to get all scored candidates including unconstructed ones.
         """
-        text = Text(
-            id=1, bbox=BBox(0, 0, 10, 10), text="42", font_size=12.0, font_name="Arial"
+        page = (
+            PageBuilder(page_number=1, width=100, height=100)
+            .add_text("42", 0, 0, 10, 10, id=1, font_size=12.0, font_name="Arial")
+            .build()
         )
-        page_data = PageData(
-            page_number=1,
-            blocks=[text],
-            bbox=BBox(0, 0, 100, 100),
-        )
+        text = page.blocks[0]
 
-        result = ClassificationResult(page_data=page_data)
+        result = ClassificationResult(page_data=page)
 
         # Add a candidate that hasn't been constructed yet
         result.add_candidate(
