@@ -5,6 +5,7 @@ pytest~=9.0.2
 pytest-cov~=7.0.0
 pytest-randomly~=4.0.1
 pytest-recording~=0.13.4
+hypothesis~=6.148.7
 vcrpy~=8.1.0
 PyYAML~=6.0.3
 snakeviz~=2.2.2

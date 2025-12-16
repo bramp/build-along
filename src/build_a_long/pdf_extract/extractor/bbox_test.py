@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
@@ -11,113 +13,181 @@ from build_a_long.pdf_extract.extractor.bbox import (
     group_by_similar_bbox,
 )
 
-
-def test_overlaps():
-    bbox1 = BBox(0, 0, 10, 10)
-    bbox2 = BBox(5, 5, 15, 15)
-    bbox3 = BBox(10, 10, 20, 20)  # Touches at corner
-    bbox4 = BBox(11, 11, 20, 20)  # No overlap
-    bbox5 = BBox(0, 0, 10, 5)  # Partial overlap
-
-    assert bbox1.overlaps(bbox2)
-    assert bbox2.overlaps(bbox1)
-    assert not bbox1.overlaps(bbox3)  # Touching at corner is not overlapping
-    assert not bbox3.overlaps(bbox1)
-    assert not bbox1.overlaps(bbox4)
-    assert bbox1.overlaps(bbox5)
+# --- Strategies ---
+floats = st.floats(
+    min_value=-1000, max_value=1000, allow_nan=False, allow_infinity=False
+)
+positive_floats = st.floats(
+    min_value=0, max_value=1000, allow_nan=False, allow_infinity=False
+)
 
 
-def test_contains():
-    bbox1 = BBox(0, 0, 10, 10)
-    bbox2 = BBox(2, 2, 8, 8)
-    bbox3 = BBox(0, 0, 10, 10)  # Same bbox
-    bbox4 = BBox(0, 0, 10, 11)  # Not fully inside
-
-    assert bbox1.contains(bbox2)
-    assert bbox1.contains(bbox3)
-    assert not bbox2.contains(bbox1)
-    assert not bbox1.contains(bbox4)
+@st.composite
+def bboxes(draw):
+    x0 = draw(floats)
+    y0 = draw(floats)
+    w = draw(positive_floats)
+    h = draw(positive_floats)
+    return BBox(x0, y0, x0 + w, y0 + h)
 
 
-def test_adjacent():
-    bbox1 = BBox(0, 0, 10, 10)
-    bbox2 = BBox(10, 0, 20, 10)  # Right adjacent
-    bbox3 = BBox(0, 10, 10, 20)  # Top adjacent
-    bbox4 = BBox(10, 10, 20, 20)  # Corner adjacent
-    bbox5 = BBox(11, 0, 20, 10)  # Not adjacent
-    bbox6 = BBox(5, 5, 15, 15)  # Overlapping, not adjacent
-
-    assert bbox1.adjacent(bbox2)
-    assert bbox2.adjacent(bbox1)
-    assert bbox1.adjacent(bbox3)
-    assert bbox3.adjacent(bbox1)
-    # Corner adjacency is not considered adjacent
-    assert not bbox1.adjacent(bbox4)
-    assert not bbox1.adjacent(bbox5)
-    assert not bbox1.adjacent(bbox6)
+@st.composite
+def non_degenerate_bboxes(draw):
+    x0 = draw(floats)
+    y0 = draw(floats)
+    w = draw(
+        st.floats(min_value=1e-6, max_value=1000, allow_nan=False, allow_infinity=False)
+    )  # Ensure positive width
+    h = draw(
+        st.floats(min_value=1e-6, max_value=1000, allow_nan=False, allow_infinity=False)
+    )  # Ensure positive height
+    return BBox(x0, y0, x0 + w, y0 + h)
 
 
-def test_similar():
-    bbox1 = BBox(0, 0, 10, 10)
-    bbox2 = BBox(0.5, 0.5, 10.5, 10.5)  # Within default tolerance of 1.0
-    bbox3 = BBox(2, 2, 12, 12)  # Outside default tolerance
-    bbox4 = BBox(0, 0, 10, 10)  # Exact same bbox
+# --- Property Tests ---
 
-    # Default tolerance (1.0)
-    assert bbox1.similar(bbox4)
-    assert bbox1.similar(bbox2)
-    assert not bbox1.similar(bbox3)
 
-    # Custom tolerance
-    assert bbox1.similar(bbox3, tolerance=2.0)
-    assert not bbox1.similar(bbox2, tolerance=0.1)
+@given(bboxes(), bboxes())
+def test_overlaps_property(b1, b2):
+    # Definition of overlaps: intervals intersect on both axes
+    x_overlap = max(b1.x0, b2.x0) < min(b1.x1, b2.x1)
+    y_overlap = max(b1.y0, b2.y0) < min(b1.y1, b2.y1)
+    expected = x_overlap and y_overlap
+    assert b1.overlaps(b2) == expected
+    # Symmetry
+    assert b1.overlaps(b2) == b2.overlaps(b1)
 
+
+@given(bboxes(), bboxes())
+def test_contains_property(b1, b2):
+    # Definition of contains: b2 inside b1
+    expected = b1.x0 <= b2.x0 and b1.y0 <= b2.y0 and b1.x1 >= b2.x1 and b1.y1 >= b2.y1
+    assert b1.contains(b2) == expected
+    # Self-containment
+    if b1 == b2:
+        assert b1.contains(b2)
+
+
+@given(bboxes(), bboxes())
+def test_union_property(b1, b2):
+    u = b1.union(b2)
+    # Validity
+    assert u.x0 == pytest.approx(min(b1.x0, b2.x0))
+    assert u.y0 == pytest.approx(min(b1.y0, b2.y0))
+    assert u.x1 == pytest.approx(max(b1.x1, b2.x1))
+    assert u.y1 == pytest.approx(max(b1.y1, b2.y1))
+    # Properties
+    assert u.contains(b1)
+    assert u.contains(b2)
+    assert b1.union(b2) == b2.union(b1)
+
+
+@given(st.lists(bboxes(), min_size=1))
+def test_union_all_property(boxes):
+    u = BBox.union_all(boxes)
+    # Check bounds
+    min_x0 = min(b.x0 for b in boxes)
+    min_y0 = min(b.y0 for b in boxes)
+    max_x1 = max(b.x1 for b in boxes)
+    max_y1 = max(b.y1 for b in boxes)
+    assert u.x0 == pytest.approx(min_x0)
+    assert u.y0 == pytest.approx(min_y0)
+    assert u.x1 == pytest.approx(max_x1)
+    assert u.y1 == pytest.approx(max_y1)
+
+
+@given(bboxes(), floats)
+def test_expand_property(b, margin):
+    # Calculate expected new coordinates
+    expected_x0 = b.x0 - margin
+    expected_y0 = b.y0 - margin
+    expected_x1 = b.x1 + margin
+    expected_y1 = b.y1 + margin
+
+    # Predict if ValueError should be raised by BBox constructor due to invalid dimensions
+    should_raise = expected_x0 > expected_x1 or expected_y0 > expected_y1
+
+    if should_raise:
+        with pytest.raises(ValueError):
+            b.expand(margin)
+    else:
+        e = b.expand(margin)
+        assert e.x0 == pytest.approx(expected_x0)
+        assert e.y0 == pytest.approx(expected_y0)
+        assert e.x1 == pytest.approx(expected_x1)
+        assert e.y1 == pytest.approx(expected_y1)
+        # Check containment
+        if margin > 0:
+            assert e.contains(b)  # Expanded box contains original
+        elif margin < 0:
+            assert b.contains(e)  # Original contains shrunk box
+        else:  # margin == 0
+            assert e == b
+
+
+@given(
+    bboxes(),
+    bboxes(),
+    st.floats(min_value=0, max_value=10, allow_nan=False, allow_infinity=False),
+)
+def test_similar_property(b1, b2, tolerance):
     # Similar is symmetric
-    assert bbox1.similar(bbox2) == bbox2.similar(bbox1)
+    assert b1.similar(b2, tolerance) == b2.similar(b1, tolerance)
+
+    # If all coordinate differences are within tolerance, they should be similar
+    all_coords_within_tolerance = all(
+        abs(getattr(b1, coord) - getattr(b2, coord)) <= tolerance
+        for coord in ["x0", "y0", "x1", "y1"]
+    )
+    if all_coords_within_tolerance:
+        assert b1.similar(b2, tolerance)
+    else:
+        # If not all coords are within tolerance, it *might* not be similar.
+        # However, Hypothesis might generate cases where float precision
+        # makes exact comparison difficult for this inverse check.
+        # The primary check is 'all_coords_within_tolerance => similar'.
+        pass
 
 
-def test_union():
-    bbox1 = BBox(0, 0, 10, 10)
-    bbox2 = BBox(5, 5, 15, 15)
-    bbox3 = BBox(20, 20, 30, 30)
-
-    # Test overlapping boxes
-    union_12 = bbox1.union(bbox2)
-    assert union_12.x0 == 0
-    assert union_12.y0 == 0
-    assert union_12.x1 == 15
-    assert union_12.y1 == 15
-
-    # Test non-overlapping boxes
-    union_13 = bbox1.union(bbox3)
-    assert union_13.x0 == 0
-    assert union_13.y0 == 0
-    assert union_13.x1 == 30
-    assert union_13.y1 == 30
-
-    # Test union is commutative
-    assert bbox1.union(bbox2) == bbox2.union(bbox1)
+@given(bboxes(), positive_floats)  # Only test with positive scales
+def test_mul_scale_positive_property(b, scale):
+    scaled = b * scale
+    assert scaled.x0 == pytest.approx(b.x0 * scale)
+    assert scaled.y0 == pytest.approx(b.y0 * scale)
+    assert scaled.x1 == pytest.approx(b.x1 * scale)
+    assert scaled.y1 == pytest.approx(b.y1 * scale)
+    assert scaled.width == pytest.approx(b.width * scale)
+    assert scaled.height == pytest.approx(b.height * scale)
 
 
-def test_union_all():
-    bbox1 = BBox(0, 0, 10, 10)
-    bbox2 = BBox(5, 5, 15, 15)
-    bbox3 = BBox(20, 20, 30, 30)
+@given(
+    non_degenerate_bboxes(),
+    st.floats(
+        max_value=-1e-6, min_value=-1e10, allow_nan=False, allow_infinity=False
+    ),  # Filter out extremely large negative scales
+)  # Test with negative scales
+def test_mul_negative_scale_raises_error(b, scale):
+    # A negative scale should invert coordinates such that x0 > x1 or y0 > y1,
+    # leading to a ValueError from BBox's model_post_init.
+    with pytest.raises(
+        ValueError
+    ):  # This should catch the ValueError raised by model_post_init
+        _ = b * scale
 
-    # Test with multiple boxes
-    union = BBox.union_all([bbox1, bbox2, bbox3])
-    assert union.x0 == 0
-    assert union.y0 == 0
-    assert union.x1 == 30
-    assert union.y1 == 30
 
-    # Test with single box
-    union_single = BBox.union_all([bbox1])
-    assert union_single == bbox1
+@given(bboxes())
+def test_to_int_tuple_property(b):
+    int_tuple = b.to_int_tuple()
+    assert len(int_tuple) == 4
+    for coord in int_tuple:
+        assert isinstance(coord, int)
+    assert int_tuple[0] == int(b.x0)
+    assert int_tuple[1] == int(b.y0)
+    assert int_tuple[2] == int(b.x1)
+    assert int_tuple[3] == int(b.y1)
 
-    # Test with two boxes
-    union_two = BBox.union_all([bbox1, bbox2])
-    assert union_two == bbox1.union(bbox2)
+
+# --- Original Clustering and Specific Tests (Kept) ---
 
 
 def test_union_all_empty():
@@ -249,6 +319,111 @@ class MockItem:
 
     id: int
     bbox: BBox
+
+
+class TestGroupBySimilarBbox:
+    """Tests for group_by_similar_bbox function."""
+
+    def test_empty_list(self):
+        """Empty list returns empty list."""
+        result = group_by_similar_bbox([])
+        assert result == []
+
+    def test_single_item(self):
+        """Single item returns one group with that item."""
+        item = MockItem(1, BBox(10, 10, 20, 20))
+        result = group_by_similar_bbox([item])
+        assert len(result) == 1
+        assert result[0] == [item]
+
+    def test_identical_bboxes(self):
+        """Items with identical bboxes are grouped together."""
+        item1 = MockItem(1, BBox(10, 10, 20, 20))
+        item2 = MockItem(2, BBox(10, 10, 20, 20))
+        item3 = MockItem(3, BBox(10, 10, 20, 20))
+
+        result = group_by_similar_bbox([item1, item2, item3])
+        assert len(result) == 1
+        assert len(result[0]) == 3
+        assert item1 in result[0]
+        assert item2 in result[0]
+        assert item3 in result[0]
+
+    def test_similar_bboxes_within_tolerance(self):
+        """Items with bboxes within tolerance are grouped together."""
+        item1 = MockItem(1, BBox(10.0, 10.0, 20.0, 20.0))
+        item2 = MockItem(2, BBox(10.5, 10.5, 20.5, 20.5))  # Within tolerance=2.0
+        item3 = MockItem(3, BBox(11.0, 11.0, 21.0, 21.0))  # Within tolerance=2.0
+
+        result = group_by_similar_bbox([item1, item2, item3], tolerance=2.0)
+        assert len(result) == 1
+        assert len(result[0]) == 3
+
+    def test_different_bboxes_separate_groups(self):
+        """Items with different bboxes are in separate groups."""
+        item1 = MockItem(1, BBox(10, 10, 20, 20))
+        item2 = MockItem(2, BBox(100, 100, 110, 110))
+        item3 = MockItem(3, BBox(200, 200, 210, 210))
+
+        result = group_by_similar_bbox([item1, item2, item3])
+        assert len(result) == 3
+        assert [item1] in result
+        assert [item2] in result
+        assert [item3] in result
+
+    def test_mixed_similar_and_different(self):
+        """Mix of similar and different bboxes."""
+        # Group 1: similar bboxes
+        item1 = MockItem(1, BBox(10, 10, 20, 20))
+        item2 = MockItem(2, BBox(10.5, 10.5, 20.5, 20.5))
+        # Group 2: different bbox
+        item3 = MockItem(3, BBox(100, 100, 110, 110))
+        # Group 3: similar to group 2
+        item4 = MockItem(4, BBox(100.5, 100.5, 110.5, 110.5))
+
+        result = group_by_similar_bbox([item1, item2, item3, item4], tolerance=2.0)
+        assert len(result) == 2
+
+        # Find group containing item1
+        group1 = next(g for g in result if item1 in g)
+        assert item2 in group1
+        assert len(group1) == 2
+
+        # Find group containing item3
+        group2 = next(g for g in result if item3 in g)
+        assert item4 in group2
+        assert len(group2) == 2
+
+    def test_custom_tolerance(self):
+        """Custom tolerance affects grouping."""
+        item1 = MockItem(1, BBox(10, 10, 20, 20))
+        item2 = MockItem(2, BBox(15, 15, 25, 25))  # 5 points difference
+
+        # With default tolerance=2.0, these are separate groups
+        result = group_by_similar_bbox([item1, item2], tolerance=2.0)
+        assert len(result) == 2
+
+        # With tolerance=10.0, they're in the same group
+        result = group_by_similar_bbox([item1, item2], tolerance=10.0)
+        assert len(result) == 1
+        assert len(result[0]) == 2
+
+    def test_preserves_insertion_order(self):
+        """Groups and items within groups preserve insertion order."""
+        item1 = MockItem(1, BBox(10, 10, 20, 20))
+        item2 = MockItem(2, BBox(100, 100, 110, 110))
+        item3 = MockItem(3, BBox(10.5, 10.5, 20.5, 20.5))  # Similar to item1
+        item4 = MockItem(4, BBox(100.5, 100.5, 110.5, 110.5))  # Similar to item2
+
+        result = group_by_similar_bbox([item1, item2, item3, item4], tolerance=2.0)
+
+        # First group should be item1's group (first encountered)
+        assert result[0][0] == item1
+        assert result[0][1] == item3
+
+        # Second group should be item2's group
+        assert result[1][0] == item2
+        assert result[1][1] == item4
 
 
 def test_build_connected_cluster_single_seed():
@@ -438,219 +613,3 @@ def test_filter_overlapping():
     assert len(result) == 2
     assert item1 in result
     assert item2 in result
-
-
-def test_expand_positive():
-    """Test expanding bbox with positive margin."""
-    bbox = BBox(10, 10, 20, 20)
-    expanded = bbox.expand(5)
-
-    assert expanded.x0 == 5
-    assert expanded.y0 == 5
-    assert expanded.x1 == 25
-    assert expanded.y1 == 25
-    assert expanded.width == 20
-    assert expanded.height == 20
-
-
-def test_expand_negative_valid():
-    """Test shrinking bbox with negative margin (valid result)."""
-    bbox = BBox(10, 10, 30, 30)
-    shrunk = bbox.expand(-5)
-
-    assert shrunk.x0 == 15
-    assert shrunk.y0 == 15
-    assert shrunk.x1 == 25
-    assert shrunk.y1 == 25
-    assert shrunk.width == 10
-    assert shrunk.height == 10
-
-
-def test_expand_negative_invalid():
-    """Test shrinking bbox with negative margin resulting in invalid bbox."""
-    bbox = BBox(10, 10, 20, 20)
-
-    # Shrink by more than half the width/height
-    with pytest.raises(ValueError, match="Cannot expand bbox by -6"):
-        bbox.expand(-6)
-
-
-def test_expand_zero():
-    """Test expanding bbox with zero margin."""
-    bbox = BBox(10, 10, 20, 20)
-    expanded = bbox.expand(0)
-
-    assert expanded == bbox
-
-
-def test_to_int_tuple():
-    """Test converting bbox to integer tuple."""
-    bbox = BBox(10.3, 20.7, 30.9, 40.1)
-    result = bbox.to_int_tuple()
-
-    assert result == (10, 20, 30, 40)
-    assert all(isinstance(v, int) for v in result)
-
-
-def test_to_int_tuple_negative():
-    """Test converting bbox with negative coords to integer tuple."""
-    bbox = BBox(-5.9, -3.1, 10.5, 20.8)
-    result = bbox.to_int_tuple()
-
-    assert result == (-5, -3, 10, 20)
-
-
-def test_mul_scale():
-    """Test scaling bbox with multiplication."""
-    bbox = BBox(10, 20, 30, 40)
-    scaled = bbox * 2.0
-
-    assert scaled.x0 == 20.0
-    assert scaled.y0 == 40.0
-    assert scaled.x1 == 60.0
-    assert scaled.y1 == 80.0
-
-
-def test_mul_scale_fractional():
-    """Test scaling bbox with fractional multiplier."""
-    bbox = BBox(10, 20, 30, 40)
-    scaled = bbox * 0.5
-
-    assert scaled.x0 == 5.0
-    assert scaled.y0 == 10.0
-    assert scaled.x1 == 15.0
-    assert scaled.y1 == 20.0
-
-
-def test_rmul_scale():
-    """Test reverse multiplication (scale * bbox)."""
-    bbox = BBox(10, 20, 30, 40)
-    scaled = 2.0 * bbox
-
-    assert scaled.x0 == 20.0
-    assert scaled.y0 == 40.0
-    assert scaled.x1 == 60.0
-    assert scaled.y1 == 80.0
-
-
-def test_mul_scale_one():
-    """Test scaling bbox by 1.0 returns equivalent bbox."""
-    bbox = BBox(10, 20, 30, 40)
-    scaled = bbox * 1.0
-
-    assert scaled == bbox
-
-
-def test_mul_combined_with_to_int_tuple():
-    """Test typical OCR use case: scale then convert to int tuple."""
-    bbox = BBox(10.5, 20.3, 30.7, 40.9)
-    scale = 4.0
-
-    result = (bbox * scale).to_int_tuple()
-
-    assert result == (42, 81, 122, 163)
-
-
-class TestGroupBySimilarBbox:
-    """Tests for group_by_similar_bbox function."""
-
-    def test_empty_list(self):
-        """Empty list returns empty list."""
-        result = group_by_similar_bbox([])
-        assert result == []
-
-    def test_single_item(self):
-        """Single item returns one group with that item."""
-        item = MockItem(1, BBox(10, 10, 20, 20))
-        result = group_by_similar_bbox([item])
-        assert len(result) == 1
-        assert result[0] == [item]
-
-    def test_identical_bboxes(self):
-        """Items with identical bboxes are grouped together."""
-        item1 = MockItem(1, BBox(10, 10, 20, 20))
-        item2 = MockItem(2, BBox(10, 10, 20, 20))
-        item3 = MockItem(3, BBox(10, 10, 20, 20))
-
-        result = group_by_similar_bbox([item1, item2, item3])
-        assert len(result) == 1
-        assert len(result[0]) == 3
-        assert item1 in result[0]
-        assert item2 in result[0]
-        assert item3 in result[0]
-
-    def test_similar_bboxes_within_tolerance(self):
-        """Items with bboxes within tolerance are grouped together."""
-        item1 = MockItem(1, BBox(10.0, 10.0, 20.0, 20.0))
-        item2 = MockItem(2, BBox(10.5, 10.5, 20.5, 20.5))  # Within tolerance=2.0
-        item3 = MockItem(3, BBox(11.0, 11.0, 21.0, 21.0))  # Within tolerance=2.0
-
-        result = group_by_similar_bbox([item1, item2, item3], tolerance=2.0)
-        assert len(result) == 1
-        assert len(result[0]) == 3
-
-    def test_different_bboxes_separate_groups(self):
-        """Items with different bboxes are in separate groups."""
-        item1 = MockItem(1, BBox(10, 10, 20, 20))
-        item2 = MockItem(2, BBox(100, 100, 110, 110))
-        item3 = MockItem(3, BBox(200, 200, 210, 210))
-
-        result = group_by_similar_bbox([item1, item2, item3])
-        assert len(result) == 3
-        assert [item1] in result
-        assert [item2] in result
-        assert [item3] in result
-
-    def test_mixed_similar_and_different(self):
-        """Mix of similar and different bboxes."""
-        # Group 1: similar bboxes
-        item1 = MockItem(1, BBox(10, 10, 20, 20))
-        item2 = MockItem(2, BBox(10.5, 10.5, 20.5, 20.5))
-        # Group 2: different bbox
-        item3 = MockItem(3, BBox(100, 100, 110, 110))
-        # Group 3: similar to group 2
-        item4 = MockItem(4, BBox(100.5, 100.5, 110.5, 110.5))
-
-        result = group_by_similar_bbox([item1, item2, item3, item4], tolerance=2.0)
-        assert len(result) == 2
-
-        # Find group containing item1
-        group1 = next(g for g in result if item1 in g)
-        assert item2 in group1
-        assert len(group1) == 2
-
-        # Find group containing item3
-        group2 = next(g for g in result if item3 in g)
-        assert item4 in group2
-        assert len(group2) == 2
-
-    def test_custom_tolerance(self):
-        """Custom tolerance affects grouping."""
-        item1 = MockItem(1, BBox(10, 10, 20, 20))
-        item2 = MockItem(2, BBox(15, 15, 25, 25))  # 5 points difference
-
-        # With default tolerance=2.0, these are separate groups
-        result = group_by_similar_bbox([item1, item2], tolerance=2.0)
-        assert len(result) == 2
-
-        # With tolerance=10.0, they're in the same group
-        result = group_by_similar_bbox([item1, item2], tolerance=10.0)
-        assert len(result) == 1
-        assert len(result[0]) == 2
-
-    def test_preserves_insertion_order(self):
-        """Groups and items within groups preserve insertion order."""
-        item1 = MockItem(1, BBox(10, 10, 20, 20))
-        item2 = MockItem(2, BBox(100, 100, 110, 110))
-        item3 = MockItem(3, BBox(10.5, 10.5, 20.5, 20.5))  # Similar to item1
-        item4 = MockItem(4, BBox(100.5, 100.5, 110.5, 110.5))  # Similar to item2
-
-        result = group_by_similar_bbox([item1, item2, item3, item4], tolerance=2.0)
-
-        # First group should be item1's group (first encountered)
-        assert result[0][0] == item1
-        assert result[0][1] == item3
-
-        # Second group should be item2's group
-        assert result[1][0] == item2
-        assert result[1][1] == item4

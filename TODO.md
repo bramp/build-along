@@ -69,7 +69,7 @@ This file outlines the tasks required to build the Lego instructions project.
 
 - [x] Refactor `extractor_test.py` with a Declarative Builder (`PageBuilder`)
 - [ ] Improve `ocr_test.py` by Mocking the Engine
-- [ ] Adopt Property-Based Testing for `bbox_test.py` using `hypothesis`
+- [x] Adopt Property-Based Testing for `bbox_test.py` using `hypothesis`
 - [x] Consolidate Serialization Tests
 - [ ] Decouple `Extractor` Logic
 
