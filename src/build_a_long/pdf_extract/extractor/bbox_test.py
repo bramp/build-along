@@ -614,3 +614,83 @@ def test_filter_overlapping():
     assert item1 in result
     assert item2 in result
     assert item3 in result
+
+
+class TestLineIntersects:
+    """Tests for BBox.line_intersects() method."""
+
+    def test_line_through_center(self):
+        """Line passing through the center of the bbox."""
+        bbox = BBox(10, 10, 20, 20)
+        # Horizontal line through center
+        assert bbox.line_intersects((0, 15), (30, 15)) is True
+        # Vertical line through center
+        assert bbox.line_intersects((15, 0), (15, 30)) is True
+        # Diagonal through center
+        assert bbox.line_intersects((0, 0), (30, 30)) is True
+
+    def test_endpoint_inside(self):
+        """Line with one or both endpoints inside the bbox."""
+        bbox = BBox(10, 10, 20, 20)
+        # Start inside
+        assert bbox.line_intersects((15, 15), (30, 30)) is True
+        # End inside
+        assert bbox.line_intersects((0, 0), (15, 15)) is True
+        # Both inside
+        assert bbox.line_intersects((12, 12), (18, 18)) is True
+
+    def test_line_entirely_outside(self):
+        """Line that doesn't intersect the bbox."""
+        bbox = BBox(10, 10, 20, 20)
+        # Line to the left
+        assert bbox.line_intersects((0, 0), (5, 30)) is False
+        # Line to the right
+        assert bbox.line_intersects((25, 0), (30, 30)) is False
+        # Line above
+        assert bbox.line_intersects((0, 0), (30, 5)) is False
+        # Line below
+        assert bbox.line_intersects((0, 25), (30, 30)) is False
+
+    def test_line_crosses_corner(self):
+        """Line that crosses near a corner."""
+        bbox = BBox(10, 10, 20, 20)
+        # Diagonal from outside to outside, passing through top-left area
+        assert bbox.line_intersects((5, 5), (15, 15)) is True
+        # Diagonal that misses the bbox
+        assert bbox.line_intersects((0, 5), (5, 0)) is False
+
+    def test_line_along_edge(self):
+        """Line that runs along an edge of the bbox."""
+        bbox = BBox(10, 10, 20, 20)
+        # Along top edge
+        assert bbox.line_intersects((10, 10), (20, 10)) is True
+        # Along left edge
+        assert bbox.line_intersects((10, 10), (10, 20)) is True
+
+    def test_horizontal_line_crossing(self):
+        """Horizontal line crossing the bbox."""
+        bbox = BBox(10, 10, 20, 20)
+        # Crosses through middle
+        assert bbox.line_intersects((0, 15), (30, 15)) is True
+        # Just above - doesn't intersect
+        assert bbox.line_intersects((0, 5), (30, 5)) is False
+        # Just below - doesn't intersect
+        assert bbox.line_intersects((0, 25), (30, 25)) is False
+
+    def test_vertical_line_crossing(self):
+        """Vertical line crossing the bbox."""
+        bbox = BBox(10, 10, 20, 20)
+        # Crosses through middle
+        assert bbox.line_intersects((15, 0), (15, 30)) is True
+        # Just to the left - doesn't intersect
+        assert bbox.line_intersects((5, 0), (5, 30)) is False
+        # Just to the right - doesn't intersect
+        assert bbox.line_intersects((25, 0), (25, 30)) is False
+
+    def test_zero_length_line(self):
+        """Point (zero-length line)."""
+        bbox = BBox(10, 10, 20, 20)
+        # Point inside
+        assert bbox.line_intersects((15, 15), (15, 15)) is True
+        # Point outside
+        assert bbox.line_intersects((5, 5), (5, 5)) is False

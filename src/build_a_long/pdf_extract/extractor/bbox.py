@@ -116,7 +116,6 @@ class BBox(BaseModel):
     def contains(self, other: BBox) -> bool:
         """
         Checks if this bounding box fully contains another bounding box.
-        This is the inverse of fully_inside - returns True if other is inside self.
         """
         return (
             other.x0 >= self.x0
@@ -193,6 +192,81 @@ class BBox(BaseModel):
             iy0 = iy1 = (iy0 + iy1) / 2
 
         return BBox(x0=ix0, y0=iy0, x1=ix1, y1=iy1)
+
+    def line_intersects(
+        self,
+        p1: tuple[float, float],
+        p2: tuple[float, float],
+    ) -> bool:
+        """Check if a line segment intersects this bounding box.
+
+        Uses the Cohen-Sutherland algorithm approach to check if a line segment
+        from p1 to p2 crosses or is inside this bbox.
+
+        Args:
+            p1: Start point (x, y) of the line segment
+            p2: End point (x, y) of the line segment
+
+        Returns:
+            True if the line segment intersects or is inside this bbox
+        """
+        x1, y1 = p1
+        x2, y2 = p2
+
+        # Check if either endpoint is inside the bbox
+        if self.x0 <= x1 <= self.x1 and self.y0 <= y1 <= self.y1:
+            return True
+        if self.x0 <= x2 <= self.x1 and self.y0 <= y2 <= self.y1:
+            return True
+
+        # Check if line segment is entirely outside on one side
+        if x1 < self.x0 and x2 < self.x0:
+            return False
+        if x1 > self.x1 and x2 > self.x1:
+            return False
+        if y1 < self.y0 and y2 < self.y0:
+            return False
+        if y1 > self.y1 and y2 > self.y1:
+            return False
+
+        # Check intersection with each edge of the bbox
+        # Using parametric line equation: P = p1 + t * (p2 - p1), t in [0, 1]
+        dx = x2 - x1
+        dy = y2 - y1
+
+        # Check left edge (x = x0)
+        if dx != 0:
+            t = (self.x0 - x1) / dx
+            if 0 <= t <= 1:
+                y_at_t = y1 + t * dy
+                if self.y0 <= y_at_t <= self.y1:
+                    return True
+
+        # Check right edge (x = x1)
+        if dx != 0:
+            t = (self.x1 - x1) / dx
+            if 0 <= t <= 1:
+                y_at_t = y1 + t * dy
+                if self.y0 <= y_at_t <= self.y1:
+                    return True
+
+        # Check top edge (y = y0)
+        if dy != 0:
+            t = (self.y0 - y1) / dy
+            if 0 <= t <= 1:
+                x_at_t = x1 + t * dx
+                if self.x0 <= x_at_t <= self.x1:
+                    return True
+
+        # Check bottom edge (y = y1)
+        if dy != 0:
+            t = (self.y1 - y1) / dy
+            if 0 <= t <= 1:
+                x_at_t = x1 + t * dx
+                if self.x0 <= x_at_t <= self.x1:
+                    return True
+
+        return False
 
     def iou(self, other: BBox) -> float:
         """Intersection over Union with another bbox.
