@@ -106,12 +106,12 @@ class BBox(BaseModel):
 
     def overlaps(self, other: BBox) -> bool:
         """
-        Checks if this bounding box strictly overlaps with another bounding box.
-        Touching edges do not count as overlapping.
+        Checks if this bounding box overlaps with another bounding box.
+        Touching edges count as overlapping.
         """
-        return max(self.x0, other.x0) < min(self.x1, other.x1) and max(
+        return max(self.x0, other.x0) <= min(self.x1, other.x1) and max(
             self.y0, other.y0
-        ) < min(self.y1, other.y1)
+        ) <= min(self.y1, other.y1)
 
     def contains(self, other: BBox) -> bool:
         """

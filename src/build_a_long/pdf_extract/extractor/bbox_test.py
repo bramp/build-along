@@ -49,9 +49,9 @@ def non_degenerate_bboxes(draw):
 
 @given(bboxes(), bboxes())
 def test_overlaps_property(b1, b2):
-    # Definition of overlaps: intervals intersect on both axes
-    x_overlap = max(b1.x0, b2.x0) < min(b1.x1, b2.x1)
-    y_overlap = max(b1.y0, b2.y0) < min(b1.y1, b2.y1)
+    # Definition of overlaps: intervals intersect on both axes (including touching)
+    x_overlap = max(b1.x0, b2.x0) <= min(b1.x1, b2.x1)
+    y_overlap = max(b1.y0, b2.y0) <= min(b1.y1, b2.y1)
     expected = x_overlap and y_overlap
     assert b1.overlaps(b2) == expected
     # Symmetry
@@ -604,12 +604,13 @@ def test_filter_overlapping():
 
     item1 = MockItem(1, BBox(12, 12, 18, 18))  # Fully inside (overlaps)
     item2 = MockItem(2, BBox(5, 5, 15, 15))  # Partial overlap
-    item3 = MockItem(3, BBox(20, 20, 30, 30))  # Touching corner (not overlapping)
+    item3 = MockItem(3, BBox(20, 20, 30, 30))  # Touching corner (overlaps with <=)
     item4 = MockItem(4, BBox(30, 30, 40, 40))  # No overlap
 
     items = [item1, item2, item3, item4]
     result = filter_overlapping(items, target)
 
-    assert len(result) == 2
+    assert len(result) == 3
     assert item1 in result
     assert item2 in result
+    assert item3 in result
