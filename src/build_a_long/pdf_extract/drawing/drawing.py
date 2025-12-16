@@ -128,6 +128,32 @@ def _create_drawable_items(
                     for source_block in candidate.source_blocks:
                         element_source_block_ids.add(source_block.id)
 
+        # Also add elements from the Page hierarchy that don't have candidates
+        # (e.g., SubAssemblyStep elements created as substeps without a candidate)
+        if result.page:
+            drawn_element_ids = {
+                id(c.constructed)
+                for _, cs in all_candidates.items()
+                for c in cs
+                if c.constructed
+            }
+            for element in result.page.iter_elements():
+                if id(element) in drawn_element_ids:
+                    continue
+                if id(element) not in chosen_elements:
+                    continue
+                # This element is in the page hierarchy but wasn't drawn via a candidate
+                label = f"[{element.__class__.__name__}]"
+                items.append(
+                    DrawableItem(
+                        bbox=element.bbox,
+                        label=label,
+                        is_element=True,
+                        is_winner=True,
+                        is_removed=False,
+                    )
+                )
+
     # Add regular blocks (skip those that will be drawn as elements)
     if draw_blocks:
         for block in result.blocks:
