@@ -326,3 +326,83 @@ class PieceLengthValueRule(Rule):
         except ValueError:
             pass
         return 0.0
+
+
+class StepValueMaxFilter(Rule):
+    """Filter that rejects step numbers above a maximum value.
+
+    Returns 1.0 for values <= max_value, 0.0 for values > max_value.
+    Used to distinguish substep numbers (small values like 1-10) from
+    main step numbers (larger values like 100-500).
+    """
+
+    def __init__(
+        self,
+        max_value: int,
+        weight: float = 1.0,
+        name: str = "StepValueMax",
+        required: bool = False,
+    ):
+        self.name = name
+        self.max_value = max_value
+        self.weight = weight
+        self.required = required
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        if not isinstance(block, Text):
+            return 0.0
+
+        value = extract_step_number_value(block.text)
+        if value is None:
+            return 0.0
+
+        if value <= self.max_value:
+            return 1.0
+        return 0.0
+
+
+class FontSizeSmallerThanRule(Rule):
+    """Rule that scores based on font size being smaller than a reference size.
+
+    Scores 1.0 if font size is clearly smaller (below threshold_ratio).
+    Scores 0.7 if font size is similar (between threshold_ratio and 1.0).
+    Scores 0.4 if font size is larger (above 1.0).
+
+    Used for substep numbers which should be smaller than main step numbers.
+    """
+
+    def __init__(
+        self,
+        reference_size: float | None,
+        threshold_ratio: float = 0.85,
+        weight: float = 1.0,
+        name: str = "FontSizeSmallerThan",
+        required: bool = False,
+    ):
+        self.name = name
+        self.reference_size = reference_size
+        self.threshold_ratio = threshold_ratio
+        self.weight = weight
+        self.required = required
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        if not isinstance(block, Text):
+            return 0.0
+
+        # If no reference size available, skip this rule
+        if self.reference_size is None:
+            return None
+
+        font_size = block.font_size if block.font_size else block.bbox.height
+
+        ratio = font_size / self.reference_size
+
+        if ratio < self.threshold_ratio:
+            # Good - clearly smaller than reference
+            return 1.0
+        elif ratio < 1.0:
+            # Similar size - could go either way
+            return 0.7
+        else:
+            # Larger than reference - less likely but still possible
+            return 0.4

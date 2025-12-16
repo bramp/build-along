@@ -25,6 +25,7 @@ from build_a_long.pdf_extract.classifier.rules.text import (
     BagNumberTextRule,
     FontSizeMatch,
     FontSizeRangeRule,
+    FontSizeSmallerThanRule,
     PageNumberTextRule,
     PageNumberValueMatch,
     PartCountTextRule,
@@ -32,6 +33,7 @@ from build_a_long.pdf_extract.classifier.rules.text import (
     PieceLengthValueRule,
     RegexMatch,
     StepNumberTextRule,
+    StepValueMaxFilter,
 )
 from build_a_long.pdf_extract.classifier.rules.visual import (
     CurveCountRule,
@@ -49,6 +51,7 @@ __all__ = [
     "Filter",
     "FontSizeMatch",
     "FontSizeRangeRule",
+    "FontSizeSmallerThanRule",
     "InBottomBandFilter",
     "IsHorizontalDividerRule",
     "IsInstanceFilter",
@@ -65,6 +68,7 @@ __all__ = [
     "SizeRangeRule",
     "SizeRatioRule",
     "StepNumberTextRule",
+    "StepValueMaxFilter",
     "StrokeColorScore",
     "TextContainerFitRule",
     "TopLeftPositionScore",
