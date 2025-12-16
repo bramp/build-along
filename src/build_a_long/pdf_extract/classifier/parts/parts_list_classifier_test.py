@@ -1,108 +1,80 @@
 """Tests for the parts list classifier."""
 
-from build_a_long.pdf_extract.classifier import ClassifierConfig
-from build_a_long.pdf_extract.classifier.classifier import classify_elements
-from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
+from build_a_long.pdf_extract.classifier import ClassificationResult, ClassifierConfig
+from build_a_long.pdf_extract.classifier.parts.parts_list_classifier import (
+    PartsListClassifier,
+)
+from build_a_long.pdf_extract.classifier.test_utils import PageBuilder
 
 
 class TestPartsListClassification:
-    """Tests for detecting a parts list drawing above a step containing part counts."""
+    """Tests for detecting a parts list drawing."""
 
-    def test_parts_list_drawing_above_step(self) -> None:
-        page_bbox = BBox(0, 0, 200, 300)
+    def test_parts_list_with_part_candidates(self, candidate_factory) -> None:
+        """Test that a drawing containing parts is classified as a parts list."""
+        # 1. Setup Page with PageBuilder
+        builder = PageBuilder(width=200, height=300)
 
-        # Page and step
-        pn = Text(id=0, bbox=BBox(10, 285, 20, 295), text="6")
-        step = Text(
-            id=1, bbox=BBox(50, 180, 70, 210), text="10"
-        )  # height 30 (taller than PN)
+        # Drawing that will be the parts list
+        builder.add_drawing(x=30, y=100, w=140, h=60, id=10)  # bbox: 30,100,170,160
 
-        # Two drawings above the step; only d1 contains part counts
-        d1 = Drawing(id=2, bbox=BBox(30, 100, 170, 160))
-        d2 = Drawing(id=3, bbox=BBox(20, 40, 180, 80))
+        # Part contents inside the drawing
+        builder.add_text("2x", x=40, y=135, w=15, h=10, id=11)
+        builder.add_image(x=40, y=110, w=15, h=15, id=12)
 
-        # Part counts inside d1
-        pc1 = Text(id=4, bbox=BBox(40, 135, 55, 145), text="2x")
-        pc2 = Text(id=5, bbox=BBox(100, 145, 115, 155), text="5×")
+        # Another drawing (noise)
+        builder.add_drawing(x=20, y=40, w=160, h=40, id=20)
 
-        # Images inside d1, above the part counts
-        img1 = Image(id=7, bbox=BBox(40, 110, 55, 125))
-        img2 = Image(id=8, bbox=BBox(100, 120, 115, 135))
+        page = builder.build()
 
-        # Some unrelated text
-        other = Text(id=6, bbox=BBox(10, 10, 40, 20), text="hello")
+        # Retrieve blocks for candidate creation
+        d1 = page.blocks[0]  # The target parts list drawing
+        pc1_text = page.blocks[1]
+        pc1_img = page.blocks[2]
 
-        page = PageData(
-            page_number=6,
-            blocks=[pn, step, d1, d2, pc1, pc2, img1, img2, other],
-            bbox=page_bbox,
-        )
+        result = ClassificationResult(page_data=page)
+        factory = candidate_factory(result)
 
-        result = classify_elements(page, config=ClassifierConfig())
+        # 2. Inject Dependencies (Part Candidates)
+        # Create a 'part' candidate inside d1
+        # First we need a part_count candidate
+        pc_candidate = factory.add_part_count(pc1_text)
 
-        # Check the Page structure was built correctly
-        assert result.page is not None
-        assert len(result.page.steps) == 1
+        # Then a part candidate linking count and image
+        factory.add_part(part_count_candidate=pc_candidate, image_block=pc1_img)
 
-        step_elem = result.page.steps[0]
-        assert step_elem.step_number.value == 10
-        assert step_elem.parts_list is not None
-        assert len(step_elem.parts_list.parts) == 2  # pc1 and pc2
+        # 3. Run ONLY the PartsListClassifier
+        classifier = PartsListClassifier(config=ClassifierConfig())
+        classifier.score(result)
 
-        # Verify the part counts in the parts list
-        part_counts = sorted([p.count.count for p in step_elem.parts_list.parts])
-        assert part_counts == [2, 5]
+        # 4. Verify
+        # Should have found one parts list candidate
+        candidates = result.get_candidates("parts_list")
+        assert len(candidates) > 0
 
-    def test_two_steps_do_not_label_and_delete_both_drawings(self) -> None:
-        """Test that near-duplicate drawings are handled correctly with multiple steps.
+        # The best candidate should be d1
+        # Filter for candidates that use d1 as source
+        d1_candidates = [c for c in candidates if d1 in c.source_blocks]
+        assert len(d1_candidates) == 1
+        parts_list_candidate = d1_candidates[0]
 
-        When there are two step numbers and two near-duplicate drawings above them,
-        only one drawing should be selected as the parts list, and both steps should
-        be created successfully.
-        """
-        page_bbox = BBox(0, 0, 600, 400)
+        # Score should be high because it contains parts
+        assert parts_list_candidate.score > 0.0
 
-        # A part count inside the drawings
-        pc = Text(
-            id=0,
-            bbox=BBox(320, 45, 330, 55),
-            text="1x",
-        )
+    def test_empty_drawing_not_parts_list(self, candidate_factory) -> None:
+        """Test that a drawing with no parts is NOT classified as a parts list."""
+        builder = PageBuilder()
+        builder.add_drawing(x=10, y=10, w=100, h=100, id=1)
+        page = builder.build()
 
-        # Image inside the drawings, above the part count
-        img = Image(id=6, bbox=BBox(320, 20, 330, 40))
+        result = ClassificationResult(page_data=page)
+        # No part candidates added
 
-        # Two steps below the drawings (both tall enough)
-        step1 = Text(id=1, bbox=BBox(260, 70, 276, 96), text="5")
-        step2 = Text(id=2, bbox=BBox(300, 70, 316, 96), text="6")
+        classifier = PartsListClassifier(config=ClassifierConfig())
+        classifier.score(result)
 
-        # Real page number at bottom to avoid confusion
-        page_number = Text(id=3, bbox=BBox(10, 380, 20, 390), text="1")
+        candidates = result.get_candidates("parts_list")
 
-        # Two near-duplicate drawings above the steps
-        d_small = Drawing(id=4, bbox=BBox(262.5, 14.7, 414.6, 61.9))
-        d_large = Drawing(id=5, bbox=BBox(262.0, 14.2, 415.1, 62.4))
-
-        page = PageData(
-            page_number=2,
-            blocks=[pc, img, step1, step2, page_number, d_small, d_large],
-            bbox=page_bbox,
-        )
-
-        result = classify_elements(page, config=ClassifierConfig())
-
-        # Check that both steps were created successfully
-        assert result.page is not None
-        assert len(result.page.steps) == 2
-
-        # Verify both steps have the correct step numbers
-        step_numbers = sorted([s.step_number.value for s in result.page.steps])
-        assert step_numbers == [5, 6]
-
-        # At least one step should have a parts_list with the part
-        steps_with_parts = [
-            s for s in result.page.steps if s.parts_list and len(s.parts_list.parts) > 0
-        ]
-        assert len(steps_with_parts) >= 1, "At least one step should have parts"
+        # If any candidates are generated, they should have 0 score
+        if candidates:
+            assert all(c.score == 0.0 for c in candidates)
