@@ -1,8 +1,4 @@
-from typing import cast
 from unittest.mock import MagicMock
-
-import pymupdf
-import pytest
 
 from build_a_long.pdf_extract.extractor.extractor import (
     Extractor,
@@ -14,7 +10,6 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
     Text,
 )
 from build_a_long.pdf_extract.extractor.pymupdf_types import (
-    DrawingDict,
     TexttraceChar,
     TexttraceSpanDict,
 )

@@ -9,8 +9,6 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
     Drawing,
-    Image,
-    Text,
 )
 
 
@@ -55,7 +53,6 @@ def test_partcount_positive():
 
     with pytest.raises(ValueError):
         PartCount(bbox=BBox(0, 0, 1, 1), count=-1)
-
 
 
 def test_drawing_is_clipped_property():

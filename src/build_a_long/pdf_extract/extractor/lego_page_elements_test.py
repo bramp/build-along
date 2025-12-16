@@ -7,13 +7,10 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PageNumber,
     Part,
     PartCount,
-    PartImage,
     PartsList,
     Step,
     StepNumber,
 )
-
-
 
 # ============================================================================
 # Manual tests
@@ -152,7 +149,6 @@ def test_manual_str_representation():
     assert "75375" in str_repr
     assert "Test Set" in str_repr
     assert "pages=3" in str_repr
-
 
 
 def test_manual_empty():

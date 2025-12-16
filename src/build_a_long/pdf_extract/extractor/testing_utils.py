@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -27,7 +29,7 @@ class PageBuilder:
         font: str = "Arial",
         size: float = 12.0,
         seqno: int | None = None,
-    ) -> "PageBuilder":
+    ) -> PageBuilder:
         """Add a text span to the page."""
         self._text_spans.append(
             {
@@ -49,7 +51,7 @@ class PageBuilder:
         width: int = 100,
         height: int = 100,
         image_id: str | None = None,
-    ) -> "PageBuilder":
+    ) -> PageBuilder:
         """Add an image to the page."""
         self._images.append(
             {
@@ -69,7 +71,7 @@ class PageBuilder:
         bbox: RectLikeTuple,
         level: int = 0,
         seqno: int | None = None,
-    ) -> "PageBuilder":
+    ) -> PageBuilder:
         """Add a drawing to the page."""
         self._drawings.append(
             {
