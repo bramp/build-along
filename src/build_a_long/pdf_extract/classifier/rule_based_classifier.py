@@ -20,7 +20,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.classifier.rules import Rule, RuleContext
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.page_blocks import Block, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks, Text
 
 if TYPE_CHECKING:
     pass
@@ -90,7 +90,7 @@ class RuleBasedClassifier(LabelClassifier):
 
     def _score(self, result: ClassificationResult) -> None:
         """Score blocks using rules."""
-        context = RuleContext(result.page_data, self.config)
+        context = RuleContext(result.page_data, self.config, result)
         rules = self.rules
 
         for block in result.page_data.blocks:
@@ -160,6 +160,9 @@ class RuleBasedClassifier(LabelClassifier):
                 )
                 source_blocks.extend(outline_effects)
 
+            # Add any classifier-specific additional source blocks
+            source_blocks.extend(self._get_additional_source_blocks(block, result))
+
             # Create score object (subclasses can override _create_score)
             score_details = self._create_score(block, components, final_score)
 
@@ -172,6 +175,17 @@ class RuleBasedClassifier(LabelClassifier):
                 source_blocks=source_blocks,
             )
             result.add_candidate(candidate)
+
+    def _get_additional_source_blocks(
+        self, block: Block, result: ClassificationResult
+    ) -> list[Blocks]:
+        """Get additional source blocks to include with the candidate.
+
+        Subclasses can override this to include related blocks (e.g.,
+        overlapping drawings, drop shadows) in the candidate's source_blocks.
+        These blocks will be marked as removed if the candidate wins.
+        """
+        return []
 
     def _should_accept(self, score: float) -> bool:
         """Determine if a score is high enough to be a candidate.

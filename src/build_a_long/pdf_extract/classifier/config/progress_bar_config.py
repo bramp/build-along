@@ -8,6 +8,11 @@ from pydantic import BaseModel, Field
 class ProgressBarConfig(BaseModel):
     """Configuration for progress bar classification."""
 
+    min_score: float = Field(
+        default=0.6,
+        description="Minimum score to be considered a valid progress bar.",
+    )
+
     # TODO We should re-use this in ProgressIndicator, or make sure the values align..
     max_bottom_margin_ratio: float = Field(
         default=0.2,

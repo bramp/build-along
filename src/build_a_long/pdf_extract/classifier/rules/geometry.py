@@ -444,3 +444,167 @@ class SizeRatioRule(Rule):
             height_ratio, self.min_ratio, self.ideal_ratio, self.max_ratio
         )
         return (w_score + h_score) / 2.0
+
+
+# TODO I think we can merge this with IsBottomBandFilter
+class BottomPositionScore(Rule):
+    """Rule that scores based on position at bottom of page.
+
+    Scores higher for elements closer to the bottom edge.
+    """
+
+    def __init__(
+        self,
+        max_bottom_margin_ratio: float,
+        weight: float = 1.0,
+        name: str = "BottomPositionScore",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+        self.max_bottom_margin_ratio = max_bottom_margin_ratio
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        page_bbox = context.page_data.bbox
+        assert page_bbox is not None
+        page_height = page_bbox.height
+
+        element_bottom = block.bbox.y1
+        bottom_distance = page_bbox.y1 - element_bottom
+        bottom_margin_ratio = bottom_distance / page_height
+
+        # Should be in bottom margin area
+        if bottom_margin_ratio > self.max_bottom_margin_ratio:
+            return 0.0
+
+        # Score based on proximity to bottom (closer = better)
+        return 1.0 - (bottom_margin_ratio / self.max_bottom_margin_ratio)
+
+
+class PageNumberProximityScore(Rule):
+    """Rule that scores based on proximity to the page number.
+
+    Boosts score if the element is horizontally near the detected page number.
+    """
+
+    def __init__(
+        self,
+        proximity_ratio: float,
+        weight: float = 1.0,
+        name: str = "PageNumberProximityScore",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+        self.proximity_ratio = proximity_ratio
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        if not context.classification_result:
+            return None
+
+        page_bbox = context.page_data.bbox
+        assert page_bbox is not None
+
+        page_number_candidates = context.classification_result.get_scored_candidates(
+            "page_number", valid_only=False, exclude_failed=True
+        )
+        if not page_number_candidates:
+            return None
+
+        # Assume best candidate is page number
+        pn_bbox = page_number_candidates[0].bbox
+        horizontal_distance = min(
+            abs(block.bbox.x0 - pn_bbox.x1),
+            abs(block.bbox.x1 - pn_bbox.x0),
+        )
+
+        if horizontal_distance < page_bbox.width * self.proximity_ratio:
+            return 1.0
+
+        return 0.0
+
+
+class WidthCoverageScore(Rule):
+    """Rule that scores based on how much of the page width the element spans."""
+
+    def __init__(
+        self,
+        min_width_ratio: float,
+        max_score_width_ratio: float,
+        weight: float = 1.0,
+        name: str = "WidthCoverageScore",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+        self.min_width_ratio = min_width_ratio
+        self.max_score_width_ratio = max_score_width_ratio
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        page_bbox = context.page_data.bbox
+        assert page_bbox is not None
+        if page_bbox.width <= 0:
+            return 0.0
+
+        width_ratio = block.bbox.width / page_bbox.width
+
+        # Penalize elements that are too narrow
+        if width_ratio < self.min_width_ratio:
+            return 0.0
+
+        # Score increases with width, maxing at max_score_width_ratio
+        if width_ratio >= self.max_score_width_ratio:
+            return 1.0
+
+        # Linear interpolation
+        return score_linear(
+            width_ratio,
+            min_val=self.min_width_ratio,
+            max_val=self.max_score_width_ratio,
+            min_score=0.0,
+            max_score=1.0,
+        )
+
+
+class ContinuousAspectRatioScore(Rule):
+    """Rule that scores aspect ratio using linear interpolation.
+
+    Scores 0.0 below min_ratio, 1.0 above ideal_ratio, and linear in between.
+    """
+
+    def __init__(
+        self,
+        min_ratio: float,
+        ideal_ratio: float,
+        weight: float = 1.0,
+        name: str = "ContinuousAspectRatioScore",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+        self.min_ratio = min_ratio
+        self.ideal_ratio = ideal_ratio
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        if block.bbox.height <= 0:
+            return 0.0
+
+        aspect_ratio = block.bbox.width / block.bbox.height
+
+        if aspect_ratio < self.min_ratio:
+            return 0.0
+
+        if aspect_ratio >= self.ideal_ratio:
+            return 1.0
+
+        return score_linear(
+            aspect_ratio,
+            min_val=self.min_ratio,
+            max_val=self.ideal_ratio,
+            min_score=0.0,
+            max_score=1.0,
+        )

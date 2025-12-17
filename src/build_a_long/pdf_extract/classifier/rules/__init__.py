@@ -9,16 +9,20 @@ from build_a_long.pdf_extract.classifier.rules.base import (
 )
 from build_a_long.pdf_extract.classifier.rules.geometry import (
     AspectRatioRule,
+    BottomPositionScore,
+    ContinuousAspectRatioScore,
     CornerDistanceScore,
     CoverageRule,
     EdgeProximityRule,
     InBottomBandFilter,
     IsHorizontalDividerRule,
     IsVerticalDividerRule,
+    PageNumberProximityScore,
     SizeRangeRule,
     SizeRatioRule,
     TextContainerFitRule,
     TopLeftPositionScore,
+    WidthCoverageScore,
 )
 from build_a_long.pdf_extract.classifier.rules.text import (
     BagNumberFontSizeRule,
@@ -44,6 +48,8 @@ __all__ = [
     "AspectRatioRule",
     "BagNumberFontSizeRule",
     "BagNumberTextRule",
+    "BottomPositionScore",
+    "ContinuousAspectRatioScore",
     "CornerDistanceScore",
     "CoverageRule",
     "CurveCountRule",
@@ -57,6 +63,7 @@ __all__ = [
     "IsInstanceFilter",
     "IsVerticalDividerRule",
     "MaxScoreRule",
+    "PageNumberProximityScore",
     "PageNumberTextRule",
     "PageNumberValueMatch",
     "PartCountTextRule",
@@ -72,4 +79,5 @@ __all__ = [
     "StrokeColorScore",
     "TextContainerFitRule",
     "TopLeftPositionScore",
+    "WidthCoverageScore",
 ]
