@@ -14,7 +14,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.classifier.rule_based_classifier import (
     RuleBasedClassifier,
-    RuleScore,
+    StepNumberScore,
 )
 from build_a_long.pdf_extract.classifier.rules import (
     FontSizeSmallerThanRule,
@@ -29,7 +29,7 @@ from build_a_long.pdf_extract.classifier.text import (
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     StepNumber,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Block, Text
 
 
 class SubStepNumberClassifier(RuleBasedClassifier):
@@ -86,6 +86,25 @@ class SubStepNumberClassifier(RuleBasedClassifier):
             ),
         ]
 
+    def _create_score(
+        self,
+        block: Block,
+        components: dict[str, float],
+        total_score: float,
+    ) -> StepNumberScore:
+        """Create a StepNumberScore that includes the parsed step value."""
+        step_value = 0
+        if isinstance(block, Text):
+            parsed = extract_step_number_value(block.text)
+            if parsed is not None:
+                step_value = parsed
+
+        return StepNumberScore(
+            components=components,
+            total_score=total_score,
+            step_value=step_value,
+        )
+
     def build(self, candidate: Candidate, result: ClassificationResult) -> StepNumber:
         """Construct a StepNumber element from a substep_number candidate.
 
@@ -97,12 +116,12 @@ class SubStepNumberClassifier(RuleBasedClassifier):
         block = candidate.source_blocks[0]
         assert isinstance(block, Text)
 
-        # Get score details for logging/debugging
+        # Get step value from score (already parsed during scoring)
         score_details = candidate.score_details
-        assert isinstance(score_details, RuleScore)
+        assert isinstance(score_details, StepNumberScore)
+        value = score_details.step_value
 
-        value = extract_step_number_value(block.text)
-        if value is None:
+        if value == 0:
             raise ValueError(
                 f"Could not parse substep number from text: '{block.text}'"
             )

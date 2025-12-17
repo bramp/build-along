@@ -34,6 +34,9 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
+from build_a_long.pdf_extract.classifier.rule_based_classifier import (
+    StepNumberScore,
+)
 from build_a_long.pdf_extract.classifier.score import (
     Score,
     Weight,
@@ -43,9 +46,6 @@ from build_a_long.pdf_extract.classifier.steps.pairing import (
     PairingConfig,
     find_optimal_pairings,
     has_divider_between,
-)
-from build_a_long.pdf_extract.classifier.text import (
-    extract_step_number_value,
 )
 from build_a_long.pdf_extract.extractor.bbox import BBox, filter_overlapping
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
@@ -60,7 +60,6 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     SubAssembly,
     SubStep,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 log = logging.getLogger(__name__)
 
@@ -758,14 +757,12 @@ class StepClassifier(LabelClassifier):
         ALIGNMENT_THRESHOLD_MULTIPLIER = 1.0  # Max horizontal offset
         DISTANCE_THRESHOLD_MULTIPLIER = 1.0  # Max vertical distance
 
-        # Extract step number value from the candidate
-        if not step_candidate.source_blocks:
+        # Extract step number value from the candidate's score
+        score_details = step_candidate.score_details
+        if not isinstance(score_details, StepNumberScore):
             return None
-        source_block = step_candidate.source_blocks[0]
-        if not isinstance(source_block, Text):
-            return None
-        step_value = extract_step_number_value(source_block.text)
-        if step_value is None:
+        step_value = score_details.step_value
+        if step_value == 0:
             return None
 
         step_bbox = step_candidate.bbox

@@ -37,6 +37,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
+from build_a_long.pdf_extract.classifier.rule_based_classifier import StepNumberScore
 from build_a_long.pdf_extract.classifier.score import Score
 from build_a_long.pdf_extract.classifier.steps.pairing import (
     DEFAULT_MAX_PAIRING_DISTANCE,
@@ -49,7 +50,6 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     StepNumber,
     SubStep,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 log = logging.getLogger(__name__)
 
@@ -140,15 +140,10 @@ class SubStepClassifier(LabelClassifier):
         )
 
     def _get_step_value(self, candidate: Candidate) -> int:
-        """Get the step number value from a candidate."""
-        from build_a_long.pdf_extract.classifier.text import extract_step_number_value
-
-        if not candidate.source_blocks:
-            return 0
-        block = candidate.source_blocks[0]
-        if isinstance(block, Text):
-            value = extract_step_number_value(block.text)
-            return value if value is not None else 0
+        """Get the step number value from a candidate's score."""
+        score_details = candidate.score_details
+        if isinstance(score_details, StepNumberScore):
+            return score_details.step_value
         return 0
 
     def _create_candidates_with_hungarian(

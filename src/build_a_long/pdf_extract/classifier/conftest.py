@@ -25,7 +25,10 @@ from build_a_long.pdf_extract.classifier.parts.parts_list_classifier import (
 from build_a_long.pdf_extract.classifier.parts.piece_length_classifier import (
     PieceLengthClassifier,
 )
-from build_a_long.pdf_extract.classifier.rule_based_classifier import RuleScore
+from build_a_long.pdf_extract.classifier.rule_based_classifier import (
+    RuleScore,
+    StepNumberScore,
+)
 from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
     StepNumberClassifier,
 )
@@ -88,13 +91,20 @@ class CandidateFactory:
         return candidate
 
     def add_step_number(self, block: Text, score: float = 1.0) -> Candidate:
+        from build_a_long.pdf_extract.classifier.text import extract_step_number_value
+
         self._ensure_classifier_registered("step_number")
-        score_details = RuleScore(
+
+        # Parse step value from the text block
+        step_value = extract_step_number_value(block.text) or 0
+
+        score_details = StepNumberScore(
             components={
                 "text_score": score,
                 "font_size_score": 0.5,
             },
             total_score=score,
+            step_value=step_value,
         )
         candidate = Candidate(
             bbox=block.bbox,

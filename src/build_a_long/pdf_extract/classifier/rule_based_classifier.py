@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.block_filter import (
     find_text_outline_effects,
@@ -19,7 +20,10 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.classifier.rules import Rule, RuleContext
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.page_blocks import Text
+from build_a_long.pdf_extract.extractor.page_blocks import Block, Text
+
+if TYPE_CHECKING:
+    pass
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +42,17 @@ class RuleScore(Score):
         return self.components.get(rule_name, default)
 
 
+class StepNumberScore(RuleScore):
+    """Score for step number candidates that includes the parsed step value.
+
+    This avoids re-parsing the step number from source blocks when the value
+    is needed later (e.g., for building StepNumber elements or sorting).
+    """
+
+    step_value: int
+    """The parsed step number value (e.g., 1, 2, 3, 42)."""
+
+
 class RuleBasedClassifier(LabelClassifier):
     """Base class for classifiers that use a list of rules to score candidates."""
 
@@ -51,6 +66,27 @@ class RuleBasedClassifier(LabelClassifier):
     def min_score(self) -> float:
         """Minimum score threshold for acceptance. Defaults to 0.0."""
         return 0.0
+
+    def _create_score(
+        self,
+        block: Block,
+        components: dict[str, float],
+        total_score: float,
+    ) -> RuleScore:
+        """Create the score object for a candidate.
+
+        Subclasses can override this to return a more specific score type
+        that contains additional information (e.g., parsed values).
+
+        Args:
+            block: The block being scored
+            components: Dictionary of rule name to score
+            total_score: The weighted total score
+
+        Returns:
+            A RuleScore (or subclass) instance
+        """
+        return RuleScore(components=components, total_score=total_score)
 
     def _score(self, result: ClassificationResult) -> None:
         """Score blocks using rules."""
@@ -124,12 +160,15 @@ class RuleBasedClassifier(LabelClassifier):
                 )
                 source_blocks.extend(outline_effects)
 
+            # Create score object (subclasses can override _create_score)
+            score_details = self._create_score(block, components, final_score)
+
             # Create candidate
             candidate = Candidate(
                 bbox=block.bbox,
                 label=self.output,
                 score=final_score,
-                score_details=RuleScore(components=components, total_score=final_score),
+                score_details=score_details,
                 source_blocks=source_blocks,
             )
             result.add_candidate(candidate)
