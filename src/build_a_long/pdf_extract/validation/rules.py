@@ -926,11 +926,7 @@ def validate_no_divider_intersection(
             continue
 
         for divider in page.dividers:
-            # Use overlaps() which returns intersection area (float).
-            # > 0 means they overlap.
-            # This is faster than intersect() which creates a new BBox.
-            overlap_area = element.bbox.overlaps(divider.bbox)
-            if overlap_area > 0.0:
+            if element.bbox.overlaps(divider.bbox):
                 validation.add(
                     ValidationIssue(
                         severity=ValidationSeverity.WARNING,
@@ -938,6 +934,6 @@ def validate_no_divider_intersection(
                         message=f"{type(element).__name__} intersects with divider",
                         pages=[page_data.page_number],
                         details=f"{type(element).__name__} {element.bbox} intersects "
-                        f"Divider {divider.bbox} (overlap area: {overlap_area:.2f})",
+                        f"Divider {divider.bbox}",
                     )
                 )

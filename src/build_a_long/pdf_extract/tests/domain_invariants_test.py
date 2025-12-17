@@ -26,6 +26,7 @@ from build_a_long.pdf_extract.validation import (
     ValidationResult,
     validate_content_no_metadata_overlap,
     validate_elements_within_page,
+    validate_no_divider_intersection,
     validate_part_contains_children,
     validate_parts_list_has_parts,
     validate_parts_lists_no_overlap,
@@ -208,5 +209,23 @@ def test_elements_do_not_overlap_page_metadata(fixture_file: str) -> None:
     errors = [i for i in validation.issues if i.rule == "content_metadata_overlap"]
     assert not errors, (
         f"Found {len(errors)} metadata overlap issues in {fixture_file}: "
+        + "; ".join(i.details or i.message for i in errors[:3])
+    )
+
+
+@pytest.mark.parametrize("fixture_file", RAW_FIXTURE_FILES)
+def test_elements_do_not_overlap_dividers(fixture_file: str) -> None:
+    """Elements should not overlap with dividers.
+
+    Domain Invariant: Dividers separate content sections. Elements like steps,
+    parts, diagrams, etc. should not cross or touch divider lines.
+    """
+    validation = _run_validation_on_fixtures(
+        fixture_file, validate_no_divider_intersection
+    )
+
+    errors = [i for i in validation.issues if i.rule == "divider_intersection"]
+    assert not errors, (
+        f"Found {len(errors)} divider intersection issues in {fixture_file}: "
         + "; ".join(i.details or i.message for i in errors[:3])
     )

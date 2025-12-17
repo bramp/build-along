@@ -11,6 +11,7 @@ from .rules import (
     validate_elements_within_page,
     validate_first_page_number,
     validate_missing_page_numbers,
+    validate_no_divider_intersection,
     validate_page_number_sequence,
     validate_part_contains_children,
     validate_parts_list_has_parts,
@@ -46,4 +47,5 @@ __all__ = [
     "validate_parts_list_has_parts",
     "validate_parts_lists_no_overlap",
     "validate_steps_no_significant_overlap",
+    "validate_no_divider_intersection",
 ]
