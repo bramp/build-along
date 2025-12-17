@@ -126,7 +126,9 @@ class PartCount(LegoPageElement):
     count: Annotated[int, Gt(0)]
 
     # TODO Do we really need this ?
-    matched_hint: Literal["part_count", "catalog_part_count"] | None = None
+    matched_hint: Literal["part_count", "catalog_part_count"] | None = Field(
+        default=None, exclude=True
+    )
     """Which font size hint was matched during classification.
     
     - 'part_count': Standard instruction page part count

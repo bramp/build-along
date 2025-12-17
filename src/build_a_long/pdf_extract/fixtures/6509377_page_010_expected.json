@@ -120,8 +120,7 @@
                 "x1": 325.08,
                 "y1": 68.83
               },
-              "count": 2,
-              "matched_hint": "part_count"
+              "count": 2
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -188,8 +187,7 @@
                 "x1": 330.84,
                 "y1": 278.64
               },
-              "count": 2,
-              "matched_hint": "part_count"
+              "count": 2
             },
             "diagram": {
               "__tag__": "PartImage",

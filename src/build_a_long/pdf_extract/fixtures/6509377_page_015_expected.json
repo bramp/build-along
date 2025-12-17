@@ -89,8 +89,7 @@
                 "x1": 95.19,
                 "y1": 57.79
               },
-              "count": 2,
-              "matched_hint": "part_count"
+              "count": 2
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -118,8 +117,7 @@
                 "x1": 153.33,
                 "y1": 57.79
               },
-              "count": 2,
-              "matched_hint": "part_count"
+              "count": 2
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -147,8 +145,7 @@
                 "x1": 62.26,
                 "y1": 57.79
               },
-              "count": 2,
-              "matched_hint": "part_count"
+              "count": 2
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -325,8 +322,7 @@
                 "x1": 109.18,
                 "y1": 284.42
               },
-              "count": 3,
-              "matched_hint": "part_count"
+              "count": 3
             },
             "diagram": {
               "__tag__": "PartImage",

@@ -101,8 +101,7 @@
                 "x1": 43.8,
                 "y1": 52.85
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -130,8 +129,7 @@
                 "x1": 92.76,
                 "y1": 52.85
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -159,8 +157,7 @@
                 "x1": 137.15,
                 "y1": 52.85
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -236,8 +233,7 @@
                 "x1": 346.25,
                 "y1": 53.93
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -265,8 +261,7 @@
                 "x1": 398.2,
                 "y1": 53.93
               },
-              "count": 2,
-              "matched_hint": "part_count"
+              "count": 2
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -294,8 +289,7 @@
                 "x1": 308.22,
                 "y1": 53.93
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",

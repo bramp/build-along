@@ -111,8 +111,7 @@
                 "x1": 53.44,
                 "y1": 53.21
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -140,8 +139,7 @@
                 "x1": 113.36,
                 "y1": 53.21
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -208,8 +206,7 @@
                 "x1": 88.67,
                 "y1": 287.78
               },
-              "count": 2,
-              "matched_hint": "part_count"
+              "count": 2
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -237,8 +234,7 @@
                 "x1": 46.07,
                 "y1": 287.78
               },
-              "count": 2,
-              "matched_hint": "part_count"
+              "count": 2
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -266,8 +262,7 @@
                 "x1": 131.99,
                 "y1": 287.78
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -334,8 +329,7 @@
                 "x1": 308.82,
                 "y1": 53.93
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -363,8 +357,7 @@
                 "x1": 351.77,
                 "y1": 53.93
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",
@@ -392,8 +385,7 @@
                 "x1": 400.49,
                 "y1": 53.93
               },
-              "count": 1,
-              "matched_hint": "part_count"
+              "count": 1
             },
             "diagram": {
               "__tag__": "PartImage",
