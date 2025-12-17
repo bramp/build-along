@@ -68,8 +68,8 @@ class PartsImageClassifier(RuleBasedClassifier):
             # Replicates the logic from _compute_size_score
             SizeRatioRule(
                 ideal_ratio=0.10,  # Peak score at 10%
-                min_ratio=0.02,  # Start scoring
-                max_ratio=0.40,  # End scoring high
+                min_ratio=0.015,  # Start scoring at 1.5% (captures tiny parts like single studs)
+                max_ratio=0.40,  # End scoring at 4%
                 weight=1.0,
                 name="size_ratio",
                 required=True,
