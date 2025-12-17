@@ -35,9 +35,7 @@ from build_a_long.pdf_extract.validation import (
 log = logging.getLogger(__name__)
 
 # Known failing fixtures that should be skipped for certain tests
-KNOWN_STEP_OVERLAP_FAILURES = {
-    "6509377_page_014_raw.json",  # Significant step overlaps (50-80% IOU)
-}
+KNOWN_STEP_OVERLAP_FAILURES: set[str] = set()
 
 
 def _run_validation_on_fixtures(
