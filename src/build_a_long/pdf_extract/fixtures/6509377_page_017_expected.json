@@ -47,10 +47,10 @@
   "trivia_text": {
     "__tag__": "TriviaText",
     "bbox": {
-      "x0": 0.0,
-      "y0": 317.08,
-      "x1": 552.76,
-      "y1": 463.48
+      "x0": 203.81,
+      "y0": 329.55,
+      "x1": 539.84,
+      "y1": 435.52
     },
     "text_lines": [
       "While R2-D2 has the strategic skills to win at the holographic dejarik table, it might be ",

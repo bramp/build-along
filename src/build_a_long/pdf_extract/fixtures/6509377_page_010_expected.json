@@ -37,13 +37,13 @@
   "progress_bar": {
     "__tag__": "ProgressBar",
     "bbox": {
-      "x0": 35.02,
-      "y0": 474.1,
+      "x0": 29.76,
+      "y0": 471.06,
       "x1": 552.76,
-      "y1": 482.59
+      "y1": 485.23
     },
-    "progress": 0.0,
-    "full_width": 517.74,
+    "progress": 0.01,
+    "full_width": 518.74,
     "indicator": {
       "__tag__": "ProgressBarIndicator",
       "bbox": {
@@ -67,10 +67,10 @@
       "number": {
         "__tag__": "BagNumber",
         "bbox": {
-          "x0": 113.93,
+          "x0": 104.07,
           "y0": 104.82,
-          "x1": 148.61,
-          "y1": 169.89
+          "x1": 158.29,
+          "y1": 179.46
         },
         "value": 1
       }
