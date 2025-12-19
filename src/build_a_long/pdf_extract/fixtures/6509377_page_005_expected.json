@@ -1,0 +1,24 @@
+{
+  "__tag__": "Page",
+  "bbox": {
+    "x0": 0.0,
+    "y0": 0.0,
+    "x1": 552.76,
+    "y1": 496.06
+  },
+  "pdf_page_number": 5,
+  "categories": [
+    "info"
+  ],
+  "progress_bar": {
+    "__tag__": "ProgressBar",
+    "bbox": {
+      "x0": 0.0,
+      "y0": 0.0,
+      "x1": 552.76,
+      "y1": 496.06
+    },
+    "full_width": 552.76
+  },
+  "unassigned_blocks_count": 0
+}
