@@ -220,6 +220,8 @@ def _draw_item(
     depth_colors: list[str],
     scale_x: float,
     scale_y: float,
+    image_width: int,
+    image_height: int,
 ) -> None:
     """Draw a single item on the image.
 
@@ -229,6 +231,8 @@ def _draw_item(
         depth_colors: List of colors to cycle through
         scale_x: X scaling factor
         scale_y: Y scaling factor
+        image_width: Width of the image
+        image_height: Height of the image
     """
     bbox = item.bbox
     scaled_bbox = (
@@ -259,15 +263,24 @@ def _draw_item(
         else:
             draw.rectangle(scaled_bbox, outline=color, width=1)
 
-    # Draw label
-    if item.depth % 2 == 0:
-        text_position = (scaled_bbox[0], scaled_bbox[3] + 2)
-        draw.text(text_position, item.label, fill=color)
-    else:
-        text_bbox = draw.textbbox((0, 0), item.label)
-        text_width = text_bbox[2] - text_bbox[0]
-        text_position = (scaled_bbox[2] - text_width, scaled_bbox[3] + 2)
-        draw.text(text_position, item.label, fill=color)
+    # Calculate text size
+    text_bbox = draw.textbbox((0, 0), item.label)
+    text_width = text_bbox[2] - text_bbox[0]
+    text_height = text_bbox[3] - text_bbox[1]
+
+    # Determine text position
+    # Left aligned if depth is even, Right aligned if odd
+    text_x = scaled_bbox[0] if item.depth % 2 == 0 else scaled_bbox[2] - text_width
+
+    # Default to drawing below the box
+    text_y = scaled_bbox[3] + 2
+
+    # Check if text is off-screen (vertically)
+    if text_y + text_height > image_height:
+        # Move text inside the box (aligned to bottom)
+        text_y = scaled_bbox[3] - text_height - 2
+
+    draw.text((text_x, text_y), item.label, fill=color)
 
 
 def draw_and_save_bboxes(
@@ -344,7 +357,15 @@ def draw_and_save_bboxes(
 
     # Draw all items
     for item in items_with_depth:
-        _draw_item(draw, item, depth_colors, scale_x, scale_y)
+        _draw_item(
+            draw,
+            item,
+            depth_colors,
+            scale_x,
+            scale_y,
+            image_width=pix.width,
+            image_height=pix.height,
+        )
 
     # Draw actual drawing paths if requested
     if draw_drawings:

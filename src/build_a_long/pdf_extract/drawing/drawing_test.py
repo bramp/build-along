@@ -460,3 +460,34 @@ def test_draw_and_save_bboxes_with_nested_bboxes():
         assert output_path.exists()
 
     doc.close()
+
+
+def test_draw_and_save_bboxes_clipped_text():
+    """Test drawing a block at the bottom of the page where text might be clipped."""
+    doc = pymupdf.open()
+    page = doc.new_page(width=200, height=200)
+
+    # Create a block at the very bottom
+    # Text label will likely be clipped if drawn below
+    block = Text(id=1, bbox=BBox(10, 190, 50, 200), text="Bottom")
+    result = ClassificationResult(
+        page_data=PageData(page_number=1, bbox=BBox(0, 0, 200, 200), blocks=[block])
+    )
+
+    with TemporaryDirectory() as tmpdir:
+        output_path = Path(tmpdir) / "test_clipped.png"
+
+        # Should not raise an exception
+        draw_and_save_bboxes(
+            page,
+            result,
+            output_path,
+            draw_blocks=True,
+            draw_elements=False,
+            draw_deleted=False,
+        )
+
+        assert output_path.exists()
+        assert output_path.stat().st_size > 0
+
+    doc.close()
