@@ -6,12 +6,24 @@ repos:
         name: Pants Fmt
         entry: pants fmt
         language: system
+        pass_filenames: true
         stages: [pre-commit]
+
+      - id: pants-lint
+        name: Pants Lint
+        entry: pants lint
+        language: system
+        pass_filenames: true
+        types: [python]
+        stages: [pre-commit]
+
       - id: pants-check
         name: Pants Check
-        entry: pants check
+        # Type-check changed files and all their dependents to catch type errors.
+        entry: pants check --changed-dependents=transitive
         language: system
         stages: [pre-commit]
+
       - id: pants-test
         name: Pants Test
         # Test changed files and all their dependents to catch downstream effects.
