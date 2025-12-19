@@ -29,6 +29,13 @@ build_ignore = ["3rdparty/*/**"]
 [ruff]
 # Prefer using Ruff configuration from pyproject.toml.
 config = "pyproject.toml"
+version = "0.14.10"
+known_versions = [
+    "0.14.10|macos_arm64|dd0f3ec914604d802658ae0d271ff9d767c117d1702a44222170dd2ffbad8d2c|12364615",
+    "0.14.10|macos_x86_64|7d5af84e84a189b49ac235d7970d35588cbed0d087f4237c96e5ac3c392bc6fb|13408056",
+    "0.14.10|linux_arm64|f6c8735bf175d449d79151f6bfe84251770ca6032e86bea0d327bc3789179027|12813877",
+    "0.14.10|linux_x86_64|4695e6375b1fa2b9c5f839218d695d8e701cfccb15d3f622b6a6feedb086bffb|13860749",
+]
 
 [test]
 # Pass through selected environment variables to tests so sandboxed runs can
