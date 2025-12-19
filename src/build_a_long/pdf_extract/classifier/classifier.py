@@ -379,10 +379,12 @@ class Classifier:
         # This catches programming errors where elements are created directly
         # instead of via result.build()
         from build_a_long.pdf_extract.validation.rules import (
+            assert_constructed_elements_on_page,
             assert_page_elements_tracked,
         )
 
         assert_page_elements_tracked(result)
+        assert_constructed_elements_on_page(result)
 
         # TODO Do we actualy ever add warnings?
         warnings = self._log_post_classification_warnings(page_data, result)

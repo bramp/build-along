@@ -69,6 +69,78 @@ def assert_page_elements_tracked(result: ClassificationResult) -> None:
         )
 
 
+# Labels whose constructed elements may not appear on the final Page.
+# These are known edge cases (e.g., tiny diagram fragments from clustering).
+# TODO But ideally we should fix these so all constructed elements appear on Page.
+WARN_ONLY_LABELS = {"diagram"}
+
+
+def assert_constructed_elements_on_page(result: ClassificationResult) -> None:
+    """Assert that all constructed elements appear in the Page hierarchy.
+
+    This validation checks that every element constructed via result.build()
+    is actually included in the final Page structure. Elements that are built
+    but not added to the Page are orphaned and won't appear in the output.
+
+    This catches programming errors where a classifier builds an element but
+    forgets to include it in the Page (e.g., missing field assignment).
+
+    Args:
+        result: The classification result to validate
+
+    Raises:
+        AssertionError: If constructed elements are orphaned (not on Page).
+    """
+    import logging
+
+    log = logging.getLogger(__name__)
+
+    page = result.page
+    if page is None:
+        return  # No page built yet, nothing to validate
+
+    # Build set of all element ids that are on the Page
+    on_page_ids: set[int] = {id(elem) for elem in page.iter_elements()}
+
+    # Check all constructed elements are on the page
+    orphaned: list[tuple[str, str]] = []  # (label, description)
+    for label, candidates in result.candidates.items():
+        for candidate in candidates:
+            if candidate.constructed is None:
+                continue
+            if id(candidate.constructed) not in on_page_ids:
+                desc = f"{candidate.constructed.__class__.__name__} at {candidate.bbox}"
+                orphaned.append((label, desc))
+
+    if orphaned:
+        # Separate warn-only vs error labels
+        errors = [
+            (label, desc) for label, desc in orphaned if label not in WARN_ONLY_LABELS
+        ]
+        warnings = [
+            (label, desc) for label, desc in orphaned if label in WARN_ONLY_LABELS
+        ]
+
+        # Log warnings for known edge cases
+        for label, desc in warnings:
+            log.warning(
+                "Page %s: Orphaned %s element (known edge case): %s",
+                result.page_data.page_number,
+                label,
+                desc,
+            )
+
+        # Raise assertion for unexpected orphans
+        if errors:
+            error_summary = "; ".join(f"{label}: {desc}" for label, desc in errors[:5])
+            if len(errors) > 5:
+                error_summary += f" ... and {len(errors) - 5} more"
+            raise AssertionError(
+                f"Page {result.page_data.page_number}: {len(errors)} constructed elements "
+                f"not on Page (programming error): {error_summary}"
+            )
+
+
 # =============================================================================
 # Sequence Validation Rules (cross-page)
 # =============================================================================
