@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 
-from build_a_long.pdf_extract.classifier.rules.base import Rule, RuleContext
+from build_a_long.pdf_extract.classifier.rules.base import Filter, Rule, RuleContext
 from build_a_long.pdf_extract.classifier.rules.scoring import (
     score_linear,
     score_triangular,
@@ -251,6 +251,47 @@ class EdgeProximityRule(Rule):
         # Decrease score as distance increases
         # Decay over 50 units
         return max(0.0, 1.0 - (avg_edge_dist - self.threshold) / 50.0)
+
+
+class PageEdgeFilter(Filter):
+    """Filter that passes if a block is entirely within the edge margin of the page.
+
+    Used to capture page-edge artifacts (borders, bleed lines) that should be
+    classified as background. Unlike EdgeProximityRule which checks if a block
+    *touches* page edges, this filter checks if a block is entirely *contained*
+    within the margin zone at any page edge.
+    """
+
+    def __init__(
+        self,
+        margin: float = 4.0,
+        name: str = "PageEdge",
+    ):
+        self.name = name
+        self.margin = margin
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        page_bbox = context.page_data.bbox
+        assert page_bbox is not None
+        bbox = block.bbox
+
+        # Check if entirely at left edge (x1 <= margin from left)
+        if bbox.x1 <= page_bbox.x0 + self.margin:
+            return 1.0
+
+        # Check if entirely at right edge (x0 >= page_width - margin)
+        if bbox.x0 >= page_bbox.x1 - self.margin:
+            return 1.0
+
+        # Check if entirely at top edge (y1 <= margin from top)
+        if bbox.y1 <= page_bbox.y0 + self.margin:
+            return 1.0
+
+        # Check if entirely at bottom edge (y0 >= page_height - margin)
+        if bbox.y0 >= page_bbox.y1 - self.margin:
+            return 1.0
+
+        return 0.0
 
 
 class IsVerticalDividerRule(Rule):

@@ -45,10 +45,16 @@ from build_a_long.pdf_extract.classifier.pages.background_classifier import (
 from build_a_long.pdf_extract.classifier.pages.divider_classifier import (
     DividerClassifier,
 )
+from build_a_long.pdf_extract.classifier.pages.full_page_background_classifier import (
+    FullPageBackgroundClassifier,
+)
 from build_a_long.pdf_extract.classifier.pages.info_page_decoration_classifier import (
     InfoPageDecorationClassifier,
 )
 from build_a_long.pdf_extract.classifier.pages.page_classifier import PageClassifier
+from build_a_long.pdf_extract.classifier.pages.page_edge_classifier import (
+    PageEdgeClassifier,
+)
 from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
     PageNumberClassifier,
 )
@@ -275,6 +281,8 @@ type Classifiers = (
     | ProgressBarClassifier
     | ProgressBarIndicatorClassifier
     | PreviewClassifier
+    | FullPageBackgroundClassifier
+    | PageEdgeClassifier
     | BackgroundClassifier
     | DividerClassifier
     | InfoPageDecorationClassifier
@@ -314,6 +322,8 @@ class Classifier:
                 PageNumberClassifier(config=config),
                 ProgressBarIndicatorClassifier(config=config),
                 ProgressBarClassifier(config=config),
+                FullPageBackgroundClassifier(config=config),
+                PageEdgeClassifier(config=config),
                 BackgroundClassifier(config=config),
                 DividerClassifier(config=config),
                 InfoPageDecorationClassifier(config=config),
