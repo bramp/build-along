@@ -94,6 +94,173 @@ class PageClassifier(LabelClassifier):
             ),
         )
 
+    def _build_page_number(self, result: ClassificationResult) -> PageNumber | None:
+        """Build the page number element if available."""
+        candidates = result.get_scored_candidates(
+            "page_number", valid_only=False, exclude_failed=True
+        )
+        if candidates:
+            page_number = result.build(candidates[0])
+            assert isinstance(page_number, PageNumber)
+            return page_number
+        return None
+
+    def _build_progress_bar(self, result: ClassificationResult) -> ProgressBar | None:
+        """Build the progress bar element if available."""
+        candidates = result.get_scored_candidates(
+            "progress_bar", valid_only=False, exclude_failed=True
+        )
+        if candidates:
+            progress_bar = result.build(candidates[0])
+            assert isinstance(progress_bar, ProgressBar)
+            return progress_bar
+        return None
+
+    def _build_background(self, result: ClassificationResult) -> Background | None:
+        """Build the background element if available."""
+        candidates = result.get_scored_candidates(
+            "background", valid_only=False, exclude_failed=True
+        )
+        if candidates:
+            background = result.build(candidates[0])
+            assert isinstance(background, Background)
+            return background
+        return None
+
+    def _build_trivia_text(self, result: ClassificationResult) -> TriviaText | None:
+        """Build the trivia text element if available."""
+        candidates = result.get_scored_candidates(
+            "trivia_text", valid_only=False, exclude_failed=True
+        )
+        if candidates:
+            trivia_text = result.build(candidates[0])
+            assert isinstance(trivia_text, TriviaText)
+            return trivia_text
+        return None
+
+    def _build_scale(self, result: ClassificationResult) -> Scale | None:
+        """Build the scale indicator if available."""
+        candidates = result.get_scored_candidates(
+            "scale", valid_only=False, exclude_failed=True
+        )
+        if candidates:
+            scale = result.build(candidates[0])
+            assert isinstance(scale, Scale)
+            return scale
+        return None
+
+    def _build_dividers(self, result: ClassificationResult) -> list[Divider]:
+        """Build all divider elements."""
+        dividers = result.build_all_for_label("divider")
+        assert all(isinstance(d, Divider) for d in dividers)
+        return [d for d in dividers if isinstance(d, Divider)]
+
+    def _build_decorations(self, result: ClassificationResult) -> list[Decoration]:
+        """Build all decoration elements (INFO page content)."""
+        decorations = result.build_all_for_label("decoration")
+        assert all(isinstance(d, Decoration) for d in decorations)
+        return [d for d in decorations if isinstance(d, Decoration)]
+
+    def _build_open_bags(self, result: ClassificationResult) -> list[OpenBag]:
+        """Build all open bag elements."""
+        open_bags: list[OpenBag] = []
+        for candidate in result.get_scored_candidates(
+            "open_bag", valid_only=False, exclude_failed=True
+        ):
+            try:
+                elem = result.build(candidate)
+                assert isinstance(elem, OpenBag)
+                open_bags.append(elem)
+            except Exception as e:
+                log.debug(
+                    "Failed to construct open_bag candidate at %s: %s",
+                    candidate.bbox,
+                    e,
+                )
+        return open_bags
+
+    def _build_parts(self, result: ClassificationResult) -> list[Part]:
+        """Build all part elements."""
+        parts: list[Part] = []
+        for candidate in result.get_scored_candidates(
+            "part", valid_only=False, exclude_failed=True
+        ):
+            try:
+                elem = result.build(candidate)
+                assert isinstance(elem, Part)
+                parts.append(elem)
+            except Exception as e:
+                log.debug(
+                    "Failed to construct part candidate at %s: %s",
+                    candidate.bbox,
+                    e,
+                )
+        return parts
+
+    def _build_steps(self, result: ClassificationResult) -> list[Step]:
+        """Build all step elements.
+
+        This uses StepClassifier's coordinated build_all which handles:
+        1. Building rotation symbols first (so they claim Drawing blocks)
+        2. Building all Step candidates
+        3. Hungarian matching to assign rotation symbols to steps
+        """
+        steps = result.build_all_for_label("step")
+        assert all(isinstance(s, Step) for s in steps)
+        steps = [s for s in steps if isinstance(s, Step)]
+        steps.sort(key=lambda step: step.step_number.value)
+        return steps
+
+    def _collect_previews(self, result: ClassificationResult) -> list[Preview]:
+        """Collect already-built preview elements.
+
+        Previews are built by StepClassifier.build_all alongside subassemblies
+        to properly deconflict white boxes that could be either.
+        """
+        return [
+            c.constructed
+            for c in result.get_candidates("preview")
+            if c.constructed is not None and isinstance(c.constructed, Preview)
+        ]
+
+    def _determine_categories(
+        self, steps: list[Step], standalone_parts: list[Part]
+    ) -> set[Page.PageType]:
+        """Determine page categories based on content."""
+        categories: set[Page.PageType] = set()
+
+        if steps:
+            categories.add(Page.PageType.INSTRUCTION)
+
+        if standalone_parts:
+            categories.add(Page.PageType.CATALOG)
+
+        if not categories:
+            categories.add(Page.PageType.INFO)
+
+        return categories
+
+    def _get_standalone_parts(
+        self, all_parts: list[Part], steps: list[Step]
+    ) -> list[Part]:
+        """Filter parts to get standalone catalog parts (not in steps)."""
+        parts_in_steps: set[int] = set()
+        for step in steps:
+            if step.parts_list:
+                for part in step.parts_list.parts:
+                    parts_in_steps.add(id(part))
+
+        standalone = [p for p in all_parts if id(p) not in parts_in_steps]
+
+        log.debug(
+            "[page] Found %d total parts, %d in steps, %d standalone",
+            len(all_parts),
+            len(parts_in_steps),
+            len(standalone),
+        )
+
+        return standalone
+
     def build(self, candidate: Candidate, result: ClassificationResult) -> Page:
         """Construct a Page by collecting all page components.
 
@@ -102,160 +269,24 @@ class PageClassifier(LabelClassifier):
         """
         page_data = result.page_data
 
-        # Get best candidates using score-based selection
-        # get_scored_candidates returns only valid candidates by default, so
-        # we must set valid_only=False, exclude_failed=True to get
-        # candidates that haven't been constructed yet.
-        page_number = None
-        page_number_candidates = result.get_scored_candidates(
-            "page_number", valid_only=False, exclude_failed=True
-        )
-        if page_number_candidates:
-            best_cand = page_number_candidates[0]
-            page_number = result.build(best_cand)
-            assert isinstance(page_number, PageNumber)
+        # Build individual elements
+        page_number = self._build_page_number(result)
+        progress_bar = self._build_progress_bar(result)
+        background = self._build_background(result)
+        trivia_text = self._build_trivia_text(result)
+        scale = self._build_scale(result)
 
-        progress_bar = None
-        progress_bar_candidates = result.get_scored_candidates(
-            "progress_bar", valid_only=False, exclude_failed=True
-        )
-        if progress_bar_candidates:
-            best_cand = progress_bar_candidates[0]
-            progress_bar = result.build(best_cand)
-            assert isinstance(progress_bar, ProgressBar)
+        # Build collections
+        dividers = self._build_dividers(result)
+        decorations = self._build_decorations(result)
+        open_bags = self._build_open_bags(result)
+        all_parts = self._build_parts(result)
+        steps = self._build_steps(result)
+        previews = self._collect_previews(result)
 
-        # Build the background (if any) - only one per page
-        background = None
-        background_candidates = result.get_scored_candidates(
-            "background", valid_only=False, exclude_failed=True
-        )
-        if background_candidates:
-            best_cand = background_candidates[0]
-            background = result.build(best_cand)
-            assert isinstance(background, Background)
-
-        # Build all dividers
-        dividers = result.build_all_for_label("divider")
-        assert all(isinstance(d, Divider) for d in dividers)
-        dividers = [d for d in dividers if isinstance(d, Divider)]  # type narrow
-
-        # Build all decorations (INFO page content)
-        decorations = result.build_all_for_label("decoration")
-        assert all(isinstance(d, Decoration) for d in decorations)
-        decorations = [
-            d for d in decorations if isinstance(d, Decoration)
-        ]  # type narrow
-
-        # Build trivia text (if any) - only one per page
-        # TODO Consider multiple per page
-        trivia_text = None
-        trivia_text_candidates = result.get_scored_candidates(
-            "trivia_text", valid_only=False, exclude_failed=True
-        )
-        if trivia_text_candidates:
-            best_cand = trivia_text_candidates[0]
-            trivia_text = result.build(best_cand)
-            assert isinstance(trivia_text, TriviaText)
-
-        # Build scale indicator (if any) - only one per page
-        scale = None
-        scale_candidates = result.get_scored_candidates(
-            "scale", valid_only=False, exclude_failed=True
-        )
-        if scale_candidates:
-            best_cand = scale_candidates[0]
-            scale = result.build(best_cand)
-            assert isinstance(scale, Scale)
-
-        # Get open bags from candidates
-        open_bags: list[OpenBag] = []
-
-        # Construct ALL open_bag candidates
-        # TODO Consider pre-filtering based on runs of bag numbers
-        for ob_candidate in result.get_scored_candidates(
-            "open_bag", valid_only=False, exclude_failed=True
-        ):
-            try:
-                elem = result.build(ob_candidate)
-                assert isinstance(elem, OpenBag)
-                open_bags.append(elem)
-            except Exception as e:
-                log.debug(
-                    "Failed to construct open_bag candidate at %s: %s",
-                    ob_candidate.bbox,
-                    e,
-                )
-
-        # Get all parts from candidates first, as they typically have more
-        # useful context.
-        all_parts: list[Part] = []
-        for part_candidate in result.get_scored_candidates(
-            "part", valid_only=False, exclude_failed=True
-        ):
-            try:
-                elem = result.build(part_candidate)
-                assert isinstance(elem, Part)
-                all_parts.append(elem)
-            except Exception as e:
-                log.debug(
-                    "Failed to construct part candidate at %s: %s",
-                    part_candidate.bbox,
-                    e,
-                )
-
-        # Build all steps using the StepClassifier's coordinated build_all.
-        # This handles:
-        # 1. Building rotation symbols first (so they claim Drawing blocks)
-        # 2. Building all Step candidates
-        # 3. Hungarian matching to assign rotation symbols to steps
-        steps = result.build_all_for_label("step")
-        assert all(isinstance(s, Step) for s in steps)
-        steps = [s for s in steps if isinstance(s, Step)]  # type narrow
-
-        # Sort steps by their step_number value
-        steps.sort(key=lambda step: step.step_number.value)
-
-        # Previews are built by StepClassifier.build_all alongside subassemblies
-        # to properly deconflict white boxes that could be either.
-        # Here we just collect the already-built previews.
-        previews = [
-            c.constructed
-            for c in result.get_candidates("preview")
-            if c.constructed is not None and isinstance(c.constructed, Preview)
-        ]
-
-        # Collect parts that are already used in steps (to exclude from catalog)
-        parts_in_steps: set[int] = set()
-        for step in steps:
-            if step.parts_list:
-                for part in step.parts_list.parts:
-                    parts_in_steps.add(id(part))
-
-        # Filter to get standalone parts (catalog pages) - parts not in steps
-        standalone_parts = [p for p in all_parts if id(p) not in parts_in_steps]
-
-        log.debug(
-            "[page] Found %d total parts, %d in steps, %d standalone",
-            len(all_parts),
-            len(parts_in_steps),
-            len(standalone_parts),
-        )
-
-        # Determine page categories and catalog field
-        categories: set[Page.PageType] = set()
-        catalog_parts: list[Part] = standalone_parts
-
-        # Check for instruction content
-        if steps:
-            categories.add(Page.PageType.INSTRUCTION)
-
-        # Check for catalog content (standalone parts not in steps)
-        if standalone_parts:
-            categories.add(Page.PageType.CATALOG)
-
-        # If no structured content, mark as INFO page
-        if not categories:
-            categories.add(Page.PageType.INFO)
+        # Determine catalog parts and page categories
+        catalog_parts = self._get_standalone_parts(all_parts, steps)
+        categories = self._determine_categories(steps, catalog_parts)
 
         log.debug(
             "[page] page=%s categories=%s page_number=%s progress_bar=%s "
