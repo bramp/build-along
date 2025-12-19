@@ -100,5 +100,5 @@ class StepNumberClassifier(RuleBasedClassifier):
         if value == 0:
             raise ValueError(f"Could not parse step number from text: '{block.text}'")
 
-        # Successfully constructed
-        return StepNumber(value=value, bbox=block.bbox)
+        # Use candidate.bbox which is the union of all source blocks
+        return StepNumber(value=value, bbox=candidate.bbox)

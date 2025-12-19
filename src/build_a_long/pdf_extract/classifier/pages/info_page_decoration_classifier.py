@@ -26,6 +26,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import Decoration, Page
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Image, Text
 
@@ -109,9 +110,17 @@ class InfoPageDecorationClassifier(LabelClassifier):
         )
 
         # Create candidate claiming all blocks
+        # Use the union of source_blocks as the bbox to satisfy validation
+        # (assert_element_bbox_matches_source_and_children)
+        candidate_bbox = (
+            BBox.union_all([b.bbox for b in source_blocks])
+            if source_blocks
+            else page_data.bbox
+        )
+
         result.add_candidate(
             Candidate(
-                bbox=page_data.bbox,
+                bbox=candidate_bbox,
                 label="decoration",
                 score=info_confidence,
                 score_details=_DecorationScore(

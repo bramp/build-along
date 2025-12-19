@@ -86,5 +86,5 @@ class PartNumberClassifier(RuleBasedClassifier):
         if element_id is None:
             raise ValueError(f"Text doesn't match part number pattern: '{block.text}'")
 
-        # Successfully constructed
-        return PartNumber(element_id=element_id, bbox=block.bbox)
+        # Use candidate.bbox which is the union of all source blocks
+        return PartNumber(element_id=element_id, bbox=candidate.bbox)

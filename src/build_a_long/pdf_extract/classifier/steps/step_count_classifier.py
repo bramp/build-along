@@ -95,4 +95,5 @@ class StepCountClassifier(RuleBasedClassifier):
         if value is None:
             raise ValueError(f"Could not parse step count from text: '{block.text}'")
 
-        return StepCount(count=value, bbox=block.bbox)
+        # Use candidate.bbox which is the union of all source blocks
+        return StepCount(count=value, bbox=candidate.bbox)

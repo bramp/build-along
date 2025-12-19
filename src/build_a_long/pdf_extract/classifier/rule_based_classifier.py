@@ -20,6 +20,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 )
 from build_a_long.pdf_extract.classifier.rules import Rule, RuleContext
 from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks, Text
 
 if TYPE_CHECKING:
@@ -127,10 +128,7 @@ class RuleBasedClassifier(LabelClassifier):
                 continue
 
             # Calculate final score
-            if total_weight > 0:
-                final_score = weighted_sum / total_weight
-            else:
-                final_score = 0.0
+            final_score = weighted_sum / total_weight if total_weight > 0 else 0.0
 
             # Check classifier-specific acceptance logic
             if not self._should_accept(final_score):
@@ -166,9 +164,14 @@ class RuleBasedClassifier(LabelClassifier):
             # Create score object (subclasses can override _create_score)
             score_details = self._create_score(block, components, final_score)
 
+            # Compute bbox as the union of all source blocks
+            # This ensures the candidate bbox matches the source_blocks union,
+            # which is required by validation (assert_element_bbox_matches_source_and_children)
+            candidate_bbox = BBox.union_all([b.bbox for b in source_blocks])
+
             # Create candidate
             candidate = Candidate(
-                bbox=block.bbox,
+                bbox=candidate_bbox,
                 label=self.output,
                 score=final_score,
                 score_details=score_details,

@@ -217,25 +217,39 @@ class StepClassifier(LabelClassifier):
         Returns:
             List of successfully constructed Step elements, sorted by step number
         """
+        # Pre-check: Get step candidates early to decide if we should build
+        # supporting elements (rotation symbols, arrows, etc.)
+        # On INFO pages with no steps, building these would create orphaned elements.
+        all_step_candidates = result.get_scored_candidates(
+            "step", valid_only=False, exclude_failed=True
+        )
+        has_step_candidates = bool(all_step_candidates)
+
         # Phase 1: Build all rotation symbols BEFORE steps.
         # This allows rotation symbols to claim their Drawing blocks first,
         # preventing them from being incorrectly clustered into diagrams.
-        for rs_candidate in result.get_scored_candidates(
-            "rotation_symbol", valid_only=False, exclude_failed=True
-        ):
-            try:
-                result.build(rs_candidate)
-                log.debug(
-                    "[step] Built rotation symbol at %s (score=%.2f)",
-                    rs_candidate.bbox,
-                    rs_candidate.score,
-                )
-            except Exception as e:
-                log.debug(
-                    "[step] Failed to construct rotation_symbol candidate at %s: %s",
-                    rs_candidate.bbox,
-                    e,
-                )
+        #
+        # IMPORTANT: Only build rotation symbols if there are step candidates.
+        # On INFO pages, there are no steps to assign rotation symbols to.
+        if has_step_candidates:
+            for rs_candidate in result.get_scored_candidates(
+                "rotation_symbol", valid_only=False, exclude_failed=True
+            ):
+                try:
+                    result.build(rs_candidate)
+                    log.debug(
+                        "[step] Built rotation symbol at %s (score=%.2f)",
+                        rs_candidate.bbox,
+                        rs_candidate.score,
+                    )
+                except Exception as e:
+                    log.debug(
+                        "[step] Failed to construct rotation_symbol candidate at %s: %s",
+                        rs_candidate.bbox,
+                        e,
+                    )
+        else:
+            log.debug("[step] Skipping rotation symbol build - no step candidates")
 
         # Phase 2: Build all parts lists BEFORE steps.
         # This allows parts lists to claim their Drawing blocks first,
@@ -266,11 +280,7 @@ class StepClassifier(LabelClassifier):
         # IMPORTANT: Only build arrows if there are step candidates.
         # On INFO pages, there are no steps to assign arrows to, so building
         # them would create orphaned elements that trigger validation errors.
-        all_step_candidates = result.get_scored_candidates(
-            "step", valid_only=False, exclude_failed=True
-        )
-        has_step_candidates = bool(all_step_candidates)
-
+        # Note: has_step_candidates was computed in the pre-check.
         if has_step_candidates:
             for arrow_candidate in result.get_scored_candidates(
                 "arrow", valid_only=False, exclude_failed=True
@@ -466,8 +476,10 @@ class StepClassifier(LabelClassifier):
         # Phase 9: Finalize steps - collect arrows and compute final bboxes
         page_bbox = result.page_data.bbox
         for step in steps:
-            # Get arrows for this step
-            arrows = self._get_arrows_for_step(step.step_number, step.diagram, result)
+            # Get arrows for this step (pass subassemblies for search region)
+            arrows = self._get_arrows_for_step(
+                step.step_number, step.diagram, step.subassemblies, result
+            )
 
             # Compute final bbox including all components
             final_bbox = self._compute_step_bbox(
@@ -942,6 +954,7 @@ class StepClassifier(LabelClassifier):
         self,
         step_num: StepNumber,
         diagram: Diagram | None,
+        subassemblies: list[SubAssembly],
         result: ClassificationResult,
     ) -> list[Arrow]:
         """Collect already-built arrows that belong to this step.
@@ -951,11 +964,13 @@ class StepClassifier(LabelClassifier):
         and assigns them to this step.
 
         Typically these are arrows pointing from subassembly callout boxes
-        to the main diagram.
+        to the main diagram. The search region includes both the diagram and
+        any subassemblies assigned to this step.
 
         Args:
             step_num: The step number element
             diagram: The diagram element (if any)
+            subassemblies: List of subassemblies assigned to this step
             result: Classification result containing arrow candidates
 
         Returns:
@@ -976,11 +991,24 @@ class StepClassifier(LabelClassifier):
         if not arrow_candidates:
             return []
 
-        # Determine search region: prefer diagram area, fallback to step area
-        search_bbox = diagram.bbox if diagram else step_num.bbox
+        # Build search region from diagram and subassemblies
+        # Arrows typically connect subassemblies to the main diagram, so we need
+        # to search both areas
+        search_bboxes: list[BBox] = []
+        if diagram:
+            search_bboxes.append(diagram.bbox)
+        for sa in subassemblies:
+            search_bboxes.append(sa.bbox)
 
-        # Expand search region to catch arrows near the diagram
-        # Use a larger margin than rotation symbols since arrows can extend further
+        # Fallback to step number bbox if no diagram or subassemblies
+        if not search_bboxes:
+            search_bboxes.append(step_num.bbox)
+
+        # Compute union of all components and expand
+        search_bbox = BBox.union_all(search_bboxes)
+
+        # Expand search region to catch arrows near the components
+        # Use a larger margin since arrows can extend further
         search_region = search_bbox.expand(100.0)
 
         log.debug(

@@ -119,12 +119,19 @@ class ProgressBarClassifier(RuleBasedClassifier):
         # Get the config for ProgressBarClassifier
         config: ProgressBarConfig = self.config.progress_bar
 
-        # Calculate properties from candidate bbox (which is unclipped block.bbox)
+        # Get the primary block's bbox (first source_block) for progress calculation.
+        # The candidate.bbox may be a union of multiple blocks (including overlapping
+        # elements), but we need the original bar's dimensions for progress.
+        assert len(candidate.source_blocks) >= 1
+        primary_block = candidate.source_blocks[0]
+        primary_bbox = primary_block.bbox
+
+        # Calculate properties from primary block bbox
         page_bbox = result.page_data.bbox
         assert page_bbox is not None
-        clipped_bbox = candidate.bbox.clip_to(page_bbox)
-        original_width = candidate.bbox.width
-        bar_start_x = candidate.bbox.x0
+        clipped_bbox = primary_bbox.clip_to(page_bbox)
+        original_width = primary_bbox.width
+        bar_start_x = primary_bbox.x0
 
         # Find and build the indicator at build time
         indicator, progress = self._find_and_build_indicator(

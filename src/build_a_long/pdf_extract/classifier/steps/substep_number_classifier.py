@@ -126,4 +126,5 @@ class SubStepNumberClassifier(RuleBasedClassifier):
                 f"Could not parse substep number from text: '{block.text}'"
             )
 
-        return StepNumber(value=value, bbox=block.bbox)
+        # Use candidate.bbox which is the union of all source blocks
+        return StepNumber(value=value, bbox=candidate.bbox)

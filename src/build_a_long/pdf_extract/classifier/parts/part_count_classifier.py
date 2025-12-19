@@ -131,5 +131,5 @@ class PartCountClassifier(RuleBasedClassifier):
             else:
                 matched_hint = "catalog_part_count"
 
-        # Successfully constructed
-        return PartCount(count=value, bbox=block.bbox, matched_hint=matched_hint)
+        # Use candidate.bbox which is the union of all source blocks
+        return PartCount(count=value, bbox=candidate.bbox, matched_hint=matched_hint)
