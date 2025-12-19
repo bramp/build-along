@@ -99,9 +99,7 @@ class PageClassifier(LabelClassifier):
 
     def _build_page_number(self, result: ClassificationResult) -> PageNumber | None:
         """Build the page number element if available."""
-        candidates = result.get_scored_candidates(
-            "page_number", valid_only=False, exclude_failed=True
-        )
+        candidates = result.get_scored_candidates("page_number")
         if candidates:
             page_number = result.build(candidates[0])
             assert isinstance(page_number, PageNumber)
@@ -110,9 +108,7 @@ class PageClassifier(LabelClassifier):
 
     def _build_progress_bar(self, result: ClassificationResult) -> ProgressBar | None:
         """Build the progress bar element if available."""
-        candidates = result.get_scored_candidates(
-            "progress_bar", valid_only=False, exclude_failed=True
-        )
+        candidates = result.get_scored_candidates("progress_bar")
         if candidates:
             progress_bar = result.build(candidates[0])
             assert isinstance(progress_bar, ProgressBar)
@@ -121,9 +117,7 @@ class PageClassifier(LabelClassifier):
 
     def _build_background(self, result: ClassificationResult) -> Background | None:
         """Build the background element if available."""
-        candidates = result.get_scored_candidates(
-            "background", valid_only=False, exclude_failed=True
-        )
+        candidates = result.get_scored_candidates("background")
         if candidates:
             background = result.build(candidates[0])
             assert isinstance(background, Background)
@@ -132,9 +126,7 @@ class PageClassifier(LabelClassifier):
 
     def _build_trivia_text(self, result: ClassificationResult) -> TriviaText | None:
         """Build the trivia text element if available."""
-        candidates = result.get_scored_candidates(
-            "trivia_text", valid_only=False, exclude_failed=True
-        )
+        candidates = result.get_scored_candidates("trivia_text")
         if candidates:
             trivia_text = result.build(candidates[0])
             assert isinstance(trivia_text, TriviaText)
@@ -143,9 +135,7 @@ class PageClassifier(LabelClassifier):
 
     def _build_scale(self, result: ClassificationResult) -> Scale | None:
         """Build the scale indicator if available."""
-        candidates = result.get_scored_candidates(
-            "scale", valid_only=False, exclude_failed=True
-        )
+        candidates = result.get_scored_candidates("scale")
         if candidates:
             scale = result.build(candidates[0])
             assert isinstance(scale, Scale)
@@ -167,9 +157,7 @@ class PageClassifier(LabelClassifier):
     def _build_open_bags(self, result: ClassificationResult) -> list[OpenBag]:
         """Build all open bag elements."""
         open_bags: list[OpenBag] = []
-        for candidate in result.get_scored_candidates(
-            "open_bag", valid_only=False, exclude_failed=True
-        ):
+        for candidate in result.get_scored_candidates("open_bag"):
             try:
                 elem = result.build(candidate)
                 assert isinstance(elem, OpenBag)
@@ -185,9 +173,7 @@ class PageClassifier(LabelClassifier):
     def _build_parts(self, result: ClassificationResult) -> list[Part]:
         """Build all part elements."""
         parts: list[Part] = []
-        for candidate in result.get_scored_candidates(
-            "part", valid_only=False, exclude_failed=True
-        ):
+        for candidate in result.get_scored_candidates("part"):
             try:
                 elem = result.build(candidate)
                 assert isinstance(elem, Part)

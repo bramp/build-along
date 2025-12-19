@@ -142,12 +142,8 @@ class SubAssemblyClassifier(LabelClassifier):
         subassembly_config = self.config.subassembly
 
         # Get step_count and substep candidates
-        step_count_candidates = result.get_scored_candidates(
-            "step_count", valid_only=False, exclude_failed=True
-        )
-        substep_candidates = result.get_scored_candidates(
-            "substep", valid_only=False, exclude_failed=True
-        )
+        step_count_candidates = result.get_scored_candidates("step_count")
+        substep_candidates = result.get_scored_candidates("substep")
 
         # Find rectangular drawing blocks that could be subassembly boxes
         # Filter by size constraints first
@@ -308,12 +304,8 @@ class SubAssemblyClassifier(LabelClassifier):
         bbox = candidate.bbox
 
         # Get candidates for child element discovery
-        step_count_candidates = result.get_scored_candidates(
-            "step_count", valid_only=False, exclude_failed=True
-        )
-        substep_candidates = result.get_scored_candidates(
-            "substep", valid_only=False, exclude_failed=True
-        )
+        step_count_candidates = result.get_scored_candidates("step_count")
+        substep_candidates = result.get_scored_candidates("substep")
 
         # Find step_count inside the box and build it
         count = None
@@ -345,9 +337,7 @@ class SubAssemblyClassifier(LabelClassifier):
         diagram = None
         if not steps:
             # Look for diagram candidates inside this box
-            diagram_candidates = result.get_scored_candidates(
-                "diagram", valid_only=False, exclude_failed=True
-            )
+            diagram_candidates = result.get_scored_candidates("diagram")
             diagram_inside = self._find_candidate_inside(bbox, diagram_candidates)
             if diagram_inside:
                 try:

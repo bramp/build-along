@@ -193,7 +193,7 @@ class TestSubAssemblyClassifier:
         # Then run subassembly classifier
         subassembly_classifier._score(result)
 
-        candidates = result.get_scored_candidates("subassembly", valid_only=False)
+        candidates = result.get_scored_candidates("subassembly")
         assert len(candidates) == 1
         assert candidates[0].label == "subassembly"
         assert candidates[0].score >= config.subassembly.min_score
@@ -271,7 +271,7 @@ class TestFindCandidateInside:
 
         # Create step_count candidates
         step_count_classifier._score(result)
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
 
         found = subassembly_classifier._find_candidate_inside(box_bbox, candidates)
 
@@ -291,7 +291,7 @@ class TestFindCandidateInside:
 
         # Create step_count candidates
         step_count_classifier._score(result)
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
 
         found = subassembly_classifier._find_candidate_inside(box_bbox, candidates)
 

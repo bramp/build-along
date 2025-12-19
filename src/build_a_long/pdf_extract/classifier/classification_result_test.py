@@ -357,11 +357,13 @@ class TestGetScoredCandidates:
         # Should include all valid candidates with score_details
         assert len(candidates) == 2
 
-    def test_valid_only_parameter(self) -> None:
-        """Test get_scored_candidates with valid_only parameter.
+    def test_get_scored_vs_get_built_candidates(self) -> None:
+        """Test get_scored_candidates vs get_built_candidates behavior.
 
-        By default, get_scored_candidates returns only valid candidates.
-        Use valid_only=False to get all scored candidates including unconstructed ones.
+        get_scored_candidates returns candidates that have been scored
+        (for scoring phase).
+        get_built_candidates returns only successfully constructed
+        candidates (for build phase).
         """
         page = (
             PageBuilder(page_number=1, width=100, height=100)
@@ -383,13 +385,12 @@ class TestGetScoredCandidates:
             ),
         )
 
-        # Get scored candidates with valid_only=False
-        candidates = result.get_scored_candidates("test_label", valid_only=False)
-
-        # Should include the candidate even though it's not constructed
+        # get_scored_candidates should include the candidate even though it's not
+        # constructed - this is for use during scoring phase
+        candidates = result.get_scored_candidates("test_label")
         assert len(candidates) == 1
         assert candidates[0].constructed is None
 
-        # With default valid_only=True, should return empty list
-        valid_candidates = result.get_scored_candidates("test_label")
-        assert len(valid_candidates) == 0
+        # get_built_candidates should return empty list since nothing is constructed
+        built_candidates = result.get_built_candidates("test_label")
+        assert len(built_candidates) == 0

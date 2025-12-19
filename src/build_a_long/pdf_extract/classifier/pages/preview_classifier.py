@@ -116,9 +116,7 @@ class PreviewClassifier(LabelClassifier):
         preview_config = self.config.preview
 
         # Get step_number candidates to determine if/where steps are
-        step_number_candidates = result.get_scored_candidates(
-            "step_number", valid_only=False, exclude_failed=True
-        )
+        step_number_candidates = result.get_scored_candidates("step_number")
 
         # Calculate the minimum y0 of all step_numbers (top of step area)
         # Previews must be above this line (lower y value = higher on page)
@@ -132,14 +130,10 @@ class PreviewClassifier(LabelClassifier):
             )
 
         # Get diagram candidates for checking what's inside potential previews
-        diagram_candidates = result.get_scored_candidates(
-            "diagram", valid_only=False, exclude_failed=True
-        )
+        diagram_candidates = result.get_scored_candidates("diagram")
 
         # Get step_count candidates to reject boxes with "2x" labels inside
-        step_count_candidates = result.get_scored_candidates(
-            "step_count", valid_only=False, exclude_failed=True
-        )
+        step_count_candidates = result.get_scored_candidates("step_count")
 
         # Find rectangular drawing blocks that could be preview boxes
         max_width = page_data.bbox.width * preview_config.max_page_width_ratio
@@ -316,9 +310,7 @@ class PreviewClassifier(LabelClassifier):
         bbox = candidate.bbox
 
         # Get diagram candidates for child element discovery
-        diagram_candidates = result.get_scored_candidates(
-            "diagram", valid_only=False, exclude_failed=True
-        )
+        diagram_candidates = result.get_scored_candidates("diagram")
 
         # Find diagrams inside the box
         diagrams_inside = self._find_diagrams_inside(bbox, diagram_candidates)

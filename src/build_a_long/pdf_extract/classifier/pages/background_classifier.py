@@ -54,16 +54,12 @@ class BackgroundClassifier(LabelClassifier):
         edge_count = 0
 
         # Get full-page background candidates
-        for candidate in result.get_scored_candidates(
-            "full_page_background", valid_only=False, exclude_failed=True
-        ):
+        for candidate in result.get_scored_candidates("full_page_background"):
             background_blocks.extend(candidate.source_blocks)
             full_page_count += 1
 
         # Get page-edge candidates
-        for candidate in result.get_scored_candidates(
-            "page_edge", valid_only=False, exclude_failed=True
-        ):
+        for candidate in result.get_scored_candidates("page_edge"):
             background_blocks.extend(candidate.source_blocks)
             edge_count += 1
 

@@ -81,9 +81,7 @@ class PartsListClassifier(LabelClassifier):
         happens at build time based on candidate scores.
         """
         # Get part candidates (not constructed elements)
-        part_candidates = result.get_scored_candidates(
-            "part", valid_only=False, exclude_failed=True
-        )
+        part_candidates = result.get_scored_candidates("part")
         if not part_candidates:
             return
 

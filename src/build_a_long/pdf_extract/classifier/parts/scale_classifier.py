@@ -82,9 +82,7 @@ class ScaleClassifier(LabelClassifier):
         page_data = result.page_data
 
         # Get piece_length candidates
-        piece_length_candidates = result.get_scored_candidates(
-            "piece_length", valid_only=False, exclude_failed=True
-        )
+        piece_length_candidates = result.get_scored_candidates("piece_length")
 
         # Get all Drawing blocks for finding containers
         drawings = [b for b in page_data.blocks if isinstance(b, Drawing)]

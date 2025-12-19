@@ -48,8 +48,8 @@ class TestStepNumberClassification:
         assert result.count_successful_candidates("step_number") == 2
 
         # Verify that the specific blocks were classified correctly
-        step_winners = result.get_winners_by_score("step_number", StepNumber)
-        assert len(step_winners) == 2
+        step_candidates = result.get_built_candidates("step_number")
+        assert len(step_candidates) == 2
 
         # Check that big_step and small_step are the source blocks
         big_candidate = result.get_candidate_for_block(big_step, "step_number")
@@ -58,7 +58,11 @@ class TestStepNumberClassification:
         assert small_candidate is not None and small_candidate.constructed is not None
 
         # Verify the step numbers have the correct values
-        step_values = {winner.value for winner in step_winners}
+        step_values = {
+            c.constructed.value
+            for c in step_candidates
+            if isinstance(c.constructed, StepNumber)
+        }
         assert step_values == {3, 12}
 
     def test_step_number_with_font_hints(self) -> None:

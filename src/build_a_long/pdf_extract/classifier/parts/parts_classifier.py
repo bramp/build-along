@@ -117,11 +117,7 @@ class PartsClassifier(LabelClassifier):
         page_data = result.page_data
 
         # Get part_count candidates
-        part_count_candidates = result.get_scored_candidates(
-            "part_count",
-            valid_only=False,
-            exclude_failed=True,
-        )
+        part_count_candidates = result.get_scored_candidates("part_count")
 
         if not part_count_candidates:
             log.debug(
@@ -131,11 +127,7 @@ class PartsClassifier(LabelClassifier):
             return
 
         # Get part_image candidates (now required)
-        part_image_candidates = result.get_scored_candidates(
-            "part_image",
-            valid_only=False,
-            exclude_failed=True,
-        )
+        part_image_candidates = result.get_scored_candidates("part_image")
 
         if not part_image_candidates:
             log.debug(
@@ -145,18 +137,10 @@ class PartsClassifier(LabelClassifier):
             return
 
         # Get optional part_number candidates
-        part_number_candidates = result.get_scored_candidates(
-            "part_number",
-            valid_only=False,
-            exclude_failed=True,
-        )
+        part_number_candidates = result.get_scored_candidates("part_number")
 
         # Get optional piece_length candidates
-        piece_length_candidates = result.get_scored_candidates(
-            "piece_length",
-            valid_only=False,
-            exclude_failed=True,
-        )
+        piece_length_candidates = result.get_scored_candidates("piece_length")
 
         log.debug(
             "[parts] page=%s part_counts=%d part_images=%d",

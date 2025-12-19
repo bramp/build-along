@@ -108,19 +108,15 @@ class SubStepClassifier(LabelClassifier):
     def _score(self, result: ClassificationResult) -> None:
         """Score substep number + diagram pairings to create SubStep candidates."""
         # Get substep number candidates (small font step numbers)
-        # During scoring, candidates are not yet constructed, so is_valid=False
-        substep_number_candidates = result.get_scored_candidates(
-            "substep_number", valid_only=False, exclude_failed=True
-        )
+        # During scoring, candidates are not yet constructed
+        substep_number_candidates = result.get_scored_candidates("substep_number")
 
         if not substep_number_candidates:
             log.debug("[substep] No substep_number candidates found")
             return
 
-        # Get diagram candidates (not yet built - use valid_only=False)
-        diagram_candidates = result.get_scored_candidates(
-            "diagram", valid_only=False, exclude_failed=True
-        )
+        # Get diagram candidates (not yet built)
+        diagram_candidates = result.get_scored_candidates("diagram")
 
         if not diagram_candidates:
             log.debug("[substep] No diagram candidates found")
@@ -166,7 +162,7 @@ class SubStepClassifier(LabelClassifier):
             return
 
         # Get dividers for obstruction checking
-        divider_candidates = result.get_scored_candidates("divider", valid_only=True)
+        divider_candidates = result.get_built_candidates("divider")
         divider_bboxes = [
             c.constructed.bbox for c in divider_candidates if c.constructed is not None
         ]

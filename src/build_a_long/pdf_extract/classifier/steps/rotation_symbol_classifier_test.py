@@ -67,9 +67,7 @@ class TestRotationSymbolClassifier:
 
         classifier.score(result)
 
-        candidates = result.get_scored_candidates(
-            "rotation_symbol", valid_only=False, exclude_failed=True
-        )
+        candidates = result.get_scored_candidates("rotation_symbol")
 
         assert len(candidates) == 1
         assert candidates[0].score > 0.3  # Should have decent score
@@ -104,9 +102,7 @@ class TestRotationSymbolClassifier:
         result = ClassificationResult(page_data=page)
         classifier.score(result)
 
-        candidates = result.get_scored_candidates(
-            "rotation_symbol", valid_only=False, exclude_failed=True
-        )
+        candidates = result.get_scored_candidates("rotation_symbol")
 
         assert len(candidates) == 0  # Should reject too large
 
@@ -129,9 +125,7 @@ class TestRotationSymbolClassifier:
         result = ClassificationResult(page_data=page)
         classifier.score(result)
 
-        candidates = result.get_scored_candidates(
-            "rotation_symbol", valid_only=False, exclude_failed=True
-        )
+        candidates = result.get_scored_candidates("rotation_symbol")
 
         assert len(candidates) == 0  # Should reject wrong aspect ratio
 
@@ -163,9 +157,7 @@ class TestRotationSymbolClassifier:
         result = ClassificationResult(page_data=page)
         classifier.score(result)
 
-        candidates = result.get_scored_candidates(
-            "rotation_symbol", valid_only=False, exclude_failed=True
-        )
+        candidates = result.get_scored_candidates("rotation_symbol")
 
         # Should NOT find the drawings as rotation symbol because
         # the cluster formed is too large (100x80)
@@ -208,9 +200,7 @@ class TestRotationSymbolClassifier:
 
         classifier.score(result)
 
-        candidates = result.get_scored_candidates(
-            "rotation_symbol", valid_only=False, exclude_failed=True
-        )
+        candidates = result.get_scored_candidates("rotation_symbol")
 
         # Images are ignored, so no rotation symbol should be detected
         assert len(candidates) == 0

@@ -21,15 +21,17 @@ def test_shine_classification() -> None:
     result = classify_elements(page_data, config=config)
 
     # Check if shine candidates were created
-    shine_candidates = result.get_scored_candidates(
-        "shine", valid_only=False, exclude_failed=True
-    )
+    shine_candidates = result.get_scored_candidates("shine")
     assert len(shine_candidates) > 0
 
     # The shine should be consumed by a PartImage
     # Find the PartImage candidate that consumed the shine
-    part_image_candidates = result.get_winners_by_score("part_image", PartImage)
-    shine_consumers = [pi for pi in part_image_candidates if pi.shine is not None]
+    part_image_candidates = result.get_built_candidates("part_image")
+    shine_consumers = [
+        pi.constructed
+        for pi in part_image_candidates
+        if isinstance(pi.constructed, PartImage) and pi.constructed.shine is not None
+    ]
 
     assert len(shine_consumers) == 1
     shine_part_image = shine_consumers[0]

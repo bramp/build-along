@@ -116,16 +116,11 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
         super()._score(result)
 
         # 2. Refine candidates (which currently represent just the anchors)
-        # Get all candidates including failed ones, but we only care about
-        # valid ones here. Actually super()._score only adds valid ones.
-        candidates = result.get_scored_candidates(self.output, valid_only=False)
+        # Get all scored candidates (get_scored_candidates excludes failed ones)
+        candidates = result.get_scored_candidates(self.output)
 
         # We need to iterate carefully as we might modify them
         for candidate in candidates:
-            # Skip if already marked as failed by rules
-            if candidate.failure_reason is not None:
-                continue
-
             anchor = candidate.source_blocks[0]
             if not isinstance(anchor, Drawing):
                 # Should be guaranteed by IsInstanceFilter, but safe check

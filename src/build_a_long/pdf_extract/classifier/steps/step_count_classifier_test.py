@@ -76,7 +76,7 @@ class TestStepCountClassifier:
 
         step_count_classifier._score(result)
 
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
         assert len(candidates) == 1
         assert candidates[0].label == "step_count"
         # Score should be reasonable (at least min_score)
@@ -97,7 +97,7 @@ class TestStepCountClassifier:
 
         step_count_classifier._score(result)
 
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
         assert len(candidates) == 3
 
     def test_score_extracts_count_value(
@@ -113,7 +113,7 @@ class TestStepCountClassifier:
 
         step_count_classifier._score(result)
 
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
         assert len(candidates) == 1
 
         # Build the StepCount element and verify the count value
@@ -136,7 +136,7 @@ class TestStepCountClassifier:
 
         step_count_classifier._score(result)
 
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
         assert len(candidates) == 0
 
     def test_score_with_lowercase_x(self, step_count_classifier: StepCountClassifier):
@@ -150,7 +150,7 @@ class TestStepCountClassifier:
 
         step_count_classifier._score(result)
 
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
         assert len(candidates) == 1
 
     def test_build_creates_step_count(
@@ -167,7 +167,7 @@ class TestStepCountClassifier:
         result = ClassificationResult(page_data=page)
 
         step_count_classifier._score(result)
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
         assert len(candidates) == 1
 
         step_count = step_count_classifier.build(candidates[0], result)
@@ -195,7 +195,7 @@ class TestFontSizeScoring:
 
         step_count_classifier_with_hints._score(result)
 
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
         assert len(candidates) == 1
         score_details = candidates[0].score_details
         assert isinstance(score_details, RuleScore)
@@ -219,7 +219,7 @@ class TestFontSizeScoring:
         # -> total score lower than threshold
         # Assuming weights are balanced enough that 0.0 on font size
         # fails the candidate
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
 
         if len(candidates) > 0:
             # If candidate exists, check that font size score is 0.0
@@ -241,7 +241,7 @@ class TestFontSizeScoring:
 
         step_count_classifier_with_hints._score(result)
 
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
         if len(candidates) > 0:
             score_details = candidates[0].score_details
             assert isinstance(score_details, RuleScore)
@@ -261,7 +261,7 @@ class TestFontSizeScoring:
 
         step_count_classifier_with_hints._score(result)
 
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
         assert len(candidates) == 1
         score_details = candidates[0].score_details
         assert isinstance(score_details, RuleScore)
@@ -280,7 +280,7 @@ class TestFontSizeScoring:
 
         step_count_classifier._score(result)
 
-        candidates = result.get_scored_candidates("step_count", valid_only=False)
+        candidates = result.get_scored_candidates("step_count")
         assert len(candidates) == 1
         score_details = candidates[0].score_details
         assert isinstance(score_details, RuleScore)

@@ -106,9 +106,7 @@ class DiagramClassifier(LabelClassifier):
         page_bbox = page_data.bbox
         assert page_bbox is not None
 
-        arrow_candidates = result.get_scored_candidates(
-            "arrow", valid_only=False, exclude_failed=True
-        )
+        arrow_candidates = result.get_scored_candidates("arrow")
 
         # Get all image blocks, filtering out full-page images
         image_blocks: list[Image] = []

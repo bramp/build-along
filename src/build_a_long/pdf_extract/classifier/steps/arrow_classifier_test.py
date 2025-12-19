@@ -149,8 +149,7 @@ class TestArrowClassifier:
 
         arrow_classifier._score(result)
 
-        # Use valid_only=False since candidates haven't been built yet
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 1
         assert candidates[0].label == "arrow"
         assert candidates[0].score > config.arrow.min_score
@@ -167,7 +166,7 @@ class TestArrowClassifier:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 0
 
     def test_score_rejects_unfilled_drawing(self, arrow_classifier: ArrowClassifier):
@@ -181,7 +180,7 @@ class TestArrowClassifier:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 0
 
     def test_score_rejects_too_large_drawing(self, arrow_classifier: ArrowClassifier):
@@ -195,7 +194,7 @@ class TestArrowClassifier:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 0
 
     def test_score_rejects_too_small_drawing(self, arrow_classifier: ArrowClassifier):
@@ -209,7 +208,7 @@ class TestArrowClassifier:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 0
 
     def test_score_calculates_direction_right(self, arrow_classifier: ArrowClassifier):
@@ -223,7 +222,7 @@ class TestArrowClassifier:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 1
         score_details = candidates[0].score_details
         assert isinstance(score_details, _ArrowScore)
@@ -322,7 +321,7 @@ class TestShaftDetection:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 1
 
         score_details = candidates[0].score_details
@@ -366,7 +365,7 @@ class TestShaftDetection:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 1
 
         score_details = candidates[0].score_details
@@ -408,7 +407,7 @@ class TestShaftDetection:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 1
 
         score_details = candidates[0].score_details
@@ -449,7 +448,7 @@ class TestShaftDetection:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 1
 
         score_details = candidates[0].score_details
@@ -489,7 +488,7 @@ class TestShaftDetection:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 1
 
         # Both arrowhead and shaft should be in source_blocks
@@ -527,7 +526,7 @@ class TestShaftDetection:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 1
 
         score_details = candidates[0].score_details
@@ -571,7 +570,7 @@ class TestShaftDetection:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
         assert len(candidates) == 1
 
         score_details = candidates[0].score_details
@@ -644,7 +643,7 @@ class TestShaftDetection:
 
         arrow_classifier._score(result)
 
-        candidates = result.get_scored_candidates("arrow", valid_only=False)
+        candidates = result.get_scored_candidates("arrow")
 
         # Should have exactly 1 arrow candidate with 2 heads
         # (not 2 separate single-head arrows)

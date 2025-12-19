@@ -195,7 +195,7 @@ class TestPreviewClassifier:
         # Then run preview classifier
         preview_classifier._score(result)
 
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 1
         assert candidates[0].label == "preview"
         assert candidates[0].score >= config.preview.min_score
@@ -216,7 +216,7 @@ class TestPreviewClassifier:
         diagram_classifier._score(result)
         preview_classifier._score(result)
 
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 0
 
     def test_score_rejects_non_white_boxes(
@@ -239,7 +239,7 @@ class TestPreviewClassifier:
         diagram_classifier._score(result)
         preview_classifier._score(result)
 
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 0
 
     def test_score_accepts_light_gray_boxes(
@@ -263,7 +263,7 @@ class TestPreviewClassifier:
         diagram_classifier._score(result)
         preview_classifier._score(result)
 
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 1
         # Light gray gets fill_score of 0.7
         assert candidates[0].score >= config.preview.min_score
@@ -289,7 +289,7 @@ class TestPreviewClassifier:
         diagram_classifier._score(result)
         preview_classifier._score(result)
 
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 0
 
     def test_build_creates_preview_with_diagram(
@@ -314,7 +314,7 @@ class TestPreviewClassifier:
         preview_classifier.score(result)
 
         # Build the preview
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 1
 
         preview = result.build(candidates[0])
@@ -345,7 +345,7 @@ class TestPreviewClassifier:
 
         # This won't find a candidate because has_images=False
         # and with default weights, score would be below min_score
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         # Score without images: 1.0 * 0.3 + 1.0 * 0.3 + 0.0 * 0.4 = 0.6
         # min_score default is 0.5, so it should pass
         assert len(candidates) == 1
@@ -384,7 +384,7 @@ class TestPreviewClassifier:
         preview_classifier._score(result)
 
         # Should only create one candidate (grouped)
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 1
 
     def test_rejects_box_with_step_count_inside(
@@ -419,7 +419,7 @@ class TestPreviewClassifier:
         preview_classifier._score(result)
 
         # Should reject the box because it contains a step_count
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 0
 
     def test_rejects_box_overlapping_step_number(
@@ -455,7 +455,7 @@ class TestPreviewClassifier:
         preview_classifier._score(result)
 
         # Should reject preview candidates because box is below the step_number
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 0
 
     def test_accepts_box_above_step_numbers(
@@ -491,7 +491,7 @@ class TestPreviewClassifier:
         preview_classifier._score(result)
 
         # Should accept preview because it's above all step_numbers
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 1
         assert candidates[0].bbox == box_bbox
 
@@ -526,6 +526,6 @@ class TestPreviewClassifier:
         preview_classifier._score(result)
 
         # Should accept the box because this is an INFO page (no step_numbers)
-        candidates = result.get_scored_candidates("preview", valid_only=False)
+        candidates = result.get_scored_candidates("preview")
         assert len(candidates) == 1
         assert candidates[0].score >= config.preview.min_score

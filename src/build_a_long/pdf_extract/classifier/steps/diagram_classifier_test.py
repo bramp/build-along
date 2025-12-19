@@ -37,7 +37,7 @@ class TestDiagramScoring:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_scored_candidates("diagram", valid_only=False)
+        candidates = result.get_scored_candidates("diagram")
         assert len(candidates) == 1
         assert candidates[0].bbox == img.bbox
 
@@ -63,7 +63,7 @@ class TestDiagramScoring:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_scored_candidates("diagram", valid_only=False)
+        candidates = result.get_scored_candidates("diagram")
         # Each image creates a separate candidate
         assert len(candidates) == 3
 
@@ -85,7 +85,7 @@ class TestDiagramScoring:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_scored_candidates("diagram", valid_only=False)
+        candidates = result.get_scored_candidates("diagram")
         # Should only have the normal image
         assert len(candidates) == 1
         assert candidates[0].bbox == normal_img.bbox
@@ -108,7 +108,7 @@ class TestDiagramBuilding:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_scored_candidates("diagram", valid_only=False)
+        candidates = result.get_scored_candidates("diagram")
         assert len(candidates) == 1
 
         # Build the diagram
@@ -135,7 +135,7 @@ class TestDiagramBuilding:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_scored_candidates("diagram", valid_only=False)
+        candidates = result.get_scored_candidates("diagram")
         assert len(candidates) == 3  # Three candidates during scoring
 
         # Build the first candidate - should cluster all three
@@ -176,7 +176,7 @@ class TestDiagramBuilding:
         # Simulate another classifier consuming img2
         result._consumed_blocks.add(img2.id)
 
-        candidates = result.get_scored_candidates("diagram", valid_only=False)
+        candidates = result.get_scored_candidates("diagram")
 
         # Build diagram from img1 - should only cluster with unclaimed images
         # Since img2 is consumed, img1 and img3 are not connected
@@ -206,7 +206,7 @@ class TestDiagramBuilding:
         result = ClassificationResult(page_data=page_data)
         classifier.score(result)
 
-        candidates = result.get_scored_candidates("diagram", valid_only=False)
+        candidates = result.get_scored_candidates("diagram")
         assert len(candidates) == 2
 
         # Build both diagrams using result.build

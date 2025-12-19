@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
@@ -385,7 +385,7 @@ class ClassificationResult(BaseModel):
     @property
     def page(self) -> Page | None:
         """Returns the Page object built from this classification result."""
-        page_candidates = self.get_scored_candidates("page", valid_only=True)
+        page_candidates = self.get_built_candidates("page")
         if page_candidates:
             page = page_candidates[0].constructed
             assert isinstance(page, Page)
@@ -410,73 +410,48 @@ class ClassificationResult(BaseModel):
         self,
         label: str,
         min_score: float = 0.0,
-        valid_only: bool = True,
-        exclude_failed: bool = False,
     ) -> list[Candidate]:
-        """Get candidates for a label that have been scored.
+        """Get candidates that have been scored, for use during scoring phase.
 
-        **Use this method in score() when working with dependency classifiers.**
+        **Use this method in _score() when working with dependency classifiers.**
 
-        This enforces the pattern of working with candidates (not constructed
-        elements or raw blocks) when one classifier depends on another. The
-        returned candidates are sorted by score (highest first).
+        This returns candidates that have been scored but may not yet be
+        constructed. During the scoring phase, candidates exist but their
+        `constructed` field is None until build() is called.
 
-        During score(), you should:
-        1. Get parent candidates using this method
-        2. Store references to parent candidates in your score_details
-        3. In construct(), validate parent candidates before using their elements
+        The returned candidates are sorted by score (highest first) and
+        excludes candidates that have already failed (e.g., lost a conflict).
+
+        Use get_built_candidates() instead when you need only successfully
+        constructed candidates (e.g., in build() or after classification).
 
         Example:
-            # In PartsClassifier.score()
-            part_count_candidates = result.get_scored_candidates("part_count")
-            for pc_cand in part_count_candidates:
-                # Store the CANDIDATE reference in score details
-                score_details = _PartPairScore(
-                    part_count_candidate=pc_cand,  # Not pc_cand.constructed!
-                    image=img,
-                )
-
-            # Later in _construct_single()
-            def _construct_single(self, candidate, result):
-                pc_cand = candidate.score_details.part_count_candidate
-
-                # Validate parent candidate is still valid
-                if not pc_cand.is_valid:
-                    raise ValueError(
-                        f"Parent invalid: {pc_cand.failure_reason or 'not constructed'}"
-                    )
-
-                # Now safe to use the constructed element
-                assert isinstance(pc_cand.constructed, PartCount)
-                return Part(count=pc_cand.constructed, ...)
+            # In PreviewClassifier._score()
+            step_number_candidates = result.get_scored_candidates("step_number")
+            for cand in step_number_candidates:
+                # Use candidate.bbox for spatial reasoning
+                # Store candidate references in score_details for later
 
         Args:
             label: The label to get candidates for
             min_score: Optional minimum score threshold (default: 0.0)
-            valid_only: If True (default), only return valid candidates
-                (constructed and no failure). Set to False to get all scored
-                candidates regardless of construction status.
-            exclude_failed: If True, filter out candidates with failure_reason,
-                even if valid_only is False. (default: False)
 
         Returns:
-            List of scored candidates sorted by score (highest first).
-            By default, only includes valid candidates (is_valid=True).
+            List of scored candidates sorted by score (highest first),
+            excluding failed candidates.
         """
         candidates = self.get_candidates(label)
 
-        # Filter to candidates that have been scored
-        scored = [c for c in candidates if c.score_details is not None]
+        # Filter to candidates that have been scored and haven't failed
+        scored = [
+            c
+            for c in candidates
+            if c.score_details is not None and c.failure_reason is None
+        ]
 
         # Apply score threshold if specified
         if min_score > 0:
             scored = [c for c in scored if c.score >= min_score]
-
-        # Filter to valid candidates if requested (default)
-        if valid_only:
-            scored = [c for c in scored if c.is_valid]
-        elif exclude_failed:
-            scored = [c for c in scored if c.failure_reason is None]
 
         # Sort by score descending
         # TODO add a tie breaker for determinism.
@@ -484,86 +459,50 @@ class ClassificationResult(BaseModel):
 
         return scored
 
-    def get_winners_by_score[T: LegoPageElements](
-        self, label: str, element_type: type[T], max_count: int | None = None
-    ) -> list[T]:
-        """Get the best candidates for a specific label by score.
+    def get_built_candidates(
+        self,
+        label: str,
+        min_score: float = 0.0,
+    ) -> list[Candidate]:
+        """Get candidates that have been successfully built/constructed.
 
-        **DEPRECATED for use in score() methods.**
+        **Use this method in build() or after classification is complete.**
 
-        This method returns constructed LegoPageElements, which encourages the
-        anti-pattern of looking at constructed elements during the score() phase.
+        This returns only candidates where construction succeeded (i.e.,
+        `candidate.constructed` is not None and there's no failure_reason).
+        These are "valid" candidates whose elements can be safely accessed.
 
-        - **In score()**: Use get_scored_candidates() instead to work with candidates
-        - **In construct()**: It's OK to use this method when you need fully
-          constructed dependency elements
+        Use get_scored_candidates() instead during the scoring phase when
+        candidates may not yet be constructed.
 
-        Prefer get_scored_candidates() in score() to maintain proper separation
-        between the scoring and construction phases.
-
-        Selects candidates by:
-        - Successfully constructed (constructed is not None)
-        - Match the specified element type
-        - Sorted by score (highest first)
-
-        Invariant: Each source block should have at most one successfully
-        constructed candidate per label. This method validates that invariant.
+        Example:
+            # In PageClassifier.build()
+            page_number_candidates = result.get_built_candidates("page_number")
+            if page_number_candidates:
+                page_number = page_number_candidates[0].constructed
 
         Args:
-            label: The label to get winners for (e.g., "page_number", "step")
-            element_type: The type of element to filter for (e.g., PageNumber)
-            max_count: Maximum number of winners to return (None = all valid)
+            label: The label to get candidates for
+            min_score: Optional minimum score threshold (default: 0.0)
 
         Returns:
-            List of constructed elements of the specified type, sorted by score
-            (highest first)
-
-        Raises:
-            AssertionError: If element_type doesn't match the actual constructed type,
-                or if multiple candidates exist for the same source block
+            List of successfully constructed candidates sorted by score
+            (highest first).
         """
-        # Get all candidates and filter for successful construction
-        valid_candidates = [
-            c for c in self.get_candidates(label) if c.constructed is not None
-        ]
+        candidates = self.get_candidates(label)
 
-        # Validate that each source block has at most one candidate for this label
-        # (candidates without source blocks are synthetic and can have duplicates)
-        seen_blocks: set[int] = set()
-        for candidate in valid_candidates:
-            assert isinstance(candidate.constructed, element_type), (
-                f"Type mismatch for label '{label}': requested "
-                f"{element_type.__name__} but got "
-                f"{type(candidate.constructed).__name__}. "
-                f"This indicates a programming error in the caller."
-            )
+        # Filter to valid candidates (constructed and no failure)
+        built = [c for c in candidates if c.is_valid]
 
-            for source_block in candidate.source_blocks:
-                block_id = id(source_block)
-                assert block_id not in seen_blocks, (
-                    f"Multiple successfully constructed candidates found for "
-                    f"label '{label}' with the same source block id:{block_id}. "
-                    f"This indicates a programming error in the classifier. "
-                    f"Source block: {source_block}"
-                )
-                seen_blocks.add(block_id)
+        # Apply score threshold if specified
+        if min_score > 0:
+            built = [c for c in built if c.score >= min_score]
 
-        # Sort by score (highest first), then by source block ID for determinism
-        # when scores are equal
-        valid_candidates.sort(
-            key=lambda c: (
-                -c.score,  # Negative for descending order
-                # TODO Fix this, so it's deterministic.
-                c.source_blocks[0].id if c.source_blocks else 0,  # Tie-breaker
-            )
-        )
+        # Sort by score descending
+        # TODO add a tie breaker for determinism.
+        built.sort(key=lambda c: -c.score)
 
-        # Apply max_count if specified
-        if max_count is not None:
-            valid_candidates = valid_candidates[:max_count]
-
-        # Extract constructed elements
-        return [cast(T, c.constructed) for c in valid_candidates]
+        return built
 
     def get_all_candidates(self) -> dict[str, list[Candidate]]:
         """Get all candidates across all labels.

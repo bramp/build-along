@@ -139,9 +139,7 @@ class OpenBagClassifier(LabelClassifier):
         page_bbox = page_data.bbox
 
         # Get bag number candidates (used for scoring bonus)
-        bag_number_candidates = result.get_scored_candidates(
-            "bag_number", valid_only=False, exclude_failed=True
-        )
+        bag_number_candidates = result.get_scored_candidates("bag_number")
 
         # Find large circular drawings (bag icon outlines)
         circle_drawings = [
@@ -440,9 +438,7 @@ class OpenBagClassifier(LabelClassifier):
         Returns:
             Built BagNumber element, or None if not found.
         """
-        bag_number_candidates = result.get_scored_candidates(
-            "bag_number", valid_only=False, exclude_failed=True
-        )
+        bag_number_candidates = result.get_scored_candidates("bag_number")
         contained = list(filter_contained(bag_number_candidates, cluster_bbox))
         best_candidate = find_best_scoring(contained)
 
@@ -482,9 +478,7 @@ class OpenBagClassifier(LabelClassifier):
         Returns:
             Built Part element, or None if not found.
         """
-        part_candidates = result.get_scored_candidates(
-            "part", valid_only=False, exclude_failed=True
-        )
+        part_candidates = result.get_scored_candidates("part")
         contained = list(filter_contained(part_candidates, cluster_bbox))
         best_candidate = find_best_scoring(contained)
 
@@ -525,9 +519,7 @@ class OpenBagClassifier(LabelClassifier):
         Returns:
             Built LoosePartSymbol element, or None if not found.
         """
-        symbol_candidates = result.get_scored_candidates(
-            "loose_part_symbol", valid_only=False, exclude_failed=True
-        )
+        symbol_candidates = result.get_scored_candidates("loose_part_symbol")
 
         # Define search region: to the right of the circle
         search_x_min = cluster_bbox.x0 + cluster_bbox.width * 0.5

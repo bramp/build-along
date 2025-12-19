@@ -550,7 +550,7 @@ class PageNumberProximityScore(Rule):
         assert page_bbox is not None
 
         page_number_candidates = context.classification_result.get_scored_candidates(
-            "page_number", valid_only=False, exclude_failed=True
+            "page_number"
         )
         if not page_number_candidates:
             return None

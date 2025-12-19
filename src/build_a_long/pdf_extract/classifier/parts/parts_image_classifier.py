@@ -129,11 +129,7 @@ class PartsImageClassifier(RuleBasedClassifier):
             Built Shine element, or None if no matching shine found
         """
         # Get available (not yet built) shine candidates
-        shine_candidates = result.get_scored_candidates(
-            "shine",
-            valid_only=False,
-            exclude_failed=True,
-        )
+        shine_candidates = result.get_scored_candidates("shine")
 
         best_shine_candidate: Candidate | None = None
         best_dist = float("inf")

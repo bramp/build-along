@@ -140,19 +140,13 @@ class StepClassifier(LabelClassifier):
         page_data = result.page_data
 
         # Get step number and parts list candidates (not constructed elements)
-        step_number_candidates = result.get_scored_candidates(
-            "step_number", valid_only=False, exclude_failed=True
-        )
+        step_number_candidates = result.get_scored_candidates("step_number")
 
         if not step_number_candidates:
             return
 
         # Get parts_list candidates
-        parts_list_candidates = result.get_scored_candidates(
-            "parts_list",
-            valid_only=False,
-            exclude_failed=True,
-        )
+        parts_list_candidates = result.get_scored_candidates("parts_list")
 
         log.debug(
             "[step] page=%s step_candidates=%d parts_list_candidates=%d",
@@ -220,9 +214,7 @@ class StepClassifier(LabelClassifier):
         # Pre-check: Get step candidates early to decide if we should build
         # supporting elements (rotation symbols, arrows, etc.)
         # On INFO pages with no steps, building these would create orphaned elements.
-        all_step_candidates = result.get_scored_candidates(
-            "step", valid_only=False, exclude_failed=True
-        )
+        all_step_candidates = result.get_scored_candidates("step")
         has_step_candidates = bool(all_step_candidates)
 
         # Phase 1: Build all rotation symbols BEFORE steps.
@@ -232,9 +224,7 @@ class StepClassifier(LabelClassifier):
         # IMPORTANT: Only build rotation symbols if there are step candidates.
         # On INFO pages, there are no steps to assign rotation symbols to.
         if has_step_candidates:
-            for rs_candidate in result.get_scored_candidates(
-                "rotation_symbol", valid_only=False, exclude_failed=True
-            ):
+            for rs_candidate in result.get_scored_candidates("rotation_symbol"):
                 try:
                     result.build(rs_candidate)
                     log.debug(
@@ -255,9 +245,7 @@ class StepClassifier(LabelClassifier):
         # Phase 2: Build all parts lists BEFORE steps.
         # This allows parts lists to claim their Drawing blocks first,
         # preventing them from being claimed by subassemblies.
-        for pl_candidate in result.get_scored_candidates(
-            "parts_list", valid_only=False, exclude_failed=True
-        ):
+        for pl_candidate in result.get_scored_candidates("parts_list"):
             try:
                 result.build(pl_candidate)
                 log.debug(
@@ -283,9 +271,7 @@ class StepClassifier(LabelClassifier):
         # them would create orphaned elements that trigger validation errors.
         # Note: has_step_candidates was computed in the pre-check.
         if has_step_candidates:
-            for arrow_candidate in result.get_scored_candidates(
-                "arrow", valid_only=False, exclude_failed=True
-            ):
+            for arrow_candidate in result.get_scored_candidates("arrow"):
                 try:
                     result.build(arrow_candidate)
                     log.debug(
@@ -311,12 +297,8 @@ class StepClassifier(LabelClassifier):
         #
         # This allows subassemblies (which have step_count labels like "2x")
         # to be distinguished from previews (which appear before steps).
-        subassembly_candidates = result.get_scored_candidates(
-            "subassembly", valid_only=False, exclude_failed=True
-        )
-        preview_candidates = result.get_scored_candidates(
-            "preview", valid_only=False, exclude_failed=True
-        )
+        subassembly_candidates = result.get_scored_candidates("subassembly")
+        preview_candidates = result.get_scored_candidates("preview")
 
         # Combine and sort by score (highest first)
         combined_candidates = list(subassembly_candidates) + list(preview_candidates)
@@ -400,9 +382,7 @@ class StepClassifier(LabelClassifier):
         # Phase 7: Assign diagrams to steps using Hungarian matching
         # Collect available diagram candidates (not yet claimed by subassemblies)
         available_diagrams: list[Diagram] = []
-        for diag_candidate in result.get_scored_candidates(
-            "diagram", valid_only=False, exclude_failed=True
-        ):
+        for diag_candidate in result.get_scored_candidates("diagram"):
             if diag_candidate.constructed is None:
                 # Build the diagram
                 try:
@@ -426,7 +406,7 @@ class StepClassifier(LabelClassifier):
 
         # Collect divider bboxes for obstruction checking (used by multiple phases)
         divider_bboxes: list[BBox] = []
-        for div_candidate in result.get_scored_candidates("divider", valid_only=True):
+        for div_candidate in result.get_built_candidates("divider"):
             assert div_candidate.constructed is not None
             assert isinstance(div_candidate.constructed, Divider)
             divider_bboxes.append(div_candidate.constructed.bbox)
@@ -438,9 +418,7 @@ class StepClassifier(LabelClassifier):
         # Phase 8: Assign subassemblies to steps using Hungarian matching
         # Collect built subassemblies
         subassemblies: list[SubAssembly] = []
-        for sa_candidate in result.get_scored_candidates(
-            "subassembly", valid_only=True
-        ):
+        for sa_candidate in result.get_built_candidates("subassembly"):
             assert sa_candidate.constructed is not None
             assert isinstance(sa_candidate.constructed, SubAssembly)
             subassemblies.append(sa_candidate.constructed)
@@ -499,9 +477,7 @@ class StepClassifier(LabelClassifier):
         # Phase 10: Assign rotation symbols to steps using Hungarian matching
         # Collect built rotation symbols
         rotation_symbols: list[RotationSymbol] = []
-        for rs_candidate in result.get_scored_candidates(
-            "rotation_symbol", valid_only=True
-        ):
+        for rs_candidate in result.get_built_candidates("rotation_symbol"):
             assert rs_candidate.constructed is not None
             assert isinstance(rs_candidate.constructed, RotationSymbol)
             rotation_symbols.append(rs_candidate.constructed)
@@ -582,9 +558,7 @@ class StepClassifier(LabelClassifier):
             sorted by step number value, and filtered to valid sequences from 1.
         """
         # Get all substep candidates
-        substep_candidates = result.get_scored_candidates(
-            "substep", valid_only=False, exclude_failed=True
-        )
+        substep_candidates = result.get_scored_candidates("substep")
 
         # Filter to only unclaimed candidates (not yet built)
         unclaimed_candidates = [c for c in substep_candidates if c.constructed is None]
@@ -692,9 +666,7 @@ class StepClassifier(LabelClassifier):
             The built Diagram element, or None if no suitable diagram found
         """
         # Get all non-failed, non-constructed diagram candidates
-        diagram_candidates = result.get_scored_candidates(
-            "diagram", valid_only=False, exclude_failed=True
-        )
+        diagram_candidates = result.get_scored_candidates("diagram")
 
         # Filter to only candidates that haven't been built yet
         # (subassemblies and rotation symbols built earlier may have claimed some)
@@ -916,11 +888,9 @@ class StepClassifier(LabelClassifier):
             Single RotationSymbol element for this step, or None if not found
         """
         # Get rotation_symbol candidates - they should already be built
-        # by PageClassifier. Use valid_only=True to only get successfully
+        # by PageClassifier. Use get_built_candidates to only get successfully
         # constructed rotation symbols.
-        rotation_symbol_candidates = result.get_scored_candidates(
-            "rotation_symbol", valid_only=True
-        )
+        rotation_symbol_candidates = result.get_built_candidates("rotation_symbol")
 
         log.debug(
             "[step] Looking for rotation symbols in step bbox %s, "
@@ -978,10 +948,7 @@ class StepClassifier(LabelClassifier):
             List of Arrow elements for this step
         """
         # Get already-built arrows (built in Phase 3)
-        arrow_candidates = result.get_scored_candidates(
-            "arrow",
-            valid_only=True,  # Only get successfully built arrows
-        )
+        arrow_candidates = result.get_built_candidates("arrow")
 
         log.debug(
             "[step] Looking for arrows for step %d, found %d built arrows",
@@ -1061,9 +1028,7 @@ class StepClassifier(LabelClassifier):
         """
         # Get all built subassemblies
         all_subassemblies: list[SubAssembly] = []
-        for sa_candidate in result.get_scored_candidates(
-            "subassembly", valid_only=True
-        ):
+        for sa_candidate in result.get_built_candidates("subassembly"):
             assert sa_candidate.constructed is not None
             assert isinstance(sa_candidate.constructed, SubAssembly)
             all_subassemblies.append(sa_candidate.constructed)
