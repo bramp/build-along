@@ -87,8 +87,8 @@ def validate_results(
             progress_bars.append((pdf_page, page.progress_bar.progress))
 
         # Collect step numbers
-        if page:
-            for step in page.steps:
+        if page and page.instruction:
+            for step in page.instruction.steps:
                 step_numbers_seen.append((pdf_page, step.step_number.value))
 
                 # Check for steps without parts lists

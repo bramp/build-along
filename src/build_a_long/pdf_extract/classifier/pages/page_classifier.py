@@ -28,8 +28,11 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.score import Score
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Background,
+    CatalogContent,
     Decoration,
     Divider,
+    InfoContent,
+    InstructionContent,
     OpenBag,
     Page,
     PageNumber,
@@ -224,12 +227,16 @@ class PageClassifier(LabelClassifier):
         ]
 
     def _determine_categories(
-        self, steps: list[Step], standalone_parts: list[Part]
+        self,
+        steps: list[Step],
+        standalone_parts: list[Part],
+        open_bags: list[OpenBag],
     ) -> set[Page.PageType]:
         """Determine page categories based on content."""
         categories: set[Page.PageType] = set()
 
-        if steps:
+        # TODO Should this be a property on Page, that is computed on access?
+        if steps or open_bags:
             categories.add(Page.PageType.INSTRUCTION)
 
         if standalone_parts:
@@ -286,7 +293,23 @@ class PageClassifier(LabelClassifier):
 
         # Determine catalog parts and page categories
         catalog_parts = self._get_standalone_parts(all_parts, steps)
-        categories = self._determine_categories(steps, catalog_parts)
+        categories = self._determine_categories(steps, catalog_parts, open_bags)
+
+        # Build composed content objects based on categories
+        instruction_content: InstructionContent | None = None
+        if Page.PageType.INSTRUCTION in categories:
+            instruction_content = InstructionContent(
+                steps=steps,
+                open_bags=open_bags,
+            )
+
+        catalog_content: CatalogContent | None = None
+        if Page.PageType.CATALOG in categories:
+            catalog_content = CatalogContent(parts=catalog_parts)
+
+        info_content: InfoContent | None = None
+        if Page.PageType.INFO in categories:
+            info_content = InfoContent(decorations=decorations)
 
         log.debug(
             "[page] page=%s categories=%s page_number=%s progress_bar=%s "
@@ -313,12 +336,11 @@ class PageClassifier(LabelClassifier):
             progress_bar=progress_bar,
             background=background,
             dividers=dividers,
-            decorations=decorations,
             scale=scale,
             previews=previews,
             trivia_text=trivia_text,
             unassigned_blocks_count=result.count_unassigned_blocks(),
-            open_bags=open_bags,
-            steps=steps,
-            catalog=catalog_parts,
+            instruction=instruction_content,
+            catalog=catalog_content,
+            info=info_content,
         )

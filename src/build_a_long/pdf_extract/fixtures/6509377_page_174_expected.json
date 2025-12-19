@@ -45,54 +45,57 @@
     "full_width": 517.74
   },
   "unassigned_blocks_count": 3,
-  "steps": [
-    {
-      "__tag__": "Step",
-      "bbox": {
-        "x0": 0.0,
-        "y0": 64.51,
-        "x1": 518.69,
-        "y1": 494.97
-      },
-      "step_number": {
-        "__tag__": "StepNumber",
-        "bbox": {
-          "x0": 14.17,
-          "y0": 64.51,
-          "x1": 58.35,
-          "y1": 96.9
-        },
-        "value": 336
-      },
-      "diagram": {
-        "__tag__": "Diagram",
+  "instruction": {
+    "__tag__": "InstructionContent",
+    "steps": [
+      {
+        "__tag__": "Step",
         "bbox": {
           "x0": 0.0,
-          "y0": 90.21,
+          "y0": 64.51,
           "x1": 518.69,
-          "y1": 442.29
-        }
-      },
-      "subassemblies": [
-        {
-          "__tag__": "SubAssembly",
+          "y1": 494.97
+        },
+        "step_number": {
+          "__tag__": "StepNumber",
+          "bbox": {
+            "x0": 14.17,
+            "y0": 64.51,
+            "x1": 58.35,
+            "y1": 96.9
+          },
+          "value": 336
+        },
+        "diagram": {
+          "__tag__": "Diagram",
           "bbox": {
             "x0": 0.0,
-            "y0": 316.55,
-            "x1": 300.92,
-            "y1": 494.97
-          },
-          "diagram": {
-            "__tag__": "Diagram",
+            "y0": 90.21,
+            "x1": 518.69,
+            "y1": 442.29
+          }
+        },
+        "subassemblies": [
+          {
+            "__tag__": "SubAssembly",
             "bbox": {
               "x0": 0.0,
-              "y0": 345.14,
-              "x1": 292.71,
-              "y1": 454.0
+              "y0": 316.55,
+              "x1": 300.92,
+              "y1": 494.97
+            },
+            "diagram": {
+              "__tag__": "Diagram",
+              "bbox": {
+                "x0": 0.0,
+                "y0": 345.14,
+                "x1": 292.71,
+                "y1": 454.0
+              }
             }
           }
-        }
-      ]
-    }
-  ]
+        ]
+      }
+    ]
+  }
 }

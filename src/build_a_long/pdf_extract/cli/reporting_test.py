@@ -10,6 +10,7 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
+    InstructionContent,
     Page,
     PageNumber,
     Part,
@@ -51,7 +52,7 @@ def test_print_page_hierarchy_with_part_numbers() -> None:
         bbox=BBox(0, 0, 25, 35),
         pdf_page_number=1,
         page_number=PageNumber(bbox=BBox(0, 25, 5, 30), value=1),
-        steps=[step],
+        instruction=InstructionContent(steps=[step]),
     )
 
     page_data = PageData(page_number=1, bbox=BBox(0, 0, 25, 35), blocks=[])
@@ -88,7 +89,7 @@ def test_print_page_hierarchy_empty_parts_list() -> None:
         bbox=BBox(0, 0, 25, 35),
         pdf_page_number=1,
         page_number=PageNumber(bbox=BBox(0, 25, 5, 30), value=1),
-        steps=[step],
+        instruction=InstructionContent(steps=[step]),
     )
 
     page_data = PageData(page_number=1, bbox=BBox(0, 0, 25, 35), blocks=[])

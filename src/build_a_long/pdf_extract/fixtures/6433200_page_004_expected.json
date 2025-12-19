@@ -8,7 +8,7 @@
   },
   "pdf_page_number": 4,
   "categories": [
-    "info"
+    "instruction"
   ],
   "background": {
     "__tag__": "Background",
@@ -75,15 +75,18 @@
     }
   ],
   "unassigned_blocks_count": 0,
-  "open_bags": [
-    {
-      "__tag__": "OpenBag",
-      "bbox": {
-        "x0": 15.0,
-        "y0": 15.0,
-        "x1": 254.0,
-        "y1": 254.0
+  "instruction": {
+    "__tag__": "InstructionContent",
+    "open_bags": [
+      {
+        "__tag__": "OpenBag",
+        "bbox": {
+          "x0": 15.0,
+          "y0": 15.0,
+          "x1": 254.0,
+          "y1": 254.0
+        }
       }
-    }
-  ]
+    ]
+  }
 }

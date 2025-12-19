@@ -15,7 +15,9 @@ from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Background,
+    CatalogContent,
     Divider,
+    InstructionContent,
     Manual,
     Page,
     PageNumber,
@@ -408,7 +410,7 @@ class TestValidateCatalogCoverage:
                     pdf_page_number=1,
                     page_number=PageNumber(bbox=BBox(90, 90, 100, 100), value=1),
                     categories={Page.PageType.INSTRUCTION},
-                    steps=[step],
+                    instruction=InstructionContent(steps=[step]),
                 )
             )
 
@@ -421,7 +423,7 @@ class TestValidateCatalogCoverage:
                     pdf_page_number=2,
                     page_number=PageNumber(bbox=BBox(90, 90, 100, 100), value=2),
                     categories={Page.PageType.CATALOG},
-                    catalog=parts,
+                    catalog=CatalogContent(parts=parts),
                 )
             )
 
@@ -620,7 +622,7 @@ def _make_classification_result(
         bbox=BBox(0, 0, 100, 100),
         pdf_page_number=page_data.page_number,
         page_number=page_num_elem,
-        steps=step_elems,
+        instruction=InstructionContent(steps=step_elems) if step_elems else None,
     )
 
     # Add a candidate for the page
@@ -794,7 +796,7 @@ def _make_page_with_steps(
         bbox=page_bbox,
         pdf_page_number=1,
         page_number=PageNumber(bbox=BBox(90, 90, 100, 100), value=page_number_val),
-        steps=steps,
+        instruction=InstructionContent(steps=steps) if steps else None,
     )
 
     return page, page_data
@@ -822,7 +824,8 @@ class TestValidatePartsListHasParts:
             ]
         )
         # Manually empty the parts list
-        page.steps[0].parts_list.parts = []  # type: ignore[union-attr]
+        assert page.instruction is not None
+        page.instruction.steps[0].parts_list.parts = []  # type: ignore[union-attr]
 
         validation = ValidationResult()
         validate_parts_list_has_parts(validation, page, page_data)
@@ -973,7 +976,7 @@ class TestValidateNoDividerIntersection:
             bbox=page_bbox,
             pdf_page_number=1,
             dividers=[divider],
-            steps=steps,
+            instruction=InstructionContent(steps=steps) if steps else None,
             background=background,
             progress_bar=progress_bar,
         )

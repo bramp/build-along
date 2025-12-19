@@ -18,6 +18,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     BagNumber,
     Diagram,
     Divider,
+    InstructionContent,
     LoosePartSymbol,
     Manual,
     OpenBag,
@@ -121,7 +122,7 @@ def _make_page() -> Page:
         pdf_page_number=10,
         categories={Page.PageType.INSTRUCTION},
         page_number=PageNumber(bbox=BBOX, value=10),
-        steps=[_make_step()],
+        instruction=InstructionContent(steps=[_make_step()]),
         dividers=[Divider(bbox=BBOX, orientation=Divider.Orientation.VERTICAL)],
     )
 
@@ -248,7 +249,8 @@ def test_polymorphic_deserialization():
     json_str = page.to_json()
     restored_page = Page.model_validate_json(json_str)
 
-    assert len(restored_page.steps) == 1
-    assert isinstance(restored_page.steps[0], Step)
+    assert restored_page.instruction is not None
+    assert len(restored_page.instruction.steps) == 1
+    assert isinstance(restored_page.instruction.steps[0], Step)
     assert len(restored_page.dividers) == 1
     assert isinstance(restored_page.dividers[0], Divider)

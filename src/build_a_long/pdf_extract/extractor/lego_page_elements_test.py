@@ -2,6 +2,8 @@
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    CatalogContent,
+    InstructionContent,
     Manual,
     Page,
     PageNumber,
@@ -26,29 +28,31 @@ def _make_sample_manual() -> Manual:
         pdf_page_number=1,
         categories={Page.PageType.INSTRUCTION},
         page_number=PageNumber(bbox=bbox, value=1),
-        steps=[
-            Step(
-                bbox=bbox,
-                step_number=StepNumber(bbox=bbox, value=1),
-                parts_list=PartsList(
+        instruction=InstructionContent(
+            steps=[
+                Step(
                     bbox=bbox,
-                    parts=[
-                        Part(bbox=bbox, count=PartCount(bbox=bbox, count=2)),
-                        Part(bbox=bbox, count=PartCount(bbox=bbox, count=3)),
-                    ],
+                    step_number=StepNumber(bbox=bbox, value=1),
+                    parts_list=PartsList(
+                        bbox=bbox,
+                        parts=[
+                            Part(bbox=bbox, count=PartCount(bbox=bbox, count=2)),
+                            Part(bbox=bbox, count=PartCount(bbox=bbox, count=3)),
+                        ],
+                    ),
                 ),
-            ),
-            Step(
-                bbox=bbox,
-                step_number=StepNumber(bbox=bbox, value=2),
-                parts_list=PartsList(
+                Step(
                     bbox=bbox,
-                    parts=[
-                        Part(bbox=bbox, count=PartCount(bbox=bbox, count=1)),
-                    ],
+                    step_number=StepNumber(bbox=bbox, value=2),
+                    parts_list=PartsList(
+                        bbox=bbox,
+                        parts=[
+                            Part(bbox=bbox, count=PartCount(bbox=bbox, count=1)),
+                        ],
+                    ),
                 ),
-            ),
-        ],
+            ],
+        ),
     )
 
     page2 = Page(
@@ -56,18 +60,20 @@ def _make_sample_manual() -> Manual:
         pdf_page_number=2,
         categories={Page.PageType.INSTRUCTION},
         page_number=PageNumber(bbox=bbox, value=2),
-        steps=[
-            Step(
-                bbox=bbox,
-                step_number=StepNumber(bbox=bbox, value=3),
-                parts_list=PartsList(
+        instruction=InstructionContent(
+            steps=[
+                Step(
                     bbox=bbox,
-                    parts=[
-                        Part(bbox=bbox, count=PartCount(bbox=bbox, count=4)),
-                    ],
+                    step_number=StepNumber(bbox=bbox, value=3),
+                    parts_list=PartsList(
+                        bbox=bbox,
+                        parts=[
+                            Part(bbox=bbox, count=PartCount(bbox=bbox, count=4)),
+                        ],
+                    ),
                 ),
-            ),
-        ],
+            ],
+        ),
     )
 
     page3 = Page(
@@ -75,10 +81,12 @@ def _make_sample_manual() -> Manual:
         pdf_page_number=180,
         categories={Page.PageType.CATALOG},
         page_number=PageNumber(bbox=bbox, value=180),
-        catalog=[
-            Part(bbox=bbox, count=PartCount(bbox=bbox, count=5)),
-            Part(bbox=bbox, count=PartCount(bbox=bbox, count=10)),
-        ],
+        catalog=CatalogContent(
+            parts=[
+                Part(bbox=bbox, count=PartCount(bbox=bbox, count=5)),
+                Part(bbox=bbox, count=PartCount(bbox=bbox, count=10)),
+            ],
+        ),
     )
 
     return Manual(pages=[page1, page2, page3], set_number="75375", name="Test Set")

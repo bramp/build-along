@@ -17,6 +17,7 @@ from PIL import Image, ImageDraw, ImageFont
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Diagram,
+    InstructionContent,
     Page,
     PageNumber,
     Part,
@@ -157,8 +158,9 @@ def draw_page(page: Page, output_path: str = "lego_page_layout.png") -> None:
         draw_progress_bar(draw, page.progress_bar)
 
     # Draw all steps
-    for step in page.steps:
-        draw_step(draw, step)
+    if page.instruction:
+        for step in page.instruction.steps:
+            draw_step(draw, step)
 
     # Save the image
     img.save(output_path)
@@ -313,77 +315,79 @@ def create_sample_page() -> Page:
             progress=0.25,
             full_width=610,
         ),
-        steps=[
-            # Step 1
-            Step(
-                bbox=BBox(60, 100, 740, 350),
-                step_number=StepNumber(
-                    value=1,
-                    bbox=BBox(70, 210, 110, 240),
+        instruction=InstructionContent(
+            steps=[
+                # Step 1
+                Step(
+                    bbox=BBox(60, 100, 740, 350),
+                    step_number=StepNumber(
+                        value=1,
+                        bbox=BBox(70, 210, 110, 240),
+                    ),
+                    parts_list=PartsList(
+                        bbox=BBox(70, 110, 290, 200),
+                        parts=[
+                            # Part 1
+                            Part(
+                                bbox=BBox(80, 120, 140, 185),
+                                count=PartCount(
+                                    count=2,
+                                    bbox=BBox(85, 165, 110, 180),
+                                ),
+                                diagram=PartImage(
+                                    bbox=BBox(85, 125, 135, 160),
+                                ),
+                            ),
+                            # Part 2
+                            Part(
+                                bbox=BBox(150, 120, 280, 185),
+                                count=PartCount(
+                                    count=1,
+                                    bbox=BBox(155, 165, 185, 180),
+                                ),
+                                diagram=PartImage(
+                                    bbox=BBox(155, 125, 225, 160),
+                                ),
+                                number=PartNumber(
+                                    element_id="6091234",
+                                    bbox=BBox(230, 125, 275, 145),
+                                ),
+                            ),
+                        ],
+                    ),
+                    diagram=Diagram(
+                        bbox=BBox(310, 110, 730, 340),
+                    ),
                 ),
-                parts_list=PartsList(
-                    bbox=BBox(70, 110, 290, 200),
-                    parts=[
-                        # Part 1
-                        Part(
-                            bbox=BBox(80, 120, 140, 185),
-                            count=PartCount(
-                                count=2,
-                                bbox=BBox(85, 165, 110, 180),
+                # Step 2
+                Step(
+                    bbox=BBox(60, 380, 740, 540),
+                    step_number=StepNumber(
+                        value=2,
+                        bbox=BBox(70, 490, 110, 520),
+                    ),
+                    parts_list=PartsList(
+                        bbox=BBox(70, 390, 220, 480),
+                        parts=[
+                            # Part 4
+                            Part(
+                                bbox=BBox(80, 400, 180, 475),
+                                count=PartCount(
+                                    count=2,
+                                    bbox=BBox(85, 455, 115, 470),
+                                ),
+                                diagram=PartImage(
+                                    bbox=BBox(85, 405, 175, 450),
+                                ),
                             ),
-                            diagram=PartImage(
-                                bbox=BBox(85, 125, 135, 160),
-                            ),
-                        ),
-                        # Part 2
-                        Part(
-                            bbox=BBox(150, 120, 280, 185),
-                            count=PartCount(
-                                count=1,
-                                bbox=BBox(155, 165, 185, 180),
-                            ),
-                            diagram=PartImage(
-                                bbox=BBox(155, 125, 225, 160),
-                            ),
-                            number=PartNumber(
-                                element_id="6091234",
-                                bbox=BBox(230, 125, 275, 145),
-                            ),
-                        ),
-                    ],
+                        ],
+                    ),
+                    diagram=Diagram(
+                        bbox=BBox(240, 390, 730, 530),
+                    ),
                 ),
-                diagram=Diagram(
-                    bbox=BBox(310, 110, 730, 340),
-                ),
-            ),
-            # Step 2
-            Step(
-                bbox=BBox(60, 380, 740, 540),
-                step_number=StepNumber(
-                    value=2,
-                    bbox=BBox(70, 490, 110, 520),
-                ),
-                parts_list=PartsList(
-                    bbox=BBox(70, 390, 220, 480),
-                    parts=[
-                        # Part 4
-                        Part(
-                            bbox=BBox(80, 400, 180, 475),
-                            count=PartCount(
-                                count=2,
-                                bbox=BBox(85, 455, 115, 470),
-                            ),
-                            diagram=PartImage(
-                                bbox=BBox(85, 405, 175, 450),
-                            ),
-                        ),
-                    ],
-                ),
-                diagram=Diagram(
-                    bbox=BBox(240, 390, 730, 530),
-                ),
-            ),
-        ],
+            ],
+        ),
     )
 
 

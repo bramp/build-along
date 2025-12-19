@@ -524,13 +524,14 @@ def print_classification_debug(
             print(f"Progress bar: {'Yes' if page_obj.progress_bar else 'No'}")
 
             if page_obj.catalog:
-                parts_count = len(page_obj.catalog)
-                total_items = sum(p.count.count for p in page_obj.catalog)
+                parts_count = len(page_obj.catalog.parts)
+                total_items = sum(p.count.count for p in page_obj.catalog.parts)
                 print(f"Catalog: {parts_count} parts ({total_items} total items)")
 
-            print(f"Steps: {len(page_obj.steps)}")
+            steps = page_obj.instruction.steps if page_obj.instruction else []
+            print(f"Steps: {len(steps)}")
 
-            for i, step in enumerate(page_obj.steps, 1):
+            for i, step in enumerate(steps, 1):
                 parts_count = len(step.parts_list.parts) if step.parts_list else 0
                 print(f"  Step {i}: #{step.step_number.value} ({parts_count} parts)")
 
@@ -552,27 +553,27 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
     if page.page_number:
         print(f"  ✓ Page Number: {page.page_number.value}")
 
-    if page.open_bags:
-        print(f"  ✓ Open Bags: {len(page.open_bags)}")
-        for open_bag in page.open_bags:
+    if page.instruction and page.instruction.open_bags:
+        print(f"  ✓ Open Bags: {len(page.instruction.open_bags)}")
+        for open_bag in page.instruction.open_bags:
             bag_label = (
                 f"Bag {open_bag.number.value}" if open_bag.number else "Bag (all)"
             )
             print(f"    - {bag_label} at {open_bag.bbox}")
 
     if page.catalog:
-        parts_count = len(page.catalog)
-        total_items = sum(p.count.count for p in page.catalog)
+        parts_count = len(page.catalog.parts)
+        total_items = sum(p.count.count for p in page.catalog.parts)
         print(f"  ✓ Catalog: {parts_count} parts ({total_items} total items)")
-        if page.catalog:
+        if page.catalog.parts:
             print("      Parts:")
-            for part in page.catalog:
+            for part in page.catalog.parts:
                 number_str = part.number.element_id if part.number else "no number"
                 print(f"        • {part.count.count}x ({number_str})")
 
-    if page.steps:
-        print(f"  ✓ Steps: {len(page.steps)}")
-        for step in page.steps:
+    if page.instruction and page.instruction.steps:
+        print(f"  ✓ Steps: {len(page.instruction.steps)}")
+        for step in page.instruction.steps:
             parts_count = len(step.parts_list.parts) if step.parts_list else 0
             print(f"    - Step {step.step_number.value} ({parts_count} parts)")
             # Print parts list details

@@ -20,5 +20,8 @@
     },
     "full_width": 552.76
   },
-  "unassigned_blocks_count": 0
+  "unassigned_blocks_count": 0,
+  "info": {
+    "__tag__": "InfoContent"
+  }
 }

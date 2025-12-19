@@ -635,11 +635,12 @@ def validate_catalog_coverage(
     # 1. Collect all parts from instruction pages
     instruction_parts: list[tuple[int, Part]] = []  # (page_num, Part)
     for page in manual.instruction_pages:
-        for step in page.steps:
-            if step.parts_list:
-                for part in step.parts_list.parts:
-                    if part.diagram:  # Ensure there's a diagram
-                        instruction_parts.append((page.pdf_page_number, part))
+        if page.instruction:
+            for step in page.instruction.steps:
+                if step.parts_list:
+                    for part in step.parts_list.parts:
+                        if part.diagram:  # Ensure there's a diagram
+                            instruction_parts.append((page.pdf_page_number, part))
 
     if not instruction_parts:
         return
@@ -781,7 +782,10 @@ def validate_parts_list_has_parts(
         page: The classified Page object
         page_data: The raw PageData for context (page number, source)
     """
-    for step in page.steps:
+    if not page.instruction:
+        return
+
+    for step in page.instruction.steps:
         if step.parts_list is None:
             continue
 
@@ -812,7 +816,12 @@ def validate_parts_lists_no_overlap(
         page: The classified Page object
         page_data: The raw PageData for context
     """
-    parts_lists = [step.parts_list for step in page.steps if step.parts_list]
+    if not page.instruction:
+        return
+
+    parts_lists = [
+        step.parts_list for step in page.instruction.steps if step.parts_list
+    ]
 
     for i, pl1 in enumerate(parts_lists):
         for pl2 in parts_lists[i + 1 :]:
@@ -848,11 +857,15 @@ def validate_steps_no_significant_overlap(
         page_data: The raw PageData for context
         overlap_threshold: Maximum allowed IOU (default 5%)
     """
-    if len(page.steps) < 2:
+    if not page.instruction:
         return
 
-    for i, step1 in enumerate(page.steps):
-        for step2 in page.steps[i + 1 :]:
+    steps = page.instruction.steps
+    if len(steps) < 2:
+        return
+
+    for i, step1 in enumerate(steps):
+        for step2 in steps[i + 1 :]:
             iou = step1.bbox.iou(step2.bbox)
             if iou > overlap_threshold:
                 validation.add(
@@ -883,7 +896,10 @@ def validate_part_contains_children(
         page: The classified Page object
         page_data: The raw PageData for context
     """
-    for step in page.steps:
+    if not page.instruction:
+        return
+
+    for step in page.instruction.steps:
         if step.parts_list is None:
             continue
 
@@ -990,21 +1006,23 @@ def validate_content_no_metadata_overlap(
     # diagrams or subassemblies, as those are large visual elements that may
     # legitimately extend into the metadata area
     content_elements: list[tuple[str, object]] = []
-    for step in page.steps:
-        # Check step_number (should never overlap metadata)
-        content_elements.append(
-            (f"Step {step.step_number.value} number", step.step_number)
-        )
-        # Check parts_list if present (should never overlap metadata)
-        if step.parts_list:
+    if page.instruction:
+        for step in page.instruction.steps:
+            # Check step_number (should never overlap metadata)
             content_elements.append(
-                (f"Step {step.step_number.value} parts_list", step.parts_list)
+                (f"Step {step.step_number.value} number", step.step_number)
             )
-        # Diagrams are intentionally NOT checked - they may extend into metadata area
-    for bag in page.open_bags:
-        content_elements.append(("OpenBag", bag))
-    for part in page.catalog:
-        content_elements.append(("CatalogPart", part))
+            # Check parts_list if present (should never overlap metadata)
+            if step.parts_list:
+                content_elements.append(
+                    (f"Step {step.step_number.value} parts_list", step.parts_list)
+                )
+            # Diagrams are intentionally NOT checked - may extend into metadata area
+        for bag in page.instruction.open_bags:
+            content_elements.append(("OpenBag", bag))
+    if page.catalog:
+        for part in page.catalog.parts:
+            content_elements.append(("CatalogPart", part))
 
     # Check for overlaps
     for meta_name, meta_elem in metadata_elements:

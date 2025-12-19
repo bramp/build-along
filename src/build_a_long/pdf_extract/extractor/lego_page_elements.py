@@ -941,6 +941,72 @@ class Step(LegoPageElement):
             yield from substep.iter_elements()
 
 
+class InstructionContent(BaseModel):
+    """Content specific to instruction pages.
+
+    Contains the building steps and open bag indicators that are specific
+    to pages showing how to build the LEGO set.
+    """
+
+    tag: Literal["InstructionContent"] = Field(
+        default="InstructionContent", alias="__tag__", frozen=True
+    )
+
+    steps: list[Step] = Field(default_factory=list)
+    """List of Step elements on the page."""
+
+    open_bags: list[OpenBag] = Field(default_factory=list)
+    """List of OpenBag elements indicating which bags to open."""
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over all child elements."""
+        for open_bag in self.open_bags:
+            yield from open_bag.iter_elements()
+        for step in self.steps:
+            yield from step.iter_elements()
+
+
+class CatalogContent(BaseModel):
+    """Content specific to catalog/inventory pages.
+
+    Contains parts that are displayed as a catalog or inventory listing,
+    not associated with building steps.
+    """
+
+    tag: Literal["CatalogContent"] = Field(
+        default="CatalogContent", alias="__tag__", frozen=True
+    )
+
+    parts: list[Part] = Field(default_factory=list)
+    """List of Part elements shown in the catalog."""
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over all child elements."""
+        for part in self.parts:
+            yield from part.iter_elements()
+
+
+class InfoContent(BaseModel):
+    """Content specific to info pages.
+
+    Contains decorative elements and other informational content that
+    appears on pages without building instructions (e.g., cover pages,
+    introduction pages).
+    """
+
+    tag: Literal["InfoContent"] = Field(
+        default="InfoContent", alias="__tag__", frozen=True
+    )
+
+    decorations: list[Decoration] = Field(default_factory=list)
+    """List of decorative elements (logos, graphics, etc.)."""
+
+    def iter_elements(self) -> Iterator[LegoPageElement]:
+        """Iterate over all child elements."""
+        for decoration in self.decorations:
+            yield from decoration.iter_elements()
+
+
 class Page(LegoPageElement):
     """A complete page of LEGO instructions.
 
@@ -948,14 +1014,14 @@ class Page(LegoPageElement):
     It represents the structured, hierarchical view of the page after classification
     and hierarchy building.
 
-    Attributes:
-        pdf_page_number: The 1-indexed page number from the original PDF
-        page_number: The LEGO page number element (printed on the page), if found
-        steps: List of Step elements on the page (for INSTRUCTION pages)
-        catalog: Parts list for catalog/inventory pages (for CATALOG pages)
-        warnings: List of warnings generated during hierarchy building
-        unprocessed_elements: Raw elements that were classified but couldn't
-            be converted
+    Pages are composed of:
+    - Common elements (background, page_number, progress_bar, etc.)
+    - Optional content types based on page category:
+      - instruction: Steps and open bags for building instructions
+      - catalog: Parts list for inventory pages
+      - info: Decorative content for informational pages
+
+    A page can have multiple content types (e.g., both instruction and catalog).
     """
 
     class PageType(Enum):
@@ -1009,13 +1075,15 @@ class Page(LegoPageElement):
     """Count of blocks on the page that were not assigned to any element or filtered
     out."""
 
-    open_bags: list[OpenBag] = Field(default_factory=list)
-    steps: list[Step] = Field(default_factory=list)
-    catalog: list[Part] = Field(default_factory=list)
-    """List of parts for catalog pages. Empty list for non-catalog pages."""
+    # Content by page type (composition pattern)
+    instruction: InstructionContent | None = None
+    """Content for instruction pages (steps, open bags). None if not instruction."""
 
-    decorations: list[Decoration] = Field(default_factory=list)
-    """List of decorative elements on INFO pages (logos, graphic elements, etc.)."""
+    catalog: CatalogContent | None = None
+    """Content for catalog pages (parts listing). None if not catalog."""
+
+    info: InfoContent | None = None
+    """Content for info pages (decorations). None if not info."""
 
     @property
     def is_instruction(self) -> bool:
@@ -1040,9 +1108,21 @@ class Page(LegoPageElement):
             if self.categories
             else ""
         )
-        bags_str = f", bags={len(self.open_bags)}" if self.open_bags else ""
-        catalog_str = f", catalog={len(self.catalog)} parts" if self.catalog else ""
-        steps_str = f", steps={len(self.steps)}" if self.steps else ""
+        bags_str = (
+            f", bags={len(self.instruction.open_bags)}"
+            if self.instruction and self.instruction.open_bags
+            else ""
+        )
+        catalog_str = (
+            f", catalog={len(self.catalog.parts)} parts"
+            if self.catalog and self.catalog.parts
+            else ""
+        )
+        steps_str = (
+            f", steps={len(self.instruction.steps)}"
+            if self.instruction and self.instruction.steps
+            else ""
+        )
         return (
             f"Page(number={page_num}{categories_str}{bags_str}{catalog_str}{steps_str})"
         )
@@ -1076,17 +1156,15 @@ class Page(LegoPageElement):
         for preview in self.previews:
             yield from preview.iter_elements()
 
-        for open_bag in self.open_bags:
-            yield from open_bag.iter_elements()
+        # Yield content from composed objects
+        if self.instruction:
+            yield from self.instruction.iter_elements()
 
-        for part in self.catalog:
-            yield from part.iter_elements()
+        if self.catalog:
+            yield from self.catalog.iter_elements()
 
-        for decoration in self.decorations:
-            yield from decoration.iter_elements()
-
-        for step in self.steps:
-            yield from step.iter_elements()
+        if self.info:
+            yield from self.info.iter_elements()
 
 
 LegoPageElements = Annotated[
@@ -1221,7 +1299,8 @@ class Manual(SerializationMixin, BaseModel):
         """
         parts: list[Part] = []
         for page in self.catalog_pages:
-            parts.extend(page.catalog)
+            if page.catalog:
+                parts.extend(page.catalog.parts)
         return parts
 
     @property
@@ -1233,7 +1312,8 @@ class Manual(SerializationMixin, BaseModel):
         """
         steps: list[Step] = []
         for page in self.instruction_pages:
-            steps.extend(page.steps)
+            if page.instruction:
+                steps.extend(page.instruction.steps)
         return steps
 
     @property
