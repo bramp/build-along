@@ -28,6 +28,7 @@
     {
       description: "Ideas Christmas Tree (40573) - Individual page fixtures",
       pdf: "data/40573/6433200.pdf",
+      //  31 is a full page diagram with a Image (not vector) arrow.
       pages: "4,5,7,31",
     },
 
