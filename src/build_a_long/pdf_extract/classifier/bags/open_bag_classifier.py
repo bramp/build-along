@@ -411,8 +411,18 @@ class OpenBagClassifier(LabelClassifier):
                     detail_score.cluster_bbox, result
                 )
 
+        # Compute bbox as union of source_blocks + children
+        # This ensures the bbox matches source_blocks + children as required
+        bbox = BBox.union_all([b.bbox for b in candidate.source_blocks])
+        if bag_number:
+            bbox = bbox.union(bag_number.bbox)
+        if part:
+            bbox = bbox.union(part.bbox)
+        if loose_part_symbol:
+            bbox = bbox.union(loose_part_symbol.bbox)
+
         return OpenBag(
-            bbox=detail_score.cluster_bbox,
+            bbox=bbox,
             number=bag_number,
             part=part,
             loose_part_symbol=loose_part_symbol,

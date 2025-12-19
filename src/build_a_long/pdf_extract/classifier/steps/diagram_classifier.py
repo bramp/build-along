@@ -194,18 +194,13 @@ class DiagramClassifier(LabelClassifier):
         # Find all unclaimed images that can be clustered with this one
         clustered_blocks = self._expand_cluster(seed_block, result, constraint_bbox)
 
-        # Calculate the combined bbox
-        cluster_bbox = BBox.union_all([b.bbox for b in clustered_blocks])
-
-        # Clip diagram bbox to page bounds (and constraint if provided)
-        diagram_bbox = cluster_bbox.clip_to(page_bbox)
-        if constraint_bbox:
-            # TODO Do we need this? this would indicate a problem in clustering
-            diagram_bbox = diagram_bbox.clip_to(constraint_bbox)
-
         # Update the candidate's source_blocks to include all clustered blocks
         # This ensures they all get marked as consumed
         candidate.source_blocks = list(clustered_blocks)
+
+        # Calculate the combined bbox from source_blocks (not clipped)
+        # This ensures bbox matches source_blocks as required by the assertion
+        diagram_bbox = BBox.union_all([b.bbox for b in candidate.source_blocks])
 
         log.debug(
             "[diagram] Building diagram at %s (clustered %d images%s)",

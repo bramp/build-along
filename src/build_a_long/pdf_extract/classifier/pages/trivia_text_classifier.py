@@ -262,7 +262,11 @@ class TriviaTextClassifier(LabelClassifier):
         detail_score = candidate.score_details
         assert isinstance(detail_score, _TriviaTextScore)
 
+        # Compute bbox as union of source_blocks
+        # This ensures the bbox matches source_blocks as required by the assertion
+        bbox = BBox.union_all([b.bbox for b in candidate.source_blocks])
+
         return TriviaText(
-            bbox=candidate.bbox,
+            bbox=bbox,
             text_lines=detail_score.text_lines,
         )

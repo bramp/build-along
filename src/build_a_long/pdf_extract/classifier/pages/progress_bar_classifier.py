@@ -135,9 +135,15 @@ class ProgressBarClassifier(RuleBasedClassifier):
             config,
         )
 
+        # Compute final bbox as union of source blocks + indicator (if present)
+        # This ensures the bbox matches source_blocks + children as required
+        bbox = BBox.union_all([b.bbox for b in candidate.source_blocks])
+        if indicator:
+            bbox = bbox.union(indicator.bbox)
+
         # Construct the ProgressBar element
         return ProgressBar(
-            bbox=clipped_bbox,
+            bbox=bbox,
             progress=progress,
             full_width=original_width,
             indicator=indicator,
