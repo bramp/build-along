@@ -1055,6 +1055,8 @@ class Page(LegoPageElement):
         """
         yield self
 
+        if self.background:
+            yield from self.background.iter_elements()
         if self.page_number:
             yield from self.page_number.iter_elements()
         if self.progress_bar:
