@@ -54,18 +54,6 @@ class TestClassifierConfig:
 class TestClassificationResult:
     """Tests for ClassificationResult."""
 
-    def test_add_and_get_warnings(self) -> None:
-        """Test adding and retrieving warnings."""
-        page_data = PageBuilder(page_number=1, width=100, height=100).build()
-        result = ClassificationResult(page_data=page_data)
-        result.add_warning("Warning 1")
-        result.add_warning("Warning 2")
-
-        warnings = result.get_warnings()
-        assert len(warnings) == 2
-        assert "Warning 1" in warnings
-        assert "Warning 2" in warnings
-
     def test_add_and_get_candidate(self) -> None:
         """Test adding and retrieving candidates."""
         page = (
@@ -122,7 +110,8 @@ class TestClassificationResultValidation:
 
     def test_post_init_validates_unique_block_ids(self) -> None:
         """Test that __post_init__ validates PageData blocks have unique IDs."""
-        # PageBuilder handles IDs automatically if not provided, but here we force duplicates
+        # PageBuilder handles IDs automatically if not provided,
+        # but here we force duplicates
         page = (
             PageBuilder(page_number=1, width=100, height=100)
             .add_text("1", 0, 0, 10, 10, id=1)
@@ -142,7 +131,6 @@ class TestClassificationResultValidation:
             .add_text("1", 0, 0, 10, 10, id=1)
             .build()
         )
-        block1 = page.blocks[0]
         # Create a block not in PageData
         block2 = Text(bbox=BBox(20, 20, 30, 30), text="2", id=2)
 

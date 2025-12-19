@@ -432,12 +432,6 @@ def print_classification_debug(
     )
     print(f"Candidates: {total_candidates} total | {num_synthetic} synthetic")
 
-    warnings = result.get_warnings()
-    if warnings:
-        print(f"Warnings: {len(warnings)}")
-        for warning in warnings:
-            print(f"  ⚠ {warning}")
-
     # Detailed candidate analysis
     if show_candidates:
         print(f"\n{'=' * 80}")

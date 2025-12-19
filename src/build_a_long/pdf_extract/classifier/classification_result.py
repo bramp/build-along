@@ -88,13 +88,6 @@ class ClassificationResult(BaseModel):
     When set, most classification results will be empty.
     """
 
-    # TODO Do we need this field? Can we remove it?
-    warnings: list[str] = Field(default_factory=list)
-    """Warning messages generated during classification.
-    
-    Public for serialization. Prefer using add_warning() and get_warnings() methods.
-    """
-
     removal_reasons: dict[int, RemovalReason] = Field(default_factory=dict)
     """Maps block IDs (block.id, not id(block)) to the reason they were removed.
     
@@ -251,7 +244,9 @@ class ClassificationResult(BaseModel):
             # bbox includes diagram which is only determined at build time).
             if candidate.bbox != element.bbox:
                 log.debug(
-                    "[build] Updating candidate bbox from %s to %s - This indicate the bbox changed between score and build, and may indicate a classification bug",
+                    "[build] Updating candidate bbox from %s to %s - "
+                    "This indicates the bbox changed between score and build, "
+                    "and may indicate a classification bug",
                     candidate.bbox,
                     element.bbox,
                 )
@@ -396,22 +391,6 @@ class ClassificationResult(BaseModel):
             assert isinstance(page, Page)
             return page
         return None
-
-    def add_warning(self, warning: str) -> None:
-        """Add a warning message to the classification result.
-
-        Args:
-            warning: The warning message to add
-        """
-        self.warnings.append(warning)
-
-    def get_warnings(self) -> list[str]:
-        """Get all warnings generated during classification.
-
-        Returns:
-            List of warning messages
-        """
-        return self.warnings.copy()
 
     # TODO Reconsider the methods below - some may be redundant.
 

@@ -89,13 +89,6 @@ from build_a_long.pdf_extract.classifier.steps import (
 from build_a_long.pdf_extract.classifier.text import FontSizeHints, TextHistogram
 from build_a_long.pdf_extract.classifier.topological_sort import topological_sort
 from build_a_long.pdf_extract.extractor import PageData
-from build_a_long.pdf_extract.extractor.bbox import filter_contained
-from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    PageNumber,
-    PartCount,
-    PartsList,
-    StepNumber,
-)
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 
 logger = logging.getLogger(__name__)
@@ -378,11 +371,6 @@ class Classifier:
         # 3. Validate classification invariants
         self._validate_classification_result(result)
 
-        # TODO Do we actualy ever add warnings?
-        warnings = self._log_post_classification_warnings(page_data, result)
-        for warning in warnings:
-            result.add_warning(warning)
-
         return result
 
     def _validate_classification_result(self, result: ClassificationResult) -> None:
@@ -417,37 +405,3 @@ class Classifier:
         assert_page_elements_tracked(result)
         assert_constructed_elements_on_page(result)
         assert_element_bbox_matches_source_and_children(result)
-
-    def _log_post_classification_warnings(
-        self, page_data: PageData, result: ClassificationResult
-    ) -> list[str]:
-        warnings = []
-
-        # Check if there's a page number
-        page_numbers = result.get_winners_by_score("page_number", PageNumber)
-        if not page_numbers:
-            warnings.append(f"Page {page_data.page_number}: missing page number")
-
-        # Get elements by label
-        parts_lists = result.get_winners_by_score("parts_list", PartsList)
-        part_counts = result.get_winners_by_score("part_count", PartCount)
-
-        for pl in parts_lists:
-            inside_counts = filter_contained(part_counts, pl.bbox)
-            if not inside_counts:
-                warnings.append(
-                    f"Page {page_data.page_number}: parts list at {pl.bbox} "
-                    f"contains no part counts"
-                )
-
-        steps = result.get_winners_by_score("step_number", StepNumber)
-        ABOVE_EPS = 2.0
-        for step in steps:
-            sb = step.bbox
-            above = [pl for pl in parts_lists if pl.bbox.y1 <= sb.y0 + ABOVE_EPS]
-            if not above:
-                warnings.append(
-                    f"Page {page_data.page_number}: step number '{step.value}' "
-                    f"at {sb} has no parts list above it"
-                )
-        return warnings
