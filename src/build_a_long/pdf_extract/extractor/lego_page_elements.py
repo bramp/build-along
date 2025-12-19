@@ -460,6 +460,31 @@ class TriviaText(LegoPageElement):
         return f"TriviaText(lines={len(self.text_lines)}, {preview!r})"
 
 
+class Decoration(LegoPageElement):
+    """A decorative element on INFO pages (logos, graphics, etc.).
+
+    Decorations are visual elements that appear on non-instruction pages
+    like covers, credits, table of contents, and other informational pages.
+    They are not part of the building instructions and exist primarily
+    to claim blocks that would otherwise be left unassigned.
+
+    Characteristics:
+    - Can be any visual element: logos, images, text, graphics
+    - Appears on pages classified as INFO pages
+    - Not semantically meaningful for instruction purposes
+
+    Positional context: Can appear anywhere on INFO pages.
+    """
+
+    tag: Literal["Decoration"] = Field(
+        default="Decoration", alias="__tag__", frozen=True
+    )
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"Decoration(bbox={self.bbox})"
+
+
 class RotationSymbol(LegoPageElement):
     """A symbol indicating the builder should rotate the assembled model.
 
@@ -986,6 +1011,9 @@ class Page(LegoPageElement):
     catalog: list[Part] = Field(default_factory=list)
     """List of parts for catalog pages. Empty list for non-catalog pages."""
 
+    decorations: list[Decoration] = Field(default_factory=list)
+    """List of decorative elements on INFO pages (logos, graphic elements, etc.)."""
+
     @property
     def is_instruction(self) -> bool:
         """Check if this page is an instruction page."""
@@ -1049,6 +1077,9 @@ class Page(LegoPageElement):
         for part in self.catalog:
             yield from part.iter_elements()
 
+        for decoration in self.decorations:
+            yield from decoration.iter_elements()
+
         for step in self.steps:
             yield from step.iter_elements()
 
@@ -1067,6 +1098,7 @@ LegoPageElements = Annotated[
     | ProgressBarIndicator
     | Background
     | TriviaText
+    | Decoration
     | Divider
     | RotationSymbol
     | Arrow

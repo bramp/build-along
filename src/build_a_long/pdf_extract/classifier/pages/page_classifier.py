@@ -28,6 +28,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.score import Score
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Background,
+    Decoration,
     Divider,
     OpenBag,
     Page,
@@ -62,6 +63,7 @@ class PageClassifier(LabelClassifier):
     requires = frozenset(
         {
             "background",
+            "decoration",
             "divider",
             "page_number",
             "preview",
@@ -136,6 +138,13 @@ class PageClassifier(LabelClassifier):
         dividers = result.build_all_for_label("divider")
         assert all(isinstance(d, Divider) for d in dividers)
         dividers = [d for d in dividers if isinstance(d, Divider)]  # type narrow
+
+        # Build all decorations (INFO page content)
+        decorations = result.build_all_for_label("decoration")
+        assert all(isinstance(d, Decoration) for d in decorations)
+        decorations = [
+            d for d in decorations if isinstance(d, Decoration)
+        ]  # type narrow
 
         # Build trivia text (if any) - only one per page
         # TODO Consider multiple per page
@@ -250,13 +259,14 @@ class PageClassifier(LabelClassifier):
 
         log.debug(
             "[page] page=%s categories=%s page_number=%s progress_bar=%s "
-            "background=%s dividers=%d previews=%d open_bags=%d steps=%d catalog=%s",
+            "background=%s dividers=%d decorations=%d previews=%d open_bags=%d steps=%d catalog=%s",
             page_data.page_number,
             [c.name for c in categories],
             page_number.value if page_number else None,
             progress_bar is not None,
             background is not None,
             len(dividers),
+            len(decorations),
             len(previews),
             len(open_bags),
             len(steps),
@@ -271,6 +281,7 @@ class PageClassifier(LabelClassifier):
             progress_bar=progress_bar,
             background=background,
             dividers=dividers,
+            decorations=decorations,
             scale=scale,
             previews=previews,
             trivia_text=trivia_text,
