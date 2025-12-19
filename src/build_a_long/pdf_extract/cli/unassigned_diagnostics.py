@@ -134,7 +134,9 @@ def categorize_unassigned_block(
                 block=block,
                 category=UnassignedCategory.LARGE_UNCLASSIFIED,
                 reason=f"Large drawing ({bbox.area / page_area * 100:.1f}% of page)",
-                recommendation="Review if this should be a background, diagram, or other element",
+                recommendation=(
+                    "Review if this should be a background, diagram, or other element"
+                ),
             )
 
     # Check for whitespace-only text
@@ -174,7 +176,9 @@ def categorize_unassigned_block(
             block=block,
             category=UnassignedCategory.IMAGE_IN_COMPLEX_PAGE,
             reason="Image not assigned to any element",
-            recommendation="Review if this should be a diagram, part_image, or other element",
+            recommendation=(
+                "Review if this should be a diagram, part_image, or other element"
+            ),
         )
 
     # Default: unknown category
@@ -315,7 +319,10 @@ def print_unassigned_diagnostics(
                 print(f"  {category.name}:")
                 for info in blocks[:5]:  # Limit to 5 per category per page
                     block = info.block
-                    bbox_str = f"({block.bbox.x0:.1f},{block.bbox.y0:.1f},{block.bbox.x1:.1f},{block.bbox.y1:.1f})"
+                    bbox_str = (
+                        f"({block.bbox.x0:.1f},{block.bbox.y0:.1f},"
+                        f"{block.bbox.x1:.1f},{block.bbox.y1:.1f})"
+                    )
                     print(f"    #{block.id} {type(block).__name__} {bbox_str}")
                     print(f"       Reason: {info.reason}")
 

@@ -271,9 +271,10 @@ class PartImage(LegoPageElement):
     shine: Shine | None = None
     """Optional shine effect indicating a metallic part."""
 
-    # TODO: image_id, digest, and xref are temporary identifiers used for classification,
-    # deduplication, and validation. They should eventually be removed in favor of
-    # directly linking matching PartImage objects or using a centralized AssetManager.
+    # TODO: image_id, digest, and xref are temporary identifiers used for
+    # classification, deduplication, and validation. They should eventually be
+    # removed in favor of directly linking matching PartImage objects or using
+    # a centralized AssetManager.
     image_id: str | None = Field(default=None, exclude=True)
     """Optional image ID from the source Image block (e.g., 'image_123')."""
 

@@ -31,8 +31,9 @@ def test_find_best_scoring_multiple():
 
 def test_find_best_scoring_tie():
     # Stability of max is not guaranteed by python docs for generic iterables
-    # without specific constraints, but for lists it usually returns the first max encountered.
-    # However, the function contract just says "the item with the highest score".
+    # without specific constraints, but for lists it usually returns the first
+    # max encountered. However, the function contract just says "the item with
+    # the highest score".
     item1 = MockScoredItem(score=0.8, name="first")
     item2 = MockScoredItem(score=0.8, name="second")
 

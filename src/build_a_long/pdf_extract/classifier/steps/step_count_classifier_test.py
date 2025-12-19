@@ -215,8 +215,10 @@ class TestFontSizeScoring:
 
         step_count_classifier_with_hints._score(result)
 
-        # Should be rejected because font_size_score is 0.0 -> total score lower than threshold
-        # Assuming weights are balanced enough that 0.0 on font size fails the candidate
+        # Should be rejected because font_size_score is 0.0
+        # -> total score lower than threshold
+        # Assuming weights are balanced enough that 0.0 on font size
+        # fails the candidate
         candidates = result.get_scored_candidates("step_count", valid_only=False)
 
         if len(candidates) > 0:

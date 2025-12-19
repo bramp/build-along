@@ -7,9 +7,9 @@ Identify SubStep elements by finding substep numbers paired with diagrams.
 
 SubSteps are mini-steps that appear either:
 1. Inside SubAssembly callout boxes (numbered 1, 2, 3 within the box)
-2. As "naked" substeps on the page (small numbers 1, 2, 3, 4 alongside a main step like 338)
+2. As "naked" substeps on the page (small numbers 1, 2, 3, 4 alongside a main step)
 
-This classifier pairs substep_number candidates with diagram candidates based on position:
+This classifier pairs substep_number with diagram candidates based on position:
 - Step number should be to the left or above the diagram
 - Step number and diagram should be relatively close together
 

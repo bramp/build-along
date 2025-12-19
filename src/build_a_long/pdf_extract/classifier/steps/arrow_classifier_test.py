@@ -594,7 +594,7 @@ class TestShaftDetection:
     def test_two_heads_sharing_same_shaft_grouped_together(
         self, arrow_classifier: ArrowClassifier
     ):
-        """Test that two arrowheads sharing the same shaft are grouped into one arrow."""
+        """Test that two arrowheads sharing the same shaft are grouped."""
         # Create an L-shaped shaft with two arrowheads at different ends
         # L-shape: horizontal from (100, 200) to (200, 200), then vertical to (200, 300)
 

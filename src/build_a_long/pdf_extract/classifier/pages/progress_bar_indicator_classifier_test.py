@@ -6,7 +6,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
-from build_a_long.pdf_extract.classifier.pages.progress_bar_indicator_classifier import (
+from build_a_long.pdf_extract.classifier.pages.progress_bar_indicator_classifier import (  # noqa: E501
     ProgressBarIndicatorClassifier,
 )
 from build_a_long.pdf_extract.extractor import PageData

@@ -82,7 +82,8 @@ def calculate_position_score(
     diag_center_x, diag_center_y = diagram_bbox.center
 
     # Calculate how far "wrong" the position is for each axis
-    # Negative values mean we're in the correct direction (left of center / above center)
+    # Negative values mean we're in the correct direction
+    # (left of center / above center)
     # Positive values mean we're in the wrong direction
 
     # X axis: ideal is to the left of diagram center

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 
 def score_triangular(
     val: float, min_val: float, ideal_val: float, max_val: float
@@ -51,6 +53,4 @@ def score_linear(
 
 def score_exponential_decay(val: float, scale: float) -> float:
     """Calculate exponential decay score: exp(-val / scale)."""
-    import math
-
     return math.exp(-val / scale)

@@ -1,6 +1,7 @@
 [tool.ruff]
 target-version = "py314"
 line-length = 88
+src = ["src"]
 
 [tool.ruff.lint]
 extend-select = [
@@ -18,8 +19,16 @@ extend-select = [
   # isort
   "I",
 ]
-# Pants fmt handles the line length, so avoid linting
-ignore = ["E501"]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 88
+
+[tool.ruff.lint.per-file-ignores]
+# Test file contains JSON test data with very long Apollo GraphQL state keys
+"**/legocom_test.py" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["build_a_long"]
 
 [tool.pytest.ini_options]
 log_cli = true

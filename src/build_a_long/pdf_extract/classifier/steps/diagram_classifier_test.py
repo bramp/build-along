@@ -44,7 +44,10 @@ class TestDiagramScoring:
     def test_multiple_images_create_multiple_candidates(
         self, classifier: DiagramClassifier
     ) -> None:
-        """Test that multiple images create multiple candidates (no clustering during score)."""
+        """Test that multiple images create multiple candidates.
+
+        No clustering occurs during the score phase.
+        """
         page_bbox = BBox(0, 0, 200, 300)
         # Three overlapping images - each becomes a candidate
         img1 = Image(id=1, bbox=BBox(50, 100, 100, 150))
@@ -154,7 +157,7 @@ class TestDiagramBuilding:
     def test_build_respects_consumed_blocks(
         self, classifier: DiagramClassifier
     ) -> None:
-        """Test that build() doesn't include images already consumed by other classifiers."""
+        """Test that build() doesn't include already-consumed images."""
         page_bbox = BBox(0, 0, 200, 300)
         # Three overlapping images
         img1 = Image(id=1, bbox=BBox(50, 100, 100, 150))

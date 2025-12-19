@@ -10,6 +10,10 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.classifier.config import SubAssemblyConfig
+from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.classifier.steps.diagram_classifier import (
+    DiagramClassifier,
+)
 from build_a_long.pdf_extract.classifier.steps.step_count_classifier import (
     StepCountClassifier,
 )
@@ -200,11 +204,6 @@ class TestSubAssemblyClassifier:
         config: ClassifierConfig,
     ):
         """Test building a SubAssembly element from a candidate."""
-        from build_a_long.pdf_extract.classifier.score import Score, Weight
-        from build_a_long.pdf_extract.classifier.steps.diagram_classifier import (
-            DiagramClassifier,
-        )
-
         box_bbox = BBox(x0=100.0, y0=100.0, x1=200.0, y1=160.0)
         box_drawing = make_drawing(box_bbox, id=1)
         # Add an image inside the box to serve as the diagram

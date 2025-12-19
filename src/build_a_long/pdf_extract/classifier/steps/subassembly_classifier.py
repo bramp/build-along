@@ -306,7 +306,6 @@ class SubAssemblyClassifier(LabelClassifier):
         a step_count candidate.
         """
         bbox = candidate.bbox
-        page_data = result.page_data
 
         # Get candidates for child element discovery
         step_count_candidates = result.get_scored_candidates(

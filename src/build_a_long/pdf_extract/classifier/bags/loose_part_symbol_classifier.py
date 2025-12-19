@@ -116,8 +116,8 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
         super()._score(result)
 
         # 2. Refine candidates (which currently represent just the anchors)
-        # Get all candidates including failed ones, but we only care about valid ones here
-        # actually super()._score only adds valid ones.
+        # Get all candidates including failed ones, but we only care about
+        # valid ones here. Actually super()._score only adds valid ones.
         candidates = result.get_scored_candidates(self.output, valid_only=False)
 
         # We need to iterate carefully as we might modify them

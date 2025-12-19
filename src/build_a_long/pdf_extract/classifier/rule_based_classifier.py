@@ -133,7 +133,8 @@ class RuleBasedClassifier(LabelClassifier):
             # Check classifier-specific acceptance logic
             if not self._should_accept(final_score):
                 log.debug(
-                    "[%s] block_id=%s rejected: score=%.3f < min_score=%.3f components=%s",
+                    "[%s] block_id=%s "
+                    "rejected: score=%.3f < min_score=%.3f components=%s",
                     self.output,
                     block.id,
                     final_score,
@@ -166,7 +167,7 @@ class RuleBasedClassifier(LabelClassifier):
 
             # Compute bbox as the union of all source blocks
             # This ensures the candidate bbox matches the source_blocks union,
-            # which is required by validation (assert_element_bbox_matches_source_and_children)
+            # required by validation (assert_element_bbox_matches_source_and_children)
             candidate_bbox = BBox.union_all([b.bbox for b in source_blocks])
 
             # Create candidate

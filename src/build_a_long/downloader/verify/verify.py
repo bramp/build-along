@@ -39,7 +39,8 @@ def _verify_single_metadata(metadata_path: Path) -> list[VerificationError]:
             VerificationError(
                 type="invalid_metadata",
                 message=(
-                    f"Error: Could not validate or parse metadata in {metadata_path}: {e}"
+                    f"Error: Could not validate or parse metadata in "
+                    f"{metadata_path}: {e}"
                 ),
             )
         )

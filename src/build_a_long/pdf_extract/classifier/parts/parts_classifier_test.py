@@ -55,8 +55,8 @@ class TestPartsClassification:
             .add_text("3x", 30, 50, 10, 10, id=4)  # t3
         )
         page = builder.build()
-        img1 = cast(Image, page.blocks[0])
-        img2 = cast(Image, page.blocks[1])
+        _ = cast(Image, page.blocks[0])
+        _ = cast(Image, page.blocks[1])
         t1 = cast(Text, page.blocks[2])
         t2 = cast(Text, page.blocks[3])
         t3 = cast(Text, page.blocks[4])
@@ -83,14 +83,16 @@ class TestPartsClassification:
             assert isinstance(part, Part)
             parts.append(part)
 
-        # Verify that only 2 Parts are created (img1 pairs with one of t1/t2, img2 pairs with t3)
+        # Verify that only 2 Parts are created
+        # (img1 pairs with one of t1/t2, img2 pairs with t3)
         assert len(parts) == 2
 
         # Verify the Part objects have the expected counts
         part_counts = sorted([p.count.count for p in parts])
         assert part_counts == [2, 3]
 
-        # Verify that only 2 PartCounts were successfully constructed (one of t1/t2 lost conflict)
+        # Verify that only 2 PartCounts were successfully constructed
+        # (one of t1/t2 lost conflict)
         assert result.count_successful_candidates("part_count") == 2
 
     def test_part_count_without_nearby_image(
@@ -106,7 +108,7 @@ class TestPartsClassification:
         )
         page = builder.build()
         t1 = cast(Text, page.blocks[0])
-        img1 = cast(Image, page.blocks[1])
+        _ = cast(Image, page.blocks[1])
 
         result = ClassificationResult(page_data=page)
         PartsImageClassifier(config=classifier.config).score(result)
@@ -139,7 +141,7 @@ class TestPartsClassification:
             .add_text("2x", 10, 60, 10, 10, id=2)  # t1 (y=60..70)
         )
         page = builder.build()
-        img_far = cast(Image, page.blocks[0])
+        _ = cast(Image, page.blocks[0])
         img_near = cast(Image, page.blocks[1])
         t1 = cast(Text, page.blocks[2])
 
@@ -184,7 +186,7 @@ class TestPartsClassification:
             .add_text("2x", 150, 50, 10, 10, id=1)  # t1 (Not aligned)
         )
         page = builder.build()
-        img1 = cast(Image, page.blocks[0])
+        _ = cast(Image, page.blocks[0])
         t1 = cast(Text, page.blocks[1])
 
         result = ClassificationResult(page_data=page)
@@ -216,7 +218,7 @@ class TestPartsClassification:
             .add_text("3x", 10, 70, 10, 10, id=2)  # t2 (farther)
         )
         page = builder.build()
-        img1 = cast(Image, page.blocks[0])
+        _ = cast(Image, page.blocks[0])
         t1 = cast(Text, page.blocks[1])
         t2 = cast(Text, page.blocks[2])
 
@@ -242,7 +244,8 @@ class TestPartsClassification:
         assert len(parts) == 1
         assert parts[0].count.count == 2  # paired with t1 (the closer one)
 
-        # Only 1 PartCount should be successfully constructed (t2 lost conflict, or simply not paired)
+        # Only 1 PartCount should be successfully constructed
+        # (t2 lost conflict, or simply not paired)
         assert result.count_successful_candidates("part_count") == 1
         unconstructed_pc_candidate = result.get_candidate_for_block(t2, "part_count")
         assert unconstructed_pc_candidate is not None

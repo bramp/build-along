@@ -88,8 +88,10 @@ class PieceLengthClassifier(RuleBasedClassifier):
         # Parse value
         value = int(text_block.text.strip())
 
-        # Use the candidate's bbox (which currently is just the text bbox from RuleBasedClassifier)
-        # We need to find the containing drawing again to include it in the final bbox
+        # Use the candidate's bbox (which currently is just the text bbox
+        # from RuleBasedClassifier)
+        # We need to find the containing drawing again to include it
+        # in the final bbox
         # This duplicates logic from TextContainerFitRule, but it's necessary since
         # RuleBasedClassifier doesn't pass rule-internal state to build.
         # Alternatively, we could expand the bbox in _score if we overrode it,

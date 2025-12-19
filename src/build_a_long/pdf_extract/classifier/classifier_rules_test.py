@@ -141,9 +141,13 @@ class TestClassifierRules:
                 for candidate in candidates:
                     if candidate.constructed is not None:
                         elem_id = id(candidate.constructed)
+                        src_id = (
+                            id(candidate.source_blocks[0])
+                            if candidate.source_blocks
+                            else "None"
+                        )
                         assert elem_id not in element_id_to_candidate, (
-                            f"Source block id:"
-                            f"{id(candidate.source_blocks[0]) if candidate.source_blocks else 'None'} "
+                            f"Source block id:{src_id} "
                             f"produced multiple elements of type "
                             f"{candidate.constructed.__class__.__name__} "
                             f"in {fixture_file} page {page_idx}"

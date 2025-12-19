@@ -102,11 +102,6 @@ class PageBuilder:
                     "size": span["size"],
                     "seqno": span["seqno"],
                     "chars": chars,
-                    # "text": text, # texttrace doesn't have "text" field directly on span?
-                    # Actually, TexttraceSpanDict definition in pymupdf_types.py implies it does NOT have 'text'.
-                    # But our make_texttrace_span helper in tests put it there? No, it put 'chars'.
-                    # Wait, Extractor._extract_text_blocks_from_texttrace uses span.get("bbox") and Text.from_texttrace_span.
-                    # Text.from_texttrace_span likely reconstructs text from chars.
                 }
             )
         return spans

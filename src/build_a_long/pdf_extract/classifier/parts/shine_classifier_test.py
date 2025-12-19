@@ -35,7 +35,8 @@ def test_shine_classification() -> None:
     shine_part_image = shine_consumers[0]
 
     # Verify it's the correct shine drawing (check bbox match as proxy)
-    # The shine element doesn't store the original block ID directly, but we can check bbox
+    # The shine element doesn't store the original block ID directly,
+    # but we can check bbox
     assert isinstance(shine_part_image.shine, Shine)
     # BBox should match drawing id=67/68: [114.88..., 258.48...]
     # This is the shine on the part image in step 16

@@ -49,7 +49,6 @@ class TestStepClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        config = classifier.config
         # Register all relevant classifiers
 
         factory = candidate_factory(result)
@@ -101,7 +100,6 @@ class TestStepClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        config = classifier.config
         # Register all relevant classifiers
 
         factory = candidate_factory(result)
@@ -155,7 +153,6 @@ class TestStepClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        config = classifier.config
         # Register all relevant classifiers
 
         factory = candidate_factory(result)
@@ -212,12 +209,12 @@ class TestStepClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        config = classifier.config
         # Register all relevant classifiers
 
         factory = candidate_factory(result)
 
-        # Score dependencies - assign higher score to step1 to ensure it wins if scores are tie-broken
+        # Score dependencies - assign higher score to step1
+        # to ensure it wins if scores are tie-broken
         factory.add_step_number(step2_text, score=0.8)  # Lower score for step2
         factory.add_step_number(step1_text, score=1.0)  # Higher score for step1
 
@@ -283,7 +280,6 @@ class TestStepClassification:
         )
 
         result = ClassificationResult(page_data=page_data)
-        config = classifier.config
         # Register all relevant classifiers
 
         factory = candidate_factory(result)

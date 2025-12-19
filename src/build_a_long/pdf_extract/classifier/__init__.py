@@ -39,7 +39,7 @@ from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
 from build_a_long.pdf_extract.classifier.pages.progress_bar_classifier import (
     ProgressBarClassifier,
 )
-from build_a_long.pdf_extract.classifier.pages.progress_bar_indicator_classifier import (
+from build_a_long.pdf_extract.classifier.pages.progress_bar_indicator_classifier import (  # noqa: E501
     ProgressBarIndicatorClassifier,
 )
 from build_a_long.pdf_extract.classifier.parts import (

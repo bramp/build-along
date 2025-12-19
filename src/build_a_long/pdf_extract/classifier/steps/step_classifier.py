@@ -244,7 +244,8 @@ class StepClassifier(LabelClassifier):
                     )
                 except Exception as e:
                     log.debug(
-                        "[step] Failed to construct rotation_symbol candidate at %s: %s",
+                        "[step] Failed to construct rotation_symbol "
+                        "candidate at %s: %s",
                         rs_candidate.bbox,
                         e,
                     )

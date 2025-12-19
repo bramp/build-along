@@ -393,7 +393,8 @@ class TextContainerFitRule(Rule):
                 elif 1.0 <= ratio < 2.0:
                     score = 0.8
                 elif 4.0 < ratio <= 10.0:
-                    # Should be covered by MAX_AREA_RATIO check above, but for completeness
+                    # Should be covered by MAX_AREA_RATIO check above,
+                    # but for completeness
                     score = 0.6
                 else:
                     score = 0.1

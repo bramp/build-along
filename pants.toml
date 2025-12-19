@@ -37,6 +37,7 @@ known_versions = [
     "0.14.10|linux_x86_64|4695e6375b1fa2b9c5f839218d695d8e701cfccb15d3f622b6a6feedb086bffb|13860749",
 ]
 
+
 [test]
 # Pass through selected environment variables to tests so sandboxed runs can
 # toggle integration tests and cassette behavior.
@@ -67,10 +68,7 @@ unowned_dependency_behavior = "error"
 
 
 [source]
-root_patterns = [
-    "/src/",
-    #, "/3rdparty/PyMuPDF/src/"
-]
+root_patterns = ["/src/"]
 
 
 [anonymous-telemetry]

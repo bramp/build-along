@@ -60,10 +60,7 @@ class FontSizeMatch(Rule):
         if self.target_size is None:
             return None
 
-        if block.font_size is None:
-            size = block.bbox.height
-        else:
-            size = block.font_size
+        size = block.bbox.height if block.font_size is None else block.font_size
 
         if self.target_size == 0:
             return 0.0
