@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import statistics
 from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.extractor import PageData
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Background,
     Divider,
+    LegoPageElement,
     Manual,
     Page,
     Part,
@@ -91,8 +94,6 @@ def assert_constructed_elements_on_page(result: ClassificationResult) -> None:
     Raises:
         AssertionError: If constructed elements are orphaned (not on Page).
     """
-    import logging
-
     log = logging.getLogger(__name__)
 
     page = result.page
@@ -136,8 +137,96 @@ def assert_constructed_elements_on_page(result: ClassificationResult) -> None:
             if len(errors) > 5:
                 error_summary += f" ... and {len(errors) - 5} more"
             raise AssertionError(
-                f"Page {result.page_data.page_number}: {len(errors)} constructed elements "
-                f"not on Page (programming error): {error_summary}"
+                f"Page {result.page_data.page_number}: {len(errors)} constructed "
+                f"elements not on Page (programming error): {error_summary}"
+            )
+
+
+def assert_element_bbox_matches_source_and_children(
+    result: ClassificationResult,
+) -> None:
+    """Assert that each element's bbox equals the union of source blocks and children.
+
+    This validation checks that the bounding box of each constructed element
+    equals the union of:
+    1. The bounding boxes of its source blocks (PDF content)
+    2. The bounding boxes of all child elements (via iter_elements)
+
+    This ensures that element bboxes accurately represent both the underlying
+    PDF content and any attached child elements (e.g., PartImage with Shine).
+
+    Elements with no source blocks (synthetic/composite elements like Page, Step)
+    are skipped since their bbox may be computed differently.
+
+    Args:
+        result: The classification result to validate
+
+    Raises:
+        AssertionError: If any element's bbox doesn't match the expected union.
+    """
+    mismatches: list[str] = []
+
+    for label, candidates in result.candidates.items():
+        for candidate in candidates:
+            # Skip candidates without constructed elements
+            if candidate.constructed is None:
+                continue
+
+            # Skip candidates without source blocks (synthetic/composite elements)
+            if not candidate.source_blocks:
+                continue
+
+            # Validate this element
+            _validate_element_bbox(
+                candidate.constructed,
+                [block.bbox for block in candidate.source_blocks],
+                label,
+                mismatches,
+            )
+
+    if mismatches:
+        mismatch_summary = "; ".join(mismatches[:5])
+        if len(mismatches) > 5:
+            mismatch_summary += f" ... and {len(mismatches) - 5} more"
+        raise AssertionError(
+            f"Page {result.page_data.page_number}: {len(mismatches)} elements have "
+            f"bbox not matching source blocks + children union: {mismatch_summary}"
+        )
+
+
+def _validate_element_bbox(
+    element: LegoPageElement,
+    source_bboxes: list[BBox],
+    label: str,
+    mismatches: list[str],
+) -> None:
+    """Validate that an element's bbox equals the union of source blocks and children.
+
+    Args:
+        element: The element to validate
+        source_bboxes: Bboxes of source blocks for this element
+        label: The label of this element (for error messages)
+        mismatches: List to append mismatch descriptions to
+    """
+    # Collect all bboxes that should contribute to the element's bbox
+    all_bboxes: list[BBox] = list(source_bboxes)
+
+    # Add child element bboxes (iter_elements yields self first, then all descendants)
+    child_iter = element.iter_elements()
+    next(child_iter)  # Skip self
+    for child in child_iter:
+        all_bboxes.append(child.bbox)
+
+    # If we have bboxes to check, validate
+    if all_bboxes:
+        expected_bbox = BBox.union_all(all_bboxes)
+        actual_bbox = element.bbox
+
+        # Check if they match (allowing for small floating point differences)
+        if not actual_bbox.similar(expected_bbox, tolerance=0.1):
+            mismatches.append(
+                f"{label}: {element.__class__.__name__} "
+                f"bbox={actual_bbox} != expected={expected_bbox}"
             )
 
 
@@ -438,7 +527,9 @@ def validate_invalid_pages(
         ValidationIssue(
             severity=ValidationSeverity.WARNING,
             rule="invalid_pages",
-            message=f"{len(invalid_pages)} page(s) failed to produce valid classification",
+            message=(
+                f"{len(invalid_pages)} page(s) failed to produce valid classification"
+            ),
             pages=invalid_pages,
         )
     )
@@ -504,9 +595,10 @@ def validate_progress_bar_sequence(
                 stdev_inc = statistics.stdev(increments)
                 cv = stdev_inc / mean_inc if mean_inc > 0 else 0.0
 
-                # Coefficient of variation > 1.0 indicates very high variance relative to mean.
-                # This suggests progress is not steady (e.g. big jumps vs tiny steps).
-                # We flag this as INFO since it's not necessarily an error, but worth noting.
+                # Coefficient of variation > 1.0 indicates very high variance
+                # relative to mean. This suggests progress is not steady
+                # (e.g. big jumps vs tiny steps). We flag this as INFO since
+                # it's not necessarily an error, but worth noting.
                 if cv > 1.0:
                     validation.add(
                         ValidationIssue(
@@ -572,16 +664,15 @@ def validate_catalog_coverage(
 
     for page_num, part in instruction_parts:
         is_matched = False
-        if part.diagram:
-            if (
-                part.diagram.xref is not None
-                and part.diagram.xref in catalog_identifiers
-            ) or (
+        if part.diagram and (
+            (part.diagram.xref is not None and part.diagram.xref in catalog_identifiers)
+            or (
                 part.diagram.digest is not None
                 and part.diagram.digest in catalog_identifiers
-            ):
-                matched_count += 1
-                is_matched = True
+            )
+        ):
+            matched_count += 1
+            is_matched = True
 
         if not is_matched:
             # Prepare identifier for unmatched parts
@@ -602,8 +693,11 @@ def validate_catalog_coverage(
         ValidationIssue(
             severity=ValidationSeverity.INFO,
             rule="catalog_coverage",
-            message=f"{msg_prefix}Catalog coverage: {matched_count}/{len(instruction_parts)} "
-            f"parts matched ({coverage_pct:.1f}%)",
+            message=(
+                f"{msg_prefix}Catalog coverage: "
+                f"{matched_count}/{len(instruction_parts)} "
+                f"parts matched ({coverage_pct:.1f}%)"
+            ),
             details=f"Catalog has {len(catalog_identifiers)} unique image identifiers. "
             f"Instructions use {len(instruction_parts)} part instances.",
         )
@@ -626,7 +720,10 @@ def validate_catalog_coverage(
             ValidationIssue(
                 severity=severity,
                 rule="missing_from_catalog",
-                message=f"{msg_prefix}{len(unmatched_parts)} instruction parts not found in catalog",
+                message=(
+                    f"{msg_prefix}{len(unmatched_parts)} instruction parts "
+                    f"not found in catalog"
+                ),
                 details=f"Unmatched identifiers: {unmatched_summary}",
             )
         )

@@ -58,7 +58,7 @@ from build_a_long.pdf_extract.classifier.pages.preview_classifier import (
 from build_a_long.pdf_extract.classifier.pages.progress_bar_classifier import (
     ProgressBarClassifier,
 )
-from build_a_long.pdf_extract.classifier.pages.progress_bar_indicator_classifier import (
+from build_a_long.pdf_extract.classifier.pages.progress_bar_indicator_classifier import (  # noqa: E501
     ProgressBarIndicatorClassifier,
 )
 from build_a_long.pdf_extract.classifier.pages.trivia_text_classifier import (
@@ -375,16 +375,8 @@ class Classifier:
         )
         page_classifier.build_all(result)
 
-        # 3. Validate that all page elements are tracked via candidates
-        # This catches programming errors where elements are created directly
-        # instead of via result.build()
-        from build_a_long.pdf_extract.validation.rules import (
-            assert_constructed_elements_on_page,
-            assert_page_elements_tracked,
-        )
-
-        assert_page_elements_tracked(result)
-        assert_constructed_elements_on_page(result)
+        # 3. Validate classification invariants
+        self._validate_classification_result(result)
 
         # TODO Do we actualy ever add warnings?
         warnings = self._log_post_classification_warnings(page_data, result)
@@ -392,6 +384,39 @@ class Classifier:
             result.add_warning(warning)
 
         return result
+
+    def _validate_classification_result(self, result: ClassificationResult) -> None:
+        """Validate classification invariants and catch programming errors.
+
+        This method runs assertions to verify that the classification process
+        produced a consistent and valid result. These checks catch bugs in
+        classifier code where elements are incorrectly constructed or tracked.
+
+        Validations performed:
+        - All page elements are tracked via candidates (not created directly)
+        - All constructed elements appear in the Page hierarchy (no orphans)
+        - Element bboxes match the union of source blocks + child elements
+
+        Args:
+            result: The classification result to validate
+
+        Raises:
+            AssertionError: If any invariant is violated
+        """
+        # Import here to avoid circular dependency:
+        # - classifier.py imports validation.rules
+        # - validation.rules imports ClassificationResult from classifier
+        # By importing at runtime (inside this method), both modules are fully
+        # loaded before the import executes, avoiding the circular import error.
+        from build_a_long.pdf_extract.validation.rules import (  # noqa: PLC0415
+            assert_constructed_elements_on_page,
+            assert_element_bbox_matches_source_and_children,
+            assert_page_elements_tracked,
+        )
+
+        assert_page_elements_tracked(result)
+        assert_constructed_elements_on_page(result)
+        assert_element_bbox_matches_source_and_children(result)
 
     def _log_post_classification_warnings(
         self, page_data: PageData, result: ClassificationResult
