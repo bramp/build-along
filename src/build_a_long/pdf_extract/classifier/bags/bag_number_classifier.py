@@ -42,6 +42,7 @@ from build_a_long.pdf_extract.classifier.rules import (
 from build_a_long.pdf_extract.classifier.text import (
     extract_bag_number_value,
 )
+from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     BagNumber,
 )
@@ -123,8 +124,11 @@ class BagNumberClassifier(RuleBasedClassifier):
                     shadow_block.bbox,
                 )
 
+        # Compute bbox as union of all source blocks
+        bbox = BBox.union_all([b.bbox for b in candidate.source_blocks])
+
         # Successfully constructed
-        return BagNumber(value=value, bbox=block.bbox)
+        return BagNumber(value=value, bbox=bbox)
 
     def _find_shadow_blocks(
         self, text_block: Text, result: ClassificationResult
