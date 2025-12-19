@@ -15,7 +15,15 @@
     {
       description: "Star Wars Millennium Falcon (75375) - Individual page fixtures",
       pdf: "data/75375/6509377.pdf",
-      pages: "1,5,10-17,45,70,126,149,172-176,180",
+
+      //   1 is cover page
+      //   5 is intro page with lots of text
+      //  10 step one with a open bag
+      //  70 2 steps, has a scale indicator
+      //  72 has 4-step subassembly
+      //  74 has "naked" substeps, and piece lengths
+      // 180 catalog page with many parts
+      pages: "1,5,10-17,45,70,72,74,126,149,172-176,180",
     },
     {
       description: "Ideas Christmas Tree (40573) - Individual page fixtures",
