@@ -21,7 +21,9 @@ class ProgressBarConfig(BaseModel):
 
     max_page_number_proximity_ratio: float = Field(
         default=0.3,
-        description="Maximum horizontal distance from page number as a ratio of page width.",
+        description=(
+            "Maximum horizontal distance from page number as a ratio of page width."
+        ),
     )
 
     page_number_proximity_multiplier: float = Field(

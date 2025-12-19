@@ -47,6 +47,7 @@ from build_a_long.pdf_extract.classifier.steps.pairing import (
     find_optimal_pairings,
     has_divider_between,
 )
+from build_a_long.pdf_extract.classifier.steps.substep_classifier import _SubStepScore
 from build_a_long.pdf_extract.extractor.bbox import BBox, filter_overlapping
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Arrow,
@@ -261,22 +262,34 @@ class StepClassifier(LabelClassifier):
         # shaft may be a thin rectangle that overlaps the subassembly's white
         # box. By building arrows first, they claim the shaft blocks before
         # subassemblies can consume them.
-        for arrow_candidate in result.get_scored_candidates(
-            "arrow", valid_only=False, exclude_failed=True
-        ):
-            try:
-                result.build(arrow_candidate)
-                log.debug(
-                    "[step] Built arrow at %s (score=%.2f)",
-                    arrow_candidate.bbox,
-                    arrow_candidate.score,
-                )
-            except Exception as e:
-                log.debug(
-                    "[step] Failed to construct arrow candidate at %s: %s",
-                    arrow_candidate.bbox,
-                    e,
-                )
+        #
+        # IMPORTANT: Only build arrows if there are step candidates.
+        # On INFO pages, there are no steps to assign arrows to, so building
+        # them would create orphaned elements that trigger validation errors.
+        all_step_candidates = result.get_scored_candidates(
+            "step", valid_only=False, exclude_failed=True
+        )
+        has_step_candidates = bool(all_step_candidates)
+
+        if has_step_candidates:
+            for arrow_candidate in result.get_scored_candidates(
+                "arrow", valid_only=False, exclude_failed=True
+            ):
+                try:
+                    result.build(arrow_candidate)
+                    log.debug(
+                        "[step] Built arrow at %s (score=%.2f)",
+                        arrow_candidate.bbox,
+                        arrow_candidate.score,
+                    )
+                except Exception as e:
+                    log.debug(
+                        "[step] Failed to construct arrow candidate at %s: %s",
+                        arrow_candidate.bbox,
+                        e,
+                    )
+        else:
+            log.debug("[step] Skipping arrow build - no step candidates on page")
 
         # Phase 4: Build subassemblies and previews BEFORE steps.
         # Both subassemblies and previews are white boxes with diagrams inside.
@@ -321,9 +334,7 @@ class StepClassifier(LabelClassifier):
         # SubStepClassifier instead.
         # Steps are built as "partial" - just step_number + parts_list.
         # Diagrams and subassemblies are assigned later via Hungarian matching.
-        all_step_candidates = result.get_scored_candidates(
-            "step", valid_only=False, exclude_failed=True
-        )
+        # Note: all_step_candidates was already fetched in Phase 3.
         page_level_step_candidates = self._filter_page_level_step_candidates(
             all_step_candidates
         )
@@ -557,10 +568,6 @@ class StepClassifier(LabelClassifier):
             List of SubStep elements that weren't claimed by any SubAssembly,
             sorted by step number value, and filtered to valid sequences from 1.
         """
-        from build_a_long.pdf_extract.classifier.steps.substep_classifier import (
-            _SubStepScore,
-        )
-
         # Get all substep candidates
         substep_candidates = result.get_scored_candidates(
             "substep", valid_only=False, exclude_failed=True

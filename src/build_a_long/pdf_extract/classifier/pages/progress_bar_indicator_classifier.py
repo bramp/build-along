@@ -90,8 +90,9 @@ class ProgressBarIndicatorClassifier(RuleBasedClassifier):
                 required=True,
                 name="aspect_ratio",
             ),
-            # Ideally we'd have a position score too, but InBottomBandFilter handles the hard constraint
-            # and position score was mostly about being *in* the band.
+            # Ideally we'd have a position score too, but InBottomBandFilter handles
+            # the hard constraint and position score was mostly about being *in*
+            # the band.
         ]
 
     def build(

@@ -113,7 +113,8 @@ def _parse_page_selection(pages_arg: str | None, doc_length: int) -> PageRanges 
 
 
 def _is_full_page_image(page: PageData) -> bool:
-    """Check if a page is dominated by a single large image AND has no other significant content.
+    """Check if a page is dominated by a single large image AND has no other
+    significant content.
 
     This heuristic aims to identify scanned PDFs where the entire page content
     is essentially one large image, while avoiding false positives for PDFs
@@ -123,8 +124,8 @@ def _is_full_page_image(page: PageData) -> bool:
         page: The page to check.
 
     Returns:
-        True if the page is dominated by a single image with no other significant content,
-        False otherwise.
+        True if the page is dominated by a single image with no other significant
+        content, False otherwise.
     """
     page_area = page.bbox.area
     if page_area <= 0:
@@ -139,7 +140,8 @@ def _is_full_page_image(page: PageData) -> bool:
 
     if len(large_images) > (len(page.blocks) / 2):
         logger.debug(
-            "Page %d has multiple large images (%d) covering >95%% of page, considered full-page image.",
+            "Page %d has multiple large images (%d) covering >95%% of page, "
+            "considered full-page image.",
             page.page_number,
             len(large_images),
         )
@@ -256,8 +258,8 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
         full_page_image_count = sum(1 for p in pages if _is_full_page_image(p))
         if len(pages) > 0 and (full_page_image_count / len(pages)) > 0.5:
             reason = (
-                f"Warning: More than 50% of processed pages appear to be composed of full-page images "
-                f"({full_page_image_count}/{len(pages)} pages). "
+                f"Warning: More than 50% of processed pages appear to be composed "
+                f"of full-page images ({full_page_image_count}/{len(pages)} pages). "
                 f"Processing will continue, but results for these pages may be poor."
             )
             logger.warning(reason)
@@ -270,7 +272,8 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             )  # Use text-only pages for hints
             print_font_hints(font_hints)
 
-        # Classify elements (use full_document_text_pages for hints, but only classify selected pages)
+        # Classify elements (use full_document_text_pages for hints, but only
+        # classify selected pages)
         batch_result = classify_pages(pages, pages_for_hints=full_document_text_pages)
 
         # Extract page_data from results for compatibility

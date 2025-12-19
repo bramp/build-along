@@ -83,7 +83,7 @@ class TestFilterBackgroundBlocks:
         assert 1 in removed_ids
         assert 2 in removed_ids
 
-        for block, reason in removed.items():
+        for _block, reason in removed.items():
             assert isinstance(reason, RemovalReason)
             assert reason.reason_type == "background_block"
             assert reason.target_block is None
@@ -123,7 +123,8 @@ class TestFilterDuplicateBlocks:
             # IOU = 380/404 = 0.94 (well above 0.9 threshold)
             Drawing(id=2, bbox=BBox(10.5, 10.5, 30.5, 30.5)),  # area = 400
             # Larger, contains most of block 1
-            # Adjusted to 31,31 (21x21=441) to ensure IOU > 0.9 with block 1 (400/441 = 0.907)
+            # Adjusted to 31,31 (21x21=441) to ensure IOU > 0.9 with block 1
+            # (400/441 = 0.907)
             Drawing(id=3, bbox=BBox(10, 10, 31, 31)),  # area = 441 (largest)
         ]
         kept, removed = filter_duplicate_blocks(blocks)
@@ -134,7 +135,7 @@ class TestFilterDuplicateBlocks:
         # At least one block should be removed
         assert len(removed) >= 1
 
-        for block, reason in removed.items():
+        for _block, reason in removed.items():
             assert isinstance(reason, RemovalReason)
             assert reason.reason_type == "duplicate_bbox"
             assert reason.target_block is not None
@@ -233,7 +234,7 @@ class TestFilterDuplicateBlocks:
         assert len(removed) == 2
 
         kept_block = kept[0]
-        for block, reason in removed.items():
+        for _block, reason in removed.items():
             assert reason.reason_type == "duplicate_bbox"
             assert reason.target_block == kept_block
 

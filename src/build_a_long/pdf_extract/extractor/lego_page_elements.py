@@ -48,7 +48,8 @@ class LegoPageElement(SerializationMixin, BaseModel, ABC):
         Empty lists are removed from the output.
 
         Args:
-            indent: Optional indentation for pretty-printing (str like '\t', int, or None)
+            indent: Optional indentation for pretty-printing (str like '\t', int,
+                or None)
             **kwargs: Additional arguments passed to model_dump()
         """
         # Use to_dict() from mixin which rounds floats
@@ -130,7 +131,7 @@ class PartCount(LegoPageElement):
         default=None, exclude=True
     )
     """Which font size hint was matched during classification.
-    
+
     - 'part_count': Standard instruction page part count
     - 'catalog_part_count': Catalog/inventory page part count
     """
@@ -1004,7 +1005,8 @@ class Page(LegoPageElement):
     """List of preview elements showing model diagrams."""
 
     unassigned_blocks_count: int = 0
-    """Count of blocks on the page that were not assigned to any element or filtered out."""
+    """Count of blocks on the page that were not assigned to any element or filtered
+    out."""
 
     open_bags: list[OpenBag] = Field(default_factory=list)
     steps: list[Step] = Field(default_factory=list)
@@ -1263,7 +1265,8 @@ class Manual(SerializationMixin, BaseModel):
         Empty lists are removed from the output.
 
         Args:
-            indent: Optional indentation for pretty-printing (str like '\t', int, or None)
+            indent: Optional indentation for pretty-printing (str like '\t', int,
+                or None)
             **kwargs: Additional arguments passed to model_dump()
         """
         # Use to_dict() from mixin which rounds floats

@@ -23,15 +23,16 @@ class TriviaTextConfig(BaseModel):
         default=5,
         description=(
             "Minimum number of text blocks to form trivia text. Trivia text typically "
-            "spans multiple lines/paragraphs. Single text blocks are unlikely to be trivia."
+            "spans multiple lines/paragraphs. Single text blocks are unlikely to be "
+            "trivia."
         ),
     )
 
     min_character_count: int = Field(
         default=200,
         description=(
-            "Minimum total characters across all text blocks. Trivia text has substantial "
-            "content. This filters out sparse text areas."
+            "Minimum total characters across all text blocks. Trivia text has "
+            "substantial content. This filters out sparse text areas."
         ),
     )
 
@@ -39,6 +40,7 @@ class TriviaTextConfig(BaseModel):
         default=50.0,
         description=(
             "Margin (in points) for clustering text blocks by proximity. Text blocks "
-            "within this distance of each other are considered part of the same cluster."
+            "within this distance of each other are considered part of the same "
+            "cluster."
         ),
     )

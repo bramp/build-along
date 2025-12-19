@@ -4,7 +4,6 @@ This list tracks the migration of various classifiers to inherit from `RuleBased
 
 ## Classifiers to Migrate to RuleBasedClassifier
 
-*   **ProgressBarClassifier**: Currently `LabelClassifier`. Requires access to `ClassificationResult` for finding overlapping blocks and page number proximity.
 *   **PreviewClassifier**: Currently `LabelClassifier`. Requires custom logic for grouping drawings and checking internal elements.
 
 ## Classifiers to Check for Migration Suitability
@@ -21,17 +20,3 @@ This list tracks the migration of various classifiers to inherit from `RuleBased
 *   **StepClassifier**: Combines candidates from multiple other classifiers.
 *   **TriviaTextClassifier**: Operates on clusters of text blocks.
 *   **ScaleClassifier**: Involves searching for containers and internal candidates.
-
-## Already RuleBasedClassifier (No action needed)
-
-*   BackgroundClassifier
-*   ProgressBarIndicatorClassifier
-*   DividerClassifier
-*   BagNumberClassifier
-*   PartCountClassifier
-*   PartNumberClassifier
-*   StepNumberClassifier
-*   StepCountClassifier
-*   PieceLengthClassifier
-*   PartsImageClassifier
-*   ShineClassifier

@@ -475,11 +475,12 @@ class Extractor:
             # Use "dict" instead of "rawdict" - we don't need per-character bboxes,
             # and "dict" provides the same span-level data with lower memory usage.
             # flags=0 disables all text flags for fastest extraction.
-            # Testing showed that most flags (TEXT_PRESERVE_LIGATURES, TEXT_PRESERVE_WHITESPACE,
-            # TEXT_MEDIABOX_CLIP, TEXT_PRESERVE_IMAGES) cause massive slowdowns on LEGO PDFs.
+            # Testing showed that most flags (TEXT_PRESERVE_LIGATURES,
+            # TEXT_PRESERVE_WHITESPACE, TEXT_MEDIABOX_CLIP, TEXT_PRESERVE_IMAGES)
+            # cause massive slowdowns on LEGO PDFs.
             # Only TEXT_USE_CID_FOR_UNKNOWN_UNICODE is fast, but flags=0 is simplest.
-            # TODO: Investigate why these flags cause slowdowns - possibly related to how
-            # LEGO PDFs are structured (many hidden/clipped text elements?).
+            # TODO: Investigate why these flags cause slowdowns - possibly related to
+            # how LEGO PDFs are structured (many hidden/clipped text elements?).
             rawdict: RawDict = self._page.get_text("dict", flags=0)  # type: ignore[assignment]
             return self._extract_text_blocks_from_rawdict(rawdict)
 

@@ -21,7 +21,7 @@ mkdir -p debug/all
 
 # Read CSV, skip header
 # CSV format: year,theme,set,filename,path
-tail -n +2 "$INPUT_CSV" | while IFS=, read -r year theme set_id filename path; do
+tail -n +2 "$INPUT_CSV" | while IFS=, read -r year theme set_id _ path; do
 	# Remove any carriage returns just in case
 	path=$(echo "$path" | tr -d '\r')
 

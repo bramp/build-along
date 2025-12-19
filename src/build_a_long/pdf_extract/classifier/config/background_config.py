@@ -22,8 +22,8 @@ class BackgroundConfig(BaseModel):
         default=0.85,
         description=(
             "Minimum coverage as a ratio of page area. A background element must cover "
-            "at least this much of the page area to be considered valid. Default is 0.85 "
-            "(85% of page area)."
+            "at least this much of the page area to be considered valid. Default is "
+            "0.85 (85% of page area)."
         ),
     )
 

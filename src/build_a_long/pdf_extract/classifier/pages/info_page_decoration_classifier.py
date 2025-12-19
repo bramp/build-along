@@ -26,7 +26,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.score import Score, Weight
-from build_a_long.pdf_extract.extractor.lego_page_elements import Decoration
+from build_a_long.pdf_extract.extractor.lego_page_elements import Decoration, Page
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Image, Text
 
 log = logging.getLogger(__name__)
@@ -75,8 +75,6 @@ class InfoPageDecorationClassifier(LabelClassifier):
                 page_number,
             )
             return
-
-        from build_a_long.pdf_extract.extractor.lego_page_elements import Page
 
         info_confidence = page_hint.confidences.get(Page.PageType.INFO, 0.0)
 

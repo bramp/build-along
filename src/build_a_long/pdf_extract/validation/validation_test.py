@@ -2,6 +2,8 @@
 
 from typing import Any
 
+import pydantic
+
 from build_a_long.pdf_extract.classifier import (
     BatchClassificationResult,
     Candidate,
@@ -12,12 +14,16 @@ from build_a_long.pdf_extract.classifier.test_utils import TestScore
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
+    Background,
+    Divider,
     Manual,
     Page,
     PageNumber,
     Part,
     PartCount,
+    PartImage,
     PartsList,
+    ProgressBar,
     Step,
     StepNumber,
 )
@@ -85,7 +91,6 @@ class TestValidationResult:
 
     def test_frozen_issue(self) -> None:
         """Test that ValidationIssue is immutable."""
-        import pydantic
 
         issue = ValidationIssue(
             severity=ValidationSeverity.ERROR,
@@ -346,7 +351,7 @@ class TestValidateProgressBarSequence:
             validation,
             [(1, 0.1), (2, 0.11), (3, 0.51), (4, 0.52), (5, 0.53)],
         )
-        # Should pass because consistency check requires >5 samples
+        # Should be ignored because there are fewer than 5 samples
         assert not validation.has_issues()
 
 
@@ -360,7 +365,6 @@ class TestValidateCatalogCoverage:
         digest: bytes | None = None,
     ) -> Part:
         """Create a Part with a diagram image ID, xref, and/or digest."""
-        from build_a_long.pdf_extract.extractor.lego_page_elements import PartImage
 
         return Part(
             bbox=BBox(0, 0, 10, 10),
@@ -381,8 +385,10 @@ class TestValidateCatalogCoverage:
         """Create a Manual with specified parts.
 
         Args:
-            instruction_parts_config: List of dicts with keys 'image_id', 'xref', 'digest'
-            catalog_parts_config: List of dicts with keys 'image_id', 'xref', 'digest'
+            instruction_parts_config: List of dicts with keys 'image_id', 'xref',
+                'digest'
+            catalog_parts_config: List of dicts with keys 'image_id', 'xref',
+                'digest'
         """
         pages = []
 
@@ -935,14 +941,6 @@ class TestValidateNoDividerIntersection:
         element_type: str = "Step",
     ) -> tuple[Page, PageData]:
         """Create a page with a divider and one other element."""
-        from build_a_long.pdf_extract.extractor.lego_page_elements import (
-            Background,
-            Divider,
-            Page,
-            ProgressBar,
-            Step,
-            StepNumber,
-        )
 
         page_bbox = BBox(0, 0, 100, 100)
         page_data = PageData(page_number=1, bbox=page_bbox, blocks=[])

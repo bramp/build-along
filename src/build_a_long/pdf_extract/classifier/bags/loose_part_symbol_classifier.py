@@ -133,8 +133,6 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
                 continue
 
             # Find blocks near this anchor (including images, which rules filtered out)
-
-            # Find blocks near this anchor (including images, which rules filtered out)
             cluster_blocks = self._find_cluster_blocks(anchor, result.page_data.blocks)
 
             if len(cluster_blocks) < 3:
@@ -161,7 +159,10 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
             avg_size = (symbol_bbox.width + symbol_bbox.height) / 2.0
 
             if not (min_size <= avg_size <= max_size):
-                candidate.failure_reason = f"Bad cluster size: {avg_size:.1f} (range {min_size:.1f}-{max_size:.1f})"
+                candidate.failure_reason = (
+                    f"Bad cluster size: {avg_size:.1f} "
+                    f"(range {min_size:.1f}-{max_size:.1f})"
+                )
                 continue
 
             # Score based on aspect ratio (closer to 1.0 is better)

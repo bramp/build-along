@@ -128,6 +128,6 @@ class TestGoldenRaw:
             pytest.fail(
                 "Extraction output doesn't match fixture(s).\n"
                 "To update fixtures, run:\n"
-                "    pants run src/build_a_long/pdf_extract/classifier/tools/regenerate_fixtures.py\n\n"
-                + "\n\n".join(failures)
+                "    pants run src/build_a_long/pdf_extract/classifier/tools/"
+                "regenerate_fixtures.py\n\n" + "\n\n".join(failures)
             )

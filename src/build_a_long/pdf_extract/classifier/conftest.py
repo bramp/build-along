@@ -32,6 +32,7 @@ from build_a_long.pdf_extract.classifier.rule_based_classifier import (
 from build_a_long.pdf_extract.classifier.steps.step_number_classifier import (
     StepNumberClassifier,
 )
+from build_a_long.pdf_extract.classifier.text import extract_step_number_value
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
 
 
@@ -91,8 +92,6 @@ class CandidateFactory:
         return candidate
 
     def add_step_number(self, block: Text, score: float = 1.0) -> Candidate:
-        from build_a_long.pdf_extract.classifier.text import extract_step_number_value
-
         self._ensure_classifier_registered("step_number")
 
         # Parse step value from the text block

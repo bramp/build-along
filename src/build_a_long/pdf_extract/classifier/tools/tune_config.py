@@ -105,7 +105,10 @@ class Tuner(ABC):
         green = "\033[92m"
         reset = "\033[0m"
 
-        msg = f"{class_name}.{field_name} = {green}{recommended_value}{reset} (was {current_value})"
+        msg = (
+            f"{class_name}.{field_name} = {green}{recommended_value}{reset} "
+            f"(was {current_value})"
+        )
         if reason:
             msg += f"  # {reason}"
         print(msg)
@@ -162,7 +165,7 @@ class ProgressBarTuner(Tuner):
 
         bar_count = 0
 
-        for page_data, result in results:
+        for _, result in results:
             bars = result.get_candidates("progress_bar")
             indicators = result.get_candidates("progress_bar_indicator")
 
@@ -229,7 +232,7 @@ class ProgressBarIndicatorTuner(Tuner):
 
         matched_indicators_count = 0
 
-        for page_data, result in results:
+        for _, result in results:
             bars = result.get_candidates("progress_bar")
             indicators = result.get_candidates("progress_bar_indicator")
 

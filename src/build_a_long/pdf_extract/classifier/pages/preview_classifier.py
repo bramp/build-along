@@ -195,7 +195,8 @@ class PreviewClassifier(LabelClassifier):
                 continue
 
             # If there are step_numbers on the page, the box must be ABOVE all of them
-            # to be a preview (previews appear before steps, subassemblies appear within)
+            # to be a preview (previews appear before steps, subassemblies
+            # appear within)
             if min_step_y0 is not None and bbox.y1 > min_step_y0:
                 log.debug(
                     "[preview] Rejected box at %s: y1=%.1f is below/overlapping "

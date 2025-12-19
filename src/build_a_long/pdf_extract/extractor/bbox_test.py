@@ -104,7 +104,8 @@ def test_expand_property(b, margin):
     expected_x1 = b.x1 + margin
     expected_y1 = b.y1 + margin
 
-    # Predict if ValueError should be raised by BBox constructor due to invalid dimensions
+    # Predict if ValueError should be raised by BBox constructor due to invalid
+    # dimensions
     should_raise = expected_x0 > expected_x1 or expected_y0 > expected_y1
 
     if should_raise:

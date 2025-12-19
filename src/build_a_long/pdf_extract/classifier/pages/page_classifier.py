@@ -290,7 +290,8 @@ class PageClassifier(LabelClassifier):
 
         log.debug(
             "[page] page=%s categories=%s page_number=%s progress_bar=%s "
-            "background=%s dividers=%d decorations=%d previews=%d open_bags=%d steps=%d catalog=%s",
+            "background=%s dividers=%d decorations=%d previews=%d "
+            "open_bags=%d steps=%d catalog=%s",
             page_data.page_number,
             [c.name for c in categories],
             page_number.value if page_number else None,

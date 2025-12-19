@@ -291,8 +291,8 @@ def print_unassigned_diagnostics(
     print("-" * 60)
     recommendations: dict[str, int] = defaultdict(int)
 
-    for page_num, analysis in pages_with_unassigned:
-        for category, blocks in analysis.items():
+    for _page_num, analysis in pages_with_unassigned:
+        for _category, blocks in analysis.items():
             for info in blocks:
                 recommendations[info.recommendation] += 1
 

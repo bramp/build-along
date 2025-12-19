@@ -44,11 +44,8 @@ class LabelClassifier(BaseModel, ABC):
         if target_size is None:
             return 0.5
 
-        if block.font_size is None:
-            # Fallback to bbox height if font size not explicitly set
-            size = block.bbox.height
-        else:
-            size = block.font_size
+        # Fallback to bbox height if font size not explicitly set
+        size = block.bbox.height if block.font_size is None else block.font_size
 
         # Calculate difference as ratio of target size
         if target_size == 0:
@@ -160,8 +157,10 @@ class LabelClassifier(BaseModel, ABC):
         IMPORTANT: Classifiers should only create elements they are responsible for.
         A classifier should NOT create elements of types handled by other classifiers.
         For example:
-        - StepClassifier should NOT create PartsList elements (that's PartsListClassifier's job)
-        - If a dependency is optional and not found, set it to None instead of creating a fallback
+        - StepClassifier should NOT create PartsList elements (that's
+          PartsListClassifier's job)
+        - If a dependency is optional and not found, set it to None instead of
+          creating a fallback
 
         If you find yourself creating an element type that another classifier handles,
         that's a design smell - either:

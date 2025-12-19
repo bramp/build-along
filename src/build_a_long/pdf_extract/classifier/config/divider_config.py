@@ -21,18 +21,18 @@ class DividerConfig(BaseModel):
     min_length_ratio: float = Field(
         default=0.4,
         description=(
-            "Minimum length as a ratio of page height (vertical) or width (horizontal). "
-            "A divider must span at least this much of the page to be considered valid. "
-            "Default is 0.4 (40% of page dimension)."
+            "Minimum length as a ratio of page height (vertical) or width "
+            "(horizontal). A divider must span at least this much of the page to be "
+            "considered valid. Default is 0.4 (40% of page dimension)."
         ),
     )
 
     max_thickness: float = Field(
         default=5.0,
         description=(
-            "Maximum thickness in points for the divider line. Dividers are thin lines, "
-            "so this limits how thick they can be. A value of 0 indicates a stroke-only "
-            "line (no fill width)."
+            "Maximum thickness in points for the divider line. Dividers are thin "
+            "lines, so this limits how thick they can be. A value of 0 indicates a "
+            "stroke-only line (no fill width)."
         ),
     )
 
@@ -41,7 +41,8 @@ class DividerConfig(BaseModel):
         default=5.0,
         description=(
             "Margin in points from page edge to ignore dividers. Dividers within this "
-            "distance from the page boundary are considered page borders and are filtered "
-            "out. This prevents detecting page border lines as content dividers."
+            "distance from the page boundary are considered page borders and are "
+            "filtered out. This prevents detecting page border lines as content "
+            "dividers."
         ),
     )

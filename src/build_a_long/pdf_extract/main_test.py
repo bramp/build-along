@@ -390,7 +390,8 @@ class TestProcessPdf:
     def test_process_pdf_does_not_skip_normal_pdfs(
         self, mock_extract_page_data, mock_pymupdf_open, tmp_path
     ):
-        """Test that _process_pdf does not skip normal PDFs (less than 50% full-page images)."""
+        """Test that _process_pdf does not skip normal PDFs (less than 50%
+        full-page images)."""
         # Create page data where less than 50% of pages are full-page images
         full_page_img_page = PageData(
             page_number=1,

@@ -15,7 +15,8 @@ Note: We compare the serialized Page.model_dump() output,
 not the object directly, to ensure JSON round-tripping works correctly.
 
 To update golden files:
-    pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
+    pants run \
+        src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
 """
 
 import logging
@@ -49,7 +50,8 @@ class TestGoldenClassifier:
         4. Compares the Page against the golden file
 
         To update golden files, use:
-            pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
+            pants run \
+                src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
         """
         fixture_path = FIXTURES_DIR / fixture_file
 
@@ -97,7 +99,8 @@ class TestGoldenClassifier:
             pytest.fail(
                 f"Page test failed for {fixture_file}:\n{diff}"
                 + "\n\nTo update golden files, run: "
-                "pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py",
+                "pants run src/build_a_long/pdf_extract/classifier/tools/"
+                "generate_golden_files.py",
                 pytrace=False,
             )
 

@@ -15,17 +15,23 @@ class ProgressBarIndicatorConfig(BaseModel):
 
     min_size: float = Field(
         default=8.0,
-        description="Minimum width/height for the indicator (filters out tiny elements).",
+        description=(
+            "Minimum width/height for the indicator (filters out tiny elements)."
+        ),
     )
 
     max_size: float = Field(
         default=25.0,
-        description="Maximum width/height for the indicator (filters out large elements).",
+        description=(
+            "Maximum width/height for the indicator (filters out large elements)."
+        ),
     )
 
     max_aspect_ratio: float = Field(
         default=1.5,
-        description="Maximum aspect ratio (width/height or height/width). 1.0 = perfect square.",
+        description=(
+            "Maximum aspect ratio (width/height or height/width). 1.0 = perfect square."
+        ),
     )
 
     max_bottom_margin_ratio: float = Field(

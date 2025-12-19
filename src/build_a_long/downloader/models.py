@@ -67,7 +67,8 @@ class InstructionMetadata(BaseModel):
     # TODO maybe rename 'set' to 'set_number' for clarity
     set: str = Field(..., description="The unique identifier for the LEGO set.")
 
-    # TODO Should we add a 'element_id' field, to uniquely identify instructions across sets?
+    # TODO Should we add a 'element_id' field, to uniquely identify instructions
+    # across sets?
 
     locale: str = Field(
         ..., description='The locale for the instructions (e.g., "en-US").'

@@ -132,14 +132,18 @@ def parse_arguments() -> argparse.Namespace:
         "--json",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Save classified Manual as JSON (default: enabled). Use --no-json to disable.",
+        help=(
+            "Save classified Manual as JSON (default: enabled). "
+            "Use --no-json to disable."
+        ),
     )
     output_group.add_argument(
         "--raw-json",
         action="store_true",
         help=(
-            "Export raw pdf extraction data as JSON (*_raw.json) with all blocks. When --pages is used, "
-            "saves one file per page. Without --pages, saves all pages in one file."
+            "Export raw pdf extraction data as JSON (*_raw.json) with all blocks. "
+            "When --pages is used, saves one file per page. Without --pages, "
+            "saves all pages in one file."
         ),
     )
     output_group.add_argument(
@@ -184,7 +188,8 @@ def parse_arguments() -> argparse.Namespace:
         action=argparse.BooleanOptionalAction,
         default=False,
         help=(
-            "Draw the actual drawing paths (not just bounding boxes) on annotated images."
+            "Draw the actual drawing paths (not just bounding boxes) on "
+            "annotated images."
         ),
     )
     output_group.add_argument(
@@ -192,7 +197,8 @@ def parse_arguments() -> argparse.Namespace:
         action=argparse.BooleanOptionalAction,
         default=False,
         help=(
-            "Draw bounding boxes for blocks that have no candidates (unassigned blocks)."
+            "Draw bounding boxes for blocks that have no candidates "
+            "(unassigned blocks)."
         ),
     )
 
@@ -201,7 +207,10 @@ def parse_arguments() -> argparse.Namespace:
     debug_group.add_argument(
         "--debug-json",
         action="store_true",
-        help="Export classification debug JSON (*_debug.json) with candidates, scores, and removal reasons.",
+        help=(
+            "Export classification debug JSON (*_debug.json) with candidates, "
+            "scores, and removal reasons."
+        ),
     )
     debug_group.add_argument(
         "--compress-json",

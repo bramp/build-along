@@ -21,7 +21,9 @@ class RotationSymbolConfig(BaseModel):
 
     ideal_size: float = Field(
         default=46.0,
-        description="Ideal width/height in points for rotation symbols (used for scoring).",
+        description=(
+            "Ideal width/height in points for rotation symbols (used for scoring)."
+        ),
     )
 
     min_size: float = Field(
@@ -65,12 +67,16 @@ class RotationSymbolConfig(BaseModel):
 
     proximity_weight: Weight = Field(
         default=0.2,
-        description="Weight for proximity to diagram score in final rotation symbol score.",
+        description=(
+            "Weight for proximity to diagram score in final rotation symbol score."
+        ),
     )
 
     cluster_size_score: Weight = Field(
         default=0.7,
-        description="Base size score for drawing clusters (slightly lower than images).",
+        description=(
+            "Base size score for drawing clusters (slightly lower than images)."
+        ),
     )
 
     proximity_close_distance: float = Field(

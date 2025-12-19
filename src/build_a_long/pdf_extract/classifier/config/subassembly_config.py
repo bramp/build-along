@@ -33,7 +33,10 @@ class SubAssemblyConfig(BaseModel):
 
     min_size_part_multiplier: float = Field(
         default=1.5,
-        description="SubAssembly must be at least this many times larger than the minimum Part size.",
+        description=(
+            "SubAssembly must be at least this many times larger than the minimum Part "
+            "size."
+        ),
     )
 
     max_page_width_ratio: float = Field(

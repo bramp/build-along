@@ -141,7 +141,8 @@ def build_hierarchy_from_blocks[T: HasBBox](
                 continue
             bbox_j = candidate.bbox
             # Skip if bboxes are identical (duplicate blocks at same position)
-            # This check uses `contains` which, like `fully_inside`, considers identical boxes to "contain" each other.
+            # This check uses `contains` which, like `fully_inside`, considers
+            # identical boxes to "contain" each other.
             if bbox_i == bbox_j:
                 continue
             if bbox_j.contains(bbox_i):

@@ -18,6 +18,8 @@ extend-select = [
   # isort
   "I",
 ]
+# Pants fmt handles the line length, so avoid linting
+ignore = ["E501"]
 
 [tool.pytest.ini_options]
 log_cli = true

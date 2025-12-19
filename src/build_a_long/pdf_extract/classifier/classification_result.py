@@ -80,37 +80,37 @@ class ClassificationResult(BaseModel):
 
     skipped_reason: str | None = None
     """If set, classification was skipped for this page.
-    
+
     This is used for pages that cannot be reasonably classified, such as:
     - Pages with too many blocks (e.g., >1000 vector drawings)
     - Info/inventory pages where each character is a separate vector
-    
+
     When set, most classification results will be empty.
     """
 
     removal_reasons: dict[int, RemovalReason] = Field(default_factory=dict)
     """Maps block IDs (block.id, not id(block)) to the reason they were removed.
-    
+
     Keys are block IDs (int) instead of Block objects to ensure JSON serializability
     and consistency with constructed_elements.
-    
+
     Public for serialization. Prefer using accessor methods.
     """
 
     candidates: dict[str, list[Candidate]] = Field(default_factory=dict)
     """Maps label names to lists of all candidates considered for that label.
-    
+
     Each candidate includes:
     - The source element
     - Its score and score details
     - The constructed LegoPageElement (if successful)
     - Failure reason (if construction failed)
-    
+
     This enables:
     - Re-evaluation with hints (exclude specific candidates)
     - Debugging (see why each candidate won/lost)
     - UI support (show users alternatives)
-    
+
     Public for serialization. Prefer using get_* accessor methods.
     """
 
@@ -245,7 +245,7 @@ class ClassificationResult(BaseModel):
             if candidate.bbox != element.bbox:
                 log.debug(
                     "[build] Updating candidate bbox from %s to %s - "
-                    "This indicates the bbox changed between score and build, "
+                    "This indicate the bbox changed between score and build, "
                     "and may indicate a classification bug",
                     candidate.bbox,
                     element.bbox,

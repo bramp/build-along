@@ -4,7 +4,10 @@ from build_a_long.pdf_extract.classifier import (
     ClassifierConfig,
     classify_pages,
 )
-from build_a_long.pdf_extract.classifier.classifier import Classifier
+from build_a_long.pdf_extract.classifier.classifier import (
+    MAX_BLOCKS_PER_PAGE,
+    Classifier,
+)
 from build_a_long.pdf_extract.classifier.test_utils import PageBuilder
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
@@ -176,7 +179,6 @@ class TestClassifyElements:
 
     def test_high_block_page_is_skipped(self) -> None:
         """Test that pages with too many blocks are skipped."""
-        from build_a_long.pdf_extract.classifier.classifier import MAX_BLOCKS_PER_PAGE
 
         # Create a page with more blocks than the threshold
         # PageBuilder handles appending blocks efficiently
