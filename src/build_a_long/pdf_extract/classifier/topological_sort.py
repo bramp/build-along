@@ -119,13 +119,11 @@ def topological_sort(
     if len(sorted_classifiers) != len(classifiers):
         # Find classifiers with non-zero in-degree (part of cycle)
         cyclic = [c for c in classifiers if in_degree[id(c)] > 0]
-        cyclic_names = [type(c).__name__ for c in cyclic]
 
         # Find and display the actual dependency chain
         cycle_chain = _find_dependency_cycle(cyclic, label_to_classifier)
         raise ValueError(
-            f"Circular dependency detected among classifiers: {cyclic_names}\n"
-            f"Dependency chain: {cycle_chain}"
+            f"Circular dependency detected among classifiers: {cycle_chain}"
         )
 
     logger.debug(

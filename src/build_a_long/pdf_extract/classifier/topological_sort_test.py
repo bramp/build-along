@@ -242,7 +242,5 @@ class TestTopologicalSort:
         error_msg = str(exc_info.value)
         # Check that it mentions circular dependency
         assert "Circular dependency detected" in error_msg
-        # Check that it includes a dependency chain
-        assert "Dependency chain:" in error_msg
         # Check that the chain includes the cycle (order may vary)
         assert "->" in error_msg
