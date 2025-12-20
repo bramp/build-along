@@ -40,6 +40,10 @@ from build_a_long.pdf_extract.classifier.rules import (
     Rule,
     TopLeftPositionScore,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import (
+    DiscreteScale,
+    LinearScale,
+)
 from build_a_long.pdf_extract.classifier.text import (
     extract_bag_number_value,
 )
@@ -88,12 +92,24 @@ class BagNumberClassifier(RuleBasedClassifier):
             ),
             # Score based on position (top-left preferred)
             TopLeftPositionScore(
+                # 1.0 at top (0%), decays to 0.0 at 40% down
+                vertical_scale=LinearScale({0.0: 1.0, 0.4: 0.0}),
+                # 1.0 for left 50%, 0.3 for right 50%
+                # TODO Why is this better than linear?
+                horizontal_scale=DiscreteScale(
+                    {
+                        (0.0, 0.5): 1.0,  # Left 50%: full score
+                        (0.5, 1.0): 0.3,  # Right 50%: reduced score
+                    }
+                ),
                 weight=config.bag_number.position_weight,
                 name="position_score",
                 required=True,
             ),
             # Score based on font size (large text)
             BagNumberFontSizeRule(
+                # 1.0 at 60pt, decays to 0.5 at 120pt
+                scale=LinearScale({60.0: 1.0, 120.0: 0.5}),
                 weight=config.bag_number.font_size_weight,
                 name="font_size_score",
                 required=True,

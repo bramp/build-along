@@ -36,6 +36,7 @@ from build_a_long.pdf_extract.classifier.rules import (
     IsInstanceFilter,
     Rule,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElements
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
@@ -59,13 +60,20 @@ class FullPageBackgroundClassifier(RuleBasedClassifier):
         return [
             IsInstanceFilter(Drawing),
             CoverageRule(
-                min_ratio=config.min_coverage_ratio,
+                # 0.5 at min_ratio, 1.0 at full coverage
+                scale=LinearScale({config.min_coverage_ratio: 0.5, 1.0: 1.0}),
                 weight=0.7,
                 required=True,
                 name="Coverage",
             ),
             EdgeProximityRule(
-                threshold=config.edge_margin,
+                # 1.0 at threshold, decay over 50 pixels
+                scale=LinearScale(
+                    {
+                        config.edge_margin: 1.0,
+                        config.edge_margin + 50.0: 0.0,
+                    }
+                ),
                 weight=0.3,
                 required=True,
                 name="EdgeProximity",

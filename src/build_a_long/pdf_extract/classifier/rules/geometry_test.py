@@ -19,6 +19,10 @@ from build_a_long.pdf_extract.classifier.rules.geometry import (
     TextContainerFitRule,
     TopLeftPositionScore,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import (
+    DiscreteScale,
+    LinearScale,
+)
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
@@ -77,7 +81,10 @@ class TestCornerDistanceScore:
 
 class TestTopLeftPositionScore:
     def test_top_left(self, context: RuleContext):
-        rule = TopLeftPositionScore()
+        rule = TopLeftPositionScore(
+            vertical_scale=LinearScale({0.0: 1.0, 0.4: 0.0}),
+            horizontal_scale=DiscreteScale({(0.0, 0.5): 1.0, (0.5, 1.0): 0.3}),
+        )
         # Top-left corner (0, 0)
         block = Text(bbox=BBox(0, 0, 10, 10), text="foo", id=1)
         # Vertical ratio = 5/1000 = 0.005 -> score = 1 - 0.005/0.4 = 0.9875
@@ -86,7 +93,10 @@ class TestTopLeftPositionScore:
         assert rule.calculate(block, context) == pytest.approx(0.99125)
 
     def test_bottom_right(self, context: RuleContext):
-        rule = TopLeftPositionScore()
+        rule = TopLeftPositionScore(
+            vertical_scale=LinearScale({0.0: 1.0, 0.4: 0.0}),
+            horizontal_scale=DiscreteScale({(0.0, 0.5): 1.0, (0.5, 1.0): 0.3}),
+        )
         # Bottom-right corner (990, 990)
         block = Text(bbox=BBox(990, 990, 1000, 1000), text="foo", id=1)
         # Vertical ratio ~1.0 > 0.4 -> score 0.0
@@ -126,32 +136,40 @@ class TestAspectRatioRule:
 
 class TestCoverageRule:
     def test_high_coverage(self, context: RuleContext):
-        rule = CoverageRule(min_ratio=0.8)
+        rule = CoverageRule(
+            scale=LinearScale({0.8: 0.5, 1.0: 1.0}),
+        )
         # 90% coverage (900x1000 on 1000x1000 page)
         block = Drawing(bbox=BBox(0, 0, 900, 1000), id=1)
-        # Norm = (0.9 - 0.8) / 0.2 = 0.5
-        # Score = 0.5 + 0.5 * 0.5 = 0.75
+        # LinearScale: (0.9 - 0.8) / (1.0 - 0.8) = 0.5, score = 0.5 + 0.5 * 0.5 = 0.75
         assert rule.calculate(block, context) == 0.75
 
     def test_low_coverage(self, context: RuleContext):
-        rule = CoverageRule(min_ratio=0.8)
-        # 10% coverage
+        rule = CoverageRule(
+            scale=LinearScale({0.8: 0.5, 1.0: 1.0}),
+        )
+        # 10% coverage -> below min in scale, clamped to 0.5
         block = Drawing(bbox=BBox(0, 0, 100, 1000), id=1)
-        assert rule.calculate(block, context) == 0.0
+        assert rule.calculate(block, context) == 0.5
 
 
 class TestEdgeProximityRule:
     def test_at_edges(self, context: RuleContext):
-        rule = EdgeProximityRule(threshold=10.0)
-        # Block exactly covering page
+        rule = EdgeProximityRule(
+            scale=LinearScale({10.0: 1.0, 60.0: 0.0}),
+        )
+        # Block exactly covering page -> avg edge dist = 0
         block = Drawing(bbox=BBox(0, 0, 1000, 1000), id=1)
+        # 0 is below 10, clamped to 1.0
         assert rule.calculate(block, context) == 1.0
 
     def test_far_from_edges(self, context: RuleContext):
-        rule = EdgeProximityRule(threshold=10.0)
+        rule = EdgeProximityRule(
+            scale=LinearScale({10.0: 1.0, 60.0: 0.0}),
+        )
         # Block in center (100, 100, 900, 900)
         # Distances: L=100, R=100, T=100, B=100. Avg=100.
-        # Score = max(0, 1 - (100-10)/50) = max(0, 1 - 1.8) = 0.0
+        # LinearScale: 100 is above 60, clamped to 0.0
         block = Drawing(bbox=BBox(100, 100, 900, 900), id=1)
         assert rule.calculate(block, context) == 0.0
 
@@ -204,13 +222,17 @@ class TestTextContainerFitRule:
 
 class TestSizeRatioRule:
     def test_ideal_ratio(self, context: RuleContext):
-        rule = SizeRatioRule(ideal_ratio=0.1, min_ratio=0.05, max_ratio=0.2)
+        rule = SizeRatioRule(
+            scale=LinearScale({0.05: 0.0, 0.1: 1.0, 0.2: 0.0}),
+        )
         # 100x100 on 1000x1000 page -> ratio 0.1
         block = Drawing(bbox=BBox(0, 0, 100, 100), id=1)
         assert rule.calculate(block, context) == 1.0
 
     def test_boundary_ratio(self, context: RuleContext):
-        rule = SizeRatioRule(ideal_ratio=0.1, min_ratio=0.05, max_ratio=0.2)
+        rule = SizeRatioRule(
+            scale=LinearScale({0.05: 0.0, 0.1: 1.0, 0.2: 0.0}),
+        )
         # 50x50 -> ratio 0.05. Should be 0.0 per triangular logic?
         # Logic: (ratio - min) / (ideal - min) -> (0.05-0.05)/(0.1-0.05) = 0.0
         block = Drawing(bbox=BBox(0, 0, 50, 50), id=1)

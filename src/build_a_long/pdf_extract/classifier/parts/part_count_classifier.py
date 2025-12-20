@@ -29,6 +29,7 @@ from build_a_long.pdf_extract.classifier.rules import (
     PartCountTextRule,
     Rule,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.classifier.text import (
     extract_part_count_value,
 )
@@ -53,6 +54,8 @@ class PartCountClassifier(RuleBasedClassifier):
     @property
     def rules(self) -> Sequence[Rule]:
         config = self.config
+        part_count_size = config.font_size_hints.part_count_size or 10.0
+        catalog_part_count_size = config.font_size_hints.catalog_part_count_size or 10.0
         return [
             # Must be text
             IsInstanceFilter(Text),
@@ -67,12 +70,24 @@ class PartCountClassifier(RuleBasedClassifier):
             MaxScoreRule(
                 rules=[
                     FontSizeMatch(
-                        target_size=config.font_size_hints.part_count_size,
+                        scale=LinearScale(
+                            {
+                                part_count_size * 0.5: 0.0,
+                                part_count_size: 1.0,
+                                part_count_size * 1.5: 0.0,
+                            }
+                        ),
                         name="instruction_font_size",
                         weight=1.0,  # Weight handled by MaxScoreRule
                     ),
                     FontSizeMatch(
-                        target_size=config.font_size_hints.catalog_part_count_size,
+                        scale=LinearScale(
+                            {
+                                catalog_part_count_size * 0.5: 0.0,
+                                catalog_part_count_size: 1.0,
+                                catalog_part_count_size * 1.5: 0.0,
+                            }
+                        ),
                         name="catalog_font_size",
                         weight=1.0,  # Weight handled by MaxScoreRule
                     ),

@@ -21,6 +21,9 @@ from build_a_long.pdf_extract.classifier.rules import (
     PageNumberValueMatch,
     Rule,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import (
+    LinearScale,
+)
 from build_a_long.pdf_extract.classifier.text import (
     extract_page_number_value,
 )
@@ -45,6 +48,7 @@ class PageNumberClassifier(RuleBasedClassifier):
     @property
     def rules(self) -> Sequence[Rule]:
         config = self.config
+        page_number_size = config.font_size_hints.page_number_size or 12.0
         return [
             # Must be text
             IsInstanceFilter(Text),
@@ -64,12 +68,21 @@ class PageNumberClassifier(RuleBasedClassifier):
                 name="position_score",
             ),
             # Score based on matching the expected page number value
+            # 1.0 at exact match, 0.0 at 10 pages away
             PageNumberValueMatch(
-                weight=config.page_number.page_value_weight, name="page_value_score"
+                scale=LinearScale({0: 1.0, 10: 0.0}),
+                weight=config.page_number.page_value_weight,
+                name="page_value_score",
             ),
-            # Score based on font size hints
+            # Score based on font size hints (triangular: 0 at edges, 1.0 at center)
             FontSizeMatch(
-                target_size=config.font_size_hints.page_number_size,
+                scale=LinearScale(
+                    {
+                        page_number_size * 0.5: 0.0,
+                        page_number_size: 1.0,
+                        page_number_size * 1.5: 0.0,
+                    }
+                ),
                 weight=config.page_number.font_size_weight,
                 name="font_size_score",
             ),

@@ -29,6 +29,7 @@ from build_a_long.pdf_extract.classifier.rules import (
     PartCountTextRule,
     Rule,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.classifier.text import (
     extract_part_count_value,
 )
@@ -71,10 +72,17 @@ class StepCountClassifier(RuleBasedClassifier):
                 required=True,
             ),
             # Score font size: should be >= part_count_size and <= step_number_size
+            # 0.7 within tolerance of min, 1.0 above min+tolerance, 0.0 outside range
             FontSizeRangeRule(
-                min_size=hints.part_count_size,
-                max_size=hints.step_number_size,
-                tolerance=1.0,
+                scale=LinearScale(
+                    {
+                        (hints.part_count_size or 10.0) - 1.0: 0.0,
+                        hints.part_count_size or 10.0: 0.7,
+                        (hints.part_count_size or 10.0) + 1.0: 1.0,
+                        (hints.step_number_size or 20.0) + 1.0: 1.0,
+                        (hints.step_number_size or 20.0) + 2.0: 0.0,
+                    }
+                ),
                 weight=step_count_config.font_size_weight,
                 name="font_size_score",
             ),

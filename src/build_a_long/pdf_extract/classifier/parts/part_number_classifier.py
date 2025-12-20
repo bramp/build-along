@@ -28,6 +28,7 @@ from build_a_long.pdf_extract.classifier.rules import (
     PartNumberTextRule,
     Rule,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.classifier.text import extract_element_id
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartNumber,
@@ -50,6 +51,7 @@ class PartNumberClassifier(RuleBasedClassifier):
     @property
     def rules(self) -> Sequence[Rule]:
         config = self.config
+        catalog_element_id_size = config.font_size_hints.catalog_element_id_size or 10.0
         return [
             # Must be text
             IsInstanceFilter(Text),
@@ -61,7 +63,13 @@ class PartNumberClassifier(RuleBasedClassifier):
             ),
             # Score based on font size hints
             FontSizeMatch(
-                target_size=config.font_size_hints.catalog_element_id_size,
+                scale=LinearScale(
+                    {
+                        catalog_element_id_size * 0.5: 0.0,
+                        catalog_element_id_size: 1.0,
+                        catalog_element_id_size * 1.5: 0.0,
+                    }
+                ),
                 weight=config.part_count.font_size_weight,  # Reuse PartCount weights
                 name="font_size_score",
             ),

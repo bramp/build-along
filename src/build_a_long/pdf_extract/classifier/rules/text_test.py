@@ -6,6 +6,7 @@ import pytest
 
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.classifier.rules.base import RuleContext
+from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.classifier.rules.text import (
     BagNumberFontSizeRule,
     BagNumberTextRule,
@@ -57,26 +58,24 @@ class TestRegexMatch:
 
 class TestFontSizeMatch:
     @pytest.mark.parametrize(
-        "font_size,target_size,expected",
+        "font_size,expected",
         [
-            (10.0, 10.0, 1.0),  # Exact match
-            (11.0, 10.0, 0.8),  # 10% diff -> score = 1 - 0.1*2 = 0.8
-            (10.0, None, None),  # No hint
+            (10.0, 1.0),  # Exact match (at peak of triangular)
+            (11.0, 0.8),  # Interpolated: 1.0 + (11-10)/(15-10) * (0-1.0) = 0.8
+            (7.5, 0.5),  # Interpolated between 5.0 and 10.0
         ],
     )
     def test_font_size_match(
         self,
         context: RuleContext,
         font_size: float,
-        target_size: float | None,
-        expected: float | None,
+        expected: float,
     ) -> None:
-        rule = FontSizeMatch(target_size=target_size)
+        rule = FontSizeMatch(
+            scale=LinearScale({5.0: 0.0, 10.0: 1.0, 15.0: 0.0}),
+        )
         block = Text(bbox=BBox(0, 0, 10, 10), text="foo", font_size=font_size, id=1)
-        if expected is None:
-            assert rule.calculate(block, context) is None
-        else:
-            assert rule.calculate(block, context) == pytest.approx(expected)
+        assert rule.calculate(block, context) == pytest.approx(expected)
 
 
 class TestFontSizeRangeRule:
@@ -84,14 +83,25 @@ class TestFontSizeRangeRule:
         "font_size,expected",
         [
             (15.0, 1.0),  # In range
-            (10.5, 0.7),  # Near boundary (between 9.0 and 11.0)
+            (10.5, 0.85),  # Interpolated: 0.7 + 0.5 * (1.0 - 0.7) = 0.85
             (5.0, 0.0),  # Out of range
         ],
     )
     def test_font_size_range(
         self, context: RuleContext, font_size: float, expected: float
     ) -> None:
-        rule = FontSizeRangeRule(min_size=10.0, max_size=20.0, tolerance=1.0)
+        # 0.7 within tolerance of min, 1.0 above min+tolerance, 0.0 outside range
+        rule = FontSizeRangeRule(
+            scale=LinearScale(
+                {
+                    9.0: 0.0,  # min - tolerance
+                    10.0: 0.7,  # min
+                    11.0: 1.0,  # min + tolerance
+                    21.0: 1.0,  # max + tolerance
+                    22.0: 0.0,  # max + tolerance + 1
+                }
+            )
+        )
         block = Text(bbox=BBox(0, 0, 10, 10), text="foo", font_size=font_size, id=1)
         assert rule.calculate(block, context) == pytest.approx(expected)
 
@@ -108,7 +118,9 @@ class TestPageNumberValueMatch:
     def test_page_number_value(
         self, context: RuleContext, text: str, expected: float
     ) -> None:
-        rule = PageNumberValueMatch()
+        rule = PageNumberValueMatch(
+            scale=LinearScale({0.0: 1.0, 10.0: 0.0}),
+        )
         block = Text(bbox=BBox(0, 0, 10, 10), text=text, id=1)
         assert rule.calculate(block, context) == pytest.approx(expected)
 
@@ -178,6 +190,8 @@ class TestBagNumberFontSizeRule:
     def test_bag_number_font_size(
         self, context: RuleContext, font_size: float, expected: float
     ) -> None:
-        rule = BagNumberFontSizeRule()
+        rule = BagNumberFontSizeRule(
+            scale=LinearScale({60.0: 1.0, 120.0: 0.5}),
+        )
         block = Text(bbox=BBox(0, 0, 0, 0), text="1", font_size=font_size, id=1)
         assert rule.calculate(block, context) == expected

@@ -44,6 +44,9 @@ from build_a_long.pdf_extract.classifier.rules import (
     Rule,
     WidthCoverageScore,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import (
+    LinearScale,
+)
 from build_a_long.pdf_extract.extractor.lego_page_elements import ProgressBarBar
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image
 
@@ -71,7 +74,9 @@ class ProgressBarBarClassifier(RuleBasedClassifier):
         return [
             IsInstanceFilter((Drawing, Image)),
             BottomPositionScore(
-                max_bottom_margin_ratio=config.max_bottom_margin_ratio,
+                scale=LinearScale(
+                    {0.0: 1.0, config.max_bottom_margin_ratio: 0.0}
+                ),  # Closer to bottom scores higher
                 weight=1.0,
                 name="position_score",
                 required=True,  # Progress bar must span most of the page width
@@ -82,15 +87,17 @@ class ProgressBarBarClassifier(RuleBasedClassifier):
                 name="page_number_proximity_score",
             ),
             WidthCoverageScore(
-                min_width_ratio=config.min_width_ratio,
-                max_score_width_ratio=config.max_score_width_ratio,
+                scale=LinearScale(
+                    {config.min_width_ratio: 0.0, config.max_score_width_ratio: 1.0}
+                ),
                 weight=1.0,
                 name="width_score",
                 required=True,  # Progress bar must span most of the page width
             ),
             ContinuousAspectRatioScore(
-                min_ratio=config.min_aspect_ratio,
-                ideal_ratio=config.ideal_aspect_ratio,
+                scale=LinearScale(
+                    {config.min_aspect_ratio: 0.0, config.ideal_aspect_ratio: 1.0}
+                ),
                 weight=1.0,
                 name="aspect_ratio_score",
                 required=True,  # Progress bar must be wider than tall

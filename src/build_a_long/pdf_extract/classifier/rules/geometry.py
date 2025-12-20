@@ -5,9 +5,8 @@ from __future__ import annotations
 import math
 
 from build_a_long.pdf_extract.classifier.rules.base import Filter, Rule, RuleContext
-from build_a_long.pdf_extract.classifier.rules.scoring import (
-    score_linear,
-    score_triangular,
+from build_a_long.pdf_extract.classifier.rules.scale import (
+    ScaleFunction,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Block, Drawing, Text
 
@@ -81,6 +80,10 @@ class TopLeftPositionScore(Rule):
 
     def __init__(
         self,
+        vertical_scale: ScaleFunction,
+        horizontal_scale: ScaleFunction,
+        vertical_weight: float = 0.7,
+        horizontal_weight: float = 0.3,
         weight: float = 1.0,
         name: str = "TopLeftPositionScore",
         required: bool = False,
@@ -88,6 +91,10 @@ class TopLeftPositionScore(Rule):
         self.name = name
         self.weight = weight
         self.required = required
+        self.vertical_weight = vertical_weight
+        self.horizontal_weight = horizontal_weight
+        self.vertical_scale = vertical_scale
+        self.horizontal_scale = horizontal_scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         page_bbox = context.page_data.bbox
@@ -102,17 +109,19 @@ class TopLeftPositionScore(Rule):
             return 0.0
 
         # Score higher for positions closer to the top
-        vertical_score = 1.0 - (vertical_ratio / 0.4)
+        vertical_score = self.vertical_scale(vertical_ratio)
 
         # Check horizontal position (prefer left half)
         center_x = (block.bbox.x0 + block.bbox.x1) / 2
         horizontal_ratio = (center_x - page_bbox.x0) / page_bbox.width
 
-        # Favor left side (1.0), but don't completely exclude right side (0.3)
-        horizontal_score = 1.0 if horizontal_ratio <= 0.5 else 0.3
+        horizontal_score = self.horizontal_scale(horizontal_ratio)
 
-        # Combine scores (70% vertical, 30% horizontal)
-        return 0.7 * vertical_score + 0.3 * horizontal_score
+        # Combine scores
+        return (
+            self.vertical_weight * vertical_score
+            + self.horizontal_weight * horizontal_score
+        )
 
 
 class SizeRangeRule(Rule):
@@ -153,23 +162,14 @@ class SizeRangeRule(Rule):
 
 
 class SizePreferenceScore(Rule):
-    """Rule that scores based on size with a target preference.
+    """Rule that scores based on size with a preference pattern.
 
-    Checks that both width and height are within [min_size, max_size], then
-    scores based on average size relative to target:
-    - At target_size: score = 1.0
-    - At min_size: score = min_score (default 0.75)
-    - Outside min/max range (either dimension): score = 0.0
-
-    Linear interpolation between min and target.
+    Scores blocks based on average size (width + height) / 2 using the provided scale.
     """
 
     def __init__(
         self,
-        min_size: float,
-        target_size: float,
-        max_size: float,
-        min_score: float = 0.75,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "SizePreference",
         required: bool = False,
@@ -177,36 +177,15 @@ class SizePreferenceScore(Rule):
         self.name = name
         self.weight = weight
         self.required = required
-        self.min_size = min_size
-        self.target_size = target_size
-        self.max_size = max_size
-        self.min_score = min_score
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         width = block.bbox.width
         height = block.bbox.height
 
-        # Both dimensions must be within range
-        if width < self.min_size or width > self.max_size:
-            return 0.0
-        if height < self.min_size or height > self.max_size:
-            return 0.0
-
-        # Score based on average size relative to target
+        # Score based on average size
         avg_size = (width + height) / 2
-
-        # Interpolate: min_score at min_size, 1.0 at target_size
-        if avg_size <= self.target_size:
-            if self.target_size == self.min_size:
-                return 1.0
-            t = (avg_size - self.min_size) / (self.target_size - self.min_size)
-            return self.min_score + t * (1.0 - self.min_score)
-        else:
-            # Beyond target but still within max - score decreases
-            if self.max_size == self.target_size:
-                return 1.0
-            t = (avg_size - self.target_size) / (self.max_size - self.target_size)
-            return 1.0 - t * (1.0 - self.min_score)
+        return self.scale(avg_size)
 
 
 class AspectRatioRule(Rule):
@@ -241,7 +220,7 @@ class CoverageRule(Rule):
 
     def __init__(
         self,
-        min_ratio: float = 0.85,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "Coverage",
         required: bool = False,
@@ -249,7 +228,7 @@ class CoverageRule(Rule):
         self.name = name
         self.weight = weight
         self.required = required
-        self.min_ratio = min_ratio
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         page_bbox = context.page_data.bbox
@@ -261,18 +240,7 @@ class CoverageRule(Rule):
         block_area = block.bbox.area
         coverage_ratio = block_area / page_area
 
-        if coverage_ratio < self.min_ratio:
-            return 0.0
-
-        # Score increases from min_ratio to 1.0
-        # Map [min_ratio, 1.0] -> [0.5, 1.0]
-        return score_linear(
-            coverage_ratio,
-            min_val=self.min_ratio,
-            max_val=1.0,
-            min_score=0.5,
-            max_score=1.0,
-        )
+        return self.scale(coverage_ratio)
 
 
 class EdgeProximityRule(Rule):
@@ -280,7 +248,7 @@ class EdgeProximityRule(Rule):
 
     def __init__(
         self,
-        threshold: float = 10.0,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "EdgeProximity",
         required: bool = False,
@@ -288,7 +256,7 @@ class EdgeProximityRule(Rule):
         self.name = name
         self.weight = weight
         self.required = required
-        self.threshold = threshold
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         page_bbox = context.page_data.bbox
@@ -302,12 +270,7 @@ class EdgeProximityRule(Rule):
 
         avg_edge_dist = (left_dist + right_dist + top_dist + bottom_dist) / 4.0
 
-        if avg_edge_dist <= self.threshold:
-            return 1.0
-
-        # Decrease score as distance increases
-        # Decay over 50 units
-        return max(0.0, 1.0 - (avg_edge_dist - self.threshold) / 50.0)
+        return self.scale(avg_edge_dist)
 
 
 class PageEdgeFilter(Filter):
@@ -507,25 +470,20 @@ class SizeRatioRule(Rule):
     """Rule that scores based on block size relative to page dimensions.
 
     Calculates width and height ratios relative to page size and scores them
-    using a triangular function peaking at `ideal_ratio` and decaying to 0.0
-    at `min_ratio` and `max_ratio`.
+    using the provided scale function.
     """
 
     def __init__(
         self,
-        ideal_ratio: float,
-        min_ratio: float,
-        max_ratio: float,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "SizeRatio",
         required: bool = False,
     ):
         self.name = name
-        self.ideal_ratio = ideal_ratio
-        self.min_ratio = min_ratio
-        self.max_ratio = max_ratio
         self.weight = weight
         self.required = required
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         page_bbox = context.page_data.bbox
@@ -536,12 +494,8 @@ class SizeRatioRule(Rule):
         width_ratio = block.bbox.width / page_bbox.width
         height_ratio = block.bbox.height / page_bbox.height
 
-        w_score = score_triangular(
-            width_ratio, self.min_ratio, self.ideal_ratio, self.max_ratio
-        )
-        h_score = score_triangular(
-            height_ratio, self.min_ratio, self.ideal_ratio, self.max_ratio
-        )
+        w_score = self.scale(width_ratio)
+        h_score = self.scale(height_ratio)
         return (w_score + h_score) / 2.0
 
 
@@ -554,7 +508,7 @@ class BottomPositionScore(Rule):
 
     def __init__(
         self,
-        max_bottom_margin_ratio: float,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "BottomPositionScore",
         required: bool = False,
@@ -562,7 +516,7 @@ class BottomPositionScore(Rule):
         self.name = name
         self.weight = weight
         self.required = required
-        self.max_bottom_margin_ratio = max_bottom_margin_ratio
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         page_bbox = context.page_data.bbox
@@ -573,12 +527,7 @@ class BottomPositionScore(Rule):
         bottom_distance = page_bbox.y1 - element_bottom
         bottom_margin_ratio = bottom_distance / page_height
 
-        # Should be in bottom margin area
-        if bottom_margin_ratio > self.max_bottom_margin_ratio:
-            return 0.0
-
-        # Score based on proximity to bottom (closer = better)
-        return 1.0 - (bottom_margin_ratio / self.max_bottom_margin_ratio)
+        return self.scale(bottom_margin_ratio)
 
 
 class PageNumberProximityScore(Rule):
@@ -630,8 +579,7 @@ class WidthCoverageScore(Rule):
 
     def __init__(
         self,
-        min_width_ratio: float,
-        max_score_width_ratio: float,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "WidthCoverageScore",
         required: bool = False,
@@ -639,8 +587,7 @@ class WidthCoverageScore(Rule):
         self.name = name
         self.weight = weight
         self.required = required
-        self.min_width_ratio = min_width_ratio
-        self.max_score_width_ratio = max_score_width_ratio
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         page_bbox = context.page_data.bbox
@@ -650,34 +597,15 @@ class WidthCoverageScore(Rule):
 
         width_ratio = block.bbox.width / page_bbox.width
 
-        # Penalize elements that are too narrow
-        if width_ratio < self.min_width_ratio:
-            return 0.0
-
-        # Score increases with width, maxing at max_score_width_ratio
-        if width_ratio >= self.max_score_width_ratio:
-            return 1.0
-
-        # Linear interpolation
-        return score_linear(
-            width_ratio,
-            min_val=self.min_width_ratio,
-            max_val=self.max_score_width_ratio,
-            min_score=0.0,
-            max_score=1.0,
-        )
+        return self.scale(width_ratio)
 
 
 class ContinuousAspectRatioScore(Rule):
-    """Rule that scores aspect ratio using linear interpolation.
-
-    Scores 0.0 below min_ratio, 1.0 above ideal_ratio, and linear in between.
-    """
+    """Rule that scores aspect ratio using the provided scale."""
 
     def __init__(
         self,
-        min_ratio: float,
-        ideal_ratio: float,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "ContinuousAspectRatioScore",
         required: bool = False,
@@ -685,8 +613,7 @@ class ContinuousAspectRatioScore(Rule):
         self.name = name
         self.weight = weight
         self.required = required
-        self.min_ratio = min_ratio
-        self.ideal_ratio = ideal_ratio
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         if block.bbox.height <= 0:
@@ -694,16 +621,4 @@ class ContinuousAspectRatioScore(Rule):
 
         aspect_ratio = block.bbox.width / block.bbox.height
 
-        if aspect_ratio < self.min_ratio:
-            return 0.0
-
-        if aspect_ratio >= self.ideal_ratio:
-            return 1.0
-
-        return score_linear(
-            aspect_ratio,
-            min_val=self.min_ratio,
-            max_val=self.ideal_ratio,
-            min_score=0.0,
-            max_score=1.0,
-        )
+        return self.scale(aspect_ratio)

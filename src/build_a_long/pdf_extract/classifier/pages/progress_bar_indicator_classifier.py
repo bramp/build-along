@@ -42,6 +42,7 @@ from build_a_long.pdf_extract.classifier.rules import (
     Rule,
     SizePreferenceScore,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     ProgressBarIndicator,
 )
@@ -74,10 +75,15 @@ class ProgressBarIndicatorClassifier(RuleBasedClassifier):
                 name="position_band",
             ),
             # Check size constraints, prefer larger (outer circle over inner fill)
+            # Triangular scale: 0.0 at min, 1.0 at max, 0.0 beyond max
             SizePreferenceScore(
-                min_size=cfg.indicator_min_size,
-                target_size=cfg.indicator_max_size,  # Target max - prefer largest
-                max_size=cfg.indicator_max_size,
+                scale=LinearScale(
+                    {
+                        cfg.indicator_min_size: 0.0,
+                        cfg.indicator_max_size: 1.0,
+                        cfg.indicator_max_size * 1.5: 0.0,  # Drop to 0.0 for oversized
+                    }
+                ),
                 weight=0.5,
                 required=True,
                 name="size",

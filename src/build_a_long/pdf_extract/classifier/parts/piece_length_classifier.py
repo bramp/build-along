@@ -40,6 +40,7 @@ from build_a_long.pdf_extract.classifier.rules import (
     Rule,
     TextContainerFitRule,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.extractor.bbox import BBox, filter_contained
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PieceLength,
@@ -59,7 +60,7 @@ class PieceLengthClassifier(RuleBasedClassifier):
     def rules(self) -> Sequence[Rule]:
         hints = self.config.font_size_hints
         # Prefer part_count_size, fall back to catalog_part_count_size
-        expected_size = hints.part_count_size or hints.catalog_part_count_size
+        expected_size = hints.part_count_size or hints.catalog_part_count_size or 10.0
 
         return [
             IsInstanceFilter(Text),
@@ -74,7 +75,13 @@ class PieceLengthClassifier(RuleBasedClassifier):
                 name="ContainerFit",
             ),
             FontSizeMatch(
-                target_size=expected_size,
+                scale=LinearScale(
+                    {
+                        expected_size * 0.5: 0.0,
+                        expected_size: 1.0,
+                        expected_size * 1.5: 0.0,
+                    }
+                ),
                 weight=1.0,
                 name="FontSize",
             ),

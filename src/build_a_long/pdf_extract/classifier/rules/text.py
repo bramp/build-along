@@ -6,6 +6,7 @@ import re
 from re import Pattern
 
 from build_a_long.pdf_extract.classifier.rules.base import Rule, RuleContext
+from build_a_long.pdf_extract.classifier.rules.scale import ScaleFunction
 from build_a_long.pdf_extract.classifier.text import (
     extract_bag_number_value,
     extract_element_id,
@@ -38,80 +39,53 @@ class RegexMatch(Rule):
 
 
 class FontSizeMatch(Rule):
-    """Rule that scores based on font size match with a hint."""
+    """Rule that scores based on font size using a scale function.
+
+    The scale should be configured with absolute font size thresholds.
+    """
 
     def __init__(
         self,
-        target_size: float | None,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "FontSizeMatch",
         required: bool = False,
     ):
         self.name = name
-        self.target_size = target_size
         self.weight = weight
         self.required = required
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         if not isinstance(block, Text):
             return 0.0
 
-        # If no hint available, skip this rule
-        if self.target_size is None:
-            return None
-
         size = block.bbox.height if block.font_size is None else block.font_size
 
-        if self.target_size == 0:
-            return 0.0
-
-        diff_ratio = abs(size - self.target_size) / self.target_size
-        # Linear penalty: score = 1.0 - (diff_ratio * 2.0)
-        return max(0.0, 1.0 - (diff_ratio * 2.0))
+        # Pass the actual font size to the scale
+        return self.scale(size)
 
 
 class FontSizeRangeRule(Rule):
-    """Rule that scores based on font size being within a range.
-
-    Scores 1.0 if strictly between min and max (with tolerance).
-    Scores 0.7 if within tolerance of min (indicating close to smaller type).
-    Scores 0.0 if outside range.
-    """
+    """Rule that scores based on font size using the provided scale."""
 
     def __init__(
         self,
-        min_size: float | None,
-        max_size: float | None,
-        tolerance: float = 1.0,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "FontSizeRange",
         required: bool = False,
     ):
         self.name = name
-        self.min_size = min_size
-        self.max_size = max_size
-        self.tolerance = tolerance
         self.weight = weight
         self.required = required
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         if not isinstance(block, Text) or block.font_size is None:
             return 0.0
 
-        if self.min_size is None or self.max_size is None:
-            return 0.5  # Neutral if hints missing
-
-        font_size = block.font_size
-
-        if font_size < self.min_size - self.tolerance:
-            return 0.0
-        if font_size > self.max_size + self.tolerance:
-            return 0.0
-
-        if font_size > self.min_size + self.tolerance:
-            return 1.0
-
-        return 0.7
+        return self.scale(block.font_size)
 
 
 class PageNumberValueMatch(Rule):
@@ -119,6 +93,7 @@ class PageNumberValueMatch(Rule):
 
     def __init__(
         self,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "PageNumberValueMatch",
         required: bool = False,
@@ -126,6 +101,7 @@ class PageNumberValueMatch(Rule):
         self.name = name
         self.weight = weight
         self.required = required
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         if not isinstance(block, Text):
@@ -137,7 +113,8 @@ class PageNumberValueMatch(Rule):
 
         expected = context.page_data.page_number
         diff = abs(value - expected)
-        return max(0.0, 1.0 - 0.1 * diff)
+        # Clamp to [0.0, 1.0]
+        return max(0.0, min(1.0, self.scale(diff)))
 
 
 class PageNumberTextRule(Rule):
@@ -252,6 +229,7 @@ class BagNumberFontSizeRule(Rule):
 
     def __init__(
         self,
+        scale: ScaleFunction,
         weight: float = 1.0,
         name: str = "BagNumberFontSizeScore",
         required: bool = False,
@@ -259,6 +237,7 @@ class BagNumberFontSizeRule(Rule):
         self.name = name
         self.weight = weight
         self.required = required
+        self.scale = scale
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         if not isinstance(block, Text):
@@ -275,7 +254,8 @@ class BagNumberFontSizeRule(Rule):
             return 1.0
         else:
             # Very large is okay but not preferred
-            return max(0.5, 1.0 - (font_size - 60) / 60.0)
+            # Clamp to [0.5, 1.0]
+            return max(0.5, min(1.0, self.scale(font_size)))
 
 
 class StepNumberTextRule(Rule):

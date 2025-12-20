@@ -19,6 +19,7 @@ from build_a_long.pdf_extract.classifier.rules import (
     Rule,
     StepNumberTextRule,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.classifier.text import (
     extract_step_number_value,
 )
@@ -41,6 +42,7 @@ class StepNumberClassifier(RuleBasedClassifier):
     @property
     def rules(self) -> Sequence[Rule]:
         config = self.config
+        step_number_size = config.font_size_hints.step_number_size or 10.0
         return [
             # Must be text
             IsInstanceFilter(Text),
@@ -58,7 +60,13 @@ class StepNumberClassifier(RuleBasedClassifier):
             ),
             # Score based on font size hints
             FontSizeMatch(
-                target_size=config.font_size_hints.step_number_size,
+                scale=LinearScale(
+                    {
+                        step_number_size * 0.5: 0.0,
+                        step_number_size: 1.0,
+                        step_number_size * 1.5: 0.0,
+                    }
+                ),
                 weight=config.step_number.font_size_weight,
                 name="font_size_score",
             ),

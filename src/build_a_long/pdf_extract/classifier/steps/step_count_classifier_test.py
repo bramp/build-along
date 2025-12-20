@@ -250,7 +250,7 @@ class TestFontSizeScoring:
     def test_font_size_close_to_part_count_scores_medium(
         self, step_count_classifier_with_hints: StepCountClassifier
     ):
-        """Test that font size close to part_count_size scores 0.7."""
+        """Test that font size close to part_count_size scores 0.85 (interpolated)."""
         # Font size within tolerance of part_count_size (10.0 +/- 1.0)
         page_data = (
             PageBuilder(width=600, height=500)
@@ -265,12 +265,12 @@ class TestFontSizeScoring:
         assert len(candidates) == 1
         score_details = candidates[0].score_details
         assert isinstance(score_details, RuleScore)
-        assert score_details.get("font_size_score") == 0.7
+        assert score_details.get("font_size_score") == 0.85
 
     def test_font_size_with_no_hints_scores_default(
         self, step_count_classifier: StepCountClassifier
     ):
-        """Test that font size without hints scores 0.5 (neutral)."""
+        """Test that font size without hints scores 1.0 (in valid range)."""
         page_data = (
             PageBuilder(width=600, height=500)
             .add_text("2x", 100.0, 100.0, 30.0, 20.0, font_size=16.0, id=1)
@@ -284,4 +284,4 @@ class TestFontSizeScoring:
         assert len(candidates) == 1
         score_details = candidates[0].score_details
         assert isinstance(score_details, RuleScore)
-        assert score_details.get("font_size_score") == 0.5
+        assert score_details.get("font_size_score") == 1.0

@@ -34,6 +34,7 @@ from build_a_long.pdf_extract.classifier.rules import (
     Rule,
     SizeRatioRule,
 )
+from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartImage,
     Shine,
@@ -68,10 +69,7 @@ class PartsImageClassifier(RuleBasedClassifier):
             # Score based on size relative to page dimensions
             # Replicates the logic from _compute_size_score
             SizeRatioRule(
-                ideal_ratio=0.10,  # Peak score at 10%
-                # Start scoring at 1.5% (captures tiny parts like single studs)
-                min_ratio=0.015,
-                max_ratio=0.40,  # End scoring at 4%
+                scale=LinearScale({0.015: 0.0, 0.10: 1.0, 0.40: 0.0}),
                 weight=1.0,
                 name="size_ratio",
                 required=True,
