@@ -57,6 +57,10 @@ class ScaleTextClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()
 
     @property
+    def effects_margin(self) -> float | None:
+        return 2.0
+
+    @property
     def rules(self) -> Sequence[Rule]:
         return [
             IsInstanceFilter(Text),

@@ -25,9 +25,6 @@ import logging
 from collections.abc import Sequence
 from typing import ClassVar
 
-from build_a_long.pdf_extract.classifier.block_filter import (
-    find_image_shadow_effects,
-)
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
@@ -46,7 +43,7 @@ from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     ProgressBarIndicator,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import BBox, Drawing, Image
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Image
 
 log = logging.getLogger(__name__)
 
@@ -62,6 +59,16 @@ class ProgressBarIndicatorClassifier(RuleBasedClassifier):
 
     output: ClassVar[str] = "progress_bar_indicator"
     requires: ClassVar[frozenset[str]] = frozenset()
+
+    @property
+    def effects_margin(self) -> float | None:
+        """Use the configured shadow margin for finding indicator effects."""
+        return self.config.progress_bar.indicator_shadow_margin
+
+    @property
+    def effects_block_types(self) -> tuple[type[Blocks], ...]:
+        """Progress bar indicators are Drawing or Image blocks."""
+        return (Drawing, Image)
 
     @property
     def rules(self) -> Sequence[Rule]:
@@ -101,35 +108,12 @@ class ProgressBarIndicatorClassifier(RuleBasedClassifier):
             # the band.
         ]
 
-    # Note: We intentionally do NOT override _get_additional_source_blocks here.
-    # Shadow blocks are consumed during build() to avoid conflicts between
-    # indicator and bar over shared blocks.
-
     def build(
         self, candidate: Candidate, result: ClassificationResult
     ) -> ProgressBarIndicator:
         """Construct a ProgressBarIndicator element from a single candidate.
 
-        Consumes shadow blocks around the indicator during build.
+        Shadow blocks around the indicator are automatically consumed via
+        _get_additional_source_blocks in the scoring phase.
         """
-        cfg = self.config.progress_bar
-
-        # Find and consume shadow blocks around the indicator
-        primary_block = candidate.source_blocks[0]
-        if isinstance(primary_block, (Drawing, Image)):
-            all_blocks = result.page_data.blocks
-            effects, _ = find_image_shadow_effects(
-                primary_block, all_blocks, margin=cfg.indicator_shadow_margin
-            )
-
-            if effects:
-                log.debug(
-                    f"Progress bar indicator at {primary_block.bbox} consumed "
-                    f"{len(effects)} shadow effect blocks."
-                )
-                candidate.source_blocks.extend(effects)
-                candidate.bbox = BBox.union_all(
-                    [b.bbox for b in candidate.source_blocks]
-                )
-
         return ProgressBarIndicator(bbox=candidate.bbox)

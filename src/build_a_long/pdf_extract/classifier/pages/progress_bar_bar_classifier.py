@@ -105,8 +105,8 @@ class ProgressBarBarClassifier(RuleBasedClassifier):
         ]
 
     # Note: We intentionally do NOT override _get_additional_source_blocks here.
-    # Additional blocks are consumed during build() after the indicator has consumed
-    # its shadows first, avoiding conflicts over shared blocks.
+    # Contained effects (like borders/fills) are automatically handled by the
+    # base class. Larger segments are merged during build() below.
 
     def build(
         self, candidate: Candidate, result: ClassificationResult

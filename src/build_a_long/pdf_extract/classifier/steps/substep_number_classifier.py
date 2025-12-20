@@ -53,6 +53,10 @@ class SubStepNumberClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()
 
     @property
+    def effects_margin(self) -> float | None:
+        return 2.0
+
+    @property
     def min_score(self) -> float:
         return self.config.substep_number.min_score
 

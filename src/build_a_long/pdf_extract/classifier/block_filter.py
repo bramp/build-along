@@ -24,7 +24,6 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
     Text,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -381,7 +380,7 @@ def filter_overlapping_text_blocks(
 
 
 def find_contained_effects(
-    primary_block: Blocks,
+    primary_block: Blocks | Block,
     all_blocks: Sequence[Blocks],
     *,
     margin: float = 2.0,
@@ -434,90 +433,6 @@ def find_contained_effects(
         effects.append(block)
 
     return effects
-
-
-def find_text_outline_effects(
-    text_block: Text,
-    all_blocks: Sequence[Blocks],
-    *,
-    margin: float = 2.0,
-) -> list[Drawing]:
-    """Find Drawing blocks that are text effects (outlines, shadows, etc.).
-
-    .. deprecated::
-        Use :func:`find_contained_effects` instead.
-
-    LEGO PDFs often render text with visual effects like outlines or drop shadows,
-    which appear as Drawing elements near/within the text bbox. Any Drawing whose
-    bbox is fully contained within the text bbox (plus a small margin) is likely
-    such an effect.
-
-    This function identifies such effects so they can be included as source blocks
-    when the Text is classified, preventing them from appearing as unconsumed.
-
-    Args:
-        text_block: The Text block to find effects for.
-        all_blocks: All blocks on the page to search through.
-        margin: Margin to expand the text bbox by when checking containment.
-            Default 2.0 points.
-
-    Returns:
-        List of Drawing blocks that appear to be effects for the text.
-    """
-    warnings.warn(
-        "find_text_outline_effects is deprecated. Use find_contained_effects instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return [
-        b
-        for b in find_contained_effects(text_block, all_blocks, margin=margin)
-        if isinstance(b, Drawing)
-    ]
-
-
-def find_image_shadow_effects(
-    primary_block: Drawing | Image,
-    all_blocks: Sequence[Blocks],
-    *,
-    margin: float = 2.0,
-) -> tuple[list[Drawing | Image], BBox]:
-    """Find Drawing/Image blocks that are shadow effects for an image element.
-
-    .. deprecated::
-        Use :func:`find_contained_effects` instead.
-
-    LEGO PDFs often render graphical elements with multiple layers for visual
-    effects like shadows, glows, or bevels. These appear as Drawing/Image
-    elements fully contained within a slightly expanded version of the primary
-    element's bbox.
-
-    This function identifies such effects so they can be included when
-    calculating the element's bounding box, preventing them from appearing
-    as unconsumed blocks.
-
-    Args:
-        primary_block: The primary Drawing/Image block to find effects for.
-        all_blocks: All blocks on the page to search through.
-        margin: Margin to expand the primary bbox by when checking containment.
-            Default 2.0 points.
-
-    Returns:
-        A tuple of:
-        - List of Drawing/Image blocks that appear to be effects
-        - The combined bbox of primary_block and all effects
-    """
-    warnings.warn(
-        "find_image_shadow_effects is deprecated. Use find_contained_effects instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    effects = find_contained_effects(primary_block, all_blocks, margin=margin)
-    combined_bbox = primary_block.bbox
-    for b in effects:
-        combined_bbox = combined_bbox.union(b.bbox)
-
-    return effects, combined_bbox
 
 
 def find_horizontally_overlapping_blocks(

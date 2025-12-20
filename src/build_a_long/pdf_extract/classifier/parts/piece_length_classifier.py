@@ -45,7 +45,7 @@ from build_a_long.pdf_extract.extractor.bbox import BBox, filter_contained
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PieceLength,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks, Drawing, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Text
 
 log = logging.getLogger(__name__)
 
@@ -55,6 +55,10 @@ class PieceLengthClassifier(RuleBasedClassifier):
 
     output = "piece_length"
     requires = frozenset()
+
+    @property
+    def effects_margin(self) -> float | None:
+        return 2.0
 
     @property
     def rules(self) -> Sequence[Rule]:
@@ -88,30 +92,35 @@ class PieceLengthClassifier(RuleBasedClassifier):
         ]
 
     def _get_additional_source_blocks(
-        self, block: Block, result: ClassificationResult
-    ) -> list[Blocks]:
+        self, block: Blocks, result: ClassificationResult
+    ) -> Sequence[Blocks]:
         """Include containing circle drawings as source blocks.
 
         This ensures the circle drawings around piece length numbers are
         marked as consumed when the piece_length is built.
         """
+        # Start with default effects (e.g. shadows of the text itself)
+        additional = list(super()._get_additional_source_blocks(block, result))
+
         if not isinstance(block, Text):
-            return []
+            return additional
 
         drawings = [b for b in result.page_data.blocks if isinstance(b, Drawing)]
         containing_drawing = self._find_smallest_containing_drawing(block, drawings)
 
         if not containing_drawing:
-            return []
+            return additional
 
-        # Start with the containing drawing
-        additional: list[Blocks] = [containing_drawing]
+        # Add the containing drawing
+        if containing_drawing.id not in {b.id for b in additional}:
+            additional.append(containing_drawing)
 
         # Find any other contained drawings (e.g. concentric circles)
         expanded_bbox = BBox.union(block.bbox, containing_drawing.bbox).expand(3.0)
         contained = filter_contained(drawings, expanded_bbox)
+        seen_ids = {b.id for b in additional}
         for d in contained:
-            if d is not containing_drawing:
+            if d.id not in seen_ids:
                 additional.append(d)
 
         return additional

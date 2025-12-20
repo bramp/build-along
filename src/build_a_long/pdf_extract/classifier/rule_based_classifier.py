@@ -70,10 +70,11 @@ class RuleBasedClassifier(LabelClassifier):
         """Margin to expand block bbox to find visual effects (outlines, shadows).
 
         If None, no automatic effect finding is performed.
-        Defaults to 2.0.
+        Defaults to None.
         """
-        return 2.0
+        return None
 
+    # TODO Do we need effects_max_area_ratio ?
     @property
     def effects_max_area_ratio(self) -> float | None:
         """Maximum ratio of effect block area to primary block area.
@@ -170,20 +171,6 @@ class RuleBasedClassifier(LabelClassifier):
             seen_ids: set[int] = {block.id}
             source_blocks: list[Blocks] = [block]
 
-            # Automatically find visual effects (outlines, shadows) for Text blocks
-            margin = self.effects_margin
-            if margin is not None and isinstance(block, Text):
-                effects = find_contained_effects(
-                    block,
-                    result.page_data.blocks,
-                    margin=margin,
-                    max_area_ratio=self.effects_max_area_ratio,
-                )
-                for b in effects:
-                    if b.id not in seen_ids:
-                        seen_ids.add(b.id)
-                        source_blocks.append(b)
-
             # Add any classifier-specific additional source blocks
             for b in self._get_additional_source_blocks(block, result):
                 if b.id not in seen_ids:
@@ -209,14 +196,26 @@ class RuleBasedClassifier(LabelClassifier):
             result.add_candidate(candidate)
 
     def _get_additional_source_blocks(
-        self, block: Block, result: ClassificationResult
+        self, block: Blocks, result: ClassificationResult
     ) -> Sequence[Blocks]:
         """Get additional source blocks to include with the candidate.
 
         Subclasses can override this to include related blocks (e.g.,
         overlapping drawings, drop shadows) in the candidate's source_blocks.
         These blocks will be marked as removed if the candidate wins.
+
+        The default implementation automatically includes Drawing/Image blocks
+        that appear to be visual effects (outlines, shadows) by calling
+        find_contained_effects if self.effects_margin is not None.
         """
+        margin = self.effects_margin
+        if margin is not None:
+            return find_contained_effects(
+                block,
+                result.page_data.blocks,
+                margin=margin,
+                max_area_ratio=self.effects_max_area_ratio,
+            )
         return []
 
     def _should_accept(self, score: float) -> bool:
