@@ -409,6 +409,13 @@ class OpenBagClassifier(LabelClassifier):
                     detail_score.cluster_bbox, result
                 )
 
+        # Filter out blocks that were consumed by children (bag_number, part, etc.)
+        # Parent elements should NOT claim blocks that are owned by their children
+        own_blocks = [
+            b for b in candidate.source_blocks if not result.is_block_consumed(b)
+        ]
+        candidate.source_blocks = own_blocks
+
         # Compute bbox as union of source_blocks + children
         # This ensures the bbox matches source_blocks + children as required
         bbox = BBox.union_all([b.bbox for b in candidate.source_blocks])

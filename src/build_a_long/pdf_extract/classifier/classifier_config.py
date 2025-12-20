@@ -17,7 +17,6 @@ from build_a_long.pdf_extract.classifier.config import (
     PartsListConfig,
     PreviewConfig,
     ProgressBarConfig,
-    ProgressBarIndicatorConfig,
     RotationSymbolConfig,
     StepCountConfig,
     StepNumberConfig,
@@ -65,13 +64,7 @@ class ClassifierConfig(BaseModel):
 
     # Progress bar classifier settings
     progress_bar: ProgressBarConfig = Field(default_factory=ProgressBarConfig)
-    """Configuration for progress bar classification."""
-
-    # Progress bar indicator classifier settings
-    progress_bar_indicator: ProgressBarIndicatorConfig = Field(
-        default_factory=ProgressBarIndicatorConfig
-    )
-    """Configuration for progress bar indicator classification."""
+    """Configuration for progress bar and indicator classification."""
 
     # Rotation symbol classifier settings
     rotation_symbol: RotationSymbolConfig = Field(default_factory=RotationSymbolConfig)

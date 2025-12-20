@@ -27,7 +27,6 @@ from build_a_long.pdf_extract.classifier.classifier import Classifier
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
 from build_a_long.pdf_extract.classifier.config import (
     ProgressBarConfig,
-    ProgressBarIndicatorConfig,
 )
 from build_a_long.pdf_extract.extractor.extractor import PageData
 
@@ -57,9 +56,9 @@ class Tuner(ABC):
         config = ClassifierConfig()
 
         # Relax ProgressBarIndicator config to capture outliers
-        config.progress_bar_indicator.min_size = 0.1
-        config.progress_bar_indicator.max_size = 1000.0
-        config.progress_bar_indicator.max_bottom_margin_ratio = 0.5
+        config.progress_bar.indicator_min_size = 0.1
+        config.progress_bar.indicator_max_size = 1000.0
+        config.progress_bar.indicator_max_bottom_margin_ratio = 0.5
 
         classifier = Classifier(config)
         results = []
@@ -222,10 +221,10 @@ class ProgressBarTuner(Tuner):
 
 
 class ProgressBarIndicatorTuner(Tuner):
-    """Tuner for ProgressBarIndicatorConfig parameters."""
+    """Tuner for ProgressBarConfig indicator parameters."""
 
     def tune(self, results: list[tuple[PageData, ClassificationResult]]) -> None:
-        print(f"--- Tuning {ProgressBarIndicatorConfig.__name__} ---")
+        print(f"--- Tuning {ProgressBarConfig.__name__} (indicator settings) ---")
 
         indicator_min_dims: list[float] = []
         indicator_max_dims: list[float] = []
@@ -255,8 +254,8 @@ class ProgressBarIndicatorTuner(Tuner):
             p5 = indicator_min_dims[int(len(indicator_min_dims) * 0.05)]
             rec_val = math.floor(p5 * 0.8)
             self._print_recommendation(
-                ProgressBarIndicatorConfig,
-                "min_size",
+                ProgressBarConfig,
+                "indicator_min_size",
                 float(rec_val),
                 reason=f"Based on 5th percentile of min(width,height): {p5:.2f}px",
             )
@@ -266,8 +265,8 @@ class ProgressBarIndicatorTuner(Tuner):
             p95 = indicator_max_dims[int(len(indicator_max_dims) * 0.95)]
             rec_val = math.ceil(p95 * 1.2)
             self._print_recommendation(
-                ProgressBarIndicatorConfig,
-                "max_size",
+                ProgressBarConfig,
+                "indicator_max_size",
                 float(rec_val),
                 reason=f"Based on 95th percentile of max(width,height): {p95:.2f}px",
             )

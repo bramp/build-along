@@ -553,6 +553,9 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
     if page.page_number:
         print(f"  ✓ Page Number: {page.page_number.value}")
 
+    if page.scale:
+        print(f"  ✓ Scale: 1:1 reference for length {page.scale.length.value}")
+
     if page.instruction and page.instruction.open_bags:
         print(f"  ✓ Open Bags: {len(page.instruction.open_bags)}")
         for open_bag in page.instruction.open_bags:

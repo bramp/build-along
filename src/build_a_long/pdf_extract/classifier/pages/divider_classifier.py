@@ -95,16 +95,6 @@ class DividerClassifier(RuleBasedClassifier):
         detail_score = candidate.score_details
         assert isinstance(detail_score, RuleScore)
 
-        # Infer orientation from score details
-        # If "VerticalDivider" score is non-zero, it's vertical
-        # Note: RuleScore stores rule scores, but since IsVertical/Horizontal are
-        # inside MaxScoreRule, their individual scores might not be directly exposed
-        # as top-level keys if not careful.
-        # However, `RuleBasedClassifier` calculates weighted sum.
-        # Wait, `RuleBasedClassifier` iterates over `self.rules`.
-        # MaxScoreRule returns the max score.
-        # It doesn't expose WHICH rule won.
-
         # So we need to re-evaluate or check dimensions to determine orientation
         bbox = candidate.bbox
         if bbox.height > bbox.width:

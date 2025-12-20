@@ -36,6 +36,9 @@ from build_a_long.pdf_extract.classifier.pages.page_classifier import PageClassi
 from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
     PageNumberClassifier,
 )
+from build_a_long.pdf_extract.classifier.pages.progress_bar_bar_classifier import (
+    ProgressBarBarClassifier,
+)
 from build_a_long.pdf_extract.classifier.pages.progress_bar_classifier import (
     ProgressBarClassifier,
 )
@@ -98,6 +101,7 @@ __all__ = [
     "StepNumberClassifier",
     "PartsListClassifier",
     "PartsImageClassifier",
+    "ProgressBarBarClassifier",
     "ProgressBarClassifier",
     "ProgressBarIndicatorClassifier",
     "TextHistogram",

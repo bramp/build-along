@@ -28,9 +28,6 @@ from build_a_long.pdf_extract.classifier.config.preview_config import PreviewCon
 from build_a_long.pdf_extract.classifier.config.progress_bar_config import (
     ProgressBarConfig,
 )
-from build_a_long.pdf_extract.classifier.config.progress_bar_indicator_config import (
-    ProgressBarIndicatorConfig,
-)
 from build_a_long.pdf_extract.classifier.config.rotation_symbol_config import (
     RotationSymbolConfig,
 )
@@ -63,7 +60,6 @@ __all__ = [
     "PartsListConfig",
     "PreviewConfig",
     "ProgressBarConfig",
-    "ProgressBarIndicatorConfig",
     "RotationSymbolConfig",
     "StepCountConfig",
     "StepNumberConfig",

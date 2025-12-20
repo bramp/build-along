@@ -61,6 +61,9 @@ from build_a_long.pdf_extract.classifier.pages.page_number_classifier import (
 from build_a_long.pdf_extract.classifier.pages.preview_classifier import (
     PreviewClassifier,
 )
+from build_a_long.pdf_extract.classifier.pages.progress_bar_bar_classifier import (
+    ProgressBarBarClassifier,
+)
 from build_a_long.pdf_extract.classifier.pages.progress_bar_classifier import (
     ProgressBarClassifier,
 )
@@ -78,6 +81,7 @@ from build_a_long.pdf_extract.classifier.parts import (
     PartsListClassifier,
     PieceLengthClassifier,
     ScaleClassifier,
+    ScaleTextClassifier,
     ShineClassifier,
 )
 from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
@@ -278,6 +282,7 @@ def classify_pages(
 
 type Classifiers = (
     PageNumberClassifier
+    | ProgressBarBarClassifier
     | ProgressBarClassifier
     | ProgressBarIndicatorClassifier
     | PreviewClassifier
@@ -293,6 +298,7 @@ type Classifiers = (
     | StepCountClassifier
     | PieceLengthClassifier
     | ScaleClassifier
+    | ScaleTextClassifier
     | PartsClassifier
     | PartsListClassifier
     | PartsImageClassifier
@@ -321,6 +327,7 @@ class Classifier:
             [
                 PageNumberClassifier(config=config),
                 ProgressBarIndicatorClassifier(config=config),
+                ProgressBarBarClassifier(config=config),
                 ProgressBarClassifier(config=config),
                 FullPageBackgroundClassifier(config=config),
                 PageEdgeClassifier(config=config),
@@ -334,6 +341,7 @@ class Classifier:
                 SubStepNumberClassifier(config=config),
                 StepCountClassifier(config=config),
                 PieceLengthClassifier(config=config),
+                ScaleTextClassifier(config=config),
                 ScaleClassifier(config=config),
                 PartsClassifier(config=config),
                 PartsListClassifier(config=config),
@@ -409,9 +417,11 @@ class Classifier:
         from build_a_long.pdf_extract.validation.rules import (  # noqa: PLC0415
             assert_constructed_elements_on_page,
             assert_element_bbox_matches_source_and_children,
+            assert_no_shared_source_blocks,
             assert_page_elements_tracked,
         )
 
         assert_page_elements_tracked(result)
         assert_constructed_elements_on_page(result)
         assert_element_bbox_matches_source_and_children(result)
+        assert_no_shared_source_blocks(result)

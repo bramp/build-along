@@ -135,8 +135,12 @@ class BagNumberClassifier(RuleBasedClassifier):
     ) -> list[Image | Drawing]:
         """Find Images/Drawings that are likely drop shadows or text effects.
 
-        These are blocks that overlap significantly with the text bbox or
-        are contained within a slightly expanded version of it.
+        These are blocks that are contained within a slightly expanded version
+        of the text bbox and are similar in size to the text. This helps avoid
+        claiming unrelated blocks like bag icon images that happen to overlap.
+
+        Only considers unconsumed blocks to avoid conflicts with other
+        classifiers that have already claimed blocks.
 
         Args:
             text_block: The primary text block.
@@ -145,23 +149,29 @@ class BagNumberClassifier(RuleBasedClassifier):
         Returns:
             List of Image/Drawing blocks that should be claimed.
         """
-        page_data = result.page_data
         text_bbox = text_block.bbox
         expanded_bbox = text_bbox.expand(_SHADOW_MARGIN)
 
         shadow_blocks: list[Image | Drawing] = []
 
-        for block in page_data.blocks:
-            if not isinstance(block, Image | Drawing):
-                continue
-
-            # Skip the text block itself
+        # Only consider unconsumed Image/Drawing blocks
+        for block in result.get_unconsumed_blocks((Image, Drawing)):
+            # Skip the text block itself (shouldn't happen since we filter by type)
             if block is text_block:
                 continue
 
-            # Check if block overlaps significantly with text or is contained
-            # in the expanded bbox
-            if expanded_bbox.contains(block.bbox) or text_bbox.iou(block.bbox) > 0.3:
-                shadow_blocks.append(block)
+            # Block must be contained in the expanded bbox
+            if not expanded_bbox.contains(block.bbox):
+                continue
+
+            # Block must be similar in size to the text (within 2x)
+            # Shadows shouldn't be much larger than the text they shadow
+            size_ratio = block.bbox.area / text_bbox.area if text_bbox.area > 0 else 0
+            if size_ratio > 2.0:
+                continue
+
+            # Type assertion: we filtered by (Image, Drawing) above
+            assert isinstance(block, (Image, Drawing))
+            shadow_blocks.append(block)
 
         return shadow_blocks

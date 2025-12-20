@@ -26,6 +26,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartNumber,
     PartsList,
     ProgressBar,
+    ProgressBarBar,
     Step,
     StepNumber,
 )
@@ -314,6 +315,7 @@ def create_sample_page() -> Page:
             bbox=BBox(60, 570, 670, 595),
             progress=0.25,
             full_width=610,
+            bar=ProgressBarBar(bbox=BBox(60, 575, 670, 590)),
         ),
         instruction=InstructionContent(
             steps=[

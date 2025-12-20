@@ -32,6 +32,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PieceLength,
     Preview,
     ProgressBar,
+    ProgressBarBar,
     ProgressBarIndicator,
     RotationSymbol,
     Scale,
@@ -153,7 +154,13 @@ TEST_CASES = [
     (Scale(bbox=BBOX, length=PieceLength(bbox=BBOX, value=1)), "Scale"),
     (PartImage(bbox=BBOX, image_id="img"), "PartImage"),
     (ProgressBarIndicator(bbox=BBOX), "ProgressBarIndicator"),
-    (ProgressBar(bbox=BBOX, full_width=100, progress=0.5), "ProgressBar"),
+    (ProgressBarBar(bbox=BBOX), "ProgressBarBar"),
+    (
+        ProgressBar(
+            bbox=BBOX, full_width=100, progress=0.5, bar=ProgressBarBar(bbox=BBOX)
+        ),
+        "ProgressBar",
+    ),
     (Divider(bbox=BBOX, orientation=Divider.Orientation.HORIZONTAL), "Divider"),
     (Background(bbox=BBOX, fill_color=(0.9, 0.9, 0.9)), "Background"),
     (TriviaText(bbox=BBOX, text_lines=["Did you know?"]), "TriviaText"),
