@@ -33,6 +33,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
 )
 from build_a_long.pdf_extract.classifier.rule_based_classifier import (
     RuleBasedClassifier,
+    RuleScore,
 )
 from build_a_long.pdf_extract.classifier.rules import (
     AspectRatioRule,
@@ -41,12 +42,13 @@ from build_a_long.pdf_extract.classifier.rules import (
     Rule,
     SizeRangeRule,
 )
-from build_a_long.pdf_extract.classifier.score import Score, Weight
+from build_a_long.pdf_extract.classifier.score import Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     LoosePartSymbol,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import (
+    Blocks,
     Drawing,
     Image,
 )
@@ -54,7 +56,7 @@ from build_a_long.pdf_extract.extractor.page_blocks import (
 log = logging.getLogger(__name__)
 
 
-class _LoosePartSymbolScore(Score):
+class _LoosePartSymbolScore(RuleScore):
     """Score for loose part symbol classification."""
 
     aspect_score: float
@@ -74,10 +76,25 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
     Identifies symbol clusters that appear in the upper portion of pages.
     These are small, square-ish clusters of drawings that provide visual context.
     The OpenBagClassifier will consume matching symbols during its build phase.
+
+    Implementation Pattern: Anchor-and-Cluster
+    -------------------------------------------
+    This classifier uses a clustering pattern where:
+
+    1. Rules find anchor blocks (small circular drawings)
+    2. _get_additional_source_blocks() discovers nearby blocks to form complete clusters
+    3. _create_score() validates the cluster properties (size, aspect) and scores it
+
+    The anchor + nearby blocks form a SINGLE visual element (the symbol).
+    This pattern is similar to RotationSymbolClassifier which clusters Drawing blocks.
     """
 
     output: ClassVar[str] = "loose_part_symbol"
-    requires: ClassVar[frozenset[str]] = frozenset()  # No dependencies - runs early
+    requires: ClassVar[frozenset[str]] = frozenset()
+
+    @property
+    def effects_margin(self) -> float | None:
+        return None
 
     @property
     def rules(self) -> Sequence[Rule]:
@@ -106,84 +123,85 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
             CurveCountRule(min_count=4, weight=1.0, required=True),
         ]
 
-    def _score(self, result: ClassificationResult) -> None:
-        """Find symbol clusters using anchor-and-cluster strategy.
+    def _get_additional_source_blocks(
+        self, block: Blocks, result: ClassificationResult
+    ) -> Sequence[Blocks]:
+        """Find blocks that form a cluster with the anchor block."""
+        if not isinstance(block, Drawing):
+            return []
 
-        1. Use rules to find potential anchor blocks (small circles).
-        2. For each anchor, find nearby blocks to form a cluster.
-        3. Score the cluster and update the candidate.
+        # Find nearby blocks to form the symbol cluster
+        cluster = self._find_cluster_blocks(block, result.page_data.blocks)
+        # Remove the anchor itself (it's already the primary block)
+        return [b for b in cluster if b is not block]
+
+    def _create_score(
+        self,
+        components: dict[str, float],
+        total_score: float,
+        source_blocks: Sequence[Blocks],
+    ) -> _LoosePartSymbolScore:
+        """Validate and score the complete cluster.
+
+        Rejects clusters that don't meet size/aspect requirements.
         """
-        # 1. Find anchors using base rules
-        super()._score(result)
-
-        # 2. Refine candidates (which currently represent just the anchors)
-        # Get all scored candidates (get_scored_candidates excludes failed ones)
-        candidates = result.get_scored_candidates(self.output)
-
-        # We need to iterate carefully as we might modify them
-        for candidate in candidates:
-            anchor = candidate.source_blocks[0]
-            if not isinstance(anchor, Drawing):
-                # Should be guaranteed by IsInstanceFilter, but safe check
-                candidate.failure_reason = "Anchor is not a Drawing"
-                continue
-
-            # Find blocks near this anchor (including images, which rules filtered out)
-            cluster_blocks = self._find_cluster_blocks(anchor, result.page_data.blocks)
-
-            if len(cluster_blocks) < 3:
-                candidate.failure_reason = (
-                    f"Cluster too small (found {len(cluster_blocks)} blocks, need 3)"
-                )
-                continue
-
-            # Calculate combined bbox
-            symbol_bbox = BBox.union_all([b.bbox for b in cluster_blocks])
-
-            # Check aspect ratio - should be roughly square (0.9 to 1.1)
-            aspect = symbol_bbox.width / symbol_bbox.height if symbol_bbox.height else 0
-            if not (0.9 <= aspect <= 1.1):
-                candidate.failure_reason = f"Bad cluster aspect ratio: {aspect:.2f}"
-                continue
-
-            # Check total size
-            config = self.config.loose_part_symbol
-            ideal_size = config.ideal_size
-            tolerance = config.size_tolerance
-            min_size = ideal_size * (1.0 - tolerance)
-            max_size = ideal_size * (1.0 + tolerance)
-            avg_size = (symbol_bbox.width + symbol_bbox.height) / 2.0
-
-            if not (min_size <= avg_size <= max_size):
-                candidate.failure_reason = (
-                    f"Bad cluster size: {avg_size:.1f} "
-                    f"(range {min_size:.1f}-{max_size:.1f})"
-                )
-                continue
-
-            # Score based on aspect ratio (closer to 1.0 is better)
-            aspect_score = 1.0 - abs(aspect - 1.0) * 0.5
-            # Score based on size (closer to ideal_size is better)
-            size_deviation = abs(avg_size - ideal_size) / ideal_size
-            size_score = 1.0 - size_deviation
-
-            new_score_details = _LoosePartSymbolScore(
-                aspect_score=aspect_score,
-                size_score=size_score,
+        # Need at least 3 blocks to form a valid symbol cluster
+        if len(source_blocks) < 3:
+            return _LoosePartSymbolScore(
+                components=components,
+                total_score=0.0,
+                aspect_score=0.0,
+                size_score=0.0,
             )
 
-            # Update candidate
-            candidate.bbox = symbol_bbox
-            candidate.source_blocks = list(cluster_blocks)
-            candidate.score_details = new_score_details
-            candidate.score = new_score_details.score()
+        # Calculate combined bbox of the cluster
+        symbol_bbox = BBox.union_all([b.bbox for b in source_blocks])
 
-            log.debug(
-                "[loose_part_symbol] Refined candidate: bbox=%s score=%.2f blocks=%d",
-                symbol_bbox,
-                candidate.score,
-                len(cluster_blocks),
+        # Check aspect ratio - should be roughly square (0.9 to 1.1)
+        aspect = symbol_bbox.width / symbol_bbox.height if symbol_bbox.height else 0
+        if not (0.9 <= aspect <= 1.1):
+            return _LoosePartSymbolScore(
+                components=components,
+                total_score=0.0,
+                aspect_score=0.0,
+                size_score=0.0,
             )
+
+        # Check total size
+        config = self.config.loose_part_symbol
+        ideal_size = config.ideal_size
+        tolerance = config.size_tolerance
+        min_size = ideal_size * (1.0 - tolerance)
+        max_size = ideal_size * (1.0 + tolerance)
+        avg_size = (symbol_bbox.width + symbol_bbox.height) / 2.0
+
+        if not (min_size <= avg_size <= max_size):
+            return _LoosePartSymbolScore(
+                components=components,
+                total_score=0.0,
+                aspect_score=0.0,
+                size_score=0.0,
+            )
+
+        # Score based on aspect ratio (closer to 1.0 is better)
+        aspect_score = 1.0 - abs(aspect - 1.0) * 0.5
+        # Score based on size (closer to ideal_size is better)
+        size_deviation = abs(avg_size - ideal_size) / ideal_size
+        size_score = 1.0 - size_deviation
+
+        log.debug(
+            "[loose_part_symbol] Cluster validated: bbox=%s score=%.2f blocks=%d",
+            symbol_bbox,
+            (aspect_score + size_score) / 2.0,
+            len(source_blocks),
+        )
+
+        return _LoosePartSymbolScore(
+            components=components,
+            total_score=total_score,
+            aspect_score=aspect_score,
+            size_score=size_score,
+        )
 
     def _find_cluster_blocks(
         self,

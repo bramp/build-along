@@ -30,7 +30,7 @@ from build_a_long.pdf_extract.classifier.text import (
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     StepNumber,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Block, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Text
 
 
 class SubStepNumberClassifier(RuleBasedClassifier):
@@ -51,10 +51,6 @@ class SubStepNumberClassifier(RuleBasedClassifier):
 
     output: ClassVar[str] = "substep_number"
     requires: ClassVar[frozenset[str]] = frozenset()
-
-    @property
-    def effects_margin(self) -> float | None:
-        return 2.0
 
     @property
     def min_score(self) -> float:
@@ -93,12 +89,13 @@ class SubStepNumberClassifier(RuleBasedClassifier):
 
     def _create_score(
         self,
-        block: Block,
         components: dict[str, float],
         total_score: float,
+        source_blocks: Sequence[Blocks],
     ) -> StepNumberScore:
         """Create a StepNumberScore that includes the parsed step value."""
         step_value = 0
+        block = source_blocks[0]  # Primary block that passed the rules
         if isinstance(block, Text):
             parsed = extract_step_number_value(block.text)
             if parsed is not None:

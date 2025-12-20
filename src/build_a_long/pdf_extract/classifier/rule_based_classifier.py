@@ -21,7 +21,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.rules import Rule, RuleContext
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Image
 
 log = logging.getLogger(__name__)
 
@@ -133,10 +133,11 @@ class RuleBasedClassifier(LabelClassifier):
 
             # Optional: Custom score with parsed data
             def _create_score(
-                self, block: Block, components: dict[str, float], total: float
+                self, components: dict[str, float], total: float,
+                source_blocks: Sequence[Blocks]
             ) -> RuleScore:
-                # Parse and store additional info
-                value = self._parse_value(block)
+                # Parse and store additional info from primary block
+                value = self._parse_value(source_blocks[0])
                 return MyCustomScore(
                     components=components,
                     total_score=total,
@@ -203,9 +204,9 @@ class RuleBasedClassifier(LabelClassifier):
         """Margin to expand block bbox to find visual effects (outlines, shadows).
 
         If None, no automatic effect finding is performed.
-        Defaults to None.
+        Defaults to 2.0.
         """
-        return None
+        return 2.0
 
     # TODO Do we need effects_max_area_ratio ?
     @property
@@ -217,24 +218,43 @@ class RuleBasedClassifier(LabelClassifier):
         """
         return None
 
+    @property
+    def effects_target_types(self) -> tuple[type[Blocks], ...]:
+        """Types of blocks to accept as effects.
+
+        Defaults to (Drawing, Image). Can be overridden to exclude Images
+        (e.g. for PartCount) or limit to specific types.
+        """
+        return (Drawing, Image)
+
     def _create_score(
         self,
-        block: Block,
         components: dict[str, float],
         total_score: float,
+        source_blocks: Sequence[Blocks],
     ) -> RuleScore:
         """Create the score object for a candidate.
 
         Subclasses can override this to return a more specific score type
-        that contains additional information (e.g., parsed values).
+        that contains additional information (e.g., parsed values, cluster
+        validation results).
 
         Args:
-            block: The block being scored
             components: Dictionary of rule name to score
-            total_score: The weighted total score
+            total_score: The weighted total score from rules
+            source_blocks: All blocks that will be part of the candidate.
+                The primary block (that passed the rules) is source_blocks[0].
+                Additional blocks from _get_additional_source_blocks() follow.
 
         Returns:
             A RuleScore (or subclass) instance
+
+        TODO: Consider adding a cluster_rules property if multiple classifiers
+        need to validate/score complete clusters. This would allow expressing
+        cluster validation (e.g., count >= 3, cluster bbox aspect ratio) as
+        declarative rules instead of imperative code in _create_score().
+        For now, the imperative approach is simpler for the few classifiers
+        that need it (e.g., LoosePartSymbolClassifier).
         """
         return RuleScore(components=components, total_score=total_score)
 
@@ -276,29 +296,8 @@ class RuleBasedClassifier(LabelClassifier):
             if failed:
                 continue
 
-            # Calculate final score
+            # Calculate final score from rules
             final_score = weighted_sum / total_weight if total_weight > 0 else 0.0
-
-            # Check classifier-specific acceptance logic
-            if not self._should_accept(final_score):
-                log.debug(
-                    "[%s] block_id=%s "
-                    "rejected: score=%.3f < min_score=%.3f components=%s",
-                    self.output,
-                    block.id,
-                    final_score,
-                    self.min_score,
-                    components,
-                )
-                continue
-
-            log.debug(
-                "[%s] block_id=%s accepted: score=%.3f components=%s",
-                self.output,
-                block.id,
-                final_score,
-                components,
-            )
 
             # Build source blocks list, deduplicating as we go
             seen_ids: set[int] = {block.id}
@@ -311,7 +310,32 @@ class RuleBasedClassifier(LabelClassifier):
                     source_blocks.append(b)
 
             # Create score object (subclasses can override _create_score)
-            score_details = self._create_score(block, components, final_score)
+            # This can validate the complete cluster and adjust the score
+            score_details = self._create_score(components, final_score, source_blocks)
+
+            # Get actual score (may differ from final_score after validation)
+            actual_score = score_details.score()
+
+            # Check classifier-specific acceptance logic on the actual score
+            if not self._should_accept(actual_score):
+                log.debug(
+                    "[%s] block_id=%s "
+                    "rejected: score=%.3f < min_score=%.3f components=%s",
+                    self.output,
+                    block.id,
+                    actual_score,
+                    self.min_score,
+                    components,
+                )
+                continue
+
+            log.debug(
+                "[%s] block_id=%s accepted: score=%.3f components=%s",
+                self.output,
+                block.id,
+                actual_score,
+                components,
+            )
 
             # Compute bbox as the union of all source blocks
             # This ensures the candidate bbox matches the source_blocks union,
@@ -322,7 +346,7 @@ class RuleBasedClassifier(LabelClassifier):
             candidate = Candidate(
                 bbox=candidate_bbox,
                 label=self.output,
-                score=final_score,
+                score=actual_score,
                 score_details=score_details,
                 source_blocks=source_blocks,
             )
@@ -343,12 +367,17 @@ class RuleBasedClassifier(LabelClassifier):
         """
         margin = self.effects_margin
         if margin is not None:
-            return find_contained_effects(
+            effects = find_contained_effects(
                 block,
                 result.page_data.blocks,
                 margin=margin,
                 max_area_ratio=self.effects_max_area_ratio,
             )
+            # Filter effects by target types (e.g. to exclude Images)
+            target_types = self.effects_target_types
+            if target_types != (Drawing, Image):
+                effects = [b for b in effects if isinstance(b, target_types)]
+            return effects
         return []
 
     def _should_accept(self, score: float) -> bool:
