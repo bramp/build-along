@@ -152,6 +152,63 @@ class SizeRangeRule(Rule):
         return 1.0
 
 
+class SizePreferenceScore(Rule):
+    """Rule that scores based on size with a target preference.
+
+    Checks that both width and height are within [min_size, max_size], then
+    scores based on average size relative to target:
+    - At target_size: score = 1.0
+    - At min_size: score = min_score (default 0.75)
+    - Outside min/max range (either dimension): score = 0.0
+
+    Linear interpolation between min and target.
+    """
+
+    def __init__(
+        self,
+        min_size: float,
+        target_size: float,
+        max_size: float,
+        min_score: float = 0.75,
+        weight: float = 1.0,
+        name: str = "SizePreference",
+        required: bool = False,
+    ):
+        self.name = name
+        self.weight = weight
+        self.required = required
+        self.min_size = min_size
+        self.target_size = target_size
+        self.max_size = max_size
+        self.min_score = min_score
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        width = block.bbox.width
+        height = block.bbox.height
+
+        # Both dimensions must be within range
+        if width < self.min_size or width > self.max_size:
+            return 0.0
+        if height < self.min_size or height > self.max_size:
+            return 0.0
+
+        # Score based on average size relative to target
+        avg_size = (width + height) / 2
+
+        # Interpolate: min_score at min_size, 1.0 at target_size
+        if avg_size <= self.target_size:
+            if self.target_size == self.min_size:
+                return 1.0
+            t = (avg_size - self.min_size) / (self.target_size - self.min_size)
+            return self.min_score + t * (1.0 - self.min_score)
+        else:
+            # Beyond target but still within max - score decreases
+            if self.max_size == self.target_size:
+                return 1.0
+            t = (avg_size - self.target_size) / (self.max_size - self.target_size)
+            return 1.0 - t * (1.0 - self.min_score)
+
+
 class AspectRatioRule(Rule):
     """Rule that checks if block aspect ratio (width/height) is within range."""
 

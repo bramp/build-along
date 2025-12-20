@@ -222,6 +222,21 @@ class Shine(LegoPageElement):
         return f"Shine(bbox={self.bbox})"
 
 
+class ScaleText(LegoPageElement):
+    """The '1:1' text indicating the scale of the diagram.
+
+    Positional context: Located within the Scale element's bounding box,
+    usually to the left or right of the part diagram.
+    """
+
+    tag: Literal["ScaleText"] = Field(default="ScaleText", alias="__tag__", frozen=True)
+    text: str = "1:1"
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"ScaleText(bbox={self.bbox}, text={self.text!r})"
+
+
 class Scale(LegoPageElement):
     """A 1:1 scale indicator showing the actual size of a piece.
 
@@ -240,9 +255,11 @@ class Scale(LegoPageElement):
     length: PieceLength
     """The piece length indicator showing the measurement (e.g., 3 studs)."""
 
-    # Note: Scale elements often contain a part image, but it's typically composed
-    # of vector Drawing blocks rather than a raster Image. These drawings are
-    # captured in the Scale's source_blocks rather than as a separate PartImage.
+    text: ScaleText | None = None
+    """The '1:1' text indicating scale."""
+
+    diagram: PartImage | None = None
+    """The part diagram shown at 1:1 scale."""
 
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
@@ -252,6 +269,10 @@ class Scale(LegoPageElement):
         """Iterate over this Scale and all child elements."""
         yield self
         yield from self.length.iter_elements()
+        if self.text:
+            yield from self.text.iter_elements()
+        if self.diagram:
+            yield from self.diagram.iter_elements()
 
 
 class PartImage(LegoPageElement):
@@ -308,7 +329,8 @@ class ProgressBarIndicator(LegoPageElement):
 
     Positional context: Located within the ProgressBar, positioned horizontally
     to indicate how far through the instructions the reader has progressed.
-    Typically a narrow vertical element that moves along the bar.
+    The indicator is typically a circular element that extends above and below
+    the bar, sitting on top of the bar visually.
 
     See layout diagram: lego_page_layout.png
     """
@@ -322,12 +344,35 @@ class ProgressBarIndicator(LegoPageElement):
         return f"ProgressBarIndicator(bbox={str(self.bbox)})"
 
 
+class ProgressBarBar(LegoPageElement):
+    """The bar portion of a progress bar, spanning across the page.
+
+    Positional context: A long, thin horizontal element at the bottom of the page.
+    This represents the track along which the indicator moves. It may consist of
+    multiple overlapping Drawing/Image elements that form a single visual bar.
+
+    See layout diagram: lego_page_layout.png
+    """
+
+    tag: Literal["ProgressBarBar"] = Field(
+        default="ProgressBarBar", alias="__tag__", frozen=True
+    )
+
+    def __str__(self) -> str:
+        """Return a single-line string representation with key information."""
+        return f"ProgressBarBar(bbox={str(self.bbox)})"
+
+
 class ProgressBar(LegoPageElement):
     """A progress bar showing building progress through the instruction book.
 
     Positional context: Typically located at the bottom of the page, spanning most
-    of the page width, near the page number. Often consists of one or more
-    Drawing/Image elements forming a horizontal bar with progress indicators.
+    of the page width, near the page number. Consists of two main components:
+
+    - bar: The horizontal track (ProgressBarBar) spanning the page width
+    - indicator: The circular marker (ProgressBarIndicator) showing current progress
+
+    The indicator sits on top of the bar and extends above and below it vertically.
 
     Note: The bbox is clipped to page boundaries for display purposes, but the
     original unclipped width is preserved in full_width for progress calculation.
@@ -350,6 +395,9 @@ class ProgressBar(LegoPageElement):
     that may be semantically meaningful for calculating progress percentage.
     """
 
+    bar: ProgressBarBar
+    """The horizontal bar track spanning the page width."""
+
     indicator: ProgressBarIndicator | None = None
     """The progress indicator element, if detected."""
 
@@ -359,12 +407,13 @@ class ProgressBar(LegoPageElement):
         return f"ProgressBar(bbox={str(self.bbox)}{progress_str})"
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
-        """Iterate over this ProgressBar and its indicator.
+        """Iterate over this ProgressBar and its child elements.
 
         Yields:
-            This element and the indicator if present
+            This element, then the bar, then the indicator if present
         """
         yield self
+        yield from self.bar.iter_elements()
         if self.indicator:
             yield from self.indicator.iter_elements()
 
@@ -1177,7 +1226,9 @@ LegoPageElements = Annotated[
     | PartImage
     | Shine
     | Scale
+    | ScaleText
     | ProgressBar
+    | ProgressBarBar
     | ProgressBarIndicator
     | Background
     | TriviaText

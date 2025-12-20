@@ -17,6 +17,9 @@ from build_a_long.pdf_extract.classifier.parts.piece_length_classifier import (
 from build_a_long.pdf_extract.classifier.parts.scale_classifier import (
     ScaleClassifier,
 )
+from build_a_long.pdf_extract.classifier.parts.scale_text_classifier import (
+    ScaleTextClassifier,
+)
 from build_a_long.pdf_extract.classifier.parts.shine_classifier import (
     ShineClassifier,
 )
@@ -29,5 +32,6 @@ __all__ = [
     "PartsListClassifier",
     "PieceLengthClassifier",
     "ScaleClassifier",
+    "ScaleTextClassifier",
     "ShineClassifier",
 ]

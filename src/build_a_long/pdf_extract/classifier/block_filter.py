@@ -13,8 +13,13 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
-from build_a_long.pdf_extract.extractor.bbox import filter_contained
-from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Text
+from build_a_long.pdf_extract.extractor.bbox import BBox, filter_contained
+from build_a_long.pdf_extract.extractor.page_blocks import (
+    Blocks,
+    Drawing,
+    Image,
+    Text,
+)
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.classifier.classification_result import (
@@ -381,7 +386,7 @@ def find_text_outline_effects(
     text_block: Text,
     all_blocks: Sequence[Blocks],
     *,
-    margin: float = 5.0,
+    margin: float = 2.0,
 ) -> list[Drawing]:
     """Find Drawing blocks that are text effects (outlines, shadows, etc.).
 
@@ -397,7 +402,7 @@ def find_text_outline_effects(
         text_block: The Text block to find effects for.
         all_blocks: All blocks on the page to search through.
         margin: Margin to expand the text bbox by when checking containment.
-            Default 5.0 points.
+            Default 2.0 points.
 
     Returns:
         List of Drawing blocks that appear to be effects for the text.
@@ -416,3 +421,116 @@ def find_text_outline_effects(
             outline_effects.append(block)
 
     return outline_effects
+
+
+def find_image_shadow_effects(
+    primary_block: Drawing | Image,
+    all_blocks: Sequence[Blocks],
+    *,
+    margin: float = 2.0,
+) -> tuple[list[Drawing | Image], BBox]:
+    """Find Drawing/Image blocks that are shadow effects for an image element.
+
+    LEGO PDFs often render graphical elements with multiple layers for visual
+    effects like shadows, glows, or bevels. These appear as Drawing/Image
+    elements fully contained within a slightly expanded version of the primary
+    element's bbox.
+
+    This function identifies such effects so they can be included when
+    calculating the element's bounding box, preventing them from appearing
+    as unassigned blocks.
+
+    Args:
+        primary_block: The primary Drawing/Image block to find effects for.
+        all_blocks: All blocks on the page to search through.
+        margin: Margin to expand the primary bbox by when checking containment.
+            Default 2.0 points.
+
+    Returns:
+        A tuple of:
+        - List of Drawing/Image blocks that appear to be effects
+        - The combined bbox of primary_block and all effects
+    """
+    effects: list[Drawing | Image] = []
+    combined_bbox = primary_block.bbox
+
+    # Expand primary bbox by margin to find contained blocks
+    search_bbox = primary_block.bbox.expand(margin)
+
+    for block in all_blocks:
+        if block is primary_block:
+            continue
+
+        if not isinstance(block, (Drawing, Image)):
+            continue
+
+        # Shadow effects should be fully contained within the expanded bbox
+        if not search_bbox.contains(block.bbox):
+            continue
+
+        effects.append(block)
+        combined_bbox = combined_bbox.union(block.bbox)
+
+    return effects, combined_bbox
+
+
+def find_horizontally_overlapping_blocks(
+    primary_block: Drawing | Image,
+    all_blocks: Sequence[Blocks],
+    *,
+    vertical_margin: float = 5.0,
+) -> tuple[list[Drawing | Image], BBox]:
+    """Find Drawing/Image blocks that overlap horizontally with the primary block.
+
+    This is specifically designed for progress bars where multiple layers
+    (borders, fills, inner bars) are stacked horizontally but may not be
+    fully contained within each other.
+
+    A block is included if:
+    - It is vertically contained within the primary block (with margin)
+    - It overlaps horizontally with the primary block
+
+    This filters out full-page backgrounds (which extend beyond the bar
+    vertically) while including inner elements.
+
+    Args:
+        primary_block: The primary Drawing/Image block.
+        all_blocks: All blocks on the page to search through.
+        vertical_margin: Margin to expand vertically when checking containment.
+            Default 5.0 points.
+
+    Returns:
+        A tuple of:
+        - List of Drawing/Image blocks that are horizontally overlapping
+        - The combined bbox of primary_block and all overlapping blocks
+    """
+    effects: list[Drawing | Image] = []
+    combined_bbox = primary_block.bbox
+
+    # Expand vertically by margin to catch slight variations
+    expanded_y0 = primary_block.bbox.y0 - vertical_margin
+    expanded_y1 = primary_block.bbox.y1 + vertical_margin
+
+    for block in all_blocks:
+        if block is primary_block:
+            continue
+
+        if not isinstance(block, (Drawing, Image)):
+            continue
+
+        # Block must be vertically contained within the expanded extent
+        # This filters out full-page backgrounds and vertical dividers
+        if block.bbox.y0 < expanded_y0 or block.bbox.y1 > expanded_y1:
+            continue
+
+        # Block must overlap horizontally with the primary block
+        if (
+            block.bbox.x1 < primary_block.bbox.x0
+            or block.bbox.x0 > primary_block.bbox.x1
+        ):
+            continue
+
+        effects.append(block)
+        combined_bbox = combined_bbox.union(block.bbox)
+
+    return effects, combined_bbox

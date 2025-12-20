@@ -26,6 +26,7 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartImage,
     PartsList,
     ProgressBar,
+    ProgressBarBar,
     Step,
     StepNumber,
 )
@@ -965,7 +966,8 @@ class TestValidateNoDividerIntersection:
             background = element
             progress_bar = None
         elif element_type == "ProgressBar":
-            element = ProgressBar(bbox=element_bbox, full_width=100)
+            bar = ProgressBarBar(bbox=element_bbox)
+            element = ProgressBar(bbox=element_bbox, full_width=100, bar=bar)
             steps = []
             background = None
             progress_bar = element

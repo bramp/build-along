@@ -43,7 +43,7 @@ from build_a_long.pdf_extract.extractor.bbox import BBox, filter_contained
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PieceLength,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks, Drawing, Text
 
 log = logging.getLogger(__name__)
 
@@ -79,6 +79,35 @@ class PieceLengthClassifier(RuleBasedClassifier):
             ),
         ]
 
+    def _get_additional_source_blocks(
+        self, block: Block, result: ClassificationResult
+    ) -> list[Blocks]:
+        """Include containing circle drawings as source blocks.
+
+        This ensures the circle drawings around piece length numbers are
+        marked as consumed when the piece_length is built.
+        """
+        if not isinstance(block, Text):
+            return []
+
+        drawings = [b for b in result.page_data.blocks if isinstance(b, Drawing)]
+        containing_drawing = self._find_smallest_containing_drawing(block, drawings)
+
+        if not containing_drawing:
+            return []
+
+        # Start with the containing drawing
+        additional: list[Blocks] = [containing_drawing]
+
+        # Find any other contained drawings (e.g. concentric circles)
+        expanded_bbox = BBox.union(block.bbox, containing_drawing.bbox).expand(3.0)
+        contained = filter_contained(drawings, expanded_bbox)
+        for d in contained:
+            if d is not containing_drawing:
+                additional.append(d)
+
+        return additional
+
     def build(self, candidate: Candidate, result: ClassificationResult) -> PieceLength:
         """Construct a PieceLength element from a single candidate."""
         # Get the text block
@@ -88,32 +117,9 @@ class PieceLengthClassifier(RuleBasedClassifier):
         # Parse value
         value = int(text_block.text.strip())
 
-        # Use the candidate's bbox (which currently is just the text bbox
-        # from RuleBasedClassifier)
-        # We need to find the containing drawing again to include it
-        # in the final bbox
-        # This duplicates logic from TextContainerFitRule, but it's necessary since
-        # RuleBasedClassifier doesn't pass rule-internal state to build.
-        # Alternatively, we could expand the bbox in _score if we overrode it,
-        # but let's stick to standard flow.
-
-        # Find containing drawing to expand bbox
-        drawings = [b for b in result.page_data.blocks if isinstance(b, Drawing)]
-        containing_drawing = self._find_smallest_containing_drawing(
-            text_block, drawings
-        )
-
-        bbox = text_block.bbox
-        if containing_drawing:
-            bbox = BBox.union(text_block.bbox, containing_drawing.bbox)
-
-            # Also include any other contained drawings (e.g. concentric circles)
-            expanded_bbox = bbox.expand(3.0)
-            contained = filter_contained(drawings, expanded_bbox)
-            for d in contained:
-                bbox = BBox.union(bbox, d.bbox)
-
-        return PieceLength(value=value, bbox=bbox)
+        # Use the candidate's bbox which is already the union of all source_blocks
+        # (text + containing drawings) computed by RuleBasedClassifier.
+        return PieceLength(value=value, bbox=candidate.bbox)
 
     def _find_smallest_containing_drawing(
         self, text: Text, drawings: list[Drawing]

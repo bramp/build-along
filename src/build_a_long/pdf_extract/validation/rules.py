@@ -16,6 +16,8 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Page,
     Part,
     ProgressBar,
+    ProgressBarBar,
+    ProgressBarIndicator,
 )
 
 from .types import ValidationIssue, ValidationResult, ValidationSeverity
@@ -191,6 +193,54 @@ def assert_element_bbox_matches_source_and_children(
         raise AssertionError(
             f"Page {result.page_data.page_number}: {len(mismatches)} elements have "
             f"bbox not matching source blocks + children union: {mismatch_summary}"
+        )
+
+
+def assert_no_shared_source_blocks(result: ClassificationResult) -> None:
+    """Assert that no two constructed candidates share the same source blocks.
+
+    This validation checks that each source block is consumed by at most one
+    constructed candidate. Shared blocks indicate a bug where two classifiers
+    both claimed the same PDF content.
+
+    Classifiers that need to claim additional blocks during build() should use
+    result.get_unconsumed_blocks() to avoid conflicts.
+
+    Args:
+        result: The classification result to validate
+
+    Raises:
+        AssertionError: If any source blocks are shared between candidates.
+    """
+    # Map block ID -> list of (label, candidate_info) that claimed it
+    block_owners: dict[int, list[tuple[str, str]]] = {}
+
+    for label, candidates in result.candidates.items():
+        for candidate in candidates:
+            if candidate.constructed is None:
+                continue
+            # Include candidate id and source block IDs for debugging
+            block_ids = sorted(b.id for b in candidate.source_blocks)
+            candidate_info = f"id={id(candidate)} {candidate.bbox} blocks={block_ids}"
+            for block in candidate.source_blocks:
+                if block.id not in block_owners:
+                    block_owners[block.id] = []
+                block_owners[block.id].append((label, candidate_info))
+
+    # Find blocks claimed by multiple candidates
+    conflicts: list[str] = []
+    for block_id, owners in block_owners.items():
+        if len(owners) > 1:
+            owner_desc = ", ".join(f"{label}@{info}" for label, info in owners)
+            conflicts.append(f"block {block_id} claimed by: {owner_desc}")
+
+    if conflicts:
+        conflict_summary = "; ".join(conflicts[:5])
+        if len(conflicts) > 5:
+            conflict_summary += f" ... and {len(conflicts) - 5} more"
+        raise AssertionError(
+            f"Page {result.page_data.page_number}: {len(conflicts)} source blocks "
+            f"shared between candidates (programming error): {conflict_summary}"
         )
 
 
@@ -1095,7 +1145,8 @@ def validate_no_divider_intersection(
 
     Domain Invariant: Dividers separate content sections. Elements like steps,
     parts, diagrams, etc. should not cross or touch divider lines.
-    Background and ProgressBar are exceptions as they span the page.
+    Background, ProgressBar, and its child elements are exceptions as they span
+    the page.
 
     Args:
         validation: ValidationResult to add issues to
@@ -1105,8 +1156,15 @@ def validate_no_divider_intersection(
     if not page.dividers:
         return
 
-    # Elements to exclude from checking
-    excluded_types = (Page, Background, ProgressBar, Divider)
+    # Elements to exclude from checking (page-spanning elements)
+    excluded_types = (
+        Page,
+        Background,
+        ProgressBar,
+        ProgressBarBar,
+        ProgressBarIndicator,
+        Divider,
+    )
 
     for element in page.iter_elements():
         if isinstance(element, excluded_types):

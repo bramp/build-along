@@ -21,27 +21,23 @@ against the printed instruction manual.
 import logging
 from typing import ClassVar
 
-from build_a_long.pdf_extract.classifier.block_filter import (
-    find_text_outline_effects,
-)
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.score import Score
-from build_a_long.pdf_extract.classifier.text import is_scale_text
 from build_a_long.pdf_extract.extractor.bbox import (
     BBox,
     filter_contained,
-    find_smallest_containing_box,
     group_by_similar_bbox,
 )
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PieceLength,
     Scale,
+    ScaleText,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing
 
 log = logging.getLogger(__name__)
 
@@ -52,58 +48,69 @@ class _ScaleScore(Score):
     piece_length_candidate: Candidate | None = None
     """The PieceLength candidate associated with this scale."""
 
+    scale_text_candidate: Candidate
+    """The ScaleText candidate associated with this scale."""
+
     def score(self) -> float:
         """Calculate overall score."""
-        # Base score for having scale text in a bounding box
-        base = 0.5
+        # Base score from scale text
+        base = self.scale_text_candidate.score
 
         # Bonus for having piece length inside
         if self.piece_length_candidate:
             base += 0.5
 
-        return base
+        return min(1.0, base)
 
 
 class ScaleClassifier(LabelClassifier):
     """Classifier for 1:1 scale indicators."""
 
     output: ClassVar[str] = "scale"
-    requires: ClassVar[frozenset[str]] = frozenset({"piece_length"})
+    requires: ClassVar[frozenset[str]] = frozenset({"piece_length", "scale_text"})
+
+    def _find_containing_box(
+        self, inner_bbox: BBox, containers: list[Drawing], margin: float = 10.0
+    ) -> Drawing | None:
+        """Find the smallest container that contains inner_bbox (with margin)."""
+        best_container: Drawing | None = None
+        best_area = float("inf")
+
+        for container in containers:
+            # Expand container slightly to allow for text sticking out
+            expanded = container.bbox.expand(margin)
+            if not expanded.contains(inner_bbox):
+                continue
+
+            container_area = container.bbox.area
+            if container_area < best_area:
+                best_area = container_area
+                best_container = container
+
+        return best_container
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score potential Scale indicators.
-
-        Algorithm:
-        1. Find Text blocks with "1:1" pattern
-        2. Find the smallest containing Drawing box
-        3. Look for PieceLength and PartImage candidates inside that box
-        4. Score based on completeness
-        """
+        """Score potential Scale indicators."""
         page_data = result.page_data
 
-        # Get piece_length candidates
+        # Get candidates
         piece_length_candidates = result.get_scored_candidates("piece_length")
+        scale_text_candidates = result.get_scored_candidates("scale_text")
 
         # Get all Drawing blocks for finding containers
-        drawings = [b for b in page_data.blocks if isinstance(b, Drawing)]
+        # Filter out large drawings (backgrounds, etc.) that are > 20% of page area
+        page_area = page_data.bbox.area
+        max_drawing_area = page_area * 0.2
+        drawings = [
+            b
+            for b in page_data.blocks
+            if isinstance(b, Drawing) and b.bbox.area <= max_drawing_area
+        ]
 
-        # Find Text blocks with "1:1" pattern
-        for block in page_data.blocks:
-            if not isinstance(block, Text):
-                continue
-
-            # Check for "1:1" pattern using the text extractor
-            if not is_scale_text(block.text):
-                continue
-
-            log.debug(
-                "[scale] Found '1:1' text at %s: '%s'",
-                block.bbox,
-                block.text,
-            )
-
+        # Iterate over 1:1 text candidates
+        for scale_text_cand in scale_text_candidates:
             # Find the smallest containing Drawing box
-            containing_box = find_smallest_containing_box(block.bbox, drawings)
+            containing_box = self._find_containing_box(scale_text_cand.bbox, drawings)
 
             if not containing_box:
                 log.debug("[scale] No containing box found, skipping")
@@ -120,54 +127,49 @@ class ScaleClassifier(LabelClassifier):
                 search_bbox, piece_length_candidates
             )
 
+            piece_length_block_ids = set()
             if piece_length_candidate:
                 log.debug(
                     "[scale] Found piece_length at %s inside box",
                     piece_length_candidate.bbox,
                 )
+                piece_length_block_ids = {
+                    b.id for b in piece_length_candidate.source_blocks
+                }
+
+            # Get scale_text block IDs to exclude from scale's source_blocks
+            scale_text_block_ids = {b.id for b in scale_text_cand.source_blocks}
+
+            # Blocks owned by children (will be excluded from scale's source_blocks)
+            child_block_ids = piece_length_block_ids | scale_text_block_ids
 
             # Create score
             score = _ScaleScore(
                 piece_length_candidate=piece_length_candidate,
+                scale_text_candidate=scale_text_cand,
             )
 
-            # Collect all source blocks:
-            # 1. The 1:1 text and its outline effects
-            # 2. All drawings with similar bbox to the containing box (borders)
-            # 3. All remaining drawings inside the box
-            #
-            # Note: The "part image" shown in the Scale is often composed of
-            # vector Drawing blocks rather than an Image block. Rather than
-            # introducing a VectorPartImage type, we simply capture all drawings
-            # inside the Scale box as source_blocks. The PieceLength classifier
-            # will claim the ruler/circle drawings it needs, and the remaining
-            # drawings (which visually represent the part) become part of Scale's
-            # source_blocks.
-            source_blocks: list[Blocks] = [block]
-
-            # Add text outline effects (shadows, etc.)
-            text_effects = find_text_outline_effects(block, page_data.blocks)
-            source_blocks.extend(text_effects)
+            # Collect source blocks for Scale (container + diagram).
+            # ScaleText and PieceLength blocks are owned by their candidates.
+            source_blocks: list[Blocks] = []
 
             # Find similar drawings to the containing box (border/shadow effects)
             similar_groups = group_by_similar_bbox(drawings, tolerance=2.0)
             for group in similar_groups:
                 if containing_box in group:
-                    source_blocks.extend(group)
+                    for d in group:
+                        if d.id not in child_block_ids:
+                            source_blocks.append(d)
                     break
 
             # Capture all drawings inside the box (vector part image, ruler, etc.)
-            # PieceLength will claim what it needs; the rest stays with Scale.
             contained_drawings = filter_contained(drawings, search_bbox)
             for drawing in contained_drawings:
-                if drawing not in source_blocks:
+                if drawing not in source_blocks and drawing.id not in child_block_ids:
                     source_blocks.append(drawing)
 
-            # Find similar text blocks (text with same bbox = drop shadow/outline)
-            texts = [b for b in page_data.blocks if isinstance(b, Text)]
-            for text in texts:
-                if text is not block and text.bbox.similar(block.bbox, tolerance=2.0):
-                    source_blocks.append(text)
+            # Note: We don't add text blocks here - ScaleText candidate owns them
+            # and any shadow effects should ideally be handled there.
 
             log.debug(
                 "[scale] Collected %d source blocks for scale at %s",
@@ -190,15 +192,7 @@ class ScaleClassifier(LabelClassifier):
         box_bbox: BBox,
         candidates: list[Candidate],
     ) -> Candidate | None:
-        """Find the best candidate inside the given box.
-
-        Args:
-            box_bbox: The bounding box to search within
-            candidates: List of candidates to search
-
-        Returns:
-            The highest-scoring candidate inside the box, or None
-        """
+        """Find the best candidate inside the given box."""
         # Find candidates contained in the box
         contained = filter_contained(candidates, box_bbox)
 
@@ -224,7 +218,25 @@ class ScaleClassifier(LabelClassifier):
         if piece_length is None:
             raise ValueError("Scale requires a PieceLength element")
 
+        # Build ScaleText
+        scale_text = result.build(score.scale_text_candidate)
+        assert isinstance(scale_text, ScaleText)
+
+        # Note: Scale diagrams are typically vector drawings, not Images.
+        # The DiagramClassifier works with Images, so we don't expect to find
+        # a Diagram candidate here. The drawing blocks are owned by the Scale
+        # via source_blocks but we don't create a separate child element for them.
+        # In the future, we could add a VectorDiagram element if needed.
+
+        # The final bbox should be the union of all components
+        bboxes = [b.bbox for b in candidate.source_blocks]
+        bboxes.append(piece_length.bbox)
+        bboxes.append(scale_text.bbox)
+        final_bbox = BBox.union_all(bboxes)
+
         return Scale(
-            bbox=candidate.bbox,
+            bbox=final_bbox,
             length=piece_length,
+            text=scale_text,
+            diagram=None,  # No Image-based diagram in Scales (they use Drawings)
         )
