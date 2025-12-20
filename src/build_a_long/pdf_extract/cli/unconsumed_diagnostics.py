@@ -10,15 +10,12 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING
 
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
+)
+from build_a_long.pdf_extract.extractor.extractor import PageData
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Image, Text
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.classification_result import (
-        ClassificationResult,
-    )
-    from build_a_long.pdf_extract.extractor.extractor import PageData
 
 
 class UnconsumedCategory(Enum):

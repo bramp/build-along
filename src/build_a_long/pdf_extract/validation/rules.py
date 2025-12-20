@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 import statistics
-from typing import TYPE_CHECKING
 
+from build_a_long.pdf_extract.classifier import ClassificationResult
 from build_a_long.pdf_extract.extractor import PageData
 from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
@@ -21,9 +21,6 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
 )
 
 from .types import ValidationIssue, ValidationResult, ValidationSeverity
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier import ClassificationResult
 
 # =============================================================================
 # Programming Error Detection (assertions)

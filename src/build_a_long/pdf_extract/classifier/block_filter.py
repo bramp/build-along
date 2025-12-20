@@ -10,21 +10,19 @@ import logging
 import warnings
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
+from build_a_long.pdf_extract.classifier.classification_result import (
+    ClassificationResult,
+)
 from build_a_long.pdf_extract.classifier.removal_reason import RemovalReason
 from build_a_long.pdf_extract.extractor.bbox import BBox, filter_contained
 from build_a_long.pdf_extract.extractor.page_blocks import (
+    Block,
     Blocks,
     Drawing,
     Image,
     Text,
 )
-
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.classifier.classification_result import (
-        ClassificationResult,
-    )
 
 
 logger = logging.getLogger(__name__)

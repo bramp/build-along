@@ -7,7 +7,6 @@ from __future__ import annotations
 import logging
 from abc import abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.block_filter import (
     find_contained_effects,
@@ -22,10 +21,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.rules import Rule, RuleContext
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks, Text
-
-if TYPE_CHECKING:
-    pass
+from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks
 
 log = logging.getLogger(__name__)
 

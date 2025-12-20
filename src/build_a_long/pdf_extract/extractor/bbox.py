@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Annotated, Protocol
+from typing import Annotated, Protocol
 
 from annotated_types import Ge
 from pydantic import BaseModel, ConfigDict
 
-if TYPE_CHECKING:
-    from build_a_long.pdf_extract.extractor.pymupdf_types import RectLike
+from build_a_long.pdf_extract.extractor.pymupdf_types import RectLike
 
 # Type alias for non-negative floats
 NonNegativeFloat = Annotated[float, Ge(0)]
