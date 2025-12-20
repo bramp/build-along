@@ -22,7 +22,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.rules import Rule, RuleContext
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks
+from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks, Text
 
 if TYPE_CHECKING:
     pass
@@ -174,9 +174,9 @@ class RuleBasedClassifier(LabelClassifier):
             seen_ids: set[int] = {block.id}
             source_blocks: list[Blocks] = [block]
 
-            # Automatically find visual effects (outlines, shadows)
+            # Automatically find visual effects (outlines, shadows) for Text blocks
             margin = self.effects_margin
-            if margin is not None:
+            if margin is not None and isinstance(block, Text):
                 effects = find_contained_effects(
                     block,
                     result.page_data.blocks,
