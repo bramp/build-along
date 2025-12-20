@@ -73,7 +73,7 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
 
     Identifies symbol clusters that appear in the upper portion of pages.
     These are small, square-ish clusters of drawings that provide visual context.
-    The OpenBagClassifier will claim matching symbols during its build phase.
+    The OpenBagClassifier will consume matching symbols during its build phase.
     """
 
     output: ClassVar[str] = "loose_part_symbol"

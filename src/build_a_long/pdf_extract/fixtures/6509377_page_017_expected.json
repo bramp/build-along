@@ -73,7 +73,7 @@
       "los droides no les arrancan los brazos a sus oponentes cuando pierden."
     ]
   },
-  "unassigned_blocks_count": 1,
+  "unconsumed_blocks_count": 1,
   "instruction": {
     "__tag__": "InstructionContent",
     "steps": [

@@ -96,7 +96,7 @@ class ProgressBarIndicatorClassifier(RuleBasedClassifier):
         ]
 
     # Note: We intentionally do NOT override _get_additional_source_blocks here.
-    # Shadow blocks are claimed during build() to avoid conflicts between
+    # Shadow blocks are consumed during build() to avoid conflicts between
     # indicator and bar over shared blocks.
 
     def build(
@@ -104,11 +104,11 @@ class ProgressBarIndicatorClassifier(RuleBasedClassifier):
     ) -> ProgressBarIndicator:
         """Construct a ProgressBarIndicator element from a single candidate.
 
-        Claims shadow blocks around the indicator during build.
+        Consumes shadow blocks around the indicator during build.
         """
         cfg = self.config.progress_bar
 
-        # Find and claim shadow blocks around the indicator
+        # Find and consume shadow blocks around the indicator
         primary_block = candidate.source_blocks[0]
         if isinstance(primary_block, (Drawing, Image)):
             all_blocks = result.page_data.blocks
@@ -118,7 +118,7 @@ class ProgressBarIndicatorClassifier(RuleBasedClassifier):
 
             if effects:
                 log.debug(
-                    f"Progress bar indicator at {primary_block.bbox} claimed "
+                    f"Progress bar indicator at {primary_block.bbox} consumed "
                     f"{len(effects)} shadow effect blocks."
                 )
                 candidate.source_blocks.extend(effects)

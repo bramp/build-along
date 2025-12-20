@@ -92,7 +92,7 @@
       "text": " 1:1"
     }
   },
-  "unassigned_blocks_count": 1,
+  "unconsumed_blocks_count": 1,
   "instruction": {
     "__tag__": "InstructionContent",
     "steps": [

@@ -39,7 +39,7 @@ class DrawableItem(BaseModel):
     is_removed: bool
     """True if this block was removed."""
 
-    is_unassigned: bool = False
+    is_unconsumed: bool = False
     """True if this block has no candidates."""
 
     depth: int = 0
@@ -52,7 +52,7 @@ def _create_drawable_items(
     draw_blocks: bool,
     draw_elements: bool,
     draw_deleted: bool,
-    draw_unassigned: bool = False,
+    draw_unconsumed: bool = False,
     debug_candidates_label: str | None = None,
 ) -> list[DrawableItem]:
     """Create a unified list of items to draw.
@@ -62,7 +62,7 @@ def _create_drawable_items(
         draw_blocks: If True, include PDF blocks
         draw_elements: If True, include LEGO page elements
         draw_deleted: If True, include removed/non-winner items
-        draw_unassigned: If True, include blocks with no candidates
+        draw_unconsumed: If True, include blocks with no candidates
         debug_candidates_label: If provided, only include candidates with this label
 
     Returns:
@@ -182,8 +182,8 @@ def _create_drawable_items(
                 )
             )
 
-    # Add unassigned blocks (blocks with no candidates)
-    if draw_unassigned:
+    # Add unconsumed blocks (blocks with no candidates)
+    if draw_unconsumed:
         for block in result.blocks:
             # Skip blocks that are source blocks for elements
             if block.id in element_source_block_ids:
@@ -198,8 +198,8 @@ def _create_drawable_items(
             if candidates:
                 continue
 
-            # This is an unassigned block - no candidates at all
-            label = f"ID: {block.id} [UNASSIGNED] {str(block)}"
+            # This is an unconsumed block - no candidates at all
+            label = f"ID: {block.id} [UNCONSUMED] {str(block)}"
             items.append(
                 DrawableItem(
                     bbox=block.bbox,
@@ -207,7 +207,7 @@ def _create_drawable_items(
                     is_element=False,
                     is_winner=False,
                     is_removed=False,
-                    is_unassigned=True,
+                    is_unconsumed=True,
                 )
             )
 
@@ -245,8 +245,8 @@ def _draw_item(
     color = depth_colors[item.depth % len(depth_colors)]
 
     # Determine drawing style
-    if item.is_unassigned:
-        # Unassigned blocks get solid magenta with thick lines
+    if item.is_unconsumed:
+        # Unconsumed blocks get solid magenta with thick lines
         draw.rectangle(scaled_bbox, outline="magenta", width=3)
         color = "magenta"  # Use magenta for label too
     elif item.is_element:
@@ -292,7 +292,7 @@ def draw_and_save_bboxes(
     draw_elements: bool = False,
     draw_deleted: bool = False,
     draw_drawings: bool = False,
-    draw_unassigned: bool = False,
+    draw_unconsumed: bool = False,
     debug_candidates_label: str | None = None,
 ) -> None:
     """
@@ -331,7 +331,7 @@ def draw_and_save_bboxes(
         draw_blocks=draw_blocks,
         draw_elements=draw_elements,
         draw_deleted=draw_deleted,
-        draw_unassigned=draw_unassigned,
+        draw_unconsumed=draw_unconsumed,
         debug_candidates_label=debug_candidates_label,
     )
 
@@ -350,7 +350,7 @@ def draw_and_save_bboxes(
                 is_element=item.is_element,
                 is_winner=item.is_winner,
                 is_removed=item.is_removed,
-                is_unassigned=item.is_unassigned,
+                is_unconsumed=item.is_unconsumed,
                 depth=depth,
             )
         )

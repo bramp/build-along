@@ -517,7 +517,7 @@ class Decoration(LegoPageElement):
     Decorations are visual elements that appear on non-instruction pages
     like covers, credits, table of contents, and other informational pages.
     They are not part of the building instructions and exist primarily
-    to claim blocks that would otherwise be left unassigned.
+    to consume blocks that would otherwise be left unconsumed.
 
     Characteristics:
     - Can be any visual element: logos, images, text, graphics
@@ -1120,8 +1120,8 @@ class Page(LegoPageElement):
     previews: Sequence[Preview] = Field(default_factory=list)
     """List of preview elements showing model diagrams."""
 
-    unassigned_blocks_count: int = 0
-    """Count of blocks on the page that were not assigned to any element or filtered
+    unconsumed_blocks_count: int = 0
+    """Count of blocks on the page that were not consumed by any element or filtered
     out."""
 
     # Content by page type (composition pattern)

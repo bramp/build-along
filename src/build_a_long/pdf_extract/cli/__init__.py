@@ -25,10 +25,10 @@ from .reporting import (
     print_page_hierarchy,
     print_summary,
 )
-from .unassigned_diagnostics import (
-    UnassignedCategory,
-    analyze_unassigned_blocks,
-    print_unassigned_diagnostics,
+from .unconsumed_diagnostics import (
+    UnconsumedCategory,
+    analyze_unconsumed_blocks,
+    print_unconsumed_diagnostics,
 )
 
 __all__ = [
@@ -51,7 +51,7 @@ __all__ = [
     "print_summary",
     "print_validation",
     "validate_results",
-    "UnassignedCategory",
-    "analyze_unassigned_blocks",
-    "print_unassigned_diagnostics",
+    "UnconsumedCategory",
+    "analyze_unconsumed_blocks",
+    "print_unconsumed_diagnostics",
 ]

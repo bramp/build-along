@@ -1296,7 +1296,7 @@ def assign_subassemblies_to_steps(
                 cost_matrix[row_idx, col_idx],
             )
 
-    # Then, try to assign remaining unassigned subassemblies to their nearest step
+    # Then, try to assign remaining unconsumed subassemblies to their nearest step
     # (if within max_distance and no divider between)
     for i, sa in enumerate(subassemblies):
         if i in assigned_subassemblies:

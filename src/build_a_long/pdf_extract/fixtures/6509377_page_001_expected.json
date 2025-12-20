@@ -10,7 +10,7 @@
   "categories": [
     "info"
   ],
-  "unassigned_blocks_count": 0,
+  "unconsumed_blocks_count": 0,
   "info": {
     "__tag__": "InfoContent",
     "decorations": [

@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.block_filter import (
-    find_text_outline_effects,
+    find_contained_effects,
 )
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -22,7 +22,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.rules import Rule, RuleContext
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks, Text
+from build_a_long.pdf_extract.extractor.page_blocks import Block, Blocks
 
 if TYPE_CHECKING:
     pass
@@ -68,6 +68,24 @@ class RuleBasedClassifier(LabelClassifier):
     def min_score(self) -> float:
         """Minimum score threshold for acceptance. Defaults to 0.0."""
         return 0.0
+
+    @property
+    def effects_margin(self) -> float | None:
+        """Margin to expand block bbox to find visual effects (outlines, shadows).
+
+        If None, no automatic effect finding is performed.
+        Defaults to 2.0.
+        """
+        return 2.0
+
+    @property
+    def effects_max_area_ratio(self) -> float | None:
+        """Maximum ratio of effect block area to primary block area.
+
+        Used to avoid consuming unrelated large blocks as effects.
+        Defaults to None (no ratio check).
+        """
+        return None
 
     def _create_score(
         self,
@@ -156,9 +174,16 @@ class RuleBasedClassifier(LabelClassifier):
             seen_ids: set[int] = {block.id}
             source_blocks: list[Blocks] = [block]
 
-            # Add text outline effects for Text blocks
-            if isinstance(block, Text):
-                for b in find_text_outline_effects(block, result.page_data.blocks):
+            # Automatically find visual effects (outlines, shadows)
+            margin = self.effects_margin
+            if margin is not None:
+                effects = find_contained_effects(
+                    block,
+                    result.page_data.blocks,
+                    margin=margin,
+                    max_area_ratio=self.effects_max_area_ratio,
+                )
+                for b in effects:
                     if b.id not in seen_ids:
                         seen_ids.add(b.id)
                         source_blocks.append(b)

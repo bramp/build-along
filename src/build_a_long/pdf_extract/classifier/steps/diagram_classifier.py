@@ -18,16 +18,16 @@ Heuristic
 Lazy Clustering
 ---------------
 Clustering is deferred to build() time. This allows other classifiers (like
-SubAssemblyClassifier) to claim images first. When build() is called:
+SubAssemblyClassifier) to consume images first. When build() is called:
 1. Start with the candidate's source image
-2. Find all adjacent/overlapping unclaimed images
+2. Find all adjacent/overlapping unconsumed images
 3. Cluster them together into a single Diagram
 4. Mark all clustered images as consumed
 
 Re-scoring
 ----------
 When a diagram's source blocks conflict with another candidate (e.g., an arrow
-that claims part of the diagram), the diagram can be re-scored without those
+that consumes part of the diagram), the diagram can be re-scored without those
 blocks. If the remaining blocks still form a valid diagram (meets minimum area),
 a reduced candidate is created instead of failing entirely.
 

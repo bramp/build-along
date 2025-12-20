@@ -29,13 +29,13 @@ class ProcessingConfig(BaseModel):
     draw_elements: bool = False
     draw_deleted: bool = False
     draw_drawings: bool = False
-    draw_unassigned: bool = False
+    draw_unconsumed: bool = False
 
     # Debug flags
     debug_classification: bool = False
     debug_candidates: bool = False
     debug_candidates_label: str | None = None
-    debug_unassigned: bool = False
+    debug_unconsumed: bool = False
     print_histogram: bool = False
     print_font_hints: bool = False
 
@@ -67,11 +67,11 @@ class ProcessingConfig(BaseModel):
             draw_elements=args.draw_elements,
             draw_deleted=args.draw_deleted,
             draw_drawings=args.draw_drawings,
-            draw_unassigned=args.draw_unassigned,
+            draw_unconsumed=args.draw_unconsumed,
             debug_classification=args.debug_classification,
             debug_candidates=args.debug_candidates,
             debug_candidates_label=args.debug_candidates_label,
-            debug_unassigned=args.debug_unassigned,
+            debug_unconsumed=args.debug_unconsumed,
             print_histogram=args.print_histogram,
             print_font_hints=args.print_font_hints,
         )
@@ -193,12 +193,12 @@ def parse_arguments() -> argparse.Namespace:
         ),
     )
     output_group.add_argument(
-        "--draw-unassigned",
+        "--draw-unconsumed",
         action=argparse.BooleanOptionalAction,
         default=False,
         help=(
             "Draw bounding boxes for blocks that have no candidates "
-            "(unassigned blocks)."
+            "(unconsumed blocks)."
         ),
     )
 
@@ -240,10 +240,10 @@ def parse_arguments() -> argparse.Namespace:
         ),
     )
     debug_group.add_argument(
-        "--debug-unassigned",
+        "--debug-unconsumed",
         action="store_true",
         help=(
-            "Print detailed diagnostics for unassigned blocks, including "
+            "Print detailed diagnostics for unconsumed blocks, including "
             "categorization, reasons, and recommendations for fixing."
         ),
     )

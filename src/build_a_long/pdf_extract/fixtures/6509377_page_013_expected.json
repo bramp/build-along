@@ -53,7 +53,7 @@
       }
     }
   },
-  "unassigned_blocks_count": 2,
+  "unconsumed_blocks_count": 2,
   "instruction": {
     "__tag__": "InstructionContent",
     "steps": [

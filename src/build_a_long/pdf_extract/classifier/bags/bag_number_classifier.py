@@ -66,6 +66,14 @@ class BagNumberClassifier(RuleBasedClassifier):
         return self.config.bag_number.min_score
 
     @property
+    def effects_margin(self) -> float:
+        return _SHADOW_MARGIN
+
+    @property
+    def effects_max_area_ratio(self) -> float:
+        return 2.0
+
+    @property
     def rules(self) -> Sequence[Rule]:
         config = self.config
 
@@ -98,7 +106,7 @@ class BagNumberClassifier(RuleBasedClassifier):
         The candidate may include additional source blocks (e.g., text outline
         effects) beyond the primary Text block.
 
-        Also claims nearby Images/Drawings that are likely drop shadows or
+        Also consumes nearby Images/Drawings that are likely drop shadows or
         other text effects (within a small margin of the text bbox).
         """
         # Get the primary text block (first in source_blocks)
@@ -115,13 +123,13 @@ class BagNumberClassifier(RuleBasedClassifier):
         if value is None:
             raise ValueError(f"Could not parse bag number from text: '{block.text}'")
 
-        # Find and claim nearby shadow/effect images by adding them to source_blocks
+        # Find and consume nearby shadow/effect images by adding them to source_blocks
         shadow_blocks = self._find_shadow_blocks(block, result)
         for shadow_block in shadow_blocks:
             if shadow_block not in candidate.source_blocks:
                 candidate.source_blocks.append(shadow_block)
                 log.debug(
-                    "[bag_number] Claimed shadow/effect block: %s",
+                    "[bag_number] Consumed shadow/effect block: %s",
                     shadow_block.bbox,
                 )
 
@@ -138,17 +146,17 @@ class BagNumberClassifier(RuleBasedClassifier):
 
         These are blocks that are contained within a slightly expanded version
         of the text bbox and are similar in size to the text. This helps avoid
-        claiming unrelated blocks like bag icon images that happen to overlap.
+        consuming unrelated blocks like bag icon images that happen to overlap.
 
         Only considers unconsumed blocks to avoid conflicts with other
-        classifiers that have already claimed blocks.
+        classifiers that have already consumed blocks.
 
         Args:
             text_block: The primary text block.
             result: Classification result for accessing page data.
 
         Returns:
-            List of Image/Drawing blocks that should be claimed.
+            List of Image/Drawing blocks that should be consumed.
         """
         text_bbox = text_block.bbox
         expanded_bbox = text_bbox.expand(_SHADOW_MARGIN)

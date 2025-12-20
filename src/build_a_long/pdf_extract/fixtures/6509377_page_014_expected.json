@@ -75,7 +75,7 @@
       "orientation": "vertical"
     }
   ],
-  "unassigned_blocks_count": 4,
+  "unconsumed_blocks_count": 4,
   "instruction": {
     "__tag__": "InstructionContent",
     "steps": [

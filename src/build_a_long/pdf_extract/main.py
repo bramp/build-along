@@ -28,8 +28,8 @@ from build_a_long.pdf_extract.cli.reporting import (
     build_and_print_page_hierarchy,
     print_summary,
 )
-from build_a_long.pdf_extract.cli.unassigned_diagnostics import (
-    print_unassigned_diagnostics,
+from build_a_long.pdf_extract.cli.unconsumed_diagnostics import (
+    print_unconsumed_diagnostics,
 )
 from build_a_long.pdf_extract.extractor.extractor import (
     ExtractionResult,
@@ -321,7 +321,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
             config.draw_blocks
             or config.draw_elements
             or config.draw_drawings
-            or config.draw_unassigned
+            or config.draw_unconsumed
         ):
             render_annotated_images(
                 doc,
@@ -332,7 +332,7 @@ def _process_pdf(config: ProcessingConfig, pdf_path: Path, output_dir: Path) -> 
                 draw_elements=config.draw_elements,
                 draw_deleted=config.draw_deleted,
                 draw_drawings=config.draw_drawings,
-                draw_unassigned=config.draw_unassigned,
+                draw_unconsumed=config.draw_unconsumed,
                 debug_candidates_label=config.debug_candidates_label,
             )
 
@@ -403,8 +403,8 @@ def _print_debug_output(
                 label=config.debug_candidates_label,
             )
 
-    if config.debug_unassigned:
-        print_unassigned_diagnostics(results)
+    if config.debug_unconsumed:
+        print_unconsumed_diagnostics(results)
 
 
 def main() -> int:

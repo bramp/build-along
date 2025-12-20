@@ -211,7 +211,7 @@ def render_annotated_images(
     draw_elements: bool = False,
     draw_deleted: bool = False,
     draw_drawings: bool = False,
-    draw_unassigned: bool = False,
+    draw_unconsumed: bool = False,
     debug_candidates_label: str | None = None,
 ) -> None:
     """Render PDF pages with annotated bounding boxes as PNG images.
@@ -243,6 +243,6 @@ def render_annotated_images(
             draw_elements=draw_elements,
             draw_deleted=draw_deleted,
             draw_drawings=draw_drawings,
-            draw_unassigned=draw_unassigned,
+            draw_unconsumed=draw_unconsumed,
             debug_candidates_label=debug_candidates_label,
         )

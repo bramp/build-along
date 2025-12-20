@@ -127,13 +127,13 @@ class ProgressBarClassifier(LabelClassifier):
             # Create a candidate for this progress bar
             # The bbox will be computed in build() as union of bar + indicator
             # As a composite element, it has no direct source_blocks - blocks are
-            # claimed through the child bar and indicator candidates when built.
+            # consumed through the child bar and indicator candidates when built.
             candidate = Candidate(
                 label="progress_bar",
                 score=pair_score.score(),
                 score_details=pair_score,
                 bbox=bar_cand.bbox,  # Temporary, will be updated in build
-                source_blocks=[],  # Composite element - blocks claimed via children
+                source_blocks=[],  # Composite element - blocks consumed via children
             )
             result.add_candidate(candidate)
 
@@ -225,8 +225,8 @@ class ProgressBarClassifier(LabelClassifier):
         """Construct a ProgressBar element from a paired candidate.
 
         The build order is important:
-        1. Build indicator first (claims its shadow blocks)
-        2. Build bar (claims remaining shadow blocks)
+        1. Build indicator first (consumes its shadow blocks)
+        2. Build bar (consumes remaining shadow blocks)
 
         This prevents conflicts between indicator and bar over shared blocks
         near the indicator position.
@@ -237,7 +237,7 @@ class ProgressBarClassifier(LabelClassifier):
         bar_cand = pair_score.bar_candidate
         ind_cand = pair_score.indicator_candidate
 
-        # Build the indicator FIRST if present (it claims its shadow blocks)
+        # Build the indicator FIRST if present (it consumes its shadow blocks)
         indicator: ProgressBarIndicator | None = None
 
         if ind_cand:
@@ -252,7 +252,7 @@ class ProgressBarClassifier(LabelClassifier):
                     e,
                 )
 
-        # Build the bar element (it claims remaining shadow blocks)
+        # Build the bar element (it consumes remaining shadow blocks)
         bar_element = result.build(bar_cand)
         assert isinstance(bar_element, ProgressBarBar)
 

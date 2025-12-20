@@ -74,7 +74,7 @@ class TestOpenBagClassification:
         assert open_bag.number is not None
         assert open_bag.number.value == 1
 
-        # Check that the circle claims the overlapping blocks
+        # Check that the circle consumes the overlapping blocks
         assert len(candidate.source_blocks) >= 3  # circle + 2 images
 
     def test_open_bag_without_bag_number(self) -> None:

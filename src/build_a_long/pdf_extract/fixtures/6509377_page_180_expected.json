@@ -34,7 +34,7 @@
     },
     "value": 180
   },
-  "unassigned_blocks_count": 0,
+  "unconsumed_blocks_count": 0,
   "catalog": {
     "__tag__": "CatalogContent",
     "parts": [

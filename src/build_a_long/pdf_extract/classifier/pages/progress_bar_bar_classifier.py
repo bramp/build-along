@@ -98,7 +98,7 @@ class ProgressBarBarClassifier(RuleBasedClassifier):
         ]
 
     # Note: We intentionally do NOT override _get_additional_source_blocks here.
-    # Additional blocks are claimed during build() after the indicator has claimed
+    # Additional blocks are consumed during build() after the indicator has consumed
     # its shadows first, avoiding conflicts over shared blocks.
 
     def build(

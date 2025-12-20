@@ -3,13 +3,13 @@ Info page decoration classifier.
 
 Purpose
 -------
-Identify INFO pages (cover, credits, table of contents, etc.) and claim all
+Identify INFO pages (cover, credits, table of contents, etc.) and consume all
 their content as a single decorative element. This prevents these blocks from
-being left unassigned.
+being left unconsumed.
 
 Strategy
 --------
-1. During scoring: Create a candidate that claims ALL blocks on INFO pages
+1. During scoring: Create a candidate that consumes ALL blocks on INFO pages
 2. PageClassifier checks for a high-scoring decoration candidate FIRST
 3. If found, build just that and skip step/catalog building entirely
 
@@ -37,7 +37,7 @@ class _DecorationScore(Score):
     """Score for info page decoration candidates."""
 
     element_count: int
-    """Number of elements claimed by this decoration."""
+    """Number of elements consumed by this decoration."""
 
     info_confidence: float
     """Confidence that this is an INFO page (from PageHint)."""
@@ -54,7 +54,7 @@ class _DecorationScore(Score):
 class InfoPageDecorationClassifier(LabelClassifier):
     """Classifier for decorative content on INFO pages.
 
-    This classifier creates a candidate that claims ALL blocks on pages
+    This classifier creates a candidate that consumes ALL blocks on pages
     identified as INFO pages (via PageHint). PageClassifier will check
     for this candidate first and, if it's high-scoring, skip the normal
     step/catalog building entirely.
@@ -97,7 +97,7 @@ class InfoPageDecorationClassifier(LabelClassifier):
 
         if not source_blocks:
             log.debug(
-                "[decoration] Page %d: No blocks to claim",
+                "[decoration] Page %d: No blocks to consume",
                 page_number,
             )
             return
@@ -109,7 +109,7 @@ class InfoPageDecorationClassifier(LabelClassifier):
             len(source_blocks),
         )
 
-        # Create candidate claiming all blocks
+        # Create candidate consuming all blocks
         # Use the union of source_blocks as the bbox to satisfy validation
         # (assert_element_bbox_matches_source_and_children)
         candidate_bbox = (

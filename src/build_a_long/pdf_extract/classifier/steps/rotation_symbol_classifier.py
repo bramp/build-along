@@ -166,7 +166,7 @@ class RotationSymbolClassifier(LabelClassifier):
                     label="rotation_symbol",
                     score=score_details.score(),
                     score_details=score_details,
-                    # Claim the Drawing blocks that make up this rotation symbol
+                    # Consume the Drawing blocks that make up this rotation symbol
                     source_blocks=list(cluster),
                 )
             )
@@ -221,7 +221,7 @@ class RotationSymbolClassifier(LabelClassifier):
         These are typically dropshadows or small reference diagrams that visually
         belong to the rotation symbol but are stored as separate Image blocks.
 
-        An image is claimed if:
+        An image is consumed if:
         1. It overlaps with or is very close to the rotation symbol bbox
         2. It's small enough to plausibly be part of the symbol (not a main diagram)
         3. It hasn't already been consumed by another classifier

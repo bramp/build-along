@@ -127,7 +127,7 @@ class OpenBagClassifier(LabelClassifier):
 
     Identifies bag icons by finding large circular outline drawings.
     The circle surrounds the entire bag graphic, and all blocks inside
-    are claimed as part of the OpenBag element.
+    are consumed as part of the OpenBag element.
     """
 
     output = "open_bag"
@@ -214,7 +214,7 @@ class OpenBagClassifier(LabelClassifier):
 
         When multiple circles overlap, a block is assigned to the circle with
         the closest higher draw_order (i.e., the circle drawn immediately after
-        the block). This ensures blocks are claimed by the correct circle.
+        the block). This ensures blocks are consumed by the correct circle.
 
         Args:
             circles: List of circular drawings (potential bag icons).
@@ -411,7 +411,7 @@ class OpenBagClassifier(LabelClassifier):
                 )
 
         # Filter out blocks that were consumed by children (bag_number, part, etc.)
-        # Parent elements should NOT claim blocks that are owned by their children
+        # Parent elements should NOT consume blocks that are owned by their children
         own_blocks = [
             b for b in candidate.source_blocks if not result.is_block_consumed(b)
         ]

@@ -201,9 +201,9 @@ def assert_no_shared_source_blocks(result: ClassificationResult) -> None:
 
     This validation checks that each source block is consumed by at most one
     constructed candidate. Shared blocks indicate a bug where two classifiers
-    both claimed the same PDF content.
+    both consumed the same PDF content.
 
-    Classifiers that need to claim additional blocks during build() should use
+    Classifiers that need to consume additional blocks during build() should use
     result.get_unconsumed_blocks() to avoid conflicts.
 
     Args:
@@ -212,7 +212,7 @@ def assert_no_shared_source_blocks(result: ClassificationResult) -> None:
     Raises:
         AssertionError: If any source blocks are shared between candidates.
     """
-    # Map block ID -> list of (label, candidate_info) that claimed it
+    # Map block ID -> list of (label, candidate_info) that consumed it
     block_owners: dict[int, list[tuple[str, str]]] = {}
 
     for label, candidates in result.candidates.items():
@@ -227,12 +227,12 @@ def assert_no_shared_source_blocks(result: ClassificationResult) -> None:
                     block_owners[block.id] = []
                 block_owners[block.id].append((label, candidate_info))
 
-    # Find blocks claimed by multiple candidates
+    # Find blocks consumed by multiple candidates
     conflicts: list[str] = []
     for block_id, owners in block_owners.items():
         if len(owners) > 1:
             owner_desc = ", ".join(f"{label}@{info}" for label, info in owners)
-            conflicts.append(f"block {block_id} claimed by: {owner_desc}")
+            conflicts.append(f"block {block_id} consumed by: {owner_desc}")
 
     if conflicts:
         conflict_summary = "; ".join(conflicts[:5])
@@ -1091,11 +1091,11 @@ def validate_content_no_metadata_overlap(
                 )
 
 
-def validate_unassigned_blocks(
+def validate_unconsumed_blocks(
     validation: ValidationResult,
     result: ClassificationResult,
 ) -> None:
-    """Validate that all source blocks are assigned to a built candidate or removed.
+    """Validate that all source blocks are consumed by a built candidate or removed.
 
     Args:
         validation: ValidationResult to add issues to
@@ -1104,9 +1104,9 @@ def validate_unassigned_blocks(
     if result.skipped_reason:
         return
 
-    unassigned_blocks = []
+    unconsumed_blocks = []
     for block in result.page_data.blocks:
-        # Check if block is assigned to a constructed candidate
+        # Check if block is consumed by a constructed candidate
         best_candidate = result.get_best_candidate(block)
         if best_candidate:
             continue
@@ -1115,21 +1115,21 @@ def validate_unassigned_blocks(
         if result.is_removed(block):
             continue
 
-        # Block is unassigned and not removed
-        unassigned_blocks.append(block)
+        # Block is unconsumed and not removed
+        unconsumed_blocks.append(block)
 
-    if unassigned_blocks:
+    if unconsumed_blocks:
         block_details = ", ".join(
-            f"#{b.id} ({type(b).__name__})" for b in unassigned_blocks[:10]
+            f"#{b.id} ({type(b).__name__})" for b in unconsumed_blocks[:10]
         )
-        if len(unassigned_blocks) > 10:
-            block_details += f" ... ({len(unassigned_blocks)} total)"
+        if len(unconsumed_blocks) > 10:
+            block_details += f" ... ({len(unconsumed_blocks)} total)"
 
         validation.add(
             ValidationIssue(
                 severity=ValidationSeverity.WARNING,
-                rule="unassigned_block",
-                message=f"{len(unassigned_blocks)} unassigned blocks on page",
+                rule="unconsumed_block",
+                message=f"{len(unconsumed_blocks)} unconsumed blocks on page",
                 pages=[result.page_data.page_number],
                 details=f"Blocks: {block_details}",
             )

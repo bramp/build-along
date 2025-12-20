@@ -153,7 +153,7 @@ class ClassificationResult(BaseModel):
         """Get all blocks that have not been consumed by any constructed candidate.
 
         This is useful during build() when a classifier needs to find additional
-        blocks to claim without conflicting with other elements.
+        blocks to consume without conflicting with other elements.
 
         Args:
             block_filter: Optional type or tuple of types to filter by.
@@ -271,7 +271,7 @@ class ClassificationResult(BaseModel):
             candidate.constructed = element
 
             # Check if any NEW source blocks (added during build) are already consumed
-            # This handles classifiers that claim additional blocks during build()
+            # This handles classifiers that consume additional blocks during build()
             new_blocks = [
                 b for b in candidate.source_blocks if b not in original_source_blocks
             ]
@@ -370,7 +370,7 @@ class ClassificationResult(BaseModel):
         """Check that none of the given blocks are already consumed.
 
         Args:
-            candidate: The candidate trying to claim these blocks
+            candidate: The candidate trying to consume these blocks
             blocks: The blocks to check
 
         Raises:
@@ -762,10 +762,10 @@ class ClassificationResult(BaseModel):
         """
         return block.id in self.removal_reasons
 
-    def count_unassigned_blocks(self) -> int:
+    def count_unconsumed_blocks(self) -> int:
         """Count blocks that were neither removed nor consumed by a classifier.
 
-        A block is considered "unassigned" if it:
+        A block is considered "unconsumed" if it:
         - Was not marked for removal (not in removal_reasons)
         - Was not consumed during construction (not in _consumed_blocks)
 
@@ -773,7 +773,7 @@ class ClassificationResult(BaseModel):
         identifying blocks that were not recognized.
 
         Returns:
-            Number of blocks that remain unassigned
+            Number of blocks that remain unconsumed
         """
         all_block_ids = {b.id for b in self.page_data.blocks}
         removed_ids = set(self.removal_reasons.keys())

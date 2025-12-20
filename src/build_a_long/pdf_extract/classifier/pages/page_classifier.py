@@ -206,7 +206,7 @@ class PageClassifier(LabelClassifier):
         """Build all step elements.
 
         This uses StepClassifier's coordinated build_all which handles:
-        1. Building rotation symbols first (so they claim Drawing blocks)
+        1. Building rotation symbols first (so they consume Drawing blocks)
         2. Building all Step candidates
         3. Hungarian matching to assign rotation symbols to steps
         """
@@ -341,7 +341,7 @@ class PageClassifier(LabelClassifier):
             scale=scale,
             previews=previews,
             trivia_text=trivia_text,
-            unassigned_blocks_count=result.count_unassigned_blocks(),
+            unconsumed_blocks_count=result.count_unconsumed_blocks(),
             instruction=instruction_content,
             catalog=catalog_content,
             info=info_content,
