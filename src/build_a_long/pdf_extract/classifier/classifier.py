@@ -315,9 +315,245 @@ type Classifiers = (
 
 
 class Classifier:
-    """
-    Performs a single run of classification based on rules, configuration, and hints.
+    """Performs a single run of classification based on rules, configuration, and hints.
+
+    This class orchestrates the two-phase classification process:
+    1. **Scoring Phase**: All classifiers run `_score()` to create candidates
+    2. **Construction Phase**: PageClassifier.build_all() triggers top-down construction
+
     This class should be stateless.
+
+    Best Practices for Writing Classifiers
+    =======================================
+
+    Phase 1: Scoring (`_score()` method)
+    ------------------------------------
+
+    The scoring phase evaluates blocks and creates candidates. Key rules:
+
+    **Allowed API Access:**
+    - `result.page_data.blocks` - Access all page blocks
+    - `result.get_candidates(label)` - Get candidates for a label
+    - `result.get_scored_candidates(label)` - Get scored candidates (identical to
+      get_candidates() during scoring phase since nothing is built yet)
+    - IMPORTANT: Only request candidates for labels in your `requires` frozenset
+
+    **Scoring Philosophy:**
+    - Score based on INTRINSIC properties (size, position, text content, color)
+    - Observe potential relationships to inform score ("could have 3 children")
+    - DO NOT pre-assign specific child candidates in your scoring logic
+    - DO NOT check `result.is_consumed()` - that's for the build phase
+
+    **Score Object Requirements:**
+    - MUST inherit from the `Score` abstract base class
+    - SHOULD store candidate references from dependencies (e.g.,
+      `part_count_candidate: Candidate`)
+    - Should NOT store Block objects directly
+    - Reason: Makes it clear if scoring depends on a built candidate or not
+
+    **Example:**
+
+    .. code-block:: python
+
+        class MyScore(Score):
+            # Score with dependency candidate reference.
+            intrinsic_score: float
+            child_candidate: Candidate | None  # OK: Store candidate
+            # child_block: Block | None  # BAD: Don't store blocks
+
+            def score(self) -> Weight:
+                return self.intrinsic_score
+
+        def _score(self, result: ClassificationResult) -> None:
+            # Get dependency candidates (only if in self.requires)
+            child_candidates = result.get_scored_candidates("child_label")
+
+            for block in result.page_data.blocks:
+                # Score based on intrinsic properties
+                intrinsic_score = self._calculate_intrinsic_score(block)
+
+                # Optional: observe potential children to inform score
+                best_child = None
+                if child_candidates:
+                    best_child = self._find_closest(block, child_candidates)
+                    if best_child:
+                        intrinsic_score += 0.2  # Boost if potential child exists
+
+                score_obj = MyScore(
+                    intrinsic_score=intrinsic_score,
+                    child_candidate=best_child,  # Store candidate reference
+                )
+
+                result.add_candidate(
+                    Candidate(
+                        bbox=block.bbox,
+                        label=self.output,
+                        score=score_obj.score(),
+                        score_details=score_obj,
+                        source_blocks=[block],
+                    )
+                )
+
+    Phase 2: Construction (`build()` method)
+    ----------------------------------------
+
+    The build phase constructs LegoPageElements from winning candidates. Key rules:
+
+    **Construction Process:**
+    - Validate that dependency candidates are still valid (not consumed/failed)
+    - Use `result.build(candidate)` to construct child elements
+    - Discover relationships at build time (don't rely on pre-scored relationships)
+    - Check `result.is_consumed()` if searching for available blocks
+
+    **Source Blocks Rules:**
+    - A source block should only be assigned to ONE built candidate
+    - Multiple candidates can reference a block during scoring, but only one builds
+    - **Non-composite elements**: MUST have 1+ source blocks
+    - **Composite elements**: MAY have 0+ source blocks (decoration, borders)
+    - Parent's source_blocks should NOT include child's source_blocks
+
+    **Exception Handling:**
+    - Raise `CandidateFailedError` for intentional build failures
+    - Let other exceptions (TypeError, AttributeError) propagate naturally
+    - Caller should catch exceptions if element is optional or alternatives exist
+    - Otherwise, let exceptions bubble up
+
+    **Example:**
+
+    .. code-block:: python
+
+        def build(
+            self, candidate: Candidate, result: ClassificationResult
+        ) -> MyElement:
+            # Construct element from candidate.
+            score = candidate.score_details
+            assert isinstance(score, MyScore)
+
+            # Build child if candidate is still valid
+            child_elem = None
+            if score.child_candidate:
+                try:
+                    child_elem = result.build(score.child_candidate)
+                    assert isinstance(child_elem, ChildElement)
+                except CandidateFailedError:
+                    # Child failed - either fail or continue without it
+                    if self._requires_child:
+                        raise  # Propagate failure
+                    # Otherwise continue with child_elem = None
+
+            return MyElement(
+                bbox=candidate.bbox,
+                child=child_elem,
+                # source_blocks inherited from candidate
+            )
+
+    Phase 2b: Global Coordination (`build_all()` method)
+    ----------------------------------------------------
+
+    Most classifiers use the default `build_all()` which iterates through
+    candidates and calls `build()` on each. Override when you need:
+
+    **When to Override:**
+    - Global optimization (e.g., Hungarian matching to find N best pairings)
+    - Building multiple candidates with interdependencies
+    - Pre-build setup that affects all candidates
+
+    **Key Differences:**
+    - `build()`: Works in isolation on a single candidate
+    - `build_all()`: Coordinates multiple candidates globally
+
+    **Can build_all() call other labels' builds?**
+    - Technically yes, but best to avoid unless necessary
+    - Usually each classifier manages only its own label's candidates
+
+    **Example:**
+
+    .. code-block:: python
+
+        def build_all(self, result: ClassificationResult) -> list[LegoPageElements]:
+            # Build candidates using Hungarian matching.
+            candidates = result.get_candidates(self.output)
+
+            # Perform global optimization
+            best_assignments = self._hungarian_match(candidates)
+
+            elements = []
+            for candidate in best_assignments:
+                try:
+                    elem = result.build(candidate)
+                    elements.append(elem)
+                except CandidateFailedError as e:
+                    log.debug(f\"Failed to build {candidate.label}: {e}\")
+                    log.debug(f"Failed to build {candidate.label}: {e}")
+
+            return elements
+
+    Common Patterns
+    ---------------
+
+    **Pattern 1: Atomic Classifier (single block → element)**
+
+    **Recommendation**: Use `RuleBasedClassifier` for most atomic classifiers.
+    It provides a declarative, maintainable way to score blocks using composable
+    rules. Only implement custom `_score()` logic when you need complex pairing
+    or non-standard scoring that can't be expressed with rules.
+
+    .. code-block:: python
+
+        class MyAtomicClassifier(RuleBasedClassifier):
+            output = "my_label"
+            requires = frozenset()  # No dependencies
+
+            @property
+            def rules(self) -> Sequence[Rule]:
+                return [
+                    IsInstanceFilter((Text,)),
+                    PositionScore(...),
+                    # ... more rules
+                ]
+
+            def build(self, candidate, result) -> MyElement:
+                return MyElement(bbox=candidate.bbox)
+
+    **Pattern 2: Composite Classifier (combines other elements)**
+
+    .. code-block:: python
+
+        class MyCompositeClassifier(LabelClassifier):
+            output = "my_composite"
+            requires = frozenset({"child1", "child2"})
+
+            def _score(self, result):
+                child1_cands = result.get_scored_candidates("child1")
+                child2_cands = result.get_scored_candidates("child2")
+
+                # Create composite candidates by pairing children
+                for c1 in child1_cands:
+                    for c2 in child2_cands:
+                        if self._are_related(c1, c2):
+                            score = self._compute_pair_score(c1, c2)
+                            result.add_candidate(
+                                Candidate(
+                                    bbox=BBox.union(c1.bbox, c2.bbox),
+                                    label=self.output,
+                                    score=score.score(),
+                                    score_details=score,
+                                    source_blocks=[],  # Composite
+                                )
+                            )
+
+            def build(self, candidate, result) -> MyComposite:
+                score = candidate.score_details
+                child1 = result.build(score.child1_candidate)
+                child2 = result.build(score.child2_candidate)
+                return MyComposite(bbox=candidate.bbox, c1=child1, c2=child2)
+
+    See Also
+    --------
+    - classifier/DESIGN.md: Architectural principles
+    - classifier/README.md: Classification pipeline overview
+    - LabelClassifier: Base class for all classifiers
+    - RuleBasedClassifier: Rule-based classifier base class
     """
 
     def __init__(self, config: ClassifierConfig):

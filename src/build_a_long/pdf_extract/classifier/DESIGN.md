@@ -12,6 +12,28 @@ This avoids conflicts that arise when:
 2. Build-time conditions change, invalidating pre-scored relationships
 3. Rollback scenarios leave state inconsistent
 
+## Implementation Recommendation
+
+**Use `RuleBasedClassifier` for atomic classifiers** (single block → element).
+
+Most classifiers scoring individual blocks should extend `RuleBasedClassifier` rather
+than implementing custom `_score()` logic. Benefits:
+
+- **Declarative**: Rules clearly express what you're looking for
+- **Composable**: Reuse existing rules across classifiers
+- **Maintainable**: Add/modify/remove rules without changing complex logic
+- **Debuggable**: Score breakdown shows exactly which rules passed/failed
+- **Consistent**: All rule-based classifiers work the same way
+
+Only implement custom `_score()` when:
+- Creating composite elements (pairing multiple child candidates)
+- Complex relationship discovery that can't be expressed as rules
+- Non-standard scoring algorithms (e.g., Hungarian matching)
+
+Examples:
+- ✅ `PageNumberClassifier`, `StepNumberClassifier`, `ProgressBarBarClassifier` - Use rules
+- ✅ `PartsClassifier`, `StepClassifier` - Custom scoring for pairing/composition
+
 ## Scoring Phase Principles
 
 ### 1. Score Based on Intrinsic Properties Only
@@ -89,15 +111,23 @@ The key difference:
 
 Score objects should contain:
 
-- The candidate block reference
 - Computed intrinsic scores
+- References to dependency candidates (from `requires` labels)
 - Optionally, metadata about *why* it scored well (for debugging)
 
 Score objects should NOT contain:
 
-- References to other candidate blocks
-- Pre-computed child assignments
+- Block objects directly (use candidate references instead)
+- Pre-discovered candidates that aren't from declared dependencies
 - Mutable state that changes during build
+
+**Important:** Storing candidate references from declared dependencies is correct and
+recommended. This makes it clear which dependencies were used during scoring. Only
+avoid storing Block objects or pre-discovered candidates from labels not in `requires`.
+
+For complete details on Score object design and all classifier best practices, see
+the comprehensive documentation in the `Classifier` and `RuleBasedClassifier` class
+docstrings.
 
 ## Build Phase Principles
 

@@ -99,60 +99,30 @@ class ClassificationResult:
 
 ### Implementation Pattern
 
-Each classifier implements two core methods:
+Each classifier implements two core methods: `_score()` and `build()`.
 
-#### Method 1: Scoring (`_score`)
+**Recommendation**: For atomic classifiers (single block → element), prefer using
+`RuleBasedClassifier`. It provides declarative, maintainable scoring using composable
+rules. Most classifiers in this codebase use this pattern successfully.
 
-Scores elements and creates candidates:
+**For comprehensive best practices documentation including:**
+- What APIs can be called in `_score()` vs `build()`
+- How to design Score objects (storing candidates vs blocks)
+- Source block rules (composite vs non-composite elements)
+- Exception handling patterns
+- When to override `build_all()` for global coordination
+- Complete code examples for atomic and composite classifiers
 
-```python
-class MyClassifier(LabelClassifier):
-    output = "my_label"
-    requires = frozenset({"dependency_label"})  # Or empty set
-    
-    def _score(self, result: ClassificationResult) -> None:
-        """Create and score candidates."""
-        # 1. Get dependency candidates if needed
-        dep_candidates = result.get_scored_candidates("dependency_label")
-        
-        # 2. Score and create candidates
-        for element in result.page_data.blocks:
-            score_details = self._calculate_score(element)
-            
-            result.add_candidate(
-                Candidate(
-                    bbox=element.bbox,
-                    label="my_label",
-                    score=score_details.total_score,
-                    score_details=score_details,  # MUST be non-None
-                    source_blocks=[element],  # Or [] for composite elements
-                )
-            )
-```
+**→ See the `Classifier` class docstring** for detailed guidelines.
 
-#### Method 2: Construction (`build`)
+**For rule-based classifiers**, see the `RuleBasedClassifier` class docstring for:
+- How rules are evaluated and weighted
+- Custom score objects with parsed data
+- Visual effects support (shadows, outlines)
+- Built-in hooks for customization
 
-Constructs LegoPageElement from a winning candidate:
-
-```python
-    def build(
-        self, candidate: Candidate, result: ClassificationResult
-    ) -> MyLegoElement:
-        """Construct element from candidate."""
-        score_details = candidate.score_details
-        assert isinstance(score_details, MyScoreDetails)
-        
-        # For composite elements, build children
-        child = result.build(score_details.child_candidate)
-        assert isinstance(child, ChildElement)
-        
-        return MyLegoElement(
-            bbox=candidate.bbox,
-            child=child,
-        )
-```
-
-See `PartsClassifier` or `PartsImageClassifier` for complete reference implementations.
+Quick reference implementations: `ProgressBarBarClassifier` (rule-based),
+`PartsClassifier` (composite with custom scoring).
 
 ### Benefits
 
