@@ -13,7 +13,7 @@ A Python script that scans the `data/` directory for downloaded LEGO set metadat
 **Usage:**
 
 ```bash
-python3 scripts/scan_sets.py > example_pdfs.csv
+python3 scripts/scan_sets.py > scripts/example_pdfs.csv
 ```
 
 ## `process_all_examples.sh`

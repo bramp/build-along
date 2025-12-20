@@ -45,11 +45,14 @@ def scan_sets():
             if not os.path.exists(pdf_path):
                 continue
 
+            # Store path relative to repo root
+            relative_path = os.path.relpath(pdf_path, REPO_ROOT)
+
             sets_by_year[year][theme].append(
                 {
                     "set": set_id,
                     "filename": pdf_filename,
-                    "path": pdf_path,
+                    "path": relative_path,
                     "year": year,
                     "theme": theme,
                 }
@@ -86,7 +89,7 @@ def scan_sets():
 
     # Write CSV to stdout
     fieldnames = ["year", "theme", "set", "filename", "path"]
-    writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
+    writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames, lineterminator='\n')
     writer.writeheader()
     for row in csv_rows:
         writer.writerow(row)
