@@ -42,7 +42,16 @@
       "x1": 517.74,
       "y1": 482.59
     },
-    "full_width": 517.74
+    "full_width": 517.74,
+    "bar": {
+      "__tag__": "ProgressBarBar",
+      "bbox": {
+        "x0": 0.0,
+        "y0": 474.1,
+        "x1": 517.74,
+        "y1": 482.59
+      }
+    }
   },
   "unassigned_blocks_count": 0,
   "instruction": {

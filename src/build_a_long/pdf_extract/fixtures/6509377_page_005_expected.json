@@ -10,17 +10,21 @@
   "categories": [
     "info"
   ],
-  "progress_bar": {
-    "__tag__": "ProgressBar",
+  "background": {
+    "__tag__": "Background",
     "bbox": {
-      "x0": 0.0,
+      "x0": -262.98,
       "y0": 0.0,
       "x1": 552.76,
-      "y1": 496.06
+      "y1": 511.37
     },
-    "full_width": 552.76
+    "fill_color": [
+      0.05,
+      0.06,
+      0.06
+    ]
   },
-  "unassigned_blocks_count": 0,
+  "unassigned_blocks_count": 121,
   "info": {
     "__tag__": "InfoContent"
   }

@@ -10,18 +10,19 @@
   "categories": [
     "info"
   ],
-  "progress_bar": {
-    "__tag__": "ProgressBar",
-    "bbox": {
-      "x0": -0.05,
-      "y0": -0.26,
-      "x1": 552.91,
-      "y1": 497.27
-    },
-    "full_width": 552.96
-  },
   "unassigned_blocks_count": 0,
   "info": {
-    "__tag__": "InfoContent"
+    "__tag__": "InfoContent",
+    "decorations": [
+      {
+        "__tag__": "Decoration",
+        "bbox": {
+          "x0": -0.05,
+          "y0": -0.26,
+          "x1": 552.91,
+          "y1": 497.27
+        }
+      }
+    ]
   }
 }

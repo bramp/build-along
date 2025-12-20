@@ -44,17 +44,55 @@
     },
     "progress": 0.67,
     "full_width": 518.74,
+    "bar": {
+      "__tag__": "ProgressBarBar",
+      "bbox": {
+        "x0": 34.02,
+        "y0": 473.1,
+        "x1": 552.76,
+        "y1": 483.59
+      }
+    },
     "indicator": {
       "__tag__": "ProgressBarIndicator",
       "bbox": {
-        "x0": 376.24,
-        "y0": 471.31,
-        "x1": 389.92,
-        "y1": 484.98
+        "x0": 376.0,
+        "y0": 471.06,
+        "x1": 390.17,
+        "y1": 485.23
       }
     }
   },
-  "unassigned_blocks_count": 30,
+  "scale": {
+    "__tag__": "Scale",
+    "bbox": {
+      "x0": 14.67,
+      "y0": 432.68,
+      "x1": 145.58,
+      "y1": 468.49
+    },
+    "length": {
+      "__tag__": "PieceLength",
+      "bbox": {
+        "x0": 92.87,
+        "y0": 447.15,
+        "x1": 105.66,
+        "y1": 459.94
+      },
+      "value": 3
+    },
+    "text": {
+      "__tag__": "ScaleText",
+      "bbox": {
+        "x0": 101.39,
+        "y0": 432.68,
+        "x1": 140.83,
+        "y1": 468.49
+      },
+      "text": " 1:1"
+    }
+  },
+  "unassigned_blocks_count": 1,
   "instruction": {
     "__tag__": "InstructionContent",
     "steps": [
