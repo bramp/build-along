@@ -20,6 +20,7 @@ from pydantic import BaseModel
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
+    CandidateFailedError,
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.label_classifier import (
@@ -101,45 +102,60 @@ class PageClassifier(LabelClassifier):
         """Build the page number element if available."""
         candidates = result.get_scored_candidates("page_number")
         if candidates:
-            page_number = result.build(candidates[0])
-            assert isinstance(page_number, PageNumber)
-            return page_number
+            try:
+                page_number = result.build(candidates[0])
+                assert isinstance(page_number, PageNumber)
+                return page_number
+            except CandidateFailedError as e:
+                log.debug("Failed to build page_number: %s", e)
         return None
 
     def _build_progress_bar(self, result: ClassificationResult) -> ProgressBar | None:
         """Build the progress bar element if available."""
         candidates = result.get_scored_candidates("progress_bar")
         if candidates:
-            progress_bar = result.build(candidates[0])
-            assert isinstance(progress_bar, ProgressBar)
-            return progress_bar
+            try:
+                progress_bar = result.build(candidates[0])
+                assert isinstance(progress_bar, ProgressBar)
+                return progress_bar
+            except CandidateFailedError as e:
+                log.debug("Failed to build progress_bar: %s", e)
         return None
 
     def _build_background(self, result: ClassificationResult) -> Background | None:
         """Build the background element if available."""
         candidates = result.get_scored_candidates("background")
         if candidates:
-            background = result.build(candidates[0])
-            assert isinstance(background, Background)
-            return background
+            try:
+                background = result.build(candidates[0])
+                assert isinstance(background, Background)
+                return background
+            except CandidateFailedError as e:
+                log.debug("Failed to build background: %s", e)
         return None
 
     def _build_trivia_text(self, result: ClassificationResult) -> TriviaText | None:
         """Build the trivia text element if available."""
         candidates = result.get_scored_candidates("trivia_text")
         if candidates:
-            trivia_text = result.build(candidates[0])
-            assert isinstance(trivia_text, TriviaText)
-            return trivia_text
+            try:
+                trivia_text = result.build(candidates[0])
+                assert isinstance(trivia_text, TriviaText)
+                return trivia_text
+            except CandidateFailedError as e:
+                log.debug("Failed to build trivia_text: %s", e)
         return None
 
     def _build_scale(self, result: ClassificationResult) -> Scale | None:
         """Build the scale indicator if available."""
         candidates = result.get_scored_candidates("scale")
         if candidates:
-            scale = result.build(candidates[0])
-            assert isinstance(scale, Scale)
-            return scale
+            try:
+                scale = result.build(candidates[0])
+                assert isinstance(scale, Scale)
+                return scale
+            except CandidateFailedError as e:
+                log.debug("Failed to build scale: %s", e)
         return None
 
     def _build_dividers(self, result: ClassificationResult) -> list[Divider]:

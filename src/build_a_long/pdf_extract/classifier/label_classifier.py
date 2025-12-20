@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
+    CandidateFailedError,
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.classifier_config import ClassifierConfig
@@ -39,6 +40,7 @@ class LabelClassifier(BaseModel, ABC):
     output: ClassVar[str] = ""
     requires: ClassVar[frozenset[str]] = frozenset()
 
+    # TODO Do we need this here?
     def _score_font_size(self, block: Text, target_size: float | None) -> float:
         """Score how well text font size matches target size."""
         if target_size is None:
@@ -138,7 +140,7 @@ class LabelClassifier(BaseModel, ABC):
                 elem = result.build(candidate)
                 candidate.constructed = elem
                 elements.append(elem)
-            except Exception as e:
+            except CandidateFailedError as e:
                 candidate.failure_reason = str(e)
         return elements
 
@@ -173,5 +175,12 @@ class LabelClassifier(BaseModel, ABC):
 
         Returns:
             The constructed LegoPageElement
+
+        Raises:
+            CandidateFailedError: If the candidate cannot be built due to
+                validation failures, conflicts, or other expected conditions.
+                This is the ONLY exception type that should be raised for
+                intentional build failures. Programming errors (TypeError,
+                AttributeError, etc.) should propagate normally.
         """
         pass
