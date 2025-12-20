@@ -34,6 +34,10 @@ class ShineClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()
 
     @property
+    def effects_margin(self) -> float | None:
+        return None
+
+    @property
     def rules(self) -> Sequence[Rule]:
         return [
             IsInstanceFilter(Drawing),

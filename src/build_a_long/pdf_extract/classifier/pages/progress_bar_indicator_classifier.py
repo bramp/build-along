@@ -43,7 +43,7 @@ from build_a_long.pdf_extract.classifier.rules.scale import LinearScale
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     ProgressBarIndicator,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Image
+from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image
 
 log = logging.getLogger(__name__)
 
@@ -64,11 +64,6 @@ class ProgressBarIndicatorClassifier(RuleBasedClassifier):
     def effects_margin(self) -> float | None:
         """Use the configured shadow margin for finding indicator effects."""
         return self.config.progress_bar.indicator_shadow_margin
-
-    @property
-    def effects_block_types(self) -> tuple[type[Blocks], ...]:
-        """Progress bar indicators are Drawing or Image blocks."""
-        return (Drawing, Image)
 
     @property
     def rules(self) -> Sequence[Rule]:

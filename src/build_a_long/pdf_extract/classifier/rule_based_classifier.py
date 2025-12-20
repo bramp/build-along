@@ -21,7 +21,7 @@ from build_a_long.pdf_extract.classifier.label_classifier import (
 from build_a_long.pdf_extract.classifier.rules import Rule, RuleContext
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Drawing, Image
+from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 
 log = logging.getLogger(__name__)
 
@@ -208,25 +208,6 @@ class RuleBasedClassifier(LabelClassifier):
         """
         return 2.0
 
-    # TODO Do we need effects_max_area_ratio ?
-    @property
-    def effects_max_area_ratio(self) -> float | None:
-        """Maximum ratio of effect block area to primary block area.
-
-        Used to avoid consuming unrelated large blocks as effects.
-        Defaults to None (no ratio check).
-        """
-        return None
-
-    @property
-    def effects_target_types(self) -> tuple[type[Blocks], ...]:
-        """Types of blocks to accept as effects.
-
-        Defaults to (Drawing, Image). Can be overridden to exclude Images
-        (e.g. for PartCount) or limit to specific types.
-        """
-        return (Drawing, Image)
-
     def _create_score(
         self,
         components: dict[str, float],
@@ -330,7 +311,7 @@ class RuleBasedClassifier(LabelClassifier):
                 continue
 
             log.debug(
-                "[%s] block_id=%s accepted: score=%.3f components=%s",
+                "[%s] block_id=%s cluster accepted: score=%.3f components=%s",
                 self.output,
                 block.id,
                 actual_score,
@@ -367,17 +348,11 @@ class RuleBasedClassifier(LabelClassifier):
         """
         margin = self.effects_margin
         if margin is not None:
-            effects = find_contained_effects(
+            return find_contained_effects(
                 block,
                 result.page_data.blocks,
                 margin=margin,
-                max_area_ratio=self.effects_max_area_ratio,
             )
-            # Filter effects by target types (e.g. to exclude Images)
-            target_types = self.effects_target_types
-            if target_types != (Drawing, Image):
-                effects = [b for b in effects if isinstance(b, target_types)]
-            return effects
         return []
 
     def _should_accept(self, score: float) -> bool:

@@ -42,10 +42,6 @@ class PageNumberClassifier(RuleBasedClassifier):
     requires = frozenset()
 
     @property
-    def effects_margin(self) -> float | None:
-        return 2.0
-
-    @property
     def min_score(self) -> float:
         return self.config.page_number.min_score
 

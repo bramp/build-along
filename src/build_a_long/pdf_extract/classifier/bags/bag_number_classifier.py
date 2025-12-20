@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
+from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -63,19 +64,11 @@ class BagNumberClassifier(RuleBasedClassifier):
     """Classifier for bag numbers."""
 
     output = "bag_number"
-    requires = frozenset()
+    requires: ClassVar[frozenset[str]] = frozenset()
 
     @property
-    def min_score(self) -> float:
-        return self.config.bag_number.min_score
-
-    @property
-    def effects_margin(self) -> float:
-        return _SHADOW_MARGIN
-
-    @property
-    def effects_max_area_ratio(self) -> float:
-        return 2.0
+    def effects_margin(self) -> float | None:
+        return None
 
     @property
     def rules(self) -> Sequence[Rule]:

@@ -57,10 +57,6 @@ class PieceLengthClassifier(RuleBasedClassifier):
     requires = frozenset()
 
     @property
-    def effects_margin(self) -> float | None:
-        return 2.0
-
-    @property
     def rules(self) -> Sequence[Rule]:
         hints = self.config.font_size_hints
         # Prefer part_count_size, fall back to catalog_part_count_size

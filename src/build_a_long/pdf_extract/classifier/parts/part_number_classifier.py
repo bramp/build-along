@@ -14,6 +14,9 @@ Enable DEBUG logs with LOG_LEVEL=DEBUG.
 import logging
 from collections.abc import Sequence
 
+from build_a_long.pdf_extract.classifier.block_filter import (
+    find_contained_effects,
+)
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
@@ -33,7 +36,12 @@ from build_a_long.pdf_extract.classifier.text import extract_element_id
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartNumber,
 )
-from build_a_long.pdf_extract.extractor.page_blocks import Text
+from build_a_long.pdf_extract.extractor.page_blocks import (
+    Block,
+    Blocks,
+    Drawing,
+    Text,
+)
 
 log = logging.getLogger(__name__)
 
@@ -43,10 +51,6 @@ class PartNumberClassifier(RuleBasedClassifier):
 
     output = "part_number"
     requires = frozenset()
-
-    @property
-    def effects_margin(self) -> float | None:
-        return 2.0
 
     @property
     def min_score(self) -> float:
@@ -78,6 +82,27 @@ class PartNumberClassifier(RuleBasedClassifier):
                 name="font_size_score",
             ),
         ]
+
+    def _get_additional_source_blocks(
+        self, block: Block, result: ClassificationResult
+    ) -> Sequence[Blocks]:
+        """Get additional source blocks, filtering only for Drawing effects.
+
+        We purposefully exclude Image effects to avoid accidentally consuming
+        the part image itself if the bbox logic matches.
+
+        # TODO Investigate this, and see if we can remove this restriction.
+        """
+        margin = self.effects_margin
+        if margin is not None:
+            effects = find_contained_effects(
+                block,
+                result.page_data.blocks,
+                margin=margin,
+            )
+            # Only include Drawing effects (backgrounds), ignore Images
+            return [b for b in effects if isinstance(b, Drawing)]
+        return []
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> PartNumber:
         """Construct a PartNumber element from a candidate.

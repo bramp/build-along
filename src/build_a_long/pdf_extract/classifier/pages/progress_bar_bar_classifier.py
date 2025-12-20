@@ -65,6 +65,10 @@ class ProgressBarBarClassifier(RuleBasedClassifier):
     requires = frozenset({"page_number"})
 
     @property
+    def effects_margin(self) -> float | None:
+        return None
+
+    @property
     def min_score(self) -> float:
         return self.config.progress_bar.min_score
 

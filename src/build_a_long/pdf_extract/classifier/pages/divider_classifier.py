@@ -57,6 +57,10 @@ class DividerClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()  # No dependencies
 
     @property
+    def effects_margin(self) -> float | None:
+        return None
+
+    @property
     def rules(self) -> Sequence[Rule]:
         config = self.config.divider
         return [

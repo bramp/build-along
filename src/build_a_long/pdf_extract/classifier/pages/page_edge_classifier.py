@@ -54,7 +54,11 @@ class PageEdgeClassifier(RuleBasedClassifier):
     """
 
     output: ClassVar[str] = "page_edge"
-    requires: ClassVar[frozenset[str]] = frozenset()  # No dependencies
+    requires: ClassVar[frozenset[str]] = frozenset()
+
+    @property
+    def effects_margin(self) -> float | None:
+        return None
 
     @property
     def rules(self) -> Sequence[Rule]:
