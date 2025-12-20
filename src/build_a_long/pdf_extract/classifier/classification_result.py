@@ -135,6 +135,43 @@ class ClassificationResult(BaseModel):
             )
         return self
 
+    def is_block_consumed(self, block: Blocks) -> bool:
+        """Check if a block has been consumed by a constructed candidate.
+
+        Args:
+            block: The block to check
+
+        Returns:
+            True if the block has been consumed, False otherwise
+        """
+        return block.id in self._consumed_blocks
+
+    def get_unconsumed_blocks(
+        self, block_filter: type[Blocks] | tuple[type[Blocks], ...] | None = None
+    ) -> list[Blocks]:
+        """Get all blocks that have not been consumed by any constructed candidate.
+
+        This is useful during build() when a classifier needs to find additional
+        blocks to claim without conflicting with other elements.
+
+        Args:
+            block_filter: Optional type or tuple of types to filter by.
+                If provided, only blocks of these types are returned.
+
+        Returns:
+            List of unconsumed blocks, optionally filtered by type
+        """
+        # TODO I wonder if in future we should track unconsumed blocks
+        # separately for performance if this becomes a bottleneck.
+        unconsumed = [
+            block
+            for block in self.page_data.blocks
+            if block.id not in self._consumed_blocks
+        ]
+        if block_filter is not None:
+            unconsumed = [b for b in unconsumed if isinstance(b, block_filter)]
+        return unconsumed
+
     def _register_classifier(self, label: str, classifier: LabelClassifier) -> None:
         """Register a classifier for a specific label.
 
@@ -192,6 +229,15 @@ class ClassificationResult(BaseModel):
             **kwargs: Additional keyword arguments passed to the classifier's
                 build method. For example, DiagramClassifier accepts
                 constraint_bbox to limit clustering.
+
+        Returns:
+            The constructed LegoPageElement
+
+        Raises:
+            CandidateFailedError: If the candidate cannot be built due to
+                validation failures, conflicts, or other expected conditions.
+                Callers should only catch this exception type, allowing
+                programming errors to propagate.
         """
         if candidate.constructed:
             return candidate.constructed
@@ -201,25 +247,8 @@ class ClassificationResult(BaseModel):
                 candidate, f"Candidate failed: {candidate.failure_reason}"
             )
 
-        # Check if any source block is already consumed
-        # TODO Do we need the following? As _fail_conflicting_candidates should
-        # be setting failure reasons already.
-        for block in candidate.source_blocks:
-            if block.id in self._consumed_blocks:
-                # Find who consumed it (for better error message)
-                # This is expensive but only happens on failure
-                winner_label = "unknown"
-                for _label, cat_candidates in self.candidates.items():
-                    for c in cat_candidates:
-                        if c.constructed and any(
-                            b.id == block.id for b in c.source_blocks
-                        ):
-                            winner_label = _label
-                            break
-
-                failure_msg = f"Block {block.id} already consumed by '{winner_label}'"
-                candidate.failure_reason = failure_msg
-                raise CandidateFailedError(candidate, failure_msg)
+        # Check if any source block is already consumed (pre-build check)
+        self._check_blocks_not_consumed(candidate, candidate.source_blocks)
 
         classifier = self._classifiers.get(candidate.label)
         if not classifier:
@@ -234,10 +263,25 @@ class ClassificationResult(BaseModel):
 
         # Take snapshot before building for automatic rollback on failure
         snapshot = self._take_snapshot()
+        original_source_blocks = list(candidate.source_blocks)
 
         try:
             element = classifier.build(candidate, self, **kwargs)
             candidate.constructed = element
+
+            # Check if any NEW source blocks (added during build) are already consumed
+            # This handles classifiers that claim additional blocks during build()
+            new_blocks = [
+                b for b in candidate.source_blocks if b not in original_source_blocks
+            ]
+            if new_blocks:
+                log.debug(
+                    "[build] Classifier added %d blocks during build for '%s': %s",
+                    len(new_blocks),
+                    candidate.label,
+                    [b.id for b in new_blocks],
+                )
+                self._check_blocks_not_consumed(candidate, new_blocks)
 
             # Sync candidate bbox with constructed element's bbox.
             # The constructed element may have a different bbox (e.g., Step's
@@ -260,6 +304,9 @@ class ClassificationResult(BaseModel):
                 candidate.bbox,
                 [b.id for b in candidate.source_blocks],
             )
+
+            self._assert_no_duplicate_source_blocks(candidate)
+
             for block in candidate.source_blocks:
                 self._consumed_blocks.add(block.id)
 
@@ -315,6 +362,52 @@ class ClassificationResult(BaseModel):
 
         # Restore consumed blocks
         self._consumed_blocks = snapshot.consumed_blocks.copy()
+
+    def _check_blocks_not_consumed(
+        self, candidate: Candidate, blocks: list[Blocks]
+    ) -> None:
+        """Check that none of the given blocks are already consumed.
+
+        Args:
+            candidate: The candidate trying to claim these blocks
+            blocks: The blocks to check
+
+        Raises:
+            CandidateFailedError: If any block is already consumed
+        """
+        for block in blocks:
+            if block.id in self._consumed_blocks:
+                # Find who consumed it (for better error message)
+                # This is expensive but only happens on failure
+                winner_label = "unknown"
+                for _label, cat_candidates in self.candidates.items():
+                    for c in cat_candidates:
+                        if c.constructed and any(
+                            b.id == block.id for b in c.source_blocks
+                        ):
+                            winner_label = _label
+                            break
+
+                failure_msg = f"Block {block.id} already consumed by '{winner_label}'"
+                candidate.failure_reason = failure_msg
+                raise CandidateFailedError(candidate, failure_msg)
+
+    def _assert_no_duplicate_source_blocks(self, candidate: Candidate) -> None:
+        """Assert that a candidate has no duplicate blocks in source_blocks.
+
+        This is a programming error check - duplicates indicate a bug in
+        the classifier that created the candidate.
+
+        Args:
+            candidate: The candidate to check
+
+        Raises:
+            AssertionError: If duplicate block IDs are found
+        """
+        block_ids = [b.id for b in candidate.source_blocks]
+        assert len(block_ids) == len(set(block_ids)), (
+            f"Duplicate blocks in source_blocks for '{candidate.label}': {block_ids}"
+        )
 
     def _fail_conflicting_candidates(self, winner: Candidate) -> None:
         """Mark other candidates sharing blocks with winner as failed.

@@ -46,6 +46,8 @@ class Candidate(BaseModel):
     Multiple source blocks indicate the candidate was derived from multiple inputs.
     For example, a PieceLength is derived from both a Text block (the number) and
     a Drawing block (the circle diagram).
+    
+    Callers should ensure unique blocks.
     """
 
     failure_reason: str | None = None
@@ -73,6 +75,7 @@ class Candidate(BaseModel):
             "step",
             "part",
             "substep",
+            "progress_bar",  # Made of progress_bar_bar + progress_bar_indicator
         }
 
         # Non-composite labels are those that correspond to LegoPageElements

@@ -151,16 +151,22 @@ class RuleBasedClassifier(LabelClassifier):
                 components,
             )
 
-            # Build source blocks list, including text outline effects for Text blocks
-            source_blocks: list = [block]
+            # Build source blocks list, deduplicating as we go
+            seen_ids: set[int] = {block.id}
+            source_blocks: list[Blocks] = [block]
+
+            # Add text outline effects for Text blocks
             if isinstance(block, Text):
-                outline_effects = find_text_outline_effects(
-                    block, result.page_data.blocks
-                )
-                source_blocks.extend(outline_effects)
+                for b in find_text_outline_effects(block, result.page_data.blocks):
+                    if b.id not in seen_ids:
+                        seen_ids.add(b.id)
+                        source_blocks.append(b)
 
             # Add any classifier-specific additional source blocks
-            source_blocks.extend(self._get_additional_source_blocks(block, result))
+            for b in self._get_additional_source_blocks(block, result):
+                if b.id not in seen_ids:
+                    seen_ids.add(b.id)
+                    source_blocks.append(b)
 
             # Create score object (subclasses can override _create_score)
             score_details = self._create_score(block, components, final_score)
