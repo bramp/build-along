@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Annotated, Protocol
 
 from annotated_types import Ge
@@ -382,11 +383,11 @@ class BBox(BaseModel):
         )
 
     @classmethod
-    def union_all(cls, bboxes: list[BBox]) -> BBox:
+    def union_all(cls, bboxes: Sequence[BBox]) -> BBox:
         """Return the bounding box that encompasses all provided bboxes.
 
         Args:
-            bboxes: List of BBox objects to union. Must be non-empty.
+            bboxes: Sequence of BBox objects to union. Must be non-empty.
 
         Returns:
             A new BBox that contains all bounding boxes.
@@ -467,7 +468,7 @@ class HasBBox(Protocol):
 
 def build_connected_cluster[T: HasBBox](
     seed_item: T,
-    candidate_items: list[T],
+    candidate_items: Sequence[T],
     *,
     tolerance: float = 1e-6,
 ) -> list[T]:
@@ -559,14 +560,14 @@ def build_all_connected_clusters[T: HasBBox](
         return []
 
     # Track which items have been assigned to clusters
-    remaining = set(range(len(items)))
+    remaining_indices = set(range(len(items)))
     clusters: list[list[T]] = []
 
-    while remaining:
+    while remaining_indices:
         # Pick an arbitrary seed from remaining items
-        seed_idx = min(remaining)
+        seed_idx = min(remaining_indices)
         seed_item = items[seed_idx]
-        remaining.remove(seed_idx)
+        remaining_indices.remove(seed_idx)
 
         # Build a cluster starting from this seed
         cluster = build_connected_cluster(seed_item, items, tolerance=tolerance)
@@ -575,7 +576,7 @@ def build_all_connected_clusters[T: HasBBox](
         for item in cluster:
             try:
                 idx = items.index(item)
-                remaining.discard(idx)
+                remaining_indices.discard(idx)
             except ValueError:
                 pass
 
@@ -584,11 +585,11 @@ def build_all_connected_clusters[T: HasBBox](
     return clusters
 
 
-def filter_contained[T: HasBBox](items: list[T], container: BBox) -> list[T]:
+def filter_contained[T: HasBBox](items: Sequence[T], container: BBox) -> list[T]:
     """Filter items to keep only those fully contained within the container bbox.
 
     Args:
-        items: List of items with bbox property
+        items: Sequence of items with bbox property
         container: The bounding box to check containment against
 
     Returns:
@@ -597,11 +598,11 @@ def filter_contained[T: HasBBox](items: list[T], container: BBox) -> list[T]:
     return [item for item in items if container.contains(item.bbox)]
 
 
-def filter_overlapping[T: HasBBox](items: list[T], target: BBox) -> list[T]:
+def filter_overlapping[T: HasBBox](items: Sequence[T], target: BBox) -> list[T]:
     """Filter items to keep only those overlapping with the target bbox.
 
     Args:
-        items: List of items with bbox property
+        items: Sequence of items with bbox property
         target: The bounding box to check overlap against
 
     Returns:
@@ -611,7 +612,7 @@ def filter_overlapping[T: HasBBox](items: list[T], target: BBox) -> list[T]:
 
 
 def filter_by_max_area[T: HasBBox](
-    items: list[T],
+    items: Sequence[T],
     max_area: float | None = None,
     max_ratio: float | None = None,
     reference_bbox: BBox | None = None,
@@ -624,7 +625,7 @@ def filter_by_max_area[T: HasBBox](
     Must specify either max_area OR (max_ratio AND reference_bbox).
 
     Args:
-        items: List of items with bbox property
+        items: Sequence of items with bbox property
         max_area: Maximum allowed area in absolute units (e.g., square points)
         max_ratio: Maximum allowed area as a ratio of reference_bbox area
             (e.g., 0.5 for 50% of page size)
@@ -656,7 +657,7 @@ def filter_by_max_area[T: HasBBox](
 
 def find_smallest_containing_box[T: HasBBox](
     inner_bbox: BBox,
-    containers: list[T],
+    containers: Sequence[T],
 ) -> T | None:
     """Find the smallest container that fully contains the inner bbox.
 
@@ -665,7 +666,7 @@ def find_smallest_containing_box[T: HasBBox](
 
     Args:
         inner_bbox: The bounding box that must be contained
-        containers: List of items with bbox property to search
+        containers: Sequence of items with bbox property to search
 
     Returns:
         The smallest container that contains inner_bbox, or None if not found
@@ -693,7 +694,7 @@ def find_smallest_containing_box[T: HasBBox](
 
 
 def group_by_similar_bbox[T: HasBBox](
-    items: list[T],
+    items: Sequence[T],
     tolerance: float = 2.0,
 ) -> list[list[T]]:
     """Group items by similar bounding boxes.
@@ -707,7 +708,7 @@ def group_by_similar_bbox[T: HasBBox](
     against the first item in each group.
 
     Args:
-        items: List of items with bbox property
+        items: Sequence of items with bbox property
         tolerance: Maximum coordinate difference to consider bboxes similar
             (default 2.0 points)
 

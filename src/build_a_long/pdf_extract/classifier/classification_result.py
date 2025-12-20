@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
@@ -148,7 +149,7 @@ class ClassificationResult(BaseModel):
 
     def get_unconsumed_blocks(
         self, block_filter: type[Blocks] | tuple[type[Blocks], ...] | None = None
-    ) -> list[Blocks]:
+    ) -> Sequence[Blocks]:
         """Get all blocks that have not been consumed by any constructed candidate.
 
         This is useful during build() when a classifier needs to find additional
@@ -180,7 +181,7 @@ class ClassificationResult(BaseModel):
         """
         self._classifiers[label] = classifier
 
-    def build_all_for_label(self, label: str) -> list[LegoPageElements]:
+    def build_all_for_label(self, label: str) -> Sequence[LegoPageElements]:
         """Build all candidates for a label using the registered classifier's build_all.
 
         This delegates to the classifier's build_all() method, allowing classifiers
@@ -467,7 +468,7 @@ class ClassificationResult(BaseModel):
             raise ValueError(f"{param_name} must be in PageData.blocks. Block: {block}")
 
     @property
-    def blocks(self) -> list[Blocks]:
+    def blocks(self) -> Sequence[Blocks]:
         """Get the blocks from the page data.
 
         Returns:
@@ -487,23 +488,23 @@ class ClassificationResult(BaseModel):
 
     # TODO Reconsider the methods below - some may be redundant.
 
-    def get_candidates(self, label: str) -> list[Candidate]:
+    def get_candidates(self, label: str) -> Sequence[Candidate]:
         """Get all candidates for a specific label.
 
         Args:
             label: The label to get candidates for
 
         Returns:
-            List of candidates for that label (returns copy to prevent
+            Sequence of candidates for that label (returns copy to prevent
             external modification)
         """
-        return self.candidates.get(label, []).copy()
+        return list(self.candidates.get(label, []))
 
     def get_scored_candidates(
         self,
         label: str,
         min_score: float = 0.0,
-    ) -> list[Candidate]:
+    ) -> Sequence[Candidate]:
         """Get candidates that have been scored, for use during scoring phase.
 
         **Use this method in _score() when working with dependency classifiers.**
@@ -556,7 +557,7 @@ class ClassificationResult(BaseModel):
         self,
         label: str,
         min_score: float = 0.0,
-    ) -> list[Candidate]:
+    ) -> Sequence[Candidate]:
         """Get candidates that have been successfully built/constructed.
 
         **Use this method in build() or after classification is complete.**
@@ -597,14 +598,14 @@ class ClassificationResult(BaseModel):
 
         return built
 
-    def get_all_candidates(self) -> dict[str, list[Candidate]]:
+    def get_all_candidates(self) -> dict[str, Sequence[Candidate]]:
         """Get all candidates across all labels.
 
         Returns:
             Dictionary mapping labels to their candidates (returns copy to
             prevent external modification)
         """
-        return {label: cands for label, cands in self.candidates.items()}
+        return {label: list(cands) for label, cands in self.candidates.items()}
 
     def count_successful_candidates(self, label: str) -> int:
         """Count how many candidates were successfully constructed for a label.
@@ -621,7 +622,7 @@ class ClassificationResult(BaseModel):
 
     # TODO This is one of the slowest methods. I wonder if we can change
     # the internal data structures to make this faster.
-    def get_all_candidates_for_block(self, block: Blocks) -> list[Candidate]:
+    def get_all_candidates_for_block(self, block: Blocks) -> Sequence[Candidate]:
         """Get all candidates for a block across all labels.
 
         Searches across all labels to find candidates that used the given block

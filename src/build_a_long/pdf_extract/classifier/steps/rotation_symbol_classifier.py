@@ -31,6 +31,7 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -256,7 +257,7 @@ class RotationSymbolClassifier(LabelClassifier):
         # Find images that overlap with the expanded search area
         potential_images = filter_overlapping(available_images, search_bbox)
 
-        claimed: list[Image] = []
+        claimed: Sequence[Image] = []
         for block in potential_images:
             # Skip if image is too large (likely a main diagram)
             if (
@@ -283,7 +284,7 @@ class RotationSymbolClassifier(LabelClassifier):
 
         return claimed
 
-    def _is_black_and_white_cluster(self, cluster: list[Drawing]) -> bool:
+    def _is_black_and_white_cluster(self, cluster: Sequence[Drawing]) -> bool:
         """Check if all drawings in a cluster are black or white.
 
         Rotation symbols are typically black drawings on transparent/white

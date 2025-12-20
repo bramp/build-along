@@ -12,6 +12,7 @@ Enable DEBUG logs with LOG_LEVEL=DEBUG.
 """
 
 import logging
+from collections.abc import Sequence
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -47,7 +48,7 @@ class PartNumberClassifier(RuleBasedClassifier):
         return self.config.part_number.min_score
 
     @property
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         config = self.config
         return [
             # Must be text

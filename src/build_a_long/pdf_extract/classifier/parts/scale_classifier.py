@@ -19,6 +19,7 @@ against the printed instruction manual.
 """
 
 import logging
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -70,7 +71,7 @@ class ScaleClassifier(LabelClassifier):
     requires: ClassVar[frozenset[str]] = frozenset({"piece_length", "scale_text"})
 
     def _find_containing_box(
-        self, inner_bbox: BBox, containers: list[Drawing], margin: float = 10.0
+        self, inner_bbox: BBox, containers: Sequence[Drawing], margin: float = 10.0
     ) -> Drawing | None:
         """Find the smallest container that contains inner_bbox (with margin)."""
         best_container: Drawing | None = None
@@ -151,7 +152,7 @@ class ScaleClassifier(LabelClassifier):
 
             # Collect source blocks for Scale (container + diagram).
             # ScaleText and PieceLength blocks are owned by their candidates.
-            source_blocks: list[Blocks] = []
+            source_blocks: Sequence[Blocks] = []
 
             # Find similar drawings to the containing box (border/shadow effects)
             similar_groups = group_by_similar_bbox(drawings, tolerance=2.0)
@@ -190,7 +191,7 @@ class ScaleClassifier(LabelClassifier):
     def _find_candidate_in_box(
         self,
         box_bbox: BBox,
-        candidates: list[Candidate],
+        candidates: Sequence[Candidate],
     ) -> Candidate | None:
         """Find the best candidate inside the given box."""
         # Find candidates contained in the box

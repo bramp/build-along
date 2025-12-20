@@ -28,6 +28,7 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -296,7 +297,7 @@ class OpenBagClassifier(LabelClassifier):
     def _score_circle(
         self,
         circle: Drawing,
-        bag_number_candidates: list[Candidate],
+        bag_number_candidates: Sequence[Candidate],
         page_bbox: BBox,
     ) -> _OpenBagScore | None:
         """Score a circular drawing as a potential bag icon outline.
@@ -367,7 +368,7 @@ class OpenBagClassifier(LabelClassifier):
         )
 
     def _has_bag_number_in_cluster(
-        self, cluster_bbox: BBox, bag_number_candidates: list[Candidate]
+        self, cluster_bbox: BBox, bag_number_candidates: Sequence[Candidate]
     ) -> bool:
         """Check if a bag number candidate exists inside the cluster bbox.
 

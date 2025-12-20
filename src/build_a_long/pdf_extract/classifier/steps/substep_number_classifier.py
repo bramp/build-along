@@ -6,6 +6,7 @@ or as naked substeps alongside main steps. These have a smaller font size than
 regular step numbers.
 """
 
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -56,7 +57,7 @@ class SubStepNumberClassifier(RuleBasedClassifier):
         return self.config.substep_number.min_score
 
     @property
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         config = self.config
         hints = config.font_size_hints
         substep_config = config.substep_number

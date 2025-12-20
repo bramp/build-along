@@ -14,7 +14,6 @@ git worktree add -b <new-branch-name> ../<worktree-directory-name>
 
 All work for the task should be performed within the newly created `<worktree-directory-name>`. When the task is complete and the branch is merged, the worktree can be removed.
 
-
 ## Build Tool
 
 This project uses `pants` as a build tool. For more information, see the [Pants documentation summary](docs/pants-AGENTS.md).
@@ -22,7 +21,7 @@ This project uses `pants` as a build tool. For more information, see the [Pants 
 ## Coding & Testing Conventions
 
 - **Modern Python**: We adhere to modern Python conventions, utilizing linters and formatters to maintain code quality and readability.
-- **Type Hinting**: All new Python code should include comprehensive type hints to improve code clarity, maintainability, and enable static analysis.
+- **Type Hinting**: All new Python code should include comprehensive type hints to improve code clarity, maintainability, and enable static analysis. Prefer using `Sequence` or `Iterable` from `collections.abc` for input parameters and return types where a list is not strictly required, to allow for greater flexibility.
 - **Pydantic Models**: Prefer using Pydantic `BaseModel` for data structures to enhance readability, maintainability, and enable automatic validation and serialization.
 - **Complex Data Structures**: When returning a tuple or dict with more than two fields, prefer creating a Pydantic model to improve readability and maintainability.
 - **Testable Code**: Always strive to write code that is easily testable, and ensure new features and bug fixes are accompanied by appropriate tests.
@@ -39,9 +38,13 @@ These guidelines are for the AI agent interacting with this repository:
 
 - **Commit Workflow**: After each logical and stable set of changes, the agent should prompt the user to commit.
 - **Git Add Specificity**: When staging changes, the agent must use `git add
-  <file>` for specific files and avoid `git add .`, `git add -a` and `git add -A`.
+<file>` for specific files and avoid `git add .`, `git add -a` and `git add -A`.
 - **Process Management**: The agent must avoid running interactive or long-running server processes in the foreground (e.g., `npm start`). For UI testing, rely on non-interactive commands like `npm run build` for verification.
 - **File Deprecation**: When deprecating files, the agent must first read their content and migrate any necessary code or functionality before deleting them to prevent data loss.
 - **Commit Frequency**: The agent should aim for small, regular git commits.
 - **Running Tests and Checks**: The agent must use `pants test ::` to run tests and `pants check ::` for linting and formatting checks.
-- **Terminal Command Length**: Long inline Python scripts or commands can break the terminal/PTY host. Instead of running long inline scripts with `python3 -c "..."`, write the script to a file first (e.g., in `scripts/`) and execute it from there. Keep terminal commands short and simple.
+- **Terminal Command Length**: Long inline Python scripts or commands can break
+  the terminal/PTY host. Instead of running long inline scripts with `python3 -c
+"..."`, write the script to a file first (e.g., in `scripts/`) and execute it
+  from there. Keep terminal commands short and simple. Remember to use
+  `PYTHONPATH=src` to ensure the correct module resolution.

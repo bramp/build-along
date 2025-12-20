@@ -12,6 +12,7 @@ import logging
 import math
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from typing import Any
 
 from pydantic import BaseModel
@@ -113,7 +114,7 @@ class Tuner(ABC):
         print(msg)
 
     def _find_best_indicator(
-        self, bar_cand: Candidate, indicators: list[Candidate]
+        self, bar_cand: Candidate, indicators: Sequence[Candidate]
     ) -> Candidate | None:
         """Find the best matching indicator for a progress bar."""
         bar_bbox = bar_cand.bbox

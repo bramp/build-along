@@ -31,6 +31,7 @@ Set environment variables to aid investigation without code changes:
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -139,7 +140,7 @@ class PreviewClassifier(LabelClassifier):
         max_width = page_data.bbox.width * preview_config.max_page_width_ratio
         max_height = page_data.bbox.height * preview_config.max_page_height_ratio
 
-        valid_drawings: list[Drawing] = []
+        valid_drawings: Sequence[Drawing] = []
         for block in page_data.blocks:
             if not isinstance(block, Drawing):
                 continue
@@ -240,7 +241,7 @@ class PreviewClassifier(LabelClassifier):
             # Find all drawings contained within the preview bbox
             # This captures the white fill boxes (from group) plus any border/decoration
             # drawings that are inside the preview area
-            all_drawings_inside: list[Blocks] = []
+            all_drawings_inside: Sequence[Blocks] = []
             for block in page_data.blocks:
                 if isinstance(block, Drawing) and bbox.contains(block.bbox):
                     all_drawings_inside.append(block)
@@ -261,7 +262,7 @@ class PreviewClassifier(LabelClassifier):
                 score_details.score(),
             )
 
-    def _find_images_inside(self, bbox: BBox, blocks: list[Blocks]) -> list[Image]:
+    def _find_images_inside(self, bbox: BBox, blocks: Sequence[Blocks]) -> list[Image]:
         """Find Image blocks that are fully inside the given box.
 
         Args:
@@ -283,7 +284,7 @@ class PreviewClassifier(LabelClassifier):
         return images
 
     def _find_diagrams_inside(
-        self, bbox: BBox, diagram_candidates: list[Candidate]
+        self, bbox: BBox, diagram_candidates: Sequence[Candidate]
     ) -> list[Candidate]:
         """Find diagram candidates that are fully inside the given box.
 

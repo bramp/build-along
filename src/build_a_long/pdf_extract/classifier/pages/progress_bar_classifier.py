@@ -23,6 +23,7 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -139,7 +140,7 @@ class ProgressBarClassifier(LabelClassifier):
     def _find_best_indicator(
         self,
         bar_cand: Candidate,
-        indicator_candidates: list[Candidate],
+        indicator_candidates: Sequence[Candidate],
         used_indicators: set[int],
         config: ProgressBarConfig,
     ) -> tuple[Candidate | None, float]:

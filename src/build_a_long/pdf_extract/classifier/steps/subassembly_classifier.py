@@ -34,6 +34,7 @@ Set environment variables to aid investigation without code changes:
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -150,7 +151,7 @@ class SubAssemblyClassifier(LabelClassifier):
         max_width = page_data.bbox.width * subassembly_config.max_page_width_ratio
         max_height = page_data.bbox.height * subassembly_config.max_page_height_ratio
 
-        valid_drawings: list[Drawing] = []
+        valid_drawings: Sequence[Drawing] = []
         for block in page_data.blocks:
             if not isinstance(block, Drawing):
                 continue
@@ -243,7 +244,7 @@ class SubAssemblyClassifier(LabelClassifier):
             )
 
     def _find_candidate_inside(
-        self, bbox: BBox, candidates: list[Candidate]
+        self, bbox: BBox, candidates: Sequence[Candidate]
     ) -> Candidate | None:
         """Find the best candidate that is fully inside the given box.
 
@@ -257,7 +258,7 @@ class SubAssemblyClassifier(LabelClassifier):
         return find_best_scoring(filter_contained(candidates, bbox))
 
     def _find_all_candidates_inside(
-        self, bbox: BBox, candidates: list[Candidate]
+        self, bbox: BBox, candidates: Sequence[Candidate]
     ) -> list[Candidate]:
         """Find all candidates that are fully inside the given box.
 
@@ -318,7 +319,7 @@ class SubAssemblyClassifier(LabelClassifier):
         # Find and build SubSteps inside the box
         substeps_inside = self._find_all_candidates_inside(bbox, substep_candidates)
 
-        steps: list[SubStep] = []
+        steps: Sequence[SubStep] = []
         for substep_candidate in substeps_inside:
             try:
                 # Pass the SubAssembly's bbox as constraint so diagrams inside

@@ -7,6 +7,7 @@ Identify the "1:1" text label associated with scale indicators.
 """
 
 import logging
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -56,7 +57,7 @@ class ScaleTextClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()
 
     @property
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         return [
             IsInstanceFilter(Text),
             ScaleTextMatchRule(

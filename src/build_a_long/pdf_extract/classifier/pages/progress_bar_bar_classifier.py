@@ -25,6 +25,7 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -65,7 +66,7 @@ class ProgressBarBarClassifier(RuleBasedClassifier):
         return self.config.progress_bar.min_score
 
     @property
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         config: ProgressBarConfig = self.config.progress_bar
         return [
             IsInstanceFilter((Drawing, Image)),

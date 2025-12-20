@@ -24,6 +24,7 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -79,7 +80,7 @@ class LoosePartSymbolClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()  # No dependencies - runs early
 
     @property
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         """Rules to identify the anchor block (small circle)."""
         return [
             IsInstanceFilter(Drawing),

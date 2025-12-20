@@ -158,7 +158,7 @@ class StepClassifier(LabelClassifier):
         # Create all possible Step candidates for pairings (without diagrams initially)
         # Deduplication happens at build time, not scoring time, so that
         # diagram assignment can be re-evaluated as blocks get claimed.
-        all_candidates: list[Candidate] = []
+        all_candidates: Sequence[Candidate] = []
         for step_candidate in step_number_candidates:
             # Create candidates for this StepNumber paired with each PartsList
             for parts_list_candidate in parts_list_candidates:
@@ -339,7 +339,7 @@ class StepClassifier(LabelClassifier):
             reverse=True,
         )
 
-        steps: list[Step] = []
+        steps: Sequence[Step] = []
         built_step_values: set[int] = set()
 
         for step_candidate in sorted_candidates:
@@ -417,7 +417,7 @@ class StepClassifier(LabelClassifier):
 
         # Phase 8: Assign subassemblies to steps using Hungarian matching
         # Collect built subassemblies
-        subassemblies: list[SubAssembly] = []
+        subassemblies: Sequence[SubAssembly] = []
         for sa_candidate in result.get_built_candidates("subassembly"):
             assert sa_candidate.constructed is not None
             assert isinstance(sa_candidate.constructed, SubAssembly)
@@ -494,8 +494,8 @@ class StepClassifier(LabelClassifier):
         return list[LegoPageElements](steps)
 
     def _filter_page_level_step_candidates(
-        self, candidates: list[Candidate]
-    ) -> list[Candidate]:
+        self, candidates: Sequence[Candidate]
+    ) -> Sequence[Candidate]:
         """Filter step candidates to exclude likely substep candidates.
 
         When a page has both low-numbered steps (1, 2, 3, 4) and high-numbered
@@ -584,7 +584,7 @@ class StepClassifier(LabelClassifier):
             return []
 
         # Now build only the filtered candidates
-        substeps: list[SubStep] = []
+        substeps: Sequence[SubStep] = []
         for candidate in valid_candidates:
             try:
                 substep_elem = result.build(candidate)
@@ -925,7 +925,7 @@ class StepClassifier(LabelClassifier):
         self,
         step_num: StepNumber,
         diagram: Diagram | None,
-        subassemblies: list[SubAssembly],
+        subassemblies: Sequence[SubAssembly],
         result: ClassificationResult,
     ) -> list[Arrow]:
         """Collect already-built arrows that belong to this step.
@@ -1027,7 +1027,7 @@ class StepClassifier(LabelClassifier):
             List of SubAssembly elements for this step
         """
         # Get all built subassemblies
-        all_subassemblies: list[SubAssembly] = []
+        all_subassemblies: Sequence[SubAssembly] = []
         for sa_candidate in result.get_built_candidates("subassembly"):
             assert sa_candidate.constructed is not None
             assert isinstance(sa_candidate.constructed, SubAssembly)
@@ -1065,7 +1065,7 @@ class StepClassifier(LabelClassifier):
         )
 
         # Find subassemblies that overlap the search region
-        subassemblies: list[SubAssembly] = []
+        subassemblies: Sequence[SubAssembly] = []
         for subassembly in all_subassemblies:
             if subassembly.bbox.overlaps(search_region):
                 log.debug(
@@ -1086,7 +1086,7 @@ class StepClassifier(LabelClassifier):
         step_num: StepNumber,
         parts_list: PartsList | None,
         diagram: Diagram | None,
-        subassemblies: list[SubAssembly],
+        subassemblies: Sequence[SubAssembly],
         page_bbox: BBox,
     ) -> BBox:
         """Compute the overall bounding box for the Step.
@@ -1118,7 +1118,7 @@ class StepClassifier(LabelClassifier):
 
 
 def assign_diagrams_to_steps(
-    steps: list[Step],
+    steps: Sequence[Step],
     diagrams: list[Diagram],
     divider_bboxes: Sequence[BBox] = (),
     max_distance: float = 500.0,
@@ -1187,8 +1187,8 @@ def assign_diagrams_to_steps(
 
 
 def assign_subassemblies_to_steps(
-    steps: list[Step],
-    subassemblies: list[SubAssembly],
+    steps: Sequence[Step],
+    subassemblies: Sequence[SubAssembly],
     divider_bboxes: Sequence[BBox] = (),
     max_distance: float = 400.0,
 ) -> None:
@@ -1323,7 +1323,7 @@ def assign_subassemblies_to_steps(
 
 
 def assign_rotation_symbols_to_steps(
-    steps: list[Step],
+    steps: Sequence[Step],
     rotation_symbols: list[RotationSymbol],
     max_distance: float = 300.0,
 ) -> None:

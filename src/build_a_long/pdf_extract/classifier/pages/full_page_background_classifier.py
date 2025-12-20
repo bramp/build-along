@@ -20,6 +20,7 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -52,7 +53,7 @@ class FullPageBackgroundClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()  # No dependencies
 
     @property
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         """Rules for full-page background detection."""
         config = self.config.background
         return [

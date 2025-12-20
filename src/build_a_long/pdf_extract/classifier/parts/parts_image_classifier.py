@@ -18,6 +18,7 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -60,7 +61,7 @@ class PartsImageClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset({"shine"})
 
     @property
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         return [
             # Only consider Image elements
             IsInstanceFilter(Image),

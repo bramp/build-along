@@ -24,6 +24,7 @@ Distinguishing from Step Numbers
 """
 
 import logging
+from collections.abc import Sequence
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -55,7 +56,7 @@ class PieceLengthClassifier(RuleBasedClassifier):
     requires = frozenset()
 
     @property
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         hints = self.config.font_size_hints
         # Prefer part_count_size, fall back to catalog_part_count_size
         expected_size = hints.part_count_size or hints.catalog_part_count_size

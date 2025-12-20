@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.block_filter import (
@@ -59,7 +60,7 @@ class RuleBasedClassifier(LabelClassifier):
 
     @property
     @abstractmethod
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         """Get the list of rules for this classifier."""
         pass
 
@@ -188,7 +189,7 @@ class RuleBasedClassifier(LabelClassifier):
 
     def _get_additional_source_blocks(
         self, block: Block, result: ClassificationResult
-    ) -> list[Blocks]:
+    ) -> Sequence[Blocks]:
         """Get additional source blocks to include with the candidate.
 
         Subclasses can override this to include related blocks (e.g.,

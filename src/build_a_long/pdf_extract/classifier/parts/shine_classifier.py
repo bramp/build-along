@@ -7,6 +7,7 @@ Identify small star-like drawings that indicate shiny/metallic parts.
 These appear in the top-right area of part images.
 """
 
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -33,7 +34,7 @@ class ShineClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()
 
     @property
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         return [
             IsInstanceFilter(Drawing),
             SizeRangeRule(

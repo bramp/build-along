@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from enum import Enum
 from typing import Annotated, Any, Literal
 
@@ -502,7 +502,7 @@ class TriviaText(LegoPageElement):
         default="TriviaText", alias="__tag__", frozen=True
     )
 
-    text_lines: list[str] = Field(default_factory=list)
+    text_lines: Sequence[str] = Field(default_factory=list)
     """The text content, split by line."""
 
     def __str__(self) -> str:
@@ -593,7 +593,7 @@ class Arrow(LegoPageElement):
 
     tag: Literal["Arrow"] = Field(default="Arrow", alias="__tag__", frozen=True)
 
-    heads: list[ArrowHead]
+    heads: Sequence[ArrowHead]
     """List of arrowheads, each with its own tip and direction.
 
     Most arrows have a single head, but branching arrows (Y-shaped) can have
@@ -675,7 +675,7 @@ class PartsList(LegoPageElement):
     """
 
     tag: Literal["PartsList"] = Field(default="PartsList", alias="__tag__", frozen=True)
-    parts: list[Part]
+    parts: Sequence[Part]
 
     @property
     def total_items(self) -> int:
@@ -876,7 +876,7 @@ class SubAssembly(LegoPageElement):
         default="SubAssembly", alias="__tag__", frozen=True
     )
 
-    steps: list[SubStep] = Field(default_factory=list)
+    steps: Sequence[SubStep] = Field(default_factory=list)
     """The steps within this sub-assembly, each with a step number and diagram."""
 
     diagram: Diagram | None = None
@@ -931,21 +931,21 @@ class Step(LegoPageElement):
     rotation_symbol: RotationSymbol | None = None
     """Optional rotation symbol indicating the builder should rotate the model."""
 
-    arrows: list[Arrow] = Field(default_factory=list)
+    arrows: Sequence[Arrow] = Field(default_factory=list)
     """Arrows indicating direction or relationship between elements.
     
     These typically point from subassembly callout boxes to the main diagram,
     or indicate direction of motion/insertion for parts.
     """
 
-    subassemblies: list[SubAssembly] = Field(default_factory=list)
+    subassemblies: Sequence[SubAssembly] = Field(default_factory=list)
     """Sub-assemblies shown in callout boxes within this step.
     
     SubAssemblies show smaller sub-assemblies that may need to be built
     multiple times before being attached to the main assembly.
     """
 
-    substeps: list[SubStep] = Field(default_factory=list)
+    substeps: Sequence[SubStep] = Field(default_factory=list)
     """Sub-steps within this step that don't have a callout box.
     
     These are mini-steps (typically numbered 1, 2, 3, 4) that break down
@@ -1001,10 +1001,10 @@ class InstructionContent(BaseModel):
         default="InstructionContent", alias="__tag__", frozen=True
     )
 
-    steps: list[Step] = Field(default_factory=list)
+    steps: Sequence[Step] = Field(default_factory=list)
     """List of Step elements on the page."""
 
-    open_bags: list[OpenBag] = Field(default_factory=list)
+    open_bags: Sequence[OpenBag] = Field(default_factory=list)
     """List of OpenBag elements indicating which bags to open."""
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
@@ -1026,7 +1026,7 @@ class CatalogContent(BaseModel):
         default="CatalogContent", alias="__tag__", frozen=True
     )
 
-    parts: list[Part] = Field(default_factory=list)
+    parts: Sequence[Part] = Field(default_factory=list)
     """List of Part elements shown in the catalog."""
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
@@ -1047,7 +1047,7 @@ class InfoContent(BaseModel):
         default="InfoContent", alias="__tag__", frozen=True
     )
 
-    decorations: list[Decoration] = Field(default_factory=list)
+    decorations: Sequence[Decoration] = Field(default_factory=list)
     """List of decorative elements (logos, graphics, etc.)."""
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
@@ -1111,13 +1111,13 @@ class Page(LegoPageElement):
     trivia_text: TriviaText | None = None
     """Trivia/flavor text on the page, if present."""
 
-    dividers: list[Divider] = Field(default_factory=list)
+    dividers: Sequence[Divider] = Field(default_factory=list)
     """List of divider lines on the page separating sections."""
 
     scale: Scale | None = None
     """Scale indicator showing 1:1 printed size reference for piece lengths."""
 
-    previews: list[Preview] = Field(default_factory=list)
+    previews: Sequence[Preview] = Field(default_factory=list)
     """List of preview elements showing model diagrams."""
 
     unassigned_blocks_count: int = 0
@@ -1326,42 +1326,42 @@ class Manual(SerializationMixin, BaseModel):
         return None
 
     @property
-    def instruction_pages(self) -> list[Page]:
+    def instruction_pages(self) -> Sequence[Page]:
         """Get all instruction pages (pages with building steps)."""
         return [p for p in self.pages if p.is_instruction]
 
     @property
-    def catalog_pages(self) -> list[Page]:
+    def catalog_pages(self) -> Sequence[Page]:
         """Get all catalog pages (pages with parts inventory)."""
         return [p for p in self.pages if p.is_catalog]
 
     @property
-    def info_pages(self) -> list[Page]:
+    def info_pages(self) -> Sequence[Page]:
         """Get all info pages."""
         return [p for p in self.pages if p.is_info]
 
     @property
-    def catalog_parts(self) -> list[Part]:
+    def catalog_parts(self) -> Sequence[Part]:
         """Get all parts from catalog pages.
 
         Returns:
             List of all Part objects from catalog pages, which typically have
             PartNumber (element_id) information for identification.
         """
-        parts: list[Part] = []
+        parts: Sequence[Part] = []
         for page in self.catalog_pages:
             if page.catalog:
                 parts.extend(page.catalog.parts)
         return parts
 
     @property
-    def all_steps(self) -> list[Step]:
+    def all_steps(self) -> Sequence[Step]:
         """Get all steps from all instruction pages in order.
 
         Returns:
             List of all Step objects from instruction pages
         """
-        steps: list[Step] = []
+        steps: Sequence[Step] = []
         for page in self.instruction_pages:
             if page.instruction:
                 steps.extend(page.instruction.steps)

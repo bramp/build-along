@@ -25,6 +25,7 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -294,8 +295,8 @@ class PartsClassifier(LabelClassifier):
 
     def _build_candidate_edges_from_part_images(
         self,
-        part_count_candidates: list[Candidate],
-        part_image_candidates: list[Candidate],
+        part_count_candidates: Sequence[Candidate],
+        part_image_candidates: Sequence[Candidate],
         page_width: float,
     ) -> list[_PartPairScore]:
         """Build candidate pairings between part count and part_image candidates.
@@ -338,7 +339,9 @@ class PartsClassifier(LabelClassifier):
         return edges
 
     def _find_part_number_candidate(
-        self, part_count_candidate: Candidate, part_number_candidates: list[Candidate]
+        self,
+        part_count_candidate: Candidate,
+        part_number_candidates: Sequence[Candidate],
     ) -> Candidate | None:
         """Find the part_number candidate that belongs to this part_count candidate.
 
@@ -372,7 +375,9 @@ class PartsClassifier(LabelClassifier):
         return best_candidate
 
     def _find_piece_length_candidate_from_part_image(
-        self, part_image_candidate: Candidate, piece_length_candidates: list[Candidate]
+        self,
+        part_image_candidate: Candidate,
+        piece_length_candidates: Sequence[Candidate],
     ) -> Candidate | None:
         """Find the piece_length candidate that belongs to this part image.
 

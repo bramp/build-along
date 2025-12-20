@@ -22,6 +22,7 @@ Enable with `LOG_LEVEL=DEBUG` for structured logs.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.block_filter import (
@@ -62,7 +63,7 @@ class ProgressBarIndicatorClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()
 
     @property
-    def rules(self) -> list[Rule]:
+    def rules(self) -> Sequence[Rule]:
         cfg = self.config.progress_bar
         return [
             # Only consider Drawing and Image elements

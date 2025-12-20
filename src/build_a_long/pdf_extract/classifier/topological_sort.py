@@ -7,13 +7,16 @@ ensuring that each classifier appears after all classifiers it depends on.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 
 logger = logging.getLogger(__name__)
 
 
-def topological_sort(classifiers: list[LabelClassifier]) -> list[LabelClassifier]:
+def topological_sort(
+    classifiers: Sequence[LabelClassifier],
+) -> Sequence[LabelClassifier]:
     """Sort classifiers topologically based on their dependencies.
 
     Ensures that classifiers are ordered such that each classifier appears

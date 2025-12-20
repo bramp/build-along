@@ -30,6 +30,7 @@ and this classifier pairs them with diagrams.
 """
 
 import logging
+from collections.abc import Sequence
 from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -144,8 +145,8 @@ class SubStepClassifier(LabelClassifier):
 
     def _create_candidates_with_hungarian(
         self,
-        step_candidates: list[Candidate],
-        diagram_candidates: list[Candidate],
+        step_candidates: Sequence[Candidate],
+        diagram_candidates: Sequence[Candidate],
         result: ClassificationResult,
     ) -> None:
         """Use Hungarian algorithm to optimally pair step numbers with diagrams.
