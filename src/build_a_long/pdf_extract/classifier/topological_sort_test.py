@@ -90,6 +90,51 @@ class TestClassifierDuplicate(LabelClassifier):
         raise NotImplementedError
 
 
+class TestClassifierX(LabelClassifier):
+    """Test classifier for circular dependency: X -> Y."""
+
+    output: ClassVar[str] = "x"
+    requires: ClassVar[frozenset[str]] = frozenset({"y"})
+
+    def _score(self, result: ClassificationResult) -> None:
+        pass
+
+    def build(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        raise NotImplementedError
+
+
+class TestClassifierY(LabelClassifier):
+    """Test classifier for circular dependency: Y -> Z."""
+
+    output: ClassVar[str] = "y"
+    requires: ClassVar[frozenset[str]] = frozenset({"z"})
+
+    def _score(self, result: ClassificationResult) -> None:
+        pass
+
+    def build(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        raise NotImplementedError
+
+
+class TestClassifierZ(LabelClassifier):
+    """Test classifier for circular dependency: Z -> X."""
+
+    output: ClassVar[str] = "z"
+    requires: ClassVar[frozenset[str]] = frozenset({"x"})
+
+    def _score(self, result: ClassificationResult) -> None:
+        pass
+
+    def build(
+        self, candidate: Candidate, result: ClassificationResult
+    ) -> LegoPageElements:
+        raise NotImplementedError
+
+
 class TestTopologicalSort:
     """Tests for the topological_sort function."""
 
@@ -181,3 +226,23 @@ class TestTopologicalSort:
         # All classifiers should be present
         assert len(sorted_classifiers) == len(classifiers)
         assert set(c.output for c in sorted_classifiers) == {"a", "b", "c", "d"}
+
+    def test_circular_dependency(self) -> None:
+        """Test that circular dependencies are detected and reported with a chain."""
+        config = ClassifierConfig()
+        classifiers: list[LabelClassifier] = [
+            TestClassifierX(config=config),  # x -> y
+            TestClassifierY(config=config),  # y -> z
+            TestClassifierZ(config=config),  # z -> x (creates cycle)
+        ]
+
+        with pytest.raises(ValueError) as exc_info:
+            topological_sort(classifiers)
+
+        error_msg = str(exc_info.value)
+        # Check that it mentions circular dependency
+        assert "Circular dependency detected" in error_msg
+        # Check that it includes a dependency chain
+        assert "Dependency chain:" in error_msg
+        # Check that the chain includes the cycle (order may vary)
+        assert "->" in error_msg

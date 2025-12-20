@@ -14,6 +14,55 @@ from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 logger = logging.getLogger(__name__)
 
 
+def _find_dependency_cycle(
+    cyclic_classifiers: Sequence[LabelClassifier],
+    label_to_classifier: dict[str, LabelClassifier],
+) -> str:
+    """Find and format a dependency cycle chain.
+
+    Args:
+        cyclic_classifiers: Classifiers that are part of a cycle
+        label_to_classifier: Mapping from output labels to classifiers
+
+    Returns:
+        A string showing the dependency chain, e.g., "A -> B -> C -> A"
+    """
+    if not cyclic_classifiers:
+        return "Unknown cycle"
+
+    # Start with the first cyclic classifier
+    start = cyclic_classifiers[0]
+    visited = set()
+    chain = []
+
+    current = start
+    while True:
+        classifier_name = type(current).__name__
+        chain.append(classifier_name)
+        visited.add(id(current))
+
+        # Find a dependency that leads to another cyclic classifier
+        next_classifier = None
+        for required_label in current.requires:
+            if required_label in label_to_classifier:
+                candidate = label_to_classifier[required_label]
+                if id(candidate) in [id(c) for c in cyclic_classifiers]:
+                    next_classifier = candidate
+                    break
+
+        if next_classifier is None:
+            break
+
+        # If we've come back to a classifier we've seen, we found the cycle
+        if id(next_classifier) in visited:
+            chain.append(type(next_classifier).__name__)
+            break
+
+        current = next_classifier
+
+    return " -> ".join(chain)
+
+
 def topological_sort(
     classifiers: Sequence[LabelClassifier],
 ) -> Sequence[LabelClassifier]:
@@ -71,8 +120,12 @@ def topological_sort(
         # Find classifiers with non-zero in-degree (part of cycle)
         cyclic = [c for c in classifiers if in_degree[id(c)] > 0]
         cyclic_names = [type(c).__name__ for c in cyclic]
+
+        # Find and display the actual dependency chain
+        cycle_chain = _find_dependency_cycle(cyclic, label_to_classifier)
         raise ValueError(
-            f"Circular dependency detected among classifiers: {cyclic_names}"
+            f"Circular dependency detected among classifiers: {cyclic_names}\n"
+            f"Dependency chain: {cycle_chain}"
         )
 
     logger.debug(
