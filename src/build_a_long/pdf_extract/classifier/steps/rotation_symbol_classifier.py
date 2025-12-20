@@ -79,7 +79,23 @@ class _RotationSymbolScore(Score):
 
 
 class RotationSymbolClassifier(LabelClassifier):
-    """Classifier for rotation symbol elements."""
+    """Classifier for rotation symbol elements.
+
+    Implementation Pattern: Clustering During Scoring
+    --------------------------------------------------
+    This classifier clusters Drawing blocks during the _score() phase, which is
+    justified because:
+
+    1. **Single Visual Element**: The rotation symbol is a single visual element
+       composed of multiple Drawing blocks that must be considered together
+    2. **Intrinsic Properties**: Clustering is based on spatial overlap (intrinsic
+       geometric property), not relationships with other classified elements
+    3. **Build-Time Discovery**: Related Images (shadows, reference diagrams) are
+       discovered and claimed during build(), following best practices
+
+    This pattern differs from typical atomic classifiers that score individual blocks,
+    but is appropriate when multiple PDF blocks form a single logical element.
+    """
 
     output = "rotation_symbol"
     requires = frozenset()

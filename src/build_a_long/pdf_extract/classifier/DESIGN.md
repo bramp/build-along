@@ -29,10 +29,13 @@ Only implement custom `_score()` when:
 - Creating composite elements (pairing multiple child candidates)
 - Complex relationship discovery that can't be expressed as rules
 - Non-standard scoring algorithms (e.g., Hungarian matching)
+- **Clustering patterns**: When multiple PDF blocks form a single visual element
+  (e.g., RotationSymbolClassifier, LoosePartSymbolClassifier, ArrowClassifier)
 
 Examples:
 - ✅ `PageNumberClassifier`, `StepNumberClassifier`, `ProgressBarBarClassifier` - Use rules
 - ✅ `PartsClassifier`, `StepClassifier` - Custom scoring for pairing/composition
+- ✅ `RotationSymbolClassifier`, `LoosePartSymbolClassifier` - Clustering for single elements
 
 ## Scoring Phase Principles
 

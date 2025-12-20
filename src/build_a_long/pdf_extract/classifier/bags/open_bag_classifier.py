@@ -128,6 +128,21 @@ class OpenBagClassifier(LabelClassifier):
     Identifies bag icons by finding large circular outline drawings.
     The circle surrounds the entire bag graphic, and all blocks inside
     are consumed as part of the OpenBag element.
+
+    Implementation Pattern: Circle Deduplication with Pre-Assignment
+    ----------------------------------------------------------------
+    This classifier uses pre-assignment of blocks to circles during scoring,
+    which is an exception to the general "no pre-assignment" rule. This is
+    justified because:
+
+    1. **Deduplication Requirement**: When circles overlap, blocks must be
+       assigned to the best circle to avoid double-counting
+    2. **Single-Pass Efficiency**: Reassigning blocks at build time would be
+       complex and inefficient
+    3. **Domain Constraint**: Each block can only belong to one bag symbol
+
+    The _assign_blocks_to_circles() method ensures each block is assigned to
+    at most one circle, preventing conflicts during build.
     """
 
     output = "open_bag"

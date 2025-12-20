@@ -104,7 +104,22 @@ class _ArrowScore(Score):
 
 
 class ArrowClassifier(LabelClassifier):
-    """Classifier for arrow elements (arrowheads)."""
+    """Classifier for arrow elements (arrowheads).
+
+    Implementation Pattern: Arrowhead + Shaft Discovery
+    ----------------------------------------------------
+    This classifier scores arrowheads using geometric rules, then discovers
+    shaft blocks during scoring. This pattern is justified because:
+
+    1. **Single Visual Element**: Arrowhead + shaft form a single arrow element
+    2. **Intrinsic Composition**: The shaft is a direct visual extension of the
+       arrowhead, not a separate classified element
+    3. **Spatial Relationship**: Shaft discovery is based on geometric properties
+       (position, alignment) relative to the arrowhead
+
+    The shaft blocks are included in source_blocks, ensuring they're consumed
+    together when the arrow candidate wins.
+    """
 
     output: ClassVar[str] = "arrow"
     requires: ClassVar[frozenset[str]] = frozenset()
