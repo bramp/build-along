@@ -14,8 +14,8 @@ backend_packages = [
     "pants.backend.experimental.python.lint.ruff.check",
     "pants.backend.experimental.python.typecheck.pyright",
 
-    # Enable this later
-    #"pants.backend.python.providers.experimental.pyenv",
+    # Pyenv integration for consistent Python versions
+    "pants.backend.python.providers.experimental.pyenv",
 
     "pants.backend.experimental.javascript.lint.prettier",
     "pants.backend.experimental.tools.yamllint",
@@ -56,9 +56,24 @@ report = "xml"
 global_report = true
 output_dir = "dist/coverage"
 
+[python-bootstrap]
+# Use pyenv-managed Python exclusively
+search_path = ["<PYENV>", "<PYENV_LOCAL>"]
+
+[pyenv-python-provider]
+# Use pyenv 2.6.17 which knows about Python 3.13.11
+version = "2.6.17"
+known_versions = [
+  "2.6.17|macos_arm64|c1716bef2cc2c41154c9e60694546abd39efca522bd427764c0a6a929d1fe2ec|1364769",
+  "2.6.17|macos_x86_64|c1716bef2cc2c41154c9e60694546abd39efca522bd427764c0a6a929d1fe2ec|1364769",
+  "2.6.17|linux_x86_64|c1716bef2cc2c41154c9e60694546abd39efca522bd427764c0a6a929d1fe2ec|1364769",
+  "2.6.17|linux_arm64|c1716bef2cc2c41154c9e60694546abd39efca522bd427764c0a6a929d1fe2ec|1364769",
+]
+
 [python]
-# Using 3.13 due to ortools support
-interpreter_constraints = ["==3.13.*"]
+# Python version managed by pyenv via .python-version file
+# Pyenv backend helps locate interpreters; constraints define compatibility
+interpreter_constraints = ["==3.13.11"]
 enable_resolves = true
 
 [python.resolves]

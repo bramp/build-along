@@ -14,15 +14,37 @@ TODO Simple setup for users (not developers)
 
 ## Developer Setup
 
+### Python Environment
+
+This project uses Python 3.13 (temporarily, until ortools supports Python 3.14).
+
+```bash
+# Install Python 3.13 via pyenv
+pyenv install 3.13.11
+
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install --upgrade pip
+pip install -r 3rdparty/requirements.txt -r 3rdparty/requirements-dev.txt
+
+# Set PYTHONPATH for development
+export PYTHONPATH=src:$PYTHONPATH
+```
+
+The `.python-version` file ensures pyenv uses Python 3.13.11 automatically.
+
 ### Install dependencies
 
-Pants requires a `pants.lock` file to manage Python dependencies. To generate it for the first time or after updating `requirements.txt`, run:
+Pants requires a `python-default.lock` file to manage Python dependencies. To generate it for the first time or after updating `requirements.txt`, run:
 
 ```bash
 pants generate-lockfiles
 ```
 
-This will create a `pants.lock` file in the root of the project.
+This will create a `python-default.lock` file in the root of the project.
 
 ## Code Style and Linting
 
@@ -37,10 +59,12 @@ pants check ::
 
 ### VSCode Configuration
 
-To enable VSCode to find the Python interpreter and libraries managed by Pants, generate a `.env` file:
+To enable VSCode to find the Python interpreter and libraries, configure:
 
 ```bash
-ROOTS=$(pants roots)
+pants export \
+    --py-resolve-format=symlinked_immutable_virtualenv \
+    --resolve=python-defaul
 python3 -c "print('PYTHONPATH=./' + ':./'.join('''${ROOTS}'''.replace(' ', '\\\\ ').split('\n')) + ':\$PYTHONPATH')" > .env
 # TODO also add dist/codegen to the path.
 

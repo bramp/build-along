@@ -153,12 +153,13 @@ def test_similar_property(b1, b2, tolerance):
 @given(bboxes(), positive_floats)  # Only test with positive scales
 def test_mul_scale_positive_property(b, scale):
     scaled = b * scale
-    assert scaled.x0 == pytest.approx(b.x0 * scale)
-    assert scaled.y0 == pytest.approx(b.y0 * scale)
-    assert scaled.x1 == pytest.approx(b.x1 * scale)
-    assert scaled.y1 == pytest.approx(b.y1 * scale)
-    assert scaled.width == pytest.approx(b.width * scale)
-    assert scaled.height == pytest.approx(b.height * scale)
+    # Use relative tolerance for floating-point comparisons across Python versions
+    assert scaled.x0 == pytest.approx(b.x0 * scale, rel=1e-9)
+    assert scaled.y0 == pytest.approx(b.y0 * scale, rel=1e-9)
+    assert scaled.x1 == pytest.approx(b.x1 * scale, rel=1e-9)
+    assert scaled.y1 == pytest.approx(b.y1 * scale, rel=1e-9)
+    assert scaled.width == pytest.approx(b.width * scale, rel=1e-9)
+    assert scaled.height == pytest.approx(b.height * scale, rel=1e-9)
 
 
 @given(
