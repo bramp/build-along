@@ -32,6 +32,7 @@ from build_a_long.pdf_extract.classifier.block_filter import (
     filter_duplicate_blocks,
     filter_overlapping_text_blocks,
 )
+from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
@@ -556,8 +557,18 @@ class Classifier:
     - RuleBasedClassifier: Rule-based classifier base class
     """
 
-    def __init__(self, config: ClassifierConfig):
+    def __init__(self, config: ClassifierConfig, use_constraint_solver: bool = False):
+        """Initialize the classifier with optional constraint solver.
+
+        Args:
+            config: Classifier configuration with hints and settings
+            use_constraint_solver: If True, use CP-SAT solver to select candidates
+                before construction. If False, use traditional greedy/speculative
+                building approach.
+        """
         self.config = config
+        self.use_constraint_solver = use_constraint_solver
+
         # Sort classifiers topologically based on their dependencies
         self.classifiers = topological_sort(
             [
@@ -604,7 +615,8 @@ class Classifier:
 
         The classification process runs in three phases:
         1. Score all classifiers (bottom-up) - auto-registers classifiers
-        2. Construct final elements (top-down starting from Page)
+        2. [Optional] Run constraint solver to select candidates
+        3. Construct final elements (top-down starting from Page)
         """
         result = ClassificationResult(page_data=page_data)
 
@@ -615,17 +627,93 @@ class Classifier:
         for classifier in self.classifiers:
             classifier.score(result)
 
-        # 2. Construct (Top-Down)
+        # 2. [Optional] Run constraint solver to select candidates
+        if self.use_constraint_solver:
+            self._run_constraint_solver(result)
+
+        # 3. Construct (Top-Down)
         # Find the PageClassifier to start the construction process
         page_classifier = next(
             c for c in self.classifiers if isinstance(c, PageClassifier)
         )
         page_classifier.build_all(result)
 
-        # 3. Validate classification invariants
+        # 4. Validate classification invariants
         self._validate_classification_result(result)
 
         return result
+
+    def _run_constraint_solver(self, result: ClassificationResult) -> None:
+        """Run CP-SAT constraint solver to select candidates.
+
+        This method:
+        1. Creates a ConstraintModel and adds all candidates
+        2. Calls declare_constraints() on each classifier
+        3. Runs auto-generation of schema-based constraints
+        4. Solves the constraint problem
+        5. Marks selected candidates in the result
+
+        Args:
+            result: The classification result with scored candidates
+        """
+        from build_a_long.pdf_extract.classifier.constraint_model import (  # noqa: PLC0415
+            ConstraintModel,
+        )
+        from build_a_long.pdf_extract.classifier.schema_constraint_generator import (  # noqa: PLC0415
+            SchemaConstraintGenerator,
+        )
+
+        logger.debug(
+            f"Running constraint solver for page {result.page_data.page_number}"
+        )
+
+        # Create constraint model
+        model = ConstraintModel()
+
+        # Add all candidates to the model
+        all_candidates: list[Candidate] = []
+        for _label, candidates in result.candidates.items():
+            for candidate in candidates:
+                model.add_candidate(candidate)
+                all_candidates.append(candidate)
+
+        logger.debug(
+            f"  Added {len(all_candidates)} total candidates "
+            f"across {len(result.candidates)} labels"
+        )
+
+        # Let each classifier declare custom constraints
+        for classifier in self.classifiers:
+            classifier.declare_constraints(model, result)
+
+        # Auto-generate schema-based constraints
+        generator = SchemaConstraintGenerator()
+        for classifier in self.classifiers:
+            generator.generate_for_classifier(classifier, model, result)
+
+        # Maximize total score (pair each candidate with its score)
+        model.maximize([(cand, cand.score) for cand in all_candidates])
+
+        # Solve
+        solved, selection = model.solve()
+
+        if not solved:
+            logger.warning(
+                f"Constraint solver failed for page {result.page_data.page_number}, "
+                "falling back to empty selection"
+            )
+            result.set_solver_selection(frozenset())
+            return
+
+        # Mark selected candidates (use frozenset for hashability)
+        selected_candidates = frozenset(
+            cand for cand in all_candidates if selection.get(id(cand), False)
+        )
+        logger.debug(
+            f"  Solver selected {len(selected_candidates)}/"
+            f"{len(all_candidates)} candidates"
+        )
+        result.set_solver_selection(selected_candidates)
 
     def _validate_classification_result(self, result: ClassificationResult) -> None:
         """Validate classification invariants and catch programming errors.

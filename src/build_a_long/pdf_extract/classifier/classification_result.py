@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
@@ -117,6 +117,15 @@ class ClassificationResult(BaseModel):
 
     _classifiers: dict[str, LabelClassifier] = PrivateAttr(default_factory=dict)
     _consumed_blocks: set[int] = PrivateAttr(default_factory=set)
+    _solver_selected_ids: set[int] = PrivateAttr(default_factory=set)
+    """Set of candidate IDs selected by the constraint solver.
+    
+    When use_constraint_solver is enabled, this tracks which candidates the
+    CP-SAT solver selected. Candidates NOT in this set should be ignored during
+    construction (treated as if they don't exist).
+    
+    Empty when solver is disabled or not yet run.
+    """
 
     @model_validator(mode="after")
     def validate_unique_block_ids(self) -> ClassificationResult:
@@ -180,6 +189,33 @@ class ClassificationResult(BaseModel):
         be called directly by external code.
         """
         self._classifiers[label] = classifier
+
+    def is_solver_selected(self, candidate: Candidate) -> bool:
+        """Check if a candidate was selected by the constraint solver.
+
+        When constraint solver is enabled, only selected candidates should be
+        built. When solver is disabled, this always returns True.
+
+        Args:
+            candidate: The candidate to check
+
+        Returns:
+            True if candidate should be considered (solver selected or disabled)
+        """
+        # If solver not used, all candidates are eligible
+        if not self._solver_selected_ids:
+            return True
+        return id(candidate) in self._solver_selected_ids
+
+    def set_solver_selection(self, selected_candidates: Collection[Candidate]) -> None:
+        """Mark candidates as selected by the constraint solver.
+
+        This should only be called by Classifier after running the CP-SAT solver.
+
+        Args:
+            selected_candidates: Collection of candidates selected by the solver
+        """
+        self._solver_selected_ids = {id(c) for c in selected_candidates}
 
     def build_all_for_label(self, label: str) -> Sequence[LegoPageElements]:
         """Build all candidates for a label using the registered classifier's build_all.

@@ -57,7 +57,8 @@ global_report = true
 output_dir = "dist/coverage"
 
 [python]
-interpreter_constraints = ["==3.14.*"]
+# Using 3.13 due to ortools support
+interpreter_constraints = ["==3.13.*"]
 enable_resolves = true
 
 [python.resolves]
