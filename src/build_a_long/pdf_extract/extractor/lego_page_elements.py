@@ -502,7 +502,7 @@ class TriviaText(LegoPageElement):
         default="TriviaText", alias="__tag__", frozen=True
     )
 
-    text_lines: Sequence[str] = Field(default_factory=list)
+    text_lines: Sequence[str] = Field(default_factory=list, exclude=True)
     """The text content, split by line."""
 
     def __str__(self) -> str:
