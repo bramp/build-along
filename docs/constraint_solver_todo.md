@@ -181,6 +181,7 @@ incremental rollout. Generic `Candidate[T]` approach implemented.
 - [ ] **Integration test: compare with/without solver**
 
   - Results should be identical for simple cases
+  - ✅ Verified manually via `scripts/test_solver_on_pdf.py`
   - File: `src/build_a_long/pdf_extract/classifier/tests/test_parts_list_solver.py`
 
 - [ ] **Enable solver for parts_list in main classifier**
