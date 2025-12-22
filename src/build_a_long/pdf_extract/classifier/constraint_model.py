@@ -116,6 +116,17 @@ class ConstraintModel:
             )
         return self._candidate_vars[cid]
 
+    def has_candidate(self, candidate: Candidate) -> bool:
+        """Check if a candidate is registered in the model.
+
+        Args:
+            candidate: The candidate to check
+
+        Returns:
+            True if the candidate was added via add_candidate(), False otherwise
+        """
+        return id(candidate) in self._candidate_vars
+
     def at_most_one_of(self, candidates: list[Candidate]) -> None:
         """Add constraint: at most one of these candidates can be selected.
 

@@ -284,8 +284,19 @@ class SchemaConstraintGenerator:
         if not child_candidates:
             return  # No children to constrain
 
+        # Skip if parent isn't in the model (when solving only specific labels)
+        if not model.has_candidate(parent_cand):
+            return
+
+        # Filter child candidates to only those in the model
+        child_candidates_in_model = [
+            c for c in child_candidates if model.has_candidate(c)
+        ]
+        if not child_candidates_in_model:
+            return
+
         parent_var = model.get_var(parent_cand)
-        child_vars = [model.get_var(c) for c in child_candidates]
+        child_vars = [model.get_var(c) for c in child_candidates_in_model]
 
         if cardinality == "required_one":
             # If parent selected, exactly one child must be selected
@@ -635,14 +646,16 @@ class SchemaConstraintGenerator:
 
         # Add at_most_one constraint for each value
         for value, cands in by_value.items():
-            if len(cands) > 1:
-                model.at_most_one_of(cands)
+            # Filter to candidates in model
+            cands_in_model = [c for c in cands if model.has_candidate(c)]
+            if len(cands_in_model) > 1:
+                model.at_most_one_of(cands_in_model)
                 log.debug(
                     "  Uniqueness: at most one %s with %s=%s (%d candidates)",
                     field_name,
                     value_attr,
                     value,
-                    len(cands),
+                    len(cands_in_model),
                 )
 
     def _add_min_count_constraint(
@@ -665,8 +678,17 @@ class SchemaConstraintGenerator:
             if not children:
                 continue
 
+            # Skip if parent isn't in the model
+            if not model.has_candidate(parent_cand):
+                continue
+
+            # Filter to children in model
+            children_in_model = [c for c in children if model.has_candidate(c)]
+            if not children_in_model:
+                continue
+
             parent_var = model.get_var(parent_cand)
-            child_vars = [model.get_var(c) for c in children]
+            child_vars = [model.get_var(c) for c in children_in_model]
 
             # If parent selected, sum(children) >= min_count
             model.model.Add(sum(child_vars) >= min_count).OnlyEnforceIf(parent_var)

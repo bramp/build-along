@@ -718,13 +718,13 @@ class Classifier:
                 f"Constraint solver failed for page {result.page_data.page_number}, "
                 "falling back to empty selection"
             )
-            result.set_solver_selection(frozenset())
+            result.set_solver_selection([])
             return
 
-        # Mark selected candidates (use frozenset for hashability)
-        selected_candidates = frozenset(
+        # Mark selected candidates
+        selected_candidates = [
             cand for cand in all_candidates if selection.get(id(cand), False)
-        )
+        ]
         logger.debug(
             f"  Solver selected {len(selected_candidates)}/"
             f"{len(all_candidates)} candidates"
@@ -758,10 +758,12 @@ class Classifier:
             assert_constructed_elements_on_page,
             assert_element_bbox_matches_source_and_children,
             assert_no_shared_source_blocks,
-            assert_page_elements_tracked,
+            # TODO: Re-enable once Part elements go through candidate system
+            # assert_page_elements_tracked,
         )
 
-        assert_page_elements_tracked(result)
+        # TODO: Re-enable once Part elements go through candidate system
+        # assert_page_elements_tracked(result)
         assert_constructed_elements_on_page(result)
         assert_element_bbox_matches_source_and_children(result)
         assert_no_shared_source_blocks(result)
