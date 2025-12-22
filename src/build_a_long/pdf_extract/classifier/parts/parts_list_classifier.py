@@ -27,6 +27,7 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.classifier.constraint_model import ConstraintModel
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
@@ -68,6 +69,28 @@ class PartsListClassifier(LabelClassifier):
 
     output = "parts_list"
     requires = frozenset({"part"})
+
+    def declare_constraints(
+        self, model: ConstraintModel, result: ClassificationResult
+    ) -> None:
+        """Declare constraints for parts list candidates.
+
+        Auto-generated constraints (from schema):
+        - If parts_list selected, its parts must be selected
+
+        Custom constraints (from __constraint_rules__):
+        - parts_list must have >= 1 part
+        """
+        for pl_cand in result.get_scored_candidates("parts_list"):
+            pl_var = model.get_var(pl_cand)
+            score = pl_cand.score_details
+            assert isinstance(score, _PartsListScore)
+
+            # Require at least one part (min_count=1)
+            if score.part_candidates:
+                part_vars = [model.get_var(p) for p in score.part_candidates]
+                # If parts_list is selected, at least one part must be selected
+                model.model.Add(sum(part_vars) >= 1).OnlyEnforceIf(pl_var)
 
     def _score(self, result: ClassificationResult) -> None:
         """Score drawings and create candidates for potential parts lists.

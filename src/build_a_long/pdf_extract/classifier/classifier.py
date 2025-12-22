@@ -557,17 +557,24 @@ class Classifier:
     - RuleBasedClassifier: Rule-based classifier base class
     """
 
-    def __init__(self, config: ClassifierConfig, use_constraint_solver: bool = False):
+    def __init__(
+        self,
+        config: ClassifierConfig,
+        use_constraint_solver: bool = False,
+        use_solver_for: set[str] | None = None,
+    ):
         """Initialize the classifier with optional constraint solver.
 
         Args:
             config: Classifier configuration with hints and settings
-            use_constraint_solver: If True, use CP-SAT solver to select candidates
-                before construction. If False, use traditional greedy/speculative
-                building approach.
+            use_constraint_solver: If True, use CP-SAT solver globally for all labels.
+                Takes precedence over use_solver_for if both are specified.
+            use_solver_for: Set of labels to solve with CP-SAT (e.g., {"parts_list"}).
+                If None, no solver is used unless use_constraint_solver=True.
         """
         self.config = config
         self.use_constraint_solver = use_constraint_solver
+        self.use_solver_for = use_solver_for or set()
 
         # Sort classifiers topologically based on their dependencies
         self.classifiers = topological_sort(
@@ -628,7 +635,7 @@ class Classifier:
             classifier.score(result)
 
         # 2. [Optional] Run constraint solver to select candidates
-        if self.use_constraint_solver:
+        if self.use_constraint_solver or self.use_solver_for:
             self._run_constraint_solver(result)
 
         # 3. Construct (Top-Down)
@@ -670,16 +677,25 @@ class Classifier:
         # Create constraint model
         model = ConstraintModel()
 
-        # Add all candidates to the model
+        # Determine which labels to include
+        if self.use_constraint_solver:
+            # Use solver for all labels
+            labels_to_solve = set(result.candidates.keys())
+        else:
+            # Use solver only for specified labels
+            labels_to_solve = self.use_solver_for
+
+        # Add candidates to the model (filtered by label if needed)
         all_candidates: list[Candidate] = []
-        for _label, candidates in result.candidates.items():
-            for candidate in candidates:
-                model.add_candidate(candidate)
-                all_candidates.append(candidate)
+        for label, candidates in result.candidates.items():
+            if label in labels_to_solve:
+                for candidate in candidates:
+                    model.add_candidate(candidate)
+                    all_candidates.append(candidate)
 
         logger.debug(
-            f"  Added {len(all_candidates)} total candidates "
-            f"across {len(result.candidates)} labels"
+            f"  Added {len(all_candidates)} candidates "
+            f"for labels: {sorted(labels_to_solve)}"
         )
 
         # Let each classifier declare custom constraints

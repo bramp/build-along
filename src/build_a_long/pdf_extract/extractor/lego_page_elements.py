@@ -4,7 +4,7 @@ import json
 from abc import ABC
 from collections.abc import Iterator, Sequence
 from enum import Enum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from annotated_types import Ge, Gt
 from pydantic import (
@@ -628,6 +628,10 @@ class Part(LegoPageElement):
     See overview of all parts: https://brickarchitect.com/files/LEGO_BRICK_LABELS-CONTACT_SHEET.pdf
     """
 
+    __constraint_rules__: ClassVar[dict] = {
+        "count": {"required": True},  # Count is mandatory
+    }
+
     tag: Literal["Part"] = Field(default="Part", alias="__tag__", frozen=True)
     count: PartCount
 
@@ -673,6 +677,10 @@ class PartsList(LegoPageElement):
 
     See layout diagram: lego_page_layout.png
     """
+
+    __constraint_rules__: ClassVar[dict] = {
+        "parts": {"min_count": 1},  # Must have at least 1 part
+    }
 
     tag: Literal["PartsList"] = Field(default="PartsList", alias="__tag__", frozen=True)
     parts: Sequence[Part]
