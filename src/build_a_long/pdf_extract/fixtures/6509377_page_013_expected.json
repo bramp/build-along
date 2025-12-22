@@ -8,6 +8,7 @@
   },
   "pdf_page_number": 13,
   "categories": [
+    "catalog",
     "instruction"
   ],
   "background": {
@@ -269,6 +270,67 @@
             }
           }
         ]
+      }
+    ]
+  },
+  "catalog": {
+    "__tag__": "CatalogContent",
+    "parts": [
+      {
+        "__tag__": "Part",
+        "bbox": {
+          "x0": 123.05,
+          "y0": 26.02,
+          "x1": 147.28,
+          "y1": 51.53
+        },
+        "count": {
+          "__tag__": "PartCount",
+          "bbox": {
+            "x0": 123.52,
+            "y0": 41.56,
+            "x1": 132.1,
+            "y1": 51.53
+          },
+          "count": 4
+        },
+        "diagram": {
+          "__tag__": "PartImage",
+          "bbox": {
+            "x0": 123.05,
+            "y0": 26.02,
+            "x1": 147.28,
+            "y1": 42.57
+          }
+        }
+      },
+      {
+        "__tag__": "Part",
+        "bbox": {
+          "x0": 73.82,
+          "y0": 28.42,
+          "x1": 95.65,
+          "y1": 51.53
+        },
+        "count": {
+          "__tag__": "PartCount",
+          "bbox": {
+            "x0": 74.3,
+            "y0": 41.56,
+            "x1": 82.87,
+            "y1": 51.53
+          },
+          "count": 4
+        },
+        "diagram": {
+          "__tag__": "PartImage",
+          "bbox": {
+            "x0": 73.82,
+            "y0": 28.42,
+            "x1": 95.65,
+            "y1": 42.56
+          }
+        }
       }
     ]
   }
