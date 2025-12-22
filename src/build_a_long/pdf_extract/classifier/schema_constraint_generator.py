@@ -30,6 +30,7 @@ Example:
 from __future__ import annotations
 
 import logging
+import types
 from typing import TYPE_CHECKING, Any, Union, get_args, get_origin
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
@@ -242,8 +243,14 @@ class SchemaConstraintGenerator:
             if len(non_none_types) == 1:
                 return self._parse_field_type(non_none_types[0], False)
 
-        # Handle Sequence[X]
-        if origin in (list, tuple, type(list), type(tuple)) and args and len(args) > 0:
+        # Handle Sequence[X], list[X], tuple[X]
+        # Check for collections.abc.Sequence and typing.Sequence
+        is_sequence = origin in (list, tuple, type(list), type(tuple)) or (
+            origin is not None
+            and hasattr(origin, "__name__")
+            and "Sequence" in str(origin)
+        )
+        if is_sequence and args and len(args) > 0:
             child_type = args[0]
             if isinstance(child_type, type) and issubclass(child_type, LegoPageElement):
                 return child_type, "many"
@@ -448,8 +455,8 @@ class SchemaConstraintGenerator:
                 ):
                     return inner_type
 
-        # Handle Optional[T] / T | None
-        if origin is Union:
+        # Handle Optional[T] / T | None (both typing.Union and types.UnionType)
+        if origin is Union or isinstance(annotation, types.UnionType):
             args = get_args(annotation)
             for arg in args:
                 if (
@@ -470,6 +477,9 @@ class SchemaConstraintGenerator:
     ) -> type[LegoPageElement] | None:
         """Extract the element type T from Candidate[T] or list[Candidate[T]].
 
+        Handles both typing.Generic style and Pydantic's generic metadata
+        (for Python 3.12+ class syntax generics).
+
         Args:
             annotation: The type annotation to inspect
 
@@ -488,7 +498,7 @@ class SchemaConstraintGenerator:
             if args:
                 return self._get_candidate_element_type(args[0])
 
-        # Handle Candidate[T]
+        # Handle Candidate[T] via typing protocol
         if (
             origin is not None
             and hasattr(origin, "__name__")
@@ -502,10 +512,35 @@ class SchemaConstraintGenerator:
             ):
                 return args[0]
 
-        # Handle Optional[Candidate[T]]
+        # Handle Pydantic generic (Python 3.12+ class syntax)
+        # via __pydantic_generic_metadata__
+        # This is needed because Pydantic uses its own metaclass for generics
+        pydantic_metadata = getattr(annotation, "__pydantic_generic_metadata__", None)
+        if pydantic_metadata:
+            pydantic_origin = pydantic_metadata.get("origin")
+            pydantic_args = pydantic_metadata.get("args", ())
+            if (
+                pydantic_origin is not None
+                and hasattr(pydantic_origin, "__name__")
+                and pydantic_origin.__name__ == "Candidate"
+                and pydantic_args
+                and isinstance(pydantic_args[0], type)
+                and issubclass(pydantic_args[0], LegoPageElement)
+            ):
+                return pydantic_args[0]
+
+        # Handle Optional[Candidate[T]] with typing.Union
         if origin is Union:
             args = get_args(annotation)
             for arg in args:
+                if arg is not type(None):
+                    result = self._get_candidate_element_type(arg)
+                    if result:
+                        return result
+
+        # Handle Candidate[T] | None (types.UnionType from Python 3.10+)
+        if isinstance(annotation, types.UnionType):
+            for arg in get_args(annotation):
                 if arg is not type(None):
                     result = self._get_candidate_element_type(arg)
                     if result:
