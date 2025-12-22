@@ -172,22 +172,22 @@ incremental rollout. Generic `Candidate[T]` approach implemented.
   - Tests skipped: `test_duplicate_part_counts_only_match_once`,
     `test_one_to_one_pairing_enforcement`, `test_multiple_images_above_picks_closest`
 
-- [ ] **Unit tests for SchemaConstraintGenerator** (TODO)
+- [x] **Unit tests for SchemaConstraintGenerator**
 
   - File: `src/build_a_long/pdf_extract/classifier/schema_constraint_generator_test.py`
-  - Test generic type introspection
-  - Test field type matching
+  - ✅ 23 tests covering type introspection and constraint generation
 
-- [ ] **Integration test: compare with/without solver**
+- [x] **Integration test: compare with/without solver**
 
   - Results should be identical for simple cases
   - ✅ Verified manually via `scripts/test_solver_on_pdf.py`
   - File: `src/build_a_long/pdf_extract/classifier/tests/test_parts_list_solver.py`
 
-- [ ] **Enable solver for parts_list in main classifier**
+- [x] **Enable solver for parts_list in main classifier**
   - File: `src/build_a_long/pdf_extract/classifier/classifier.py`
-  - Add: `use_solver_for={'parts_list', 'part', 'part_count', 'part_image'}`
-  - Test on real PDFs
+  - ✅ Added `DEFAULT_SOLVER_LABELS` with parts-related labels
+  - ✅ Solver now enabled by default for: parts_list, part, part_count, part_image, part_number
+  - ✅ Tested on real PDFs - results identical
 
 ---
 

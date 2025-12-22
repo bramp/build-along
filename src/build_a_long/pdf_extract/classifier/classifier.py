@@ -557,6 +557,19 @@ class Classifier:
     - RuleBasedClassifier: Rule-based classifier base class
     """
 
+    # Labels for which the constraint solver is enabled by default.
+    # The CP-SAT solver ensures consistent parent-child relationships between
+    # elements (e.g., parts_list contains parts, parts have part_count/part_number).
+    DEFAULT_SOLVER_LABELS: frozenset[str] = frozenset(
+        {
+            "parts_list",
+            "part",
+            "part_count",
+            "part_image",
+            "part_number",
+        }
+    )
+
     def __init__(
         self,
         config: ClassifierConfig,
@@ -570,11 +583,17 @@ class Classifier:
             use_constraint_solver: If True, use CP-SAT solver globally for all labels.
                 Takes precedence over use_solver_for if both are specified.
             use_solver_for: Set of labels to solve with CP-SAT (e.g., {"parts_list"}).
-                If None, no solver is used unless use_constraint_solver=True.
+                If None, defaults to DEFAULT_SOLVER_LABELS for parts-related labels.
+                Pass an empty set() to disable the solver entirely.
         """
         self.config = config
         self.use_constraint_solver = use_constraint_solver
-        self.use_solver_for = use_solver_for or set()
+        # Default to parts labels if not specified (None)
+        # Use empty set only if explicitly passed as set()
+        if use_solver_for is None:
+            self.use_solver_for = set(self.DEFAULT_SOLVER_LABELS)
+        else:
+            self.use_solver_for = use_solver_for
 
         # Sort classifiers topologically based on their dependencies
         self.classifiers = topological_sort(
