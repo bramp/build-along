@@ -2,7 +2,7 @@
 # $ pants generate-lockfiles
 
 httpx~=0.28.1
-numpy~=2.3.5
+numpy~=2.4.0
 scipy~=1.16.3
 beautifulsoup4~=4.14.3 # Used by src/build_a_long/downloader/legocom.py
 json5~=0.12.1
