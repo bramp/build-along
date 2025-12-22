@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, model_validator
 
 from build_a_long.pdf_extract.classifier.score import Score
@@ -9,10 +11,24 @@ from build_a_long.pdf_extract.extractor.bbox import BBox
 from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElements
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks
 
+if TYPE_CHECKING:
+    from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
+
 
 # TODO Change this to be frozen
-class Candidate(BaseModel):
+class Candidate[T: "LegoPageElement"](BaseModel):
     """A candidate block with its score and constructed LegoElement.
+
+    The generic type parameter T indicates what LegoPageElement type this
+    candidate will produce when built. This enables type-safe constraint
+    generation by SchemaConstraintGenerator.
+
+    Example:
+        # A candidate that produces a Part element
+        part_candidate: Candidate[Part]
+
+        # A list of candidates that produce Part elements
+        part_candidates: list[Candidate[Part]]
 
     Represents a single block that was considered for a particular label,
     including its score, the constructed LegoPageElement (if successful),
@@ -22,6 +38,7 @@ class Candidate(BaseModel):
     - Re-evaluation with hints (exclude specific candidates)
     - Debugging (see all candidates and why they won/lost)
     - UI support (show users alternatives)
+    - Type-safe constraint generation
     """
 
     bbox: BBox

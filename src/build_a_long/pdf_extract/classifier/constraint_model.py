@@ -46,8 +46,8 @@ class ConstraintModel:
         model.at_most_one_of(conflicting_candidates)
         model.if_selected_then(parent, children)
 
-        # Set objective and solve
-        model.maximize([(c, c.score) for c in candidates])
+        # Set objective and solve (scale float scores to int weights 0-1000)
+        model.maximize([(c, int(c.score * 1000)) for c in candidates])
         success, selection = model.solve()
 
         if success:
@@ -269,20 +269,21 @@ class ConstraintModel:
             len(block_to_candidates),
         )
 
-    def maximize(self, objective_terms: list[tuple[Candidate, int | float]]) -> None:
+    def maximize(self, objective_terms: list[tuple[Candidate, int]]) -> None:
         """Set objective: maximize sum of (candidate_var * weight).
 
-        Typically weights are candidate scores scaled to integers.
+        CP-SAT requires integer coefficients. Weights should be in the range
+        0-1000 (or similar scale). Callers should scale float scores before
+        passing them here.
 
         Args:
-            objective_terms: List of (candidate, weight) tuples
+            objective_terms: List of (candidate, weight) tuples where weight
+                is an integer (typically 0-1000)
         """
         terms = []
         for candidate, weight in objective_terms:
             var = self.get_var(candidate)
-            # CP-SAT requires integer coefficients
-            int_weight = int(weight)
-            terms.append(var * int_weight)
+            terms.append(var * weight)
 
         self.model.Maximize(sum(terms))
 

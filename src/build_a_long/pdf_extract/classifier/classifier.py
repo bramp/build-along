@@ -707,8 +707,8 @@ class Classifier:
         for classifier in self.classifiers:
             generator.generate_for_classifier(classifier, model, result)
 
-        # Maximize total score (pair each candidate with its score)
-        model.maximize([(cand, cand.score) for cand in all_candidates])
+        # Maximize total score (scale float scores 0.0-1.0 to int weights 0-1000)
+        model.maximize([(cand, int(cand.score * 1000)) for cand in all_candidates])
 
         # Solve
         solved, selection = model.solve()

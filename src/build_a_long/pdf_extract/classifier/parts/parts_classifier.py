@@ -48,22 +48,30 @@ log = logging.getLogger(__name__)
 
 
 class _PartPairScore(Score):
-    """Internal score representation for part pairing classification."""
+    """Internal score representation for part pairing classification.
+
+    Uses generic Candidate[T] types to enable automatic constraint mapping.
+    SchemaConstraintGenerator matches:
+    - Candidate[PartCount] → Part.count
+    - Candidate[PartImage] → Part.diagram
+    - Candidate[PartNumber] → Part.number
+    - Candidate[PieceLength] → Part.length
+    """
 
     distance: float
     """Vertical distance between image and count."""
 
-    part_count_candidate: Candidate
-    """The part_count candidate."""
+    part_count_candidate: Candidate[PartCount]
+    """The part_count candidate (maps to Part.count)."""
 
-    part_image_candidate: Candidate
-    """The part_image candidate."""
+    part_image_candidate: Candidate[PartImage]
+    """The part_image candidate (maps to Part.diagram)."""
 
-    part_number_candidate: Candidate | None = None
-    """The part_number candidate (optional)."""
+    part_number_candidate: Candidate[PartNumber] | None = None
+    """The part_number candidate (optional, maps to Part.number)."""
 
-    piece_length_candidate: Candidate | None = None
-    """The piece_length candidate (optional)."""
+    piece_length_candidate: Candidate[PieceLength] | None = None
+    """The piece_length candidate (optional, maps to Part.length)."""
 
     def sort_key(self) -> tuple[float, float]:
         """Return a tuple for sorting candidates.

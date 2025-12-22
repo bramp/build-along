@@ -23,6 +23,19 @@ class Score(BaseModel):
     - 0.0 indicates lowest confidence/worst match
     - 1.0 indicates highest confidence/best match
 
+    Score classes should use generic Candidate[T] types to enable automatic
+    constraint mapping by SchemaConstraintGenerator:
+
+        class _PartsListScore(Score):
+            # Candidate[Part] auto-maps to PartsList.parts (Sequence[Part])
+            part_candidates: list[Candidate[Part]] = []
+
+        class _PartPairScore(Score):
+            # Candidate[PartCount] auto-maps to Part.count
+            part_count_candidate: Candidate[PartCount]
+            # Candidate[PartImage] auto-maps to Part.diagram
+            part_image_candidate: Candidate[PartImage]
+
     Example implementations:
         class _PageNumberScore(Score):
             text_score: float

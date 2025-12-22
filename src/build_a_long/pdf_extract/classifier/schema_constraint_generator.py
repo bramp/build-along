@@ -5,34 +5,35 @@ generate constraints for the CP-SAT solver.
 
 Design Decisions:
 -----------------
-1. Use EXPLICIT field naming convention to identify dependencies:
+1. Use generic Candidate[T] to automatically map score fields to schema fields:
+   - Candidate[Part] auto-maps to schema fields of type Part or Sequence[Part]
+   - Candidate[PartCount] auto-maps to schema fields of type PartCount
+
+2. Fall back to naming convention if no generic type:
    - Fields ending in '_candidate' are single dependencies
    - Fields ending in '_candidates' are list dependencies
-   This makes dependencies obvious in code (no hidden magic).
 
-2. Use Pydantic's model_fields to introspect schema structure.
+3. Use Pydantic's model_fields to introspect schema structure.
 
-3. Support __constraint_rules__ class variable for custom constraints beyond
+4. Support __constraint_rules__ class variable for custom constraints beyond
    what can be inferred from field types.
 
 Example:
-    class Step(LegoPageElement):
-        # Explicit naming makes dependencies clear
-        step_number: StepNumber  # Required field
-        diagram: Diagram | None  # Optional field
+    class PartsList(LegoPageElement):
+        parts: Sequence[Part]  # Schema expects Part elements
 
-        # Score references candidates explicitly
-        class _StepScore(Score):
-            step_number_candidate: Candidate  # "_candidate" suffix = dependency
-            parts_list_candidate: Candidate | None
+    class _PartsListScore(Score):
+        # Candidate[Part] auto-maps to PartsList.parts because types match
+        part_candidates: list[Candidate[Part]] = []
 """
 
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Union, get_args, get_origin
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
+from build_a_long.pdf_extract.classifier.score import Score
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Arrow,
     Background,
@@ -311,19 +312,29 @@ class SchemaConstraintGenerator:
             pass
 
     def _extract_child_candidates(
-        self, parent_cand: Candidate, field_name: str
+        self, parent_cand: Candidate, schema_field_name: str
     ) -> list[Candidate]:
         """Extract child candidates from parent's score_details.
 
-        Uses EXPLICIT naming convention:
+        Uses generic Candidate[T] type to match score fields to schema fields:
+
+            class _PartsListScore(Score):
+                # Candidate[Part] auto-maps to PartsList.parts (Sequence[Part])
+                part_candidates: list[Candidate[Part]] = []
+
+        The matching algorithm:
+        1. Get the target element type from schema field
+           (e.g., Part from parts: Sequence[Part])
+        2. Find score fields with Candidate[T] where T matches the target type
+        3. Extract candidates from those fields
+
+        Falls back to naming convention if no generic type found:
         - Looks for score_details.{field_name}_candidate (single)
         - Looks for score_details.{field_name}_candidates (list)
 
-        This makes dependencies obvious in code.
-
         Args:
             parent_cand: The parent candidate
-            field_name: The field name (e.g., 'step_number', 'parts_list')
+            schema_field_name: The schema field name (e.g., 'parts', 'count')
 
         Returns:
             List of child candidates (empty if none found)
@@ -332,23 +343,178 @@ class SchemaConstraintGenerator:
         if not score_details:
             return []
 
-        children = []
+        # Get target element class from parent's element schema
+        parent_element_class = self._get_element_class(parent_cand.label)
+        if not parent_element_class:
+            return []
 
-        # Try single: {field_name}_candidate
-        single_attr = f"{field_name}_candidate"
+        target_element_type = self._get_field_element_type(
+            parent_element_class, schema_field_name
+        )
+        if not target_element_type:
+            # Fall back to naming convention
+            return self._extract_by_naming_convention(score_details, schema_field_name)
+
+        children: list[Candidate] = []
+
+        # Search score_details fields for Candidate[T] where T matches target
+        if hasattr(score_details, "model_fields"):
+            for attr_name, field_info in score_details.model_fields.items():
+                candidate_element_type = self._get_candidate_element_type(
+                    field_info.annotation
+                )
+                if candidate_element_type and self._types_match(
+                    candidate_element_type, target_element_type
+                ):
+                    value = getattr(score_details, attr_name, None)
+                    if isinstance(value, Candidate):
+                        children.append(value)
+                    elif isinstance(value, list):
+                        children.extend([c for c in value if isinstance(c, Candidate)])
+
+        # If found via generic type, return
+        if children:
+            return children
+
+        # Fall back to naming convention
+        return self._extract_by_naming_convention(score_details, schema_field_name)
+
+    def _extract_by_naming_convention(
+        self, score_details: Score, schema_field_name: str
+    ) -> list[Candidate]:
+        """Fall back to naming convention: {field_name}_candidate(s)."""
+        children: list[Candidate] = []
+
+        single_attr = f"{schema_field_name}_candidate"
         if hasattr(score_details, single_attr):
             value = getattr(score_details, single_attr)
             if isinstance(value, Candidate):
                 children.append(value)
 
-        # Try multiple: {field_name}_candidates
-        multi_attr = f"{field_name}_candidates"
+        multi_attr = f"{schema_field_name}_candidates"
         if hasattr(score_details, multi_attr):
             value = getattr(score_details, multi_attr)
             if isinstance(value, list):
                 children.extend([c for c in value if isinstance(c, Candidate)])
 
         return children
+
+    def _get_field_element_type(
+        self, element_class: type[LegoPageElement], field_name: str
+    ) -> type[LegoPageElement] | None:
+        """Get the element type expected by a schema field.
+
+        For example:
+        - PartsList.parts: Sequence[Part] → returns Part
+        - Part.count: PartCount → returns PartCount
+        - Part.diagram: PartImage | None → returns PartImage
+
+        Args:
+            element_class: The element class to inspect
+            field_name: The field name to look up
+
+        Returns:
+            The element type, or None if not found/not an element type
+        """
+        if field_name not in element_class.model_fields:
+            return None
+
+        field_info = element_class.model_fields[field_name]
+        annotation = field_info.annotation
+
+        # Handle Sequence[T], list[T]
+        origin = get_origin(annotation)
+        if origin in (list, tuple) or (
+            origin is not None
+            and hasattr(origin, "__name__")
+            and "Sequence" in str(origin)
+        ):
+            args = get_args(annotation)
+            if args:
+                inner_type = args[0]
+                if isinstance(inner_type, type) and issubclass(
+                    inner_type, LegoPageElement
+                ):
+                    return inner_type
+
+        # Handle Optional[T] / T | None
+        if origin is Union:
+            args = get_args(annotation)
+            for arg in args:
+                if (
+                    arg is not type(None)
+                    and isinstance(arg, type)
+                    and issubclass(arg, LegoPageElement)
+                ):
+                    return arg
+
+        # Handle direct type
+        if isinstance(annotation, type) and issubclass(annotation, LegoPageElement):
+            return annotation
+
+        return None
+
+    def _get_candidate_element_type(
+        self, annotation: Any
+    ) -> type[LegoPageElement] | None:
+        """Extract the element type T from Candidate[T] or list[Candidate[T]].
+
+        Args:
+            annotation: The type annotation to inspect
+
+        Returns:
+            The element type T if this is Candidate[T], None otherwise
+        """
+        origin = get_origin(annotation)
+
+        # Handle list[Candidate[T]] or Sequence[Candidate[T]]
+        if origin in (list, tuple) or (
+            origin is not None
+            and hasattr(origin, "__name__")
+            and "Sequence" in str(origin)
+        ):
+            args = get_args(annotation)
+            if args:
+                return self._get_candidate_element_type(args[0])
+
+        # Handle Candidate[T]
+        if (
+            origin is not None
+            and hasattr(origin, "__name__")
+            and origin.__name__ == "Candidate"
+        ):
+            args = get_args(annotation)
+            if (
+                args
+                and isinstance(args[0], type)
+                and issubclass(args[0], LegoPageElement)
+            ):
+                return args[0]
+
+        # Handle Optional[Candidate[T]]
+        if origin is Union:
+            args = get_args(annotation)
+            for arg in args:
+                if arg is not type(None):
+                    result = self._get_candidate_element_type(arg)
+                    if result:
+                        return result
+
+        return None
+
+    def _types_match(
+        self, candidate_type: type[LegoPageElement], schema_type: type[LegoPageElement]
+    ) -> bool:
+        """Check if a candidate element type matches a schema field type.
+
+        Args:
+            candidate_type: The type from Candidate[T]
+            schema_type: The type expected by the schema field
+
+        Returns:
+            True if types match (including subclass relationships)
+        """
+        return candidate_type is schema_type or issubclass(candidate_type, schema_type)
 
     def _generate_custom_constraints(
         self,
