@@ -12,6 +12,31 @@ from build_a_long.downloader.legocom import LEGO_BASE, build_metadata
 from build_a_long.downloader.util import is_valid_set_id
 
 
+def parse_duration(duration_str: str) -> timedelta | None:
+    """Parse a human-readable duration string into a timedelta.
+
+    Args:
+        duration_str: A duration string like "1d", "2 hours", "30m", etc.
+
+    Returns:
+        A timedelta representing the duration, or None if parsing failed.
+
+    Note:
+        TODO(bramp): This is a workaround for a pytimeparse2 bug where
+        as_timedelta=True returns relativedelta instead of timedelta on
+        Python 3.13. This may have been fixed in Python 3.14+. Once we
+        upgrade, we can simplify this to use as_timedelta=True directly.
+        See: https://github.com/onegreyonewhite/pytimeparse2/issues/XX
+    """
+    result = pytimeparse2.parse(duration_str)
+    if result is None:
+        return None
+    if isinstance(result, timedelta):
+        return result
+    # result is int/float seconds
+    return timedelta(seconds=result)
+
+
 def get_set_numbers_from_args(args: argparse.Namespace) -> list[str]:
     """Extract and validate LEGO set numbers from command-line arguments.
 
@@ -136,12 +161,8 @@ def run_download(args: argparse.Namespace) -> int:
     overwrite_metadata_if_older_than: timedelta | None = None
     if args.overwrite_metadata_if_older_than:
         duration_str = args.overwrite_metadata_if_older_than
-        try:
-            duration = pytimeparse2.parse(duration_str, as_timedelta=True)
-            if not isinstance(duration, timedelta):
-                raise ValueError("Invalid duration string format")
-            overwrite_metadata_if_older_than = duration
-        except (ValueError, TypeError):
+        overwrite_metadata_if_older_than = parse_duration(duration_str)
+        if overwrite_metadata_if_older_than is None:
             print(
                 f"Error: Invalid duration string: {duration_str}",
                 file=sys.stderr,
