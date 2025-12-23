@@ -723,6 +723,10 @@ class Classifier:
             f"for labels: {sorted(labels_to_solve)}"
         )
 
+        # Add block exclusivity constraints
+        # (candidates sharing blocks are mutually exclusive)
+        model.add_block_exclusivity_constraints(all_candidates)
+
         # Let each classifier declare custom constraints
         for classifier in self.classifiers:
             classifier.declare_constraints(model, result)

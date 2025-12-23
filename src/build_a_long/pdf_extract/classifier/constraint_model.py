@@ -68,6 +68,10 @@ class ConstraintModel:
         self._solver = cp_model.CpSolver()
         """The solver instance (reused across solve calls)."""
 
+        # Constraint tracking for logging
+        self._constraint_counts: dict[str, int] = {}
+        """Count of constraints by type for summary logging."""
+
     def add_candidate(self, candidate: Candidate) -> cp_model.IntVar:
         """Register a candidate and return its boolean variable.
 
@@ -95,6 +99,34 @@ class ConstraintModel:
             )
 
         return self._candidate_vars[cid]
+
+    def _track_constraint(self, constraint_type: str, count: int = 1) -> None:
+        """Track constraint for summary logging.
+
+        Args:
+            constraint_type: Name of the constraint type
+            count: Number of constraints added (default 1)
+        """
+        if constraint_type not in self._constraint_counts:
+            self._constraint_counts[constraint_type] = 0
+        self._constraint_counts[constraint_type] += count
+
+    def get_constraint_summary(self) -> str:
+        """Get a summary of all constraints added to the model.
+
+        Returns:
+            Human-readable summary string
+        """
+        if not self._constraint_counts:
+            return "No constraints added"
+
+        lines = ["Constraint Summary:"]
+        total = 0
+        for ctype, count in sorted(self._constraint_counts.items()):
+            lines.append(f"  - {ctype}: {count}")
+            total += count
+        lines.append(f"  Total: {total} constraints")
+        return "\n".join(lines)
 
     def get_var(self, candidate: Candidate) -> cp_model.IntVar:
         """Get the boolean variable for a candidate.
@@ -141,11 +173,13 @@ class ConstraintModel:
 
         vars_list = [self.get_var(c) for c in candidates]
         self.model.Add(sum(vars_list) <= 1)
+        self._track_constraint("at_most_one_of")
 
         log.debug(
-            "Added constraint: at_most_one_of %d candidates (%s)",
+            "  [constraint] at_most_one_of: %d candidates (%s)",
             len(candidates),
-            ", ".join(c.label for c in candidates[:3]),
+            ", ".join(f"{c.label}@{c.bbox}" for c in candidates[:3])
+            + ("..." if len(candidates) > 3 else ""),
         )
 
     def exactly_one_of(self, candidates: list[Candidate]) -> None:
@@ -161,8 +195,13 @@ class ConstraintModel:
 
         vars_list = [self.get_var(c) for c in candidates]
         self.model.Add(sum(vars_list) == 1)
+        self._track_constraint("exactly_one_of")
 
-        log.debug("Added constraint: exactly_one_of %d candidates", len(candidates))
+        log.debug(
+            "  [constraint] exactly_one_of: %d candidates (%s)",
+            len(candidates),
+            candidates[0].label if candidates else "?",
+        )
 
     def if_selected_then(self, parent: Candidate, children: list[Candidate]) -> None:
         """Add constraint: if parent selected, all children must be selected.
@@ -183,10 +222,13 @@ class ConstraintModel:
             # If parent=1, then child=1
             self.model.Add(child_var == 1).OnlyEnforceIf(parent_var)
 
+        self._track_constraint("if_selected_then", len(children))
         log.debug(
-            "Added constraint: if %s selected, then %d children must be selected",
+            "  [constraint] if_selected_then: %s => %d children (%s)",
             parent.label,
             len(children),
+            ", ".join(c.label for c in children[:3])
+            + ("..." if len(children) > 3 else ""),
         )
 
     def if_any_selected_then_one_of(
@@ -216,9 +258,9 @@ class ConstraintModel:
         # If any_a, then at least one in group_b
         self.model.Add(sum(vars_b) >= 1).OnlyEnforceIf(any_a)
 
+        self._track_constraint("if_any_selected_then_one_of")
         log.debug(
-            "Added constraint: if any of %d %s selected, "
-            "then at least one of %d %s required",
+            "  [constraint] if_any_selected_then_one_of: %d %s => one of %d %s",
             len(group_a),
             group_a[0].label if group_a else "?",
             len(group_b),
@@ -239,11 +281,14 @@ class ConstraintModel:
         var_a = self.get_var(candidate_a)
         var_b = self.get_var(candidate_b)
         self.model.Add(var_a + var_b <= 1)
+        self._track_constraint("mutually_exclusive")
 
         log.debug(
-            "Added constraint: %s and %s are mutually exclusive",
+            "  [constraint] mutually_exclusive: %s@%s vs %s@%s",
             candidate_a.label,
+            candidate_a.bbox,
             candidate_b.label,
+            candidate_b.bbox,
         )
 
     def add_block_exclusivity_constraints(
@@ -274,10 +319,14 @@ class ConstraintModel:
                 self.at_most_one_of(candidates)
                 constraint_count += 1
 
-        log.info(
-            "Added %d block exclusivity constraints for %d blocks",
+        # Track separately since at_most_one_of already tracks
+        # We want to know how many came from block exclusivity
+        self._constraint_counts["block_exclusivity"] = constraint_count
+
+        log.debug(
+            "  [constraint] block_exclusivity: %d constraints for %d blocks",
             constraint_count,
-            len(block_to_candidates),
+            len([b for b, c in block_to_candidates.items() if len(c) > 1]),
         )
 
     def maximize(self, objective_terms: list[tuple[Candidate, int]]) -> None:
@@ -311,10 +360,22 @@ class ConstraintModel:
         # Configure solver
         self._solver.parameters.log_search_progress = False
 
+        # Log constraint summary
+        log.info("=" * 60)
+        log.info("CONSTRAINT SOLVER STARTING")
+        log.info("=" * 60)
+        log.info("  Candidates: %d", len(self._candidates))
+
+        # Log candidates by label
+        label_counts: dict[str, int] = {}
+        for cand in self._candidates.values():
+            label_counts[cand.label] = label_counts.get(cand.label, 0) + 1
+        for label, count in sorted(label_counts.items()):
+            log.info("    - %s: %d", label, count)
+
+        log.info("  Constraints: %s", self.get_constraint_summary())
+
         # Solve
-        log.info(
-            "Solving constraint model with %d candidates...", len(self._candidates)
-        )
         status = self._solver.Solve(self.model)
 
         # Extract results
@@ -325,12 +386,14 @@ class ConstraintModel:
             }
 
             selected_count = sum(1 for s in selection.values() if s)
+            log.info("-" * 60)
             log.info(
-                "Solver succeeded: status=%s, selected %d/%d candidates",
+                "CONSTRAINT SOLVER COMPLETE: %s, selected %d/%d candidates",
                 "OPTIMAL" if status == cp_model.OPTIMAL else "FEASIBLE",
                 selected_count,
                 len(self._candidates),
             )
+            log.info("=" * 60)
 
             return True, selection
 
