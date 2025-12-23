@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from enum import Enum
 from typing import Annotated, Any, ClassVar, Literal
 
@@ -28,6 +28,57 @@ from build_a_long.pdf_extract.utils import (
     auto_id_field,
     remove_empty_lists,
 )
+
+
+def _sort_items_by_row[T](items: Sequence[T], get_bbox: Callable[[T], BBox]) -> list[T]:
+    """Sort items in reading order: row by row, left-to-right within each row.
+
+    Groups items into rows based on vertical overlap, then sorts each row
+    left-to-right. Rows are ordered top-to-bottom.
+
+    This is more robust than simple (y0, x0) sorting because items in the same
+    visual row may have slightly different y0 values due to varying heights.
+
+    Args:
+        items: Sequence of items to sort
+        get_bbox: Function that extracts BBox from an item
+
+    Returns:
+        List of items sorted in reading order
+    """
+    if not items:
+        return []
+
+    # Sort by x0 first so items are in left-to-right order
+    items_by_x = sorted(items, key=lambda item: get_bbox(item).x0)
+
+    # Cluster into rows using union-find based on Y overlap
+    # Two items are in the same row if their Y ranges overlap
+    rows: list[list[T]] = []
+
+    for item in items_by_x:
+        bbox = get_bbox(item)
+        placed = False
+
+        # Try to place in an existing row that overlaps vertically
+        for row in rows:
+            # Check if item overlaps with first item in row (representative)
+            row_bbox = get_bbox(row[0])
+            # Check Y overlap: ranges [y0, y1] overlap if max(y0s) < min(y1s)
+            if max(bbox.y0, row_bbox.y0) < min(bbox.y1, row_bbox.y1):
+                row.append(item)
+                placed = True
+                break
+
+        if not placed:
+            # Start a new row
+            rows.append([item])
+
+    # Sort rows by minimum y0 (top to bottom)
+    rows.sort(key=lambda row: min(get_bbox(item).y0 for item in row))
+
+    # Flatten: items within each row are already sorted by x0
+    return [item for row in rows for item in row]
 
 
 class LegoPageElement(SerializationMixin, BaseModel, ABC):
