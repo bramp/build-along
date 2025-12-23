@@ -128,6 +128,13 @@ class ClassificationResult(BaseModel):
     
     Empty when solver is disabled or not yet run.
     """
+    # TODO When all classifiers use the CP, we can remove this.
+    _solver_labels: set[str] = PrivateAttr(default_factory=set)
+    """Set of labels that were included in the constraint solver.
+    
+    Only candidates with labels in this set are subject to solver selection.
+    Candidates with labels NOT in this set are always eligible for construction.
+    """
 
     _build_cache: dict[int, LegoPageElements] = PrivateAttr(default_factory=dict)
     """Map of Candidate.id -> constructed LegoPageElement.
@@ -210,29 +217,42 @@ class ClassificationResult(BaseModel):
     def is_solver_selected(self, candidate: Candidate) -> bool:
         """Check if a candidate was selected by the constraint solver.
 
-        When constraint solver is enabled, only selected candidates should be
-        built. When solver is disabled, this always returns True.
+        When constraint solver is enabled for a label, only selected candidates
+        of that label should be built. Candidates with labels not included in
+        the solver are always eligible.
 
         Args:
             candidate: The candidate to check
 
         Returns:
-            True if candidate should be considered (solver selected or disabled)
+            True if candidate should be considered (solver selected, or
+            label wasn't in solver, or solver disabled)
         """
-        # If solver not used, all candidates are eligible
-        if not self._solver_selected_ids:
+        # If solver not used at all, all candidates are eligible
+        if not self._solver_labels:
             return True
+        # If this label wasn't in the solver, candidate is eligible
+        if candidate.label not in self._solver_labels:
+            return True
+        # Label was in solver - check if this candidate was selected
         return candidate.id in self._solver_selected_ids
 
-    def set_solver_selection(self, selected_candidates: Collection[Candidate]) -> None:
+    def set_solver_selection(
+        self,
+        selected_candidates: Collection[Candidate],
+        solved_labels: Collection[str],
+    ) -> None:
         """Mark candidates as selected by the constraint solver.
 
         This should only be called by Classifier after running the CP-SAT solver.
 
         Args:
             selected_candidates: Collection of candidates selected by the solver
+            solved_labels: Collection of labels that were included in the solver.
+                Only candidates with these labels are subject to solver selection.
         """
         self._solver_selected_ids = {c.id for c in selected_candidates}
+        self._solver_labels = set(solved_labels)
 
     def build_all_for_label(self, label: str) -> Sequence[LegoPageElements]:
         """Build all candidates for a label using the registered classifier's build_all.
@@ -301,6 +321,12 @@ class ClassificationResult(BaseModel):
         if candidate.id in self._failure_reasons:
             raise CandidateFailedError(
                 candidate, f"Candidate failed: {self._failure_reasons[candidate.id]}"
+            )
+
+        # Check if solver was used and this candidate was not selected
+        if not self.is_solver_selected(candidate):
+            raise CandidateFailedError(
+                candidate, "Candidate not selected by constraint solver"
             )
 
         # Check if any source block is already consumed (pre-build check)
@@ -532,6 +558,8 @@ class ClassificationResult(BaseModel):
 
         The returned candidates are sorted by score (highest first) and
         excludes candidates that have already failed (e.g., lost a conflict).
+        When the constraint solver has been used for this label, only
+        solver-selected candidates are returned.
 
         Use get_built_candidates() instead when you need only successfully
         constructed candidates (e.g., in build() or after classification).
@@ -549,7 +577,8 @@ class ClassificationResult(BaseModel):
 
         Returns:
             List of scored candidates sorted by score (highest first),
-            excluding failed candidates.
+            excluding failed candidates and non-selected candidates
+            (when solver was used for this label).
         """
         candidates = self.get_candidates(label)
 
@@ -559,6 +588,10 @@ class ClassificationResult(BaseModel):
             for c in candidates
             if c.score_details is not None and c.id not in self._failure_reasons
         ]
+
+        # Filter by solver selection if solver was used for this label
+        if self._solver_labels and label in self._solver_labels:
+            scored = [c for c in scored if c.id in self._solver_selected_ids]
 
         # Apply score threshold if specified
         if min_score > 0:

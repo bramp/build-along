@@ -23,6 +23,27 @@ class Score(BaseModel):
     - 0.0 indicates lowest confidence/worst match
     - 1.0 indicates highest confidence/best match
 
+    IMPORTANT: Pairing Classifiers and Constraint Solver Integration
+    -----------------------------------------------------------------
+    When a classifier creates candidates that PAIR multiple elements together
+    (e.g., Part pairing PartCount with PartImage), the score() method MUST
+    incorporate ALL factors that distinguish good pairings from bad ones:
+
+    - Distance between elements (closer is usually better)
+    - Alignment quality (left/center/right alignment as expected)
+    - Relative positioning (above/below/beside as expected)
+    - Any domain-specific heuristics
+
+    This is CRITICAL because the constraint solver maximizes total score to
+    select optimal one-to-one matchings. If all candidate pairings have similar
+    scores, the solver cannot distinguish good from bad and may choose suboptimal
+    pairings.
+
+    See rules/scoring.py for utility functions:
+    - score_exponential_decay(): For distance-based scoring
+    - score_triangular(): For value-in-range scoring (e.g., alignment)
+    - score_linear(): For linear interpolation
+
     Score classes should use generic Candidate[T] types to enable automatic
     constraint mapping by SchemaConstraintGenerator:
 
