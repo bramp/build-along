@@ -449,8 +449,8 @@ class SchemaConstraintGenerator:
         children: list[Candidate] = []
 
         # Search score_details fields for Candidate[T] where T matches target
-        if hasattr(score_details, "model_fields"):
-            for attr_name, field_info in score_details.model_fields.items():
+        if hasattr(type(score_details), "model_fields"):
+            for attr_name, field_info in type(score_details).model_fields.items():
                 candidate_element_type = self._get_candidate_element_type(
                     field_info.annotation
                 )
