@@ -576,6 +576,9 @@ class Classifier:
             "background",
             # Dividers (block exclusivity via solver)
             "divider",
+            # Step-related labels (uniqueness by step_value)
+            "step",
+            "step_number",
         }
     )
 

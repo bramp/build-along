@@ -2,12 +2,14 @@
 Step number classifier.
 """
 
+import logging
 from collections.abc import Sequence
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.classifier.constraint_model import ConstraintModel
 from build_a_long.pdf_extract.classifier.rule_based_classifier import (
     RuleBasedClassifier,
     StepNumberScore,
@@ -91,6 +93,42 @@ class StepNumberClassifier(RuleBasedClassifier):
             total_score=total_score,
             step_value=step_value,
         )
+
+    def declare_constraints(
+        self, model: ConstraintModel, result: ClassificationResult
+    ) -> None:
+        """Declare constraints for step_number candidates.
+
+        Constraints:
+        - Uniqueness: At most one step_number per step_value (e.g., only one "1")
+        - The solver will pick the highest-scoring candidate for each step_value
+        """
+        candidates = result.get_candidates(self.output)
+        candidates_in_model = [c for c in candidates if model.has_candidate(c)]
+
+        if not candidates_in_model:
+            return
+
+        # Group by step_value
+        by_value: dict[int, list[Candidate]] = {}
+        for cand in candidates_in_model:
+            if isinstance(cand.score_details, StepNumberScore):
+                step_value = cand.score_details.step_value
+                if step_value not in by_value:
+                    by_value[step_value] = []
+                by_value[step_value].append(cand)
+
+        # Add at_most_one constraint for each step_value
+        log = logging.getLogger(__name__)
+        for step_value, cands in by_value.items():
+            if len(cands) > 1:
+                model.at_most_one_of(cands)
+                log.debug(
+                    "[step_number] Uniqueness constraint: at most one step_number "
+                    "with value=%d (%d candidates)",
+                    step_value,
+                    len(cands),
+                )
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> StepNumber:
         """Construct a StepNumber element from a candidate.

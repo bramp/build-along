@@ -6,7 +6,12 @@ from build_a_long.pdf_extract.classifier import (
     ClassificationResult,
     ClassifierConfig,
 )
+from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.conftest import CandidateFactory
+from build_a_long.pdf_extract.classifier.constraint_model import ConstraintModel
+from build_a_long.pdf_extract.classifier.schema_constraint_generator import (
+    SchemaConstraintGenerator,
+)
 from build_a_long.pdf_extract.classifier.steps.step_classifier import (
     StepClassifier,
     _StepScore,
@@ -18,6 +23,84 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     Step,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Drawing, Image, Text
+
+
+def run_solver(
+    result: ClassificationResult,
+    classifier: StepClassifier,
+    labels_to_solve: set[str],
+) -> None:
+    """Run the constraint solver on the classification result.
+
+    This helper mimics what Classifier._solve_constraints() does, allowing
+    unit tests to test solver behavior without going through the full
+    classification pipeline.
+
+    Args:
+        result: The classification result with scored candidates
+        classifier: The step classifier to declare constraints
+        labels_to_solve: Set of labels to include in the solver
+    """
+    model = ConstraintModel()
+
+    # Add all candidates for the specified labels
+    all_candidates: list[Candidate] = []
+    for label, candidates in result.candidates.items():
+        if label in labels_to_solve:
+            for candidate in candidates:
+                model.add_candidate(candidate)
+                all_candidates.append(candidate)
+
+    # Add block exclusivity constraints
+    model.add_block_exclusivity_constraints(all_candidates)
+
+    # Let the classifier declare custom constraints
+    classifier.declare_constraints(model, result)
+
+    # Auto-generate schema-based constraints
+    generator = SchemaConstraintGenerator()
+    generator.generate_for_classifier(classifier, model, result)
+
+    # Maximize total score
+    model.maximize([(cand, int(cand.score * 1000)) for cand in all_candidates])
+
+    # Solve
+    solved, selection = model.solve()
+
+    if not solved:
+        result.set_solver_selection([], labels_to_solve)
+        return
+
+    # Mark selected candidates
+    selected_candidates = [
+        cand for cand in all_candidates if selection.get(cand.id, False)
+    ]
+    result.set_solver_selection(selected_candidates, labels_to_solve)
+
+
+def score_solve_and_build(
+    result: ClassificationResult,
+    classifier: StepClassifier,
+    labels_to_solve: set[str] | None = None,
+) -> None:
+    """Score candidates, run the solver, and build all steps.
+
+    This is a convenience helper that combines the three-step process:
+    1. classifier.score(result) - Score all step candidates
+    2. run_solver() - Run constraint solver to select best candidates
+    3. classifier.build_all() - Build the selected step elements
+
+    Args:
+        result: The classification result with dependency candidates already added
+        classifier: The step classifier to use
+        labels_to_solve: Set of labels to include in solver. Defaults to {"step"}.
+    """
+    if labels_to_solve is None:
+        labels_to_solve = {"step"}
+
+    classifier.score(result)
+    run_solver(result, classifier, labels_to_solve)
+    classifier.build_all(result)
 
 
 @pytest.fixture
@@ -64,10 +147,7 @@ class TestStepClassification:
 
         factory.add_parts_list(d1, [part1_candidate, part2_candidate])
 
-        classifier.score(result)
-
-        # Build steps using build_all (handles deduplication)
-        classifier.build_all(result)
+        score_solve_and_build(result, classifier)
 
         # Get constructed steps
         steps = [
@@ -108,10 +188,7 @@ class TestStepClassification:
         # Manually score step number candidate
         factory.add_step_number(step_text)
 
-        classifier.score(result)
-
-        # Build steps using build_all (handles deduplication)
-        classifier.build_all(result)
+        score_solve_and_build(result, classifier)
 
         # Get constructed steps
         steps = [
@@ -172,10 +249,7 @@ class TestStepClassification:
         factory.add_parts_list(d1, [part1_candidate])
         factory.add_parts_list(d2, [part2_candidate])
 
-        classifier.score(result)
-
-        # Build steps using build_all (handles deduplication)
-        classifier.build_all(result)
+        score_solve_and_build(result, classifier)
 
         # Get constructed steps
         steps = [
@@ -301,10 +375,7 @@ class TestStepClassification:
         factory.add_parts_list(d1, [part1_candidate])
         factory.add_parts_list(d2, [part2_candidate])
 
-        classifier.score(result)
-
-        # Build steps using build_all (handles deduplication)
-        classifier.build_all(result)
+        score_solve_and_build(result, classifier)
 
         # Get constructed steps
         steps = [

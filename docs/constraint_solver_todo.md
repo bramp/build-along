@@ -263,15 +263,21 @@ This was not implemented because:
   - Create step candidates WITHOUT diagram
   - Remove diagram pre-assignment logic from `_StepScore`
 
-- [ ] **Update StepClassifier constraints**
+- [x] **Update StepClassifier constraints** ✅
 
-  - Implement: `declare_constraints(model, result)`
+  - Implemented: `declare_constraints(model, result)`
   - Constraints:
-    - Unique step numbers
-    - If step selected, step_number must be selected
-    - If step selected, parts_list (if present) must be selected
-    - No orphaned arrows (arrows need at least one step)
-    - No orphaned rotation symbols
+    - [x] Unique step values (at most one step per step_value)
+    - [ ] If step selected, step_number must be selected
+    - [ ] If step selected, parts_list (if present) must be selected
+    - [ ] No orphaned arrows (arrows need at least one step)
+    - [ ] No orphaned rotation symbols
+
+- [x] **Update StepNumberClassifier constraints** ✅
+
+  - Implemented: `declare_constraints(model, result)`
+  - Constraints:
+    - [x] Unique step_number values (at most one per step_value)
 
 - [ ] **Refactor StepClassifier.build_all()**
 
@@ -295,10 +301,10 @@ This was not implemented because:
   - Page with 2 steps, 2 diagrams
   - Page with 3 steps, 2 diagrams (one shared)
 
-- [ ] **Test step uniqueness**
+- [x] **Test step uniqueness** ✅
 
-  - Page with duplicate step_number candidates
-  - Solver should pick at most one
+  - Golden tests pass with solver enabled for step and step_number
+  - Solver picks at most one candidate per step_value
 
 - [ ] **Test no orphaned arrows**
 
@@ -315,7 +321,7 @@ This was not implemented because:
 ### All Remaining Elements
 
 - [ ] **Add constraint rules to all elements**
-  - [ ] `StepNumber` - unique by value
+  - [x] `StepNumber` - unique by value ✅
   - [ ] `Diagram` - can be shared or assigned spatially
   - [ ] `Arrow` - needs parent step
   - [ ] `RotationSymbol` - needs parent step
@@ -330,7 +336,7 @@ This was not implemented because:
 ### Classifier Updates
 
 - [ ] Implement `declare_constraints()` for all classifiers:
-  - [ ] `StepNumberClassifier`
+  - [x] `StepNumberClassifier` ✅ - uniqueness by step_value
   - [ ] `DiagramClassifier`
   - [ ] `ArrowClassifier`
   - [ ] `RotationSymbolClassifier`
@@ -341,6 +347,7 @@ This was not implemented because:
   - [x] `ProgressBarClassifier` ✅
   - [x] `BackgroundClassifier` ✅
   - [x] `DividerClassifier` ✅
+  - [x] `StepClassifier` ✅ - uniqueness by step_value
 
 ### Enable by Default
 

@@ -31,6 +31,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     CandidateFailedError,
     ClassificationResult,
 )
+from build_a_long.pdf_extract.classifier.constraint_model import ConstraintModel
 from build_a_long.pdf_extract.classifier.label_classifier import (
     LabelClassifier,
 )
@@ -135,6 +136,91 @@ class StepClassifier(LabelClassifier):
         }
     )
 
+    def declare_constraints(
+        self, model: ConstraintModel, result: ClassificationResult
+    ) -> None:
+        """Declare constraints for step candidates.
+
+        Constraints:
+        - Uniqueness by step_value: At most one step per step_value (e.g., only
+          one "Step 1"). The solver picks the highest-scoring candidate.
+        - Uniqueness by step_number: Each step_number candidate can only be used
+          by one step. This prevents the same step number element from being
+          shared by multiple step candidates.
+        - Uniqueness by parts_list: Each parts_list candidate can only be used
+          by one step. This prevents the same parts list from being shared.
+        """
+        candidates = result.get_candidates(self.output)
+        candidates_in_model = [c for c in candidates if model.has_candidate(c)]
+
+        if not candidates_in_model:
+            return
+
+        # Group by step_value (semantic uniqueness)
+        by_value: dict[int, list[Candidate]] = {}
+        # Group by step_number_candidate id (element uniqueness)
+        by_step_number: dict[int, list[Candidate]] = {}
+        # Group by parts_list_candidate id (element uniqueness)
+        by_parts_list: dict[int, list[Candidate]] = {}
+
+        for cand in candidates_in_model:
+            if isinstance(cand.score_details, _StepScore):
+                score = cand.score_details
+
+                # Group by step_value
+                step_value = score.step_value
+                if step_value not in by_value:
+                    by_value[step_value] = []
+                by_value[step_value].append(cand)
+
+                # Group by step_number_candidate id
+                step_num_id = score.step_number_candidate.id
+                if step_num_id not in by_step_number:
+                    by_step_number[step_num_id] = []
+                by_step_number[step_num_id].append(cand)
+
+                # Group by parts_list_candidate id (if present)
+                if score.parts_list_candidate is not None:
+                    pl_id = score.parts_list_candidate.id
+                    if pl_id not in by_parts_list:
+                        by_parts_list[pl_id] = []
+                    by_parts_list[pl_id].append(cand)
+
+        # Add at_most_one constraint for each step_value
+        for step_value, cands in by_value.items():
+            if len(cands) > 1:
+                model.at_most_one_of(cands)
+                log.debug(
+                    "[step] Uniqueness constraint: at most one step with value=%d "
+                    "(%d candidates)",
+                    step_value,
+                    len(cands),
+                )
+
+        # Add at_most_one constraint for each step_number_candidate
+        # This ensures each StepNumber element is used by at most one Step
+        for step_num_id, cands in by_step_number.items():
+            if len(cands) > 1:
+                model.at_most_one_of(cands)
+                log.debug(
+                    "[step] Uniqueness constraint: step_number id=%d used by "
+                    "at most one step (%d candidates)",
+                    step_num_id,
+                    len(cands),
+                )
+
+        # Add at_most_one constraint for each parts_list_candidate
+        # This ensures each PartsList element is used by at most one Step
+        for pl_id, cands in by_parts_list.items():
+            if len(cands) > 1:
+                model.at_most_one_of(cands)
+                log.debug(
+                    "[step] Uniqueness constraint: parts_list id=%d used by "
+                    "at most one step (%d candidates)",
+                    pl_id,
+                    len(cands),
+                )
+
     def _score(self, result: ClassificationResult) -> None:
         """Score step pairings and create candidates."""
         page_data = result.page_data
@@ -205,8 +291,9 @@ class StepClassifier(LabelClassifier):
         - Rotation symbols must build before diagrams so small circular graphics
           aren't incorrectly clustered into diagrams
 
-        Deduplication of steps happens at build time (not scoring time) so that
-        diagram assignment can be re-evaluated as blocks get claimed.
+        Step uniqueness is enforced by the constraint solver when enabled
+        (via declare_constraints). When solver is disabled, deduplication
+        falls back to greedy matching by step_value.
 
         Returns:
             List of successfully constructed Step elements, sorted by step number
@@ -321,41 +408,35 @@ class StepClassifier(LabelClassifier):
                     e,
                 )
 
-        # Phase 5: Build Step candidates with deduplication by step value
+        # Phase 5: Build Step candidates
+        # The solver (via get_scored_candidates) returns only solver-selected
+        # candidates (at most one per step_value), so no deduplication needed.
         # Filter out candidates that look like substeps (small step numbers with
         # a significant gap from main step numbers). These are handled by
         # SubStepClassifier instead.
         # Steps are built as "partial" - just step_number + parts_list.
         # Diagrams and subassemblies are assigned later via Hungarian matching.
-        # Note: all_step_candidates was already fetched in Phase 3.
+        # Note: all_step_candidates was already fetched in pre-check phase.
         page_level_step_candidates = self._filter_page_level_step_candidates(
             all_step_candidates
         )
 
-        # Sort by score (highest first) so best candidates get built first
-        sorted_candidates = sorted(
-            page_level_step_candidates,
-            key=lambda c: c.score,
-            reverse=True,
-        )
-
         steps: Sequence[Step] = []
+        # Track built step values to detect duplicates (should never happen
+        # since solver enforces uniqueness via at_most_one_of constraints)
         built_step_values: set[int] = set()
 
-        for step_candidate in sorted_candidates:
+        for step_candidate in page_level_step_candidates:
             # Get step value from score
             score = step_candidate.score_details
             if not isinstance(score, _StepScore):
                 continue
 
-            # Skip if we've already built a step with this value
-            if score.step_value in built_step_values:
-                log.debug(
-                    "[step] Skipping duplicate step %d candidate (score=%.2f)",
-                    score.step_value,
-                    step_candidate.score,
-                )
-                continue
+            # Solver enforces uniqueness - we should never see duplicates
+            assert score.step_value not in built_step_values, (
+                f"Duplicate step {score.step_value} candidate - solver should "
+                f"have enforced uniqueness"
+            )
 
             try:
                 elem = result.build(step_candidate)
