@@ -747,7 +747,7 @@ class Classifier:
                 f"Constraint solver failed for page {result.page_data.page_number}, "
                 "falling back to empty selection"
             )
-            result.set_solver_selection([])
+            result.set_solver_selection([], labels_to_solve)
             return
 
         # Mark selected candidates
@@ -758,7 +758,7 @@ class Classifier:
             f"  Solver selected {len(selected_candidates)}/"
             f"{len(all_candidates)} candidates"
         )
-        result.set_solver_selection(selected_candidates)
+        result.set_solver_selection(selected_candidates, labels_to_solve)
 
     def _validate_classification_result(self, result: ClassificationResult) -> None:
         """Validate classification invariants and catch programming errors.

@@ -111,15 +111,17 @@ class PageClassifier(LabelClassifier):
         return None
 
     def _build_progress_bar(self, result: ClassificationResult) -> ProgressBar | None:
-        """Build the progress bar element if available."""
-        candidates = result.get_scored_candidates("progress_bar")
-        if candidates:
-            try:
-                progress_bar = result.build(candidates[0])
-                assert isinstance(progress_bar, ProgressBar)
-                return progress_bar
-            except CandidateFailedError as e:
-                log.debug("Failed to build progress_bar: %s", e)
+        """Build the progress bar element if available.
+
+        The solver constrains progress_bar to at most one, so we build all
+        selected candidates and return the first (if any).
+        """
+        progress_bars = result.build_all_for_label("progress_bar")
+        if progress_bars:
+            assert len(progress_bars) == 1
+            progress_bar = progress_bars[0]
+            assert isinstance(progress_bar, ProgressBar)
+            return progress_bar
         return None
 
     def _build_background(self, result: ClassificationResult) -> Background | None:
