@@ -90,27 +90,57 @@ class ProgressBarClassifier(LabelClassifier):
     ) -> None:
         """Declare constraints for progress_bar candidates.
 
-        At most one progress bar per page - this is a singleton element.
+        Constraints:
+        - At most one progress bar per page (singleton element)
+        - Each bar can only be used by one progress_bar
+        - Each indicator can only be used by one progress_bar
         """
         candidates = list(result.get_scored_candidates("progress_bar"))
         candidates_in_model = [c for c in candidates if model.has_candidate(c)]
 
-        if len(candidates_in_model) > 1:
-            model.at_most_one_of(candidates_in_model)
-            log.debug(
-                "[progress_bar] Added at_most_one constraint for %d candidates",
-                len(candidates_in_model),
-            )
+        if len(candidates_in_model) <= 1:
+            return
+
+        # At most one progress bar per page
+        model.at_most_one_of(candidates_in_model)
+        log.debug(
+            "[progress_bar] Added at_most_one constraint for %d candidates",
+            len(candidates_in_model),
+        )
+
+        # Group by bar_candidate - at most one progress_bar per bar
+        by_bar: dict[int, list[Candidate]] = {}
+        for cand in candidates_in_model:
+            score = cand.score_details
+            assert isinstance(score, _ProgressBarPairScore)
+            bar_id = score.bar_candidate.id
+            by_bar.setdefault(bar_id, []).append(cand)
+
+        for _bar_id, group in by_bar.items():
+            if len(group) > 1:
+                model.at_most_one_of(group)
+
+        # Group by indicator_candidate - at most one progress_bar per indicator
+        by_indicator: dict[int, list[Candidate]] = {}
+        for cand in candidates_in_model:
+            score = cand.score_details
+            assert isinstance(score, _ProgressBarPairScore)
+            if score.indicator_candidate:
+                ind_id = score.indicator_candidate.id
+                by_indicator.setdefault(ind_id, []).append(cand)
+
+        for _ind_id, group in by_indicator.items():
+            if len(group) > 1:
+                model.at_most_one_of(group)
 
     def _score(self, result: ClassificationResult) -> None:
-        """Create ProgressBar candidates by pairing bar and indicator candidates."""
+        """Create ProgressBar candidates for all valid bar+indicator pairings."""
         config: ProgressBarConfig = self.config.progress_bar
 
-        # Get bar candidates (scoring phase - candidates aren't constructed yet)
         bar_candidates = result.get_scored_candidates("progress_bar_bar")
-
-        # Get indicator candidates (scoring phase)
-        indicator_candidates = result.get_scored_candidates("progress_bar_indicator")
+        indicator_candidates = list(
+            result.get_scored_candidates("progress_bar_indicator")
+        )
 
         log.debug(
             "[progress_bar] page=%s bar_candidates=%d indicator_candidates=%d",
@@ -122,123 +152,99 @@ class ProgressBarClassifier(LabelClassifier):
         if not bar_candidates:
             return
 
-        # Track which indicators have been used
-        used_indicators: set[int] = set()
-
         for bar_cand in bar_candidates:
-            # Find the best matching indicator for this bar
-            best_indicator, extension_amount = self._find_best_indicator(
-                bar_cand, indicator_candidates, used_indicators, config, result
+            # Find ALL valid indicators for this bar
+            valid_indicators = self._get_valid_indicators(
+                bar_cand, indicator_candidates, config
             )
 
-            # Mark indicator as used if found
-            if best_indicator:
-                used_indicators.add(id(best_indicator))
+            # Create a candidate for each valid pairing
+            for ind_cand, extension_amount in valid_indicators:
+                self._create_candidate(result, bar_cand, ind_cand, extension_amount)
 
-            # Create the pairing score
-            pair_score = _ProgressBarPairScore(
-                bar_candidate=bar_cand,
-                indicator_candidate=best_indicator,
-                extension_amount=extension_amount,
-            )
+            # Also create a candidate with no indicator (bar only)
+            if not valid_indicators:
+                self._create_candidate(result, bar_cand, None, 0.0)
 
-            # Create a candidate for this progress bar
-            # The bbox will be computed in build() as union of bar + indicator
-            # As a composite element, it has no direct source_blocks - blocks are
-            # consumed through the child bar and indicator candidates when built.
-            candidate = Candidate(
-                label="progress_bar",
-                score=pair_score.score(),
-                score_details=pair_score,
-                bbox=bar_cand.bbox,  # Temporary, will be updated in build
-                source_blocks=[],  # Composite element - blocks consumed via children
-            )
-            result.add_candidate(candidate)
+    def _create_candidate(
+        self,
+        result: ClassificationResult,
+        bar_cand: Candidate,
+        ind_cand: Candidate | None,
+        extension_amount: float,
+    ) -> None:
+        """Create a progress_bar candidate for a bar+indicator pairing."""
+        pair_score = _ProgressBarPairScore(
+            bar_candidate=bar_cand,
+            indicator_candidate=ind_cand,
+            extension_amount=extension_amount,
+        )
+        candidate = Candidate(
+            label="progress_bar",
+            score=pair_score.score(),
+            score_details=pair_score,
+            bbox=bar_cand.bbox,
+            source_blocks=[],
+        )
+        result.add_candidate(candidate)
 
-    def _find_best_indicator(
+    def _get_valid_indicators(
         self,
         bar_cand: Candidate,
         indicator_candidates: Sequence[Candidate],
-        used_indicators: set[int],
         config: ProgressBarConfig,
-        result: ClassificationResult,
-    ) -> tuple[Candidate | None, float]:
-        """Find the best matching indicator for a bar candidate.
-
-        Args:
-            bar_cand: The bar candidate to find an indicator for
-            indicator_candidates: All available indicator candidates
-            used_indicators: Set of indicator IDs that have already been used
-            config: ProgressBarConfig instance
+    ) -> list[tuple[Candidate, float]]:
+        """Find all valid indicators for a bar candidate.
 
         Returns:
-            Tuple of (best_indicator, extension_amount) where extension_amount
-            is normalized by bar height. Returns (None, 0.0) if no match found.
+            List of (indicator_candidate, extension_amount) tuples.
         """
         bar_bbox = bar_cand.bbox
         bar_height = bar_bbox.height
         bar_center_y = (bar_bbox.y0 + bar_bbox.y1) / 2
 
-        # Get the original bar width from the primary source block
         primary_block = bar_cand.source_blocks[0]
         bar_start_x = primary_block.bbox.x0
         bar_full_width = primary_block.bbox.width
+        bar_end_x = bar_start_x + bar_full_width
 
-        best_candidate: Candidate | None = None
-        best_score: float = -1.0
-        best_extension: float = 0.0
+        valid: list[tuple[Candidate, float]] = []
 
         for ind_cand in indicator_candidates:
-            # Skip already used indicators
-            if id(ind_cand) in used_indicators:
-                continue
-
-            # Skip if already built (consumed elsewhere)
-            if result.get_constructed(ind_cand) is not None:
-                continue
-
             ind_bbox = ind_cand.bbox
 
             # Indicator must be at least as tall as the bar
             if ind_bbox.height < bar_height:
                 continue
 
-            # Check if indicator extends beyond the bar vertically
-            # This is the key criterion - a true indicator "sticks out" from the bar
+            # Must extend beyond the bar vertically
             extends_above = ind_bbox.y0 < bar_bbox.y0
             extends_below = ind_bbox.y1 > bar_bbox.y1
             if not (extends_above or extends_below):
                 continue
 
-            # Check if the indicator's center Y is aligned with the bar's center Y
+            # Center Y must be aligned with bar's center Y
             ind_center_y = (ind_bbox.y0 + ind_bbox.y1) / 2
             if abs(ind_center_y - bar_center_y) > bar_height:
                 continue
 
-            # Must be horizontally within or near the progress bar
+            # Must be horizontally within or near the bar
             indicator_x = (ind_bbox.x0 + ind_bbox.x1) / 2
-            bar_end_x = bar_start_x + bar_full_width
             if (
                 indicator_x < bar_start_x - config.indicator_search_margin
                 or indicator_x > bar_end_x + config.indicator_search_margin
             ):
                 continue
 
-            # Calculate how much the indicator extends beyond the bar
+            # Calculate extension amount
             extension_above = max(0.0, bar_bbox.y0 - ind_bbox.y0)
             extension_below = max(0.0, ind_bbox.y1 - bar_bbox.y1)
             total_extension = extension_above + extension_below
-            normalized_extension = total_extension / bar_height if bar_height > 0 else 0
+            normalized = total_extension / bar_height if bar_height > 0 else 0
 
-            # Score: combine indicator's base score with extension bonus
-            effective_score = ind_cand.score + normalized_extension * 0.5
+            valid.append((ind_cand, normalized))
 
-            if effective_score > best_score:
-                best_candidate = ind_cand
-                best_score = effective_score
-                best_extension = normalized_extension
-
-        return best_candidate, best_extension
+        return valid
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> ProgressBar:
         """Construct a ProgressBar element from a paired candidate.
