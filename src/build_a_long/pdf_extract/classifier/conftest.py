@@ -138,6 +138,7 @@ class CandidateFactory:
 
         score_details = _PartPairScore(
             distance=10.0,
+            alignment_offset=0.0,  # Perfect alignment for test fixtures
             part_count_candidate=part_count_candidate,
             part_image_candidate=part_image_candidate,
             part_number_candidate=part_number_candidate,
