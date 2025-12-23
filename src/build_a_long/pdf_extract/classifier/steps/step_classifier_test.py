@@ -12,6 +12,12 @@ from build_a_long.pdf_extract.classifier.constraint_model import ConstraintModel
 from build_a_long.pdf_extract.classifier.schema_constraint_generator import (
     SchemaConstraintGenerator,
 )
+from build_a_long.pdf_extract.classifier.score import Score
+from build_a_long.pdf_extract.classifier.steps.arrow_classifier import (
+    ArrowClassifier,
+    _ArrowHeadData,
+    _ArrowScore,
+)
 from build_a_long.pdf_extract.classifier.steps.step_classifier import (
     StepClassifier,
     _StepScore,
@@ -495,3 +501,148 @@ class TestFilterSubassemblyValues:
         assert filter_subassembly_values(items) == items
         # With max_subassembly_start=4, min=4 should filter
         assert filter_subassembly_values(items, max_subassembly_start=4) == [(15, "b")]
+
+
+class TestNoOrphanConstraints:
+    """Tests for no-orphan constraints in StepClassifier."""
+
+    def test_no_orphan_constraint_declared_for_arrows(
+        self,
+        classifier: StepClassifier,
+        candidate_factory: Callable[[ClassificationResult], CandidateFactory],
+    ) -> None:
+        """Verify no-orphan constraint is declared for arrows.
+
+        When arrows exist, the constraint solver must ensure at least one
+        step is selected to prevent orphaned arrows.
+        """
+        page_bbox = BBox(0, 0, 600, 400)
+        step_text = Text(id=1, bbox=BBox(50, 50, 70, 70), text="1")
+        arrow_drawing = Drawing(id=2, bbox=BBox(100, 100, 200, 110))
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[step_text, arrow_drawing],
+            bbox=page_bbox,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        factory = candidate_factory(result)
+
+        # Add step_number and step candidates
+        factory.add_step_number(step_text)
+        classifier.score(result)
+
+        # Add an arrow candidate manually
+        result._register_classifier("arrow", ArrowClassifier(config=ClassifierConfig()))
+        arrow_score = _ArrowScore(
+            heads=[
+                _ArrowHeadData(
+                    tip=(150, 105),
+                    direction=0,
+                    shape_score=1.0,
+                    size_score=1.0,
+                    block=arrow_drawing,
+                )
+            ]
+        )
+        arrow_cand = Candidate(
+            bbox=arrow_drawing.bbox,
+            label="arrow",
+            score=1.0,
+            score_details=arrow_score,
+            source_blocks=[arrow_drawing],
+        )
+        result.add_candidate(arrow_cand)
+
+        # Create constraint model
+        model = ConstraintModel()
+        for cand in result.get_candidates("step"):
+            model.add_candidate(cand)
+        model.add_candidate(arrow_cand)
+
+        # Declare constraints
+        classifier.declare_constraints(model, result)
+
+        # Verify constraints were added by checking model internals
+        # (if_any_selected_then_one_of creates indicator variables)
+        assert model._constraint_counts.get("if_any_selected_then_one_of", 0) >= 1
+
+    def test_no_orphan_constraints_for_all_child_elements(
+        self,
+        classifier: StepClassifier,
+        candidate_factory: Callable[[ClassificationResult], CandidateFactory],
+    ) -> None:
+        """Verify no-orphan constraints are declared for all relevant element types."""
+        page_bbox = BBox(0, 0, 600, 400)
+        step_text = Text(id=1, bbox=BBox(50, 50, 70, 70), text="1")
+
+        # Create dummy blocks for simple orphan-able element types
+        # Note: substep is a composite element with empty source_blocks
+        simple_orphan_labels = ["arrow", "rotation_symbol", "subassembly", "diagram"]
+        dummy_blocks = [
+            Drawing(id=100 + i, bbox=BBox(200 + i * 50, 100, 250 + i * 50, 150))
+            for i in range(len(simple_orphan_labels))
+        ]
+
+        page_data = PageData(
+            page_number=1,
+            blocks=[step_text, *dummy_blocks],
+            bbox=page_bbox,
+        )
+
+        result = ClassificationResult(page_data=page_data)
+        factory = candidate_factory(result)
+
+        # Add step_number and step candidates
+        factory.add_step_number(step_text)
+        classifier.score(result)
+
+        # Create a concrete Score subclass for testing
+        class _DummyScore(Score):
+            def score(self) -> float:
+                return 1.0
+
+        # Add simple element candidates (with source_blocks)
+        for i, label in enumerate(simple_orphan_labels):
+            dummy_cand = Candidate(
+                bbox=dummy_blocks[i].bbox,
+                label=label,
+                score=1.0,
+                score_details=_DummyScore(),
+                source_blocks=[dummy_blocks[i]],
+            )
+            result.add_candidate(dummy_cand)
+
+        # Add substep candidate (composite, empty source_blocks)
+        substep_cand = Candidate(
+            bbox=BBox(300, 200, 400, 300),
+            label="substep",
+            score=1.0,
+            score_details=_DummyScore(),
+            source_blocks=[],  # Composite elements have empty source_blocks
+        )
+        result.add_candidate(substep_cand)
+
+        # All orphan labels we expect constraints for
+        all_orphan_labels = [
+            "arrow",
+            "rotation_symbol",
+            "subassembly",
+            "substep",
+            "diagram",
+        ]
+
+        # Create constraint model
+        model = ConstraintModel()
+        for cand in result.get_candidates("step"):
+            model.add_candidate(cand)
+        for label in all_orphan_labels:
+            for cand in result.get_candidates(label):
+                model.add_candidate(cand)
+
+        # Declare constraints
+        classifier.declare_constraints(model, result)
+
+        # Should have 5 no-orphan constraints (one per orphan label)
+        assert model._constraint_counts.get("if_any_selected_then_one_of", 0) == 5

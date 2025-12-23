@@ -142,8 +142,16 @@ class StepClassifier(LabelClassifier):
         """Declare constraints for step candidates.
 
         Constraints:
-        - Uniqueness by step_value: At most one step per step_value (e.g., only
-          one "Step 1"). The solver picks the highest-scoring candidate.
+        1. Uniqueness by step_value: At most one step per step_value (e.g., only
+           one "Step 1"). The solver picks the highest-scoring candidate.
+
+        2. No orphaned elements: If any of these elements are selected, at least
+           one step must also be selected:
+           - arrows (point from subassembly callouts to main diagram)
+           - rotation_symbols (indicate model rotation)
+           - subassemblies (callout boxes within steps)
+           - substeps (mini-steps within a main step)
+           - diagrams (the main instruction graphic)
 
         Note: Child uniqueness constraints (each step_number/parts_list can only
         be used by one parent) are handled automatically by
@@ -152,31 +160,58 @@ class StepClassifier(LabelClassifier):
         candidates = result.get_candidates(self.output)
         candidates_in_model = [c for c in candidates if model.has_candidate(c)]
 
-        if not candidates_in_model:
-            return
+        # === Constraint 1: Uniqueness by step_value ===
+        if candidates_in_model:
+            by_value: dict[int, list[Candidate]] = {}
 
-        # Group by step_value (semantic uniqueness)
-        by_value: dict[int, list[Candidate]] = {}
+            for cand in candidates_in_model:
+                if isinstance(cand.score_details, _StepScore):
+                    score = cand.score_details
+                    step_value = score.step_value
+                    if step_value not in by_value:
+                        by_value[step_value] = []
+                    by_value[step_value].append(cand)
 
-        for cand in candidates_in_model:
-            if isinstance(cand.score_details, _StepScore):
-                score = cand.score_details
+            for step_value, cands in by_value.items():
+                if len(cands) > 1:
+                    model.at_most_one_of(cands)
+                    log.debug(
+                        "[step] Uniqueness constraint: at most one step with "
+                        "value=%d (%d candidates)",
+                        step_value,
+                        len(cands),
+                    )
 
-                # Group by step_value
-                step_value = score.step_value
-                if step_value not in by_value:
-                    by_value[step_value] = []
-                by_value[step_value].append(cand)
+        # === Constraint 2: No orphaned elements ===
+        # These elements must have a parent step if they are selected.
+        # This prevents arrows, diagrams, etc. from being built without a step.
+        #
+        # TODO: Consider moving this to SchemaConstraintGenerator using
+        # __constraint_rules__['field']['no_orphans'] = True on the Step schema.
+        # This would centralize the constraint logic and make it declarative.
+        # However, not all child elements should have no-orphan constraints
+        # (e.g., diagrams can exist standalone on cover pages).
+        orphan_labels = [
+            "arrow",
+            "rotation_symbol",
+            "subassembly",
+            "substep",
+            "diagram",
+        ]
 
-        # Add at_most_one constraint for each step_value
-        for step_value, cands in by_value.items():
-            if len(cands) > 1:
-                model.at_most_one_of(cands)
+        for label in orphan_labels:
+            child_candidates = [
+                c for c in result.get_candidates(label) if model.has_candidate(c)
+            ]
+            if child_candidates and candidates_in_model:
+                model.if_any_selected_then_one_of(child_candidates, candidates_in_model)
                 log.debug(
-                    "[step] Uniqueness constraint: at most one step with value=%d "
-                    "(%d candidates)",
-                    step_value,
-                    len(cands),
+                    "[step] No-orphan constraint: if any %s selected, "
+                    "at least one step must be selected (%d %s, %d steps)",
+                    label,
+                    len(child_candidates),
+                    label,
+                    len(candidates_in_model),
                 )
 
     def _score(self, result: ClassificationResult) -> None:

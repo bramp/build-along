@@ -116,22 +116,29 @@ be derived directly from the schema. Classifiers should only implement
 
 **Manual (implement in `declare_constraints()`):**
 
-| Constraint Type       | Description                                              | Example                                    |
-| --------------------- | -------------------------------------------------------- | ------------------------------------------ |
-| Semantic uniqueness   | Elements with same semantic value are mutually exclusive | Only one Step with `step_value=3` per page |
-| Singleton constraints | At most one of this element type per page                | Only one `PageNumber` per page             |
-| Custom business rules | Domain-specific constraints                              | Arrows must point to an existing step      |
+| Constraint Type       | Description                                              | Example                                       |
+| --------------------- | -------------------------------------------------------- | --------------------------------------------- |
+| Semantic uniqueness   | Elements with same semantic value are mutually exclusive | Only one Step with `step_value=3` per page    |
+| Singleton constraints | At most one of this element type per page                | Only one `PageNumber` per page                |
+| No-orphan constraints | If child elements exist, parent must also exist          | If arrows selected, at least one step must be |
+| Custom business rules | Domain-specific constraints                              | Specific spatial relationships                |
 
-**Example:** `StepClassifier` only needs to handle step_value uniqueness:
+**Example:** `StepClassifier` handles step_value uniqueness and no-orphan constraints:
 
 ```python
 def declare_constraints(self, model: ConstraintModel, result: ClassificationResult) -> None:
-    # Only semantic constraint: unique step values
-    # Child uniqueness (step_number, parts_list) is automatic!
+    # Semantic constraint: unique step values
     candidates_by_step_value = self._group_by_step_value(candidates)
     for step_value, cands in candidates_by_step_value.items():
         if len(cands) > 1:
             model.at_most_one_of([c.var for c in cands])
+
+    # No-orphan constraints: arrows, diagrams, etc. need a parent step
+    orphan_labels = ["arrow", "rotation_symbol", "subassembly", "substep", "diagram"]
+    for label in orphan_labels:
+        child_candidates = result.get_candidates(label)
+        if child_candidates and step_candidates:
+            model.if_any_selected_then_one_of(child_candidates, step_candidates)
 ```
 
 ### 3. Separation of Selection vs Assignment
