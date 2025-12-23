@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 
-from build_a_long.pdf_extract.classifier.rules.base import Filter, Rule, RuleContext
+from build_a_long.pdf_extract.classifier.rules.base import Rule, RuleContext
 from build_a_long.pdf_extract.classifier.rules.scale import (
     ScaleFunction,
 )
@@ -273,22 +273,29 @@ class EdgeProximityRule(Rule):
         return self.scale(avg_edge_dist)
 
 
-class PageEdgeFilter(Filter):
-    """Filter that passes if a block is entirely within the edge margin of the page.
+class PageEdgeFilter(Rule):
+    """Rule that checks if a block is entirely within the edge margin of the page.
 
     Used to capture page-edge artifacts (borders, bleed lines) that should be
     classified as background. Unlike EdgeProximityRule which checks if a block
-    *touches* page edges, this filter checks if a block is entirely *contained*
+    *touches* page edges, this rule checks if a block is entirely *contained*
     within the margin zone at any page edge.
+
+    This is a required rule that must pass for the block to be considered a
+    page-edge element.
     """
 
     def __init__(
         self,
         margin: float = 4.0,
         name: str = "PageEdge",
+        weight: float = 1.0,
+        required: bool = True,
     ):
         self.name = name
         self.margin = margin
+        self.weight = weight
+        self.required = required
 
     def calculate(self, block: Block, context: RuleContext) -> float | None:
         page_bbox = context.page_data.bbox
