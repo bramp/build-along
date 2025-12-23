@@ -90,7 +90,9 @@ class TestPartCountClassification:
 
         builder = PageBuilder(page_number=1, width=100, height=100)
         builder.add_text("2x", 0, 0, 10, 10, id=1)  # matching_text
-        builder.add_text("3x", 0, 0, 15, 15, id=2)  # different_text
+        builder.add_text(
+            "3x", 50, 50, 15, 15, id=2
+        )  # different_text (different location)
 
         page = builder.build()
         matching_text = page.blocks[0]

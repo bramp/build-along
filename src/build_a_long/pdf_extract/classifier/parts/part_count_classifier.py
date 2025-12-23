@@ -108,23 +108,26 @@ class PartCountClassifier(RuleBasedClassifier):
     def _get_additional_source_blocks(
         self, block: Block, result: ClassificationResult
     ) -> Sequence[Blocks]:
-        """Get additional source blocks, filtering only for Drawing effects.
+        """Get additional source blocks for PartCount candidates.
+
+        This includes:
+        1. Drawing effects (shadows, outlines) near the text
+        2. Duplicate Text blocks at the same position (PDF rendering artifacts)
 
         We purposefully exclude Image effects to avoid accidentally consuming
         the part image itself if the bbox logic matches.
-
-        # TODO Investigate this, and see if we can remove this restriction.
         """
         margin = self.effects_margin
-        if margin is not None:
-            effects = find_contained_effects(
-                block,
-                result.page_data.blocks,
-                margin=margin,
-            )
-            # Only include Drawing effects (backgrounds), ignore Images
-            return [b for b in effects if isinstance(b, Drawing)]
-        return []
+        if margin is None:
+            return []
+
+        # Find Drawing effects and duplicate Text blocks
+        return find_contained_effects(
+            block,
+            result.page_data.blocks,
+            margin=margin,
+            block_types=(Drawing, Text),
+        )
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> PartCount:
         """Construct a PartCount element from a candidate.

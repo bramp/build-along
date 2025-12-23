@@ -385,13 +385,14 @@ def find_contained_effects(
     *,
     margin: float = 2.0,
     max_area_ratio: float | None = None,
-) -> list[Drawing | Image]:
-    """Find Drawing/Image blocks that are visual effects for a primary block.
+    block_types: tuple[type, ...] = (Drawing, Image),
+) -> list[Blocks]:
+    """Find blocks that are visual effects for a primary block.
 
     LEGO PDFs often render elements (Text, Drawing, or Image) with multiple
     layers for visual effects like outlines, shadows, glows, or bevels. These
-    appear as Drawing/Image elements fully contained within a slightly expanded
-    version of the primary element's bbox.
+    appear as elements fully contained within a slightly expanded version of
+    the primary element's bbox.
 
     Args:
         primary_block: The block to find effects for.
@@ -400,11 +401,13 @@ def find_contained_effects(
             Default 2.0 points.
         max_area_ratio: Optional maximum ratio of effect block area to primary
             block area. If provided, blocks larger than this ratio are excluded.
+        block_types: Tuple of block types to include. Default is (Drawing, Image).
+            Can include Text to find duplicate/overlapping text blocks.
 
     Returns:
-        List of Drawing/Image blocks that appear to be effects.
+        List of blocks matching block_types that appear to be effects.
     """
-    effects: list[Drawing | Image] = []
+    effects: list[Blocks] = []
     primary_bbox = primary_block.bbox
     primary_area = primary_bbox.area
 
@@ -415,7 +418,7 @@ def find_contained_effects(
         if block.id == primary_block.id:
             continue
 
-        if not isinstance(block, (Drawing, Image)):
+        if not isinstance(block, block_types):
             continue
 
         # Effects should be fully contained within the expanded bbox
