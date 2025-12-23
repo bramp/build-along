@@ -195,7 +195,7 @@ class OpenBagClassifier(LabelClassifier):
                 continue
 
             # Get blocks assigned to this specific circle
-            overlapping_blocks = block_assignments.get(id(circle), [])
+            overlapping_blocks = block_assignments.get(circle.id, [])
 
             result.add_candidate(
                 Candidate(
@@ -254,10 +254,10 @@ class OpenBagClassifier(LabelClassifier):
         for circle in circles:
             # Expand circle bbox slightly to catch blocks on the edge
             expanded_bbox = circle.bbox.expand(2.0)
-            circle_info.append((id(circle), expanded_bbox, circle.draw_order))
+            circle_info.append((circle.id, expanded_bbox, circle.draw_order))
 
         # Initialize result dictionary
-        result: dict[int, list[Blocks]] = {id(c): [] for c in circles}
+        result: dict[int, list[Blocks]] = {c.id: [] for c in circles}
 
         # Assign each block to the appropriate circle
         for block in small_blocks:
