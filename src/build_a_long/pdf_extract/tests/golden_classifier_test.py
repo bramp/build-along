@@ -92,12 +92,12 @@ class TestGoldenClassifier:
         expected_json = golden_path.read_text()
 
         # Compare the JSON strings
-        diff = compare_json(expected_json, actual_json, fixture_file)
+        diff = compare_json(expected_json, actual_json, golden_file)
 
         # Report errors if any
         if diff:
             pytest.fail(
-                f"Page test failed for {fixture_file}:\n{diff}"
+                f"Page test failed for {golden_file}:\n{diff}"
                 + "\n\nTo update golden files, run: "
                 "pants run src/build_a_long/pdf_extract/classifier/tools/"
                 "generate_golden_files.py",
