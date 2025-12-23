@@ -4,19 +4,19 @@ This list tracks the migration of various classifiers to inherit from `RuleBased
 
 ## Classifiers to Migrate to RuleBasedClassifier
 
-*   **PreviewClassifier**: Currently `LabelClassifier`. Requires custom logic for grouping drawings and checking internal elements.
+- **PreviewClassifier**: Currently `LabelClassifier`. Requires custom logic for grouping drawings and checking internal elements.
 
 ## Classifiers to Check for Migration Suitability
 
-*   **LoosePartSymbolClassifier**: Still needs to be evaluated.
-*   **DiagramClassifier**: Still needs to be evaluated.
-*   **ArrowClassifier**: Still needs to be evaluated.
-*   **SubAssemblyClassifier**: Still needs to be evaluated.
+- **LoosePartSymbolClassifier**: Still needs to be evaluated.
+- **DiagramClassifier**: Still needs to be evaluated.
+- **ArrowClassifier**: Still needs to be evaluated.
+- **SubAssemblyClassifier**: Still needs to be evaluated.
 
 ## Complex/Composite Classifiers (Likely won't migrate to RuleBasedClassifier directly)
 
-*   **PartsClassifier**: Combines candidates from other classifiers.
-*   **PartsListClassifier**: Operates on groups of blocks.
-*   **StepClassifier**: Combines candidates from multiple other classifiers.
-*   **TriviaTextClassifier**: Operates on clusters of text blocks.
-*   **ScaleClassifier**: Involves searching for containers and internal candidates.
+- **PartsClassifier**: Combines candidates from other classifiers.
+- **PartsListClassifier**: Operates on groups of blocks.
+- **StepClassifier**: Combines candidates from multiple other classifiers.
+- **TriviaTextClassifier**: Operates on clusters of text blocks.
+- **ScaleClassifier**: Involves searching for containers and internal candidates.
