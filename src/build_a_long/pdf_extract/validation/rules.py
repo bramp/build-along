@@ -1119,9 +1119,82 @@ def validate_unconsumed_blocks(
         unconsumed_blocks.append(block)
 
     if unconsumed_blocks:
-        block_details = ", ".join(
-            f"#{b.id} ({type(b).__name__})" for b in unconsumed_blocks[:10]
-        )
+        # Build detailed info for each unconsumed block
+        block_details_list = []
+        # Margin for "near" containment/overlap checks (in points)
+        near_margin = 2.0
+
+        for block in unconsumed_blocks[:10]:
+            block_bbox = block.bbox
+            block_info = f"#{block.id} {type(block).__name__} at {block_bbox}"
+
+            # Find candidates that contain or overlap this block
+            containing = []
+            near_containing = []
+            overlapping = []
+            near_overlapping = []
+
+            for label, candidates in result.candidates.items():
+                for cand in candidates:
+                    cand_bbox = cand.bbox
+                    selected = result.is_solver_selected(cand)
+                    cand_ref = f"{label}(id={cand.id},sel={selected})"
+
+                    # Exact containment check
+                    if (
+                        cand_bbox.x0 <= block_bbox.x0
+                        and cand_bbox.y0 <= block_bbox.y0
+                        and cand_bbox.x1 >= block_bbox.x1
+                        and cand_bbox.y1 >= block_bbox.y1
+                    ):
+                        containing.append(cand_ref)
+                    # Near containment check (with margin)
+                    elif (
+                        cand_bbox.x0 - near_margin <= block_bbox.x0
+                        and cand_bbox.y0 - near_margin <= block_bbox.y0
+                        and cand_bbox.x1 + near_margin >= block_bbox.x1
+                        and cand_bbox.y1 + near_margin >= block_bbox.y1
+                    ):
+                        near_containing.append(cand_ref)
+                    # Exact overlap check (but doesn't contain)
+                    elif not (
+                        cand_bbox.x1 < block_bbox.x0
+                        or block_bbox.x1 < cand_bbox.x0
+                        or cand_bbox.y1 < block_bbox.y0
+                        or block_bbox.y1 < cand_bbox.y0
+                    ):
+                        overlapping.append(cand_ref)
+                    # Near overlap check (with margin, but no exact overlap)
+                    elif not (
+                        cand_bbox.x1 + near_margin < block_bbox.x0
+                        or block_bbox.x1 < cand_bbox.x0 - near_margin
+                        or cand_bbox.y1 + near_margin < block_bbox.y0
+                        or block_bbox.y1 < cand_bbox.y0 - near_margin
+                    ):
+                        near_overlapping.append(cand_ref)
+
+            if containing:
+                block_info += f" contained_by=[{','.join(containing[:3])}]"
+                if len(containing) > 3:
+                    block_info += f"...+{len(containing) - 3}"
+            if near_containing:
+                near_list = ",".join(near_containing[:3])
+                block_info += f" near_contained_by(±{near_margin}pt)=[{near_list}]"
+                if len(near_containing) > 3:
+                    block_info += f"...+{len(near_containing) - 3}"
+            if overlapping:
+                block_info += f" overlaps=[{','.join(overlapping[:3])}]"
+                if len(overlapping) > 3:
+                    block_info += f"...+{len(overlapping) - 3}"
+            if near_overlapping:
+                near_list = ",".join(near_overlapping[:3])
+                block_info += f" near_overlaps(±{near_margin}pt)=[{near_list}]"
+                if len(near_overlapping) > 3:
+                    block_info += f"...+{len(near_overlapping) - 3}"
+
+            block_details_list.append(block_info)
+
+        block_details = "; ".join(block_details_list)
         if len(unconsumed_blocks) > 10:
             block_details += f" ... ({len(unconsumed_blocks)} total)"
 
