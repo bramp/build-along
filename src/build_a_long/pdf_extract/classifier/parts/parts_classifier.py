@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -43,6 +44,9 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     PartNumber,
     PieceLength,
 )
+
+if TYPE_CHECKING:
+    from build_a_long.pdf_extract.classifier.constraint_model import ConstraintModel
 
 log = logging.getLogger(__name__)
 
@@ -116,8 +120,46 @@ class PartsClassifier(LabelClassifier):
     output = "part"
     requires = frozenset({"part_count", "part_image", "part_number", "piece_length"})
 
+    def declare_constraints(
+        self, model: ConstraintModel, result: ClassificationResult
+    ) -> None:
+        """Declare constraints for part candidates.
+
+        Each part_count can only be used by one part.
+        Each part_image can only be used by one part.
+        """
+        candidates = list(result.get_scored_candidates("part"))
+        candidates_in_model = [c for c in candidates if model.has_candidate(c)]
+
+        if len(candidates_in_model) <= 1:
+            return
+
+        # Group by part_count_candidate - each count used at most once
+        by_count: dict[int, list[Candidate]] = {}
+        for cand in candidates_in_model:
+            score = cand.score_details
+            assert isinstance(score, _PartPairScore)
+            count_id = score.part_count_candidate.id
+            by_count.setdefault(count_id, []).append(cand)
+
+        for _count_id, group in by_count.items():
+            if len(group) > 1:
+                model.at_most_one_of(group)
+
+        # Group by part_image_candidate - each image used at most once
+        by_image: dict[int, list[Candidate]] = {}
+        for cand in candidates_in_model:
+            score = cand.score_details
+            assert isinstance(score, _PartPairScore)
+            image_id = score.part_image_candidate.id
+            by_image.setdefault(image_id, []).append(cand)
+
+        for _image_id, group in by_image.items():
+            if len(group) > 1:
+                model.at_most_one_of(group)
+
     def _score(self, result: ClassificationResult) -> None:
-        """Score part pairings and create candidates.
+        """Score part pairings and create candidates for all valid pairings.
 
         Creates candidates with score details containing references to parent
         candidates (not constructed elements), following the recommended pattern
@@ -158,7 +200,7 @@ class PartsClassifier(LabelClassifier):
             len(part_image_candidates),
         )
 
-        # Build candidate pairings using existing helper
+        # Build ALL candidate pairings
         candidate_edges = self._build_candidate_edges_from_part_images(
             part_count_candidates,
             part_image_candidates,
@@ -178,30 +220,8 @@ class PartsClassifier(LabelClassifier):
             )
             return
 
-        # Sort by distance (prefer closer pairs)
-        candidate_edges.sort(key=lambda ps: ps.sort_key())
-
-        # Greedy matching to enforce one-to-one pairing
-        # TODO We could create many possible Parts using N-best matching instead
-        # Use Candidate.id (stable unique identifier) instead of id() (Python object id)
-        # because Pydantic may deep-copy Candidate objects when storing in Score fields.
-        used_count_candidates: set[int] = set()
-        used_image_candidates: set[int] = set()
-
+        # Create a candidate for EACH valid pairing (solver will pick best)
         for ps in candidate_edges:
-            count_cand_id = ps.part_count_candidate.id
-            image_cand_id = ps.part_image_candidate.id
-
-            if (
-                count_cand_id in used_count_candidates
-                or image_cand_id in used_image_candidates
-            ):
-                continue
-
-            # Mark as used
-            used_count_candidates.add(count_cand_id)
-            used_image_candidates.add(image_cand_id)
-
             # Find associated candidates (not elements!)
             part_number_cand = self._find_part_number_candidate(
                 ps.part_count_candidate, part_number_candidates
@@ -231,7 +251,7 @@ class PartsClassifier(LabelClassifier):
                 Candidate(
                     bbox=bbox,
                     label="part",
-                    score=1.0,
+                    score=enhanced_score.score(),
                     score_details=enhanced_score,
                     source_blocks=[],  # Part is composite, no direct source blocks
                 )
