@@ -137,25 +137,29 @@ class PartsListClassifier(LabelClassifier):
             if score.score() < min_score:
                 continue
 
-            # Determine failure reason if any
-            failure_reason = None
-
+            # Skip candidates with no parts
             if len(contained) == 0:
-                failure_reason = "Drawing contains no parts"
+                log.debug(
+                    "[parts_list] Drawing at %s rejected: contains no parts",
+                    bbox,
+                )
+                continue
 
-            # Check if drawing is suspiciously large
-            if failure_reason is None and page_data.bbox:
+            # Check if drawing is suspiciously large (skip if so)
+            if page_data.bbox:
                 page_area = page_data.bbox.area
                 drawing_area = bbox.area
                 max_ratio = self.config.parts_list.max_area_ratio
                 if page_area > 0 and drawing_area / page_area > max_ratio:
                     pct = drawing_area / page_area * 100
-                    failure_reason = f"Drawing too large ({pct:.1f}% of page area)"
                     log.debug(
-                        "[parts_list] Drawing %d rejected: %s",
-                        group[0].id,
-                        failure_reason,
+                        "[parts_list] Drawing at %s rejected: too large "
+                        "(%.1f%% of page area, max %.0f%%)",
+                        bbox,
+                        pct,
+                        max_ratio * 100,
                     )
+                    continue
 
             # Create candidate with all grouped drawings as source blocks
             candidate = Candidate(

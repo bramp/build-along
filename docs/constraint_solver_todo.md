@@ -324,7 +324,8 @@ This was not implemented because:
   - [ ] `BagNumber` - unique by value
   - [x] `PageNumber` - at most one per page ✅
   - [x] `ProgressBar` - at most one per page ✅
-  - [ ] `Background` - at most one per page
+  - [x] `Background` - at most one per page ✅
+  - [x] `Divider` - block exclusivity via solver ✅
 
 ### Classifier Updates
 
@@ -338,7 +339,8 @@ This was not implemented because:
   - [ ] `BagNumberClassifier`
   - [x] `PageNumberClassifier` ✅
   - [x] `ProgressBarClassifier` ✅
-  - [ ] `BackgroundClassifier`
+  - [x] `BackgroundClassifier` ✅
+  - [x] `DividerClassifier` ✅
 
 ### Enable by Default
 

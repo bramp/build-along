@@ -99,15 +99,17 @@ class PageClassifier(LabelClassifier):
         )
 
     def _build_page_number(self, result: ClassificationResult) -> PageNumber | None:
-        """Build the page number element if available."""
-        candidates = result.get_scored_candidates("page_number")
-        if candidates:
-            try:
-                page_number = result.build(candidates[0])
-                assert isinstance(page_number, PageNumber)
-                return page_number
-            except CandidateFailedError as e:
-                log.debug("Failed to build page_number: %s", e)
+        """Build the page number element if available.
+
+        The solver constrains page_number to at most one, so we build all
+        selected candidates and return the first (if any).
+        """
+        page_numbers = result.build_all_for_label("page_number")
+        if page_numbers:
+            assert len(page_numbers) == 1
+            page_number = page_numbers[0]
+            assert isinstance(page_number, PageNumber)
+            return page_number
         return None
 
     def _build_progress_bar(self, result: ClassificationResult) -> ProgressBar | None:
@@ -125,15 +127,17 @@ class PageClassifier(LabelClassifier):
         return None
 
     def _build_background(self, result: ClassificationResult) -> Background | None:
-        """Build the background element if available."""
-        candidates = result.get_scored_candidates("background")
-        if candidates:
-            try:
-                background = result.build(candidates[0])
-                assert isinstance(background, Background)
-                return background
-            except CandidateFailedError as e:
-                log.debug("Failed to build background: %s", e)
+        """Build the background element if available.
+
+        The solver constrains background to at most one, so we build all
+        selected candidates and return the first (if any).
+        """
+        backgrounds = result.build_all_for_label("background")
+        if backgrounds:
+            assert len(backgrounds) == 1
+            background = backgrounds[0]
+            assert isinstance(background, Background)
+            return background
         return None
 
     def _build_trivia_text(self, result: ClassificationResult) -> TriviaText | None:

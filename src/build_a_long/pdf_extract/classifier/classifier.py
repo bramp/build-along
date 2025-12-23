@@ -573,6 +573,9 @@ class Classifier:
             "progress_bar",
             "progress_bar_bar",
             "progress_bar_indicator",
+            "background",
+            # Dividers (block exclusivity via solver)
+            "divider",
         }
     )
 

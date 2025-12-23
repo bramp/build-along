@@ -30,6 +30,7 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.classifier.constraint_model import ConstraintModel
 from build_a_long.pdf_extract.classifier.rule_based_classifier import (
     RuleBasedClassifier,
     RuleScore,
@@ -55,6 +56,24 @@ class DividerClassifier(RuleBasedClassifier):
 
     output: ClassVar[str] = "divider"
     requires: ClassVar[frozenset[str]] = frozenset()  # No dependencies
+
+    def declare_constraints(
+        self, model: ConstraintModel, result: ClassificationResult
+    ) -> None:
+        """Declare constraints for divider candidates.
+
+        Dividers are simple - each block can only be one divider.
+        Block exclusivity is handled automatically by ConstraintModel.
+        This method is here for logging/debugging purposes.
+        """
+        candidates = list(result.get_scored_candidates("divider"))
+        candidates_in_model = [c for c in candidates if model.has_candidate(c)]
+
+        if candidates_in_model:
+            log.debug(
+                "[divider] %d candidates in model (block exclusivity auto-applied)",
+                len(candidates_in_model),
+            )
 
     @property
     def effects_margin(self) -> float | None:
