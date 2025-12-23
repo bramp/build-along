@@ -8,7 +8,7 @@ Design Decisions:
 -----------------
 1. Expose raw CP-SAT model (self.model) to allow power users to add custom
    constraints beyond our helper methods.
-2. Use candidate ID (id(candidate)) as key for variable lookup.
+2. Use Candidate.id (auto-generated unique ID) as key for variable lookup.
 3. Provide high-level helpers for common patterns (at_most_one_of, if_selected_then).
 """
 
@@ -80,7 +80,7 @@ class ConstraintModel:
         Returns:
             The boolean variable representing this candidate's selection
         """
-        cid = id(candidate)
+        cid = candidate.id
 
         if cid not in self._candidate_vars:
             var = self.model.NewBoolVar(f"{candidate.label}_{cid}")
@@ -108,7 +108,7 @@ class ConstraintModel:
         Raises:
             KeyError: If candidate not registered via add_candidate()
         """
-        cid = id(candidate)
+        cid = candidate.id
         if cid not in self._candidate_vars:
             raise KeyError(
                 f"Candidate {candidate.label} at {candidate.bbox} not registered. "
@@ -125,7 +125,7 @@ class ConstraintModel:
         Returns:
             True if the candidate was added via add_candidate(), False otherwise
         """
-        return id(candidate) in self._candidate_vars
+        return candidate.id in self._candidate_vars
 
     def at_most_one_of(self, candidates: list[Candidate]) -> None:
         """Add constraint: at most one of these candidates can be selected.

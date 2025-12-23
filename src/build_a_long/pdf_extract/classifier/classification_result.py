@@ -222,7 +222,7 @@ class ClassificationResult(BaseModel):
         # If solver not used, all candidates are eligible
         if not self._solver_selected_ids:
             return True
-        return id(candidate) in self._solver_selected_ids
+        return candidate.id in self._solver_selected_ids
 
     def set_solver_selection(self, selected_candidates: Collection[Candidate]) -> None:
         """Mark candidates as selected by the constraint solver.
@@ -232,7 +232,7 @@ class ClassificationResult(BaseModel):
         Args:
             selected_candidates: Collection of candidates selected by the solver
         """
-        self._solver_selected_ids = {id(c) for c in selected_candidates}
+        self._solver_selected_ids = {c.id for c in selected_candidates}
 
     def build_all_for_label(self, label: str) -> Sequence[LegoPageElements]:
         """Build all candidates for a label using the registered classifier's build_all.

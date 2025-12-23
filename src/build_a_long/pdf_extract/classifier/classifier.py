@@ -742,7 +742,7 @@ class Classifier:
 
         # Mark selected candidates
         selected_candidates = [
-            cand for cand in all_candidates if selection.get(id(cand), False)
+            cand for cand in all_candidates if selection.get(cand.id, False)
         ]
         logger.debug(
             f"  Solver selected {len(selected_candidates)}/"

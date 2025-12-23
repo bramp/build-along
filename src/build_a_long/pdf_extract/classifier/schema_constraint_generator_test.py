@@ -237,8 +237,8 @@ class TestConstraintModelIntegration:
 
         success, selection = model.solve()
         assert success is True
-        assert selection[id(cand_high)] is True
-        assert selection[id(cand_low)] is False
+        assert selection[cand_high.id] is True
+        assert selection[cand_low.id] is False
 
 
 class TestLabelMapping:

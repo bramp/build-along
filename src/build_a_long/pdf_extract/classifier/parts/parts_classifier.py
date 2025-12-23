@@ -183,12 +183,14 @@ class PartsClassifier(LabelClassifier):
 
         # Greedy matching to enforce one-to-one pairing
         # TODO We could create many possible Parts using N-best matching instead
+        # Use Candidate.id (stable unique identifier) instead of id() (Python object id)
+        # because Pydantic may deep-copy Candidate objects when storing in Score fields.
         used_count_candidates: set[int] = set()
         used_image_candidates: set[int] = set()
 
         for ps in candidate_edges:
-            count_cand_id = id(ps.part_count_candidate)
-            image_cand_id = id(ps.part_image_candidate)
+            count_cand_id = ps.part_count_candidate.id
+            image_cand_id = ps.part_image_candidate.id
 
             if (
                 count_cand_id in used_count_candidates
