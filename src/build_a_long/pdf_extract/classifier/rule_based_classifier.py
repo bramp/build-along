@@ -240,98 +240,123 @@ class RuleBasedClassifier(LabelClassifier):
         return RuleScore(components=components, total_score=total_score)
 
     def _score(self, result: ClassificationResult) -> None:
-        """Score blocks using rules."""
+        """Score blocks using rules and add candidates.
+
+        Iterates over all blocks, calls _score_block() for each, and adds
+        resulting candidates to the result.
+
+        Subclasses that need to create multiple candidates per block (e.g.,
+        with variants) can override this method, call _score_block() to get
+        the base candidate, then create variants and add them manually.
+        """
         context = RuleContext(result.page_data, self.config, result)
-        rules = self.rules
 
         for block in result.page_data.blocks:
-            components = {}
-            weighted_sum = 0.0
-            total_weight = 0.0
-            failed = False
+            candidate = self._score_block(block, context, result)
+            if candidate is not None:
+                result.add_candidate(candidate)
 
-            for rule in rules:
-                score = rule.calculate(block, context)
+    def _score_block(
+        self,
+        block: Blocks,
+        context: RuleContext,
+        result: ClassificationResult,
+    ) -> Candidate | None:
+        """Score a single block and return a candidate if it passes.
 
-                # If rule returns None, it's skipped (not applicable)
-                if score is None:
-                    continue
+        This method applies rules to a block, builds source blocks, creates
+        the score object, and returns a Candidate if the block passes all
+        requirements. Returns None if the block fails any required rule or
+        doesn't meet the minimum score threshold.
 
-                # If required rule fails (score 0), fail the block immediately
-                if rule.required and score == 0.0:
-                    failed = True
-                    # log.debug(
-                    #    "[%s] block_id=%s failed required rule '%s'",
-                    #    self.output,
-                    #    block.id,
-                    #    rule.name,
-                    # )
-                    break
+        Subclasses can call this directly when they need to create multiple
+        variants of a candidate (e.g., with/without optional attachments).
 
-                rule_weight = rule.weight  # Using direct weight from Rule instance
+        Args:
+            block: The block to score
+            context: Rule context with page data and config
+            result: Classification result for accessing other candidates
 
-                weighted_sum += score * rule_weight
-                total_weight += rule_weight
-                components[rule.name] = score
+        Returns:
+            A Candidate if the block passes, None otherwise
+        """
+        rules = self.rules
+        components: dict[str, float] = {}
+        weighted_sum = 0.0
+        total_weight = 0.0
 
-            if failed:
+        for rule in rules:
+            score = rule.calculate(block, context)
+
+            # If rule returns None, it's skipped (not applicable)
+            if score is None:
                 continue
 
-            # Calculate final score from rules
-            final_score = weighted_sum / total_weight if total_weight > 0 else 0.0
+            # If required rule fails (score 0), fail the block immediately
+            if rule.required and score == 0.0:
+                return None
 
-            # Build source blocks list, deduplicating as we go
-            seen_ids: set[int] = {block.id}
-            source_blocks: list[Blocks] = [block]
+            rule_weight = rule.weight
+            weighted_sum += score * rule_weight
+            total_weight += rule_weight
+            components[rule.name] = score
 
-            # Add any classifier-specific additional source blocks
-            for b in self._get_additional_source_blocks(block, result):
-                if b.id not in seen_ids:
-                    seen_ids.add(b.id)
-                    source_blocks.append(b)
+        if total_weight == 0:
+            return None
 
-            # Create score object (subclasses can override _create_score)
-            # This can validate the complete cluster and adjust the score
-            score_details = self._create_score(components, final_score, source_blocks)
+        # Calculate final score from rules
+        final_score = weighted_sum / total_weight
 
-            # Get actual score (may differ from final_score after validation)
-            actual_score = score_details.score()
+        # Build source blocks list, deduplicating as we go
+        seen_ids: set[int] = {block.id}
+        source_blocks: list[Blocks] = [block]
 
-            # Check classifier-specific acceptance logic on the actual score
-            if not self._should_accept(actual_score):
-                log.debug(
-                    "[%s] block_id=%s "
-                    "rejected: score=%.3f < min_score=%.3f components=%s",
-                    self.output,
-                    block.id,
-                    actual_score,
-                    self.min_score,
-                    components,
-                )
-                continue
+        # Add any classifier-specific additional source blocks
+        for b in self._get_additional_source_blocks(block, result):
+            if b.id not in seen_ids:
+                seen_ids.add(b.id)
+                source_blocks.append(b)
 
+        # Create score object (subclasses can override _create_score)
+        # This can validate the complete cluster and adjust the score
+        score_details = self._create_score(components, final_score, source_blocks)
+
+        # Get actual score (may differ from final_score after validation)
+        actual_score = score_details.score()
+
+        # Check classifier-specific acceptance logic on the actual score
+        if not self._should_accept(actual_score):
             log.debug(
-                "[%s] block_id=%s cluster accepted: score=%.3f components=%s",
+                "[%s] block_id=%s rejected: score=%.3f < min_score=%.3f components=%s",
                 self.output,
                 block.id,
                 actual_score,
+                self.min_score,
                 components,
             )
+            return None
 
-            # Compute bbox as the union of all source blocks
-            # This ensures the candidate bbox matches the source_blocks union,
-            # required by validation (assert_element_bbox_matches_source_and_children)
-            candidate_bbox = BBox.union_all([b.bbox for b in source_blocks])
+        log.debug(
+            "[%s] block_id=%s cluster accepted: score=%.3f components=%s",
+            self.output,
+            block.id,
+            actual_score,
+            components,
+        )
 
-            # Create candidate
-            candidate = Candidate(
-                bbox=candidate_bbox,
-                label=self.output,
-                score=actual_score,
-                score_details=score_details,
-                source_blocks=source_blocks,
-            )
-            result.add_candidate(candidate)
+        # Compute bbox as the union of all source blocks
+        # This ensures the candidate bbox matches the source_blocks union,
+        # required by validation (assert_element_bbox_matches_source_and_children)
+        candidate_bbox = BBox.union_all([b.bbox for b in source_blocks])
+
+        # Create and return candidate
+        return Candidate(
+            bbox=candidate_bbox,
+            label=self.output,
+            score=actual_score,
+            score_details=score_details,
+            source_blocks=source_blocks,
+        )
 
     def _get_additional_source_blocks(
         self, block: Blocks, result: ClassificationResult
