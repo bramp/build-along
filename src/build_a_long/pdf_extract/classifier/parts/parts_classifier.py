@@ -348,75 +348,11 @@ class PartsClassifier(LabelClassifier):
     ) -> None:
         """Declare constraints for part candidates.
 
-        Constraints:
-        - Each part_count can only be used by one part
-        - Each part_image can only be used by one part
-        - Each part_number can only be used by one part
-        - Each piece_length can only be used by one part
+        Note: Child uniqueness constraints (each part_count, part_image,
+        part_number, piece_length can only be used by one part) are handled
+        automatically by SchemaConstraintGenerator.add_child_uniqueness_constraints().
         """
-        candidates = list(result.get_scored_candidates("part"))
-        candidates_in_model = [c for c in candidates if model.has_candidate(c)]
-
-        if len(candidates_in_model) <= 1:
-            return
-
-        # Group by part_count_candidate - at most one part per count
-        by_count: dict[int, list[Candidate]] = {}
-        for cand in candidates_in_model:
-            score = cand.score_details
-            assert isinstance(score, _PartPairScore)
-            count_id = score.part_count_candidate.id
-            by_count.setdefault(count_id, []).append(cand)
-
-        for _count_id, group in by_count.items():
-            if len(group) > 1:
-                model.at_most_one_of(group)
-
-        # Group by part_image_candidate - at most one part per image
-        by_image: dict[int, list[Candidate]] = {}
-        for cand in candidates_in_model:
-            score = cand.score_details
-            assert isinstance(score, _PartPairScore)
-            image_id = score.part_image_candidate.id
-            by_image.setdefault(image_id, []).append(cand)
-
-        for _image_id, group in by_image.items():
-            if len(group) > 1:
-                model.at_most_one_of(group)
-
-        # Group by part_number_candidate - at most one part per number
-        by_number: dict[int, list[Candidate]] = {}
-        for cand in candidates_in_model:
-            score = cand.score_details
-            assert isinstance(score, _PartPairScore)
-            if score.part_number_candidate:
-                number_id = score.part_number_candidate.id
-                by_number.setdefault(number_id, []).append(cand)
-
-        for _number_id, group in by_number.items():
-            if len(group) > 1:
-                model.at_most_one_of(group)
-
-        # Group by piece_length_candidate - at most one part per length
-        by_length: dict[int, list[Candidate]] = {}
-        for cand in candidates_in_model:
-            score = cand.score_details
-            assert isinstance(score, _PartPairScore)
-            if score.piece_length_candidate:
-                length_id = score.piece_length_candidate.id
-                by_length.setdefault(length_id, []).append(cand)
-
-        for _length_id, group in by_length.items():
-            if len(group) > 1:
-                model.at_most_one_of(group)
-
-        log.debug(
-            "[parts] Added constraints: %d count, %d image, %d number, %d length",
-            sum(1 for g in by_count.values() if len(g) > 1),
-            sum(1 for g in by_image.values() if len(g) > 1),
-            sum(1 for g in by_number.values() if len(g) > 1),
-            sum(1 for g in by_length.values() if len(g) > 1),
-        )
+        pass  # All constraints now handled by schema generator
 
     def _score(self, result: ClassificationResult) -> None:
         """Score part pairings using anchor-based spatial chaining.

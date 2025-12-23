@@ -92,8 +92,10 @@ class ProgressBarClassifier(LabelClassifier):
 
         Constraints:
         - At most one progress bar per page (singleton element)
-        - Each bar can only be used by one progress_bar
-        - Each indicator can only be used by one progress_bar
+
+        Note: Child uniqueness constraints (each bar/indicator can only be used
+        by one progress_bar) are handled automatically by
+        SchemaConstraintGenerator.add_child_uniqueness_constraints().
         """
         candidates = list(result.get_scored_candidates("progress_bar"))
         candidates_in_model = [c for c in candidates if model.has_candidate(c)]
@@ -107,31 +109,6 @@ class ProgressBarClassifier(LabelClassifier):
             "[progress_bar] Added at_most_one constraint for %d candidates",
             len(candidates_in_model),
         )
-
-        # Group by bar_candidate - at most one progress_bar per bar
-        by_bar: dict[int, list[Candidate]] = {}
-        for cand in candidates_in_model:
-            score = cand.score_details
-            assert isinstance(score, _ProgressBarPairScore)
-            bar_id = score.bar_candidate.id
-            by_bar.setdefault(bar_id, []).append(cand)
-
-        for _bar_id, group in by_bar.items():
-            if len(group) > 1:
-                model.at_most_one_of(group)
-
-        # Group by indicator_candidate - at most one progress_bar per indicator
-        by_indicator: dict[int, list[Candidate]] = {}
-        for cand in candidates_in_model:
-            score = cand.score_details
-            assert isinstance(score, _ProgressBarPairScore)
-            if score.indicator_candidate:
-                ind_id = score.indicator_candidate.id
-                by_indicator.setdefault(ind_id, []).append(cand)
-
-        for _ind_id, group in by_indicator.items():
-            if len(group) > 1:
-                model.at_most_one_of(group)
 
     def _score(self, result: ClassificationResult) -> None:
         """Create ProgressBar candidates for all valid bar+indicator pairings."""

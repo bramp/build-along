@@ -61,6 +61,9 @@ def run_solver(
     generator = SchemaConstraintGenerator()
     generator.generate_for_classifier(classifier, model, result)
 
+    # Add child uniqueness constraints (each child has at most one parent)
+    generator.add_child_uniqueness_constraints(model)
+
     # Maximize total score
     model.maximize([(cand, int(cand.score * 1000)) for cand in all_candidates])
 

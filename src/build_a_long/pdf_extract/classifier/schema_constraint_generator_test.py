@@ -185,6 +185,106 @@ class TestParseFieldType:
         assert cardinality == ""
 
 
+class TestChildUniquenessConstraints:
+    """Tests for add_child_uniqueness_constraints method."""
+
+    def _make_candidate(
+        self, label: str, score_val: float = 0.9, score_details: Score | None = None
+    ) -> Candidate:
+        """Create a test candidate.
+
+        Uses 'part' label (a composite label) which allows empty source_blocks.
+        """
+        return Candidate(
+            bbox=BBox(0, 0, 10, 10),
+            label=label,
+            score=score_val,
+            score_details=score_details or MockScore(),
+        )
+
+    def test_child_with_one_parent_allowed(self) -> None:
+        """A child with only one parent has no extra constraint."""
+        generator = SchemaConstraintGenerator()
+        model = ConstraintModel()
+
+        # Create a child and one parent (using 'part' label for empty source_blocks)
+        child = self._make_candidate("part", score_val=0.8)
+        parent = self._make_candidate("part", score_val=0.9)
+
+        model.add_candidate(child)
+        model.add_candidate(parent)
+
+        # Manually track the relationship (simulating what _add_field_constraint does)
+        generator._child_parents[child.id] = [parent]
+
+        # Add child uniqueness constraints
+        generator.add_child_uniqueness_constraints(model)
+
+        # Should solve fine - no constraint needed for single parent
+        model.maximize([(child, 800), (parent, 900)])
+        success, selection = model.solve()
+
+        assert success is True
+        assert selection[parent.id] is True
+
+    def test_child_with_multiple_parents_at_most_one(self) -> None:
+        """A child with multiple parents can only be used by one."""
+        generator = SchemaConstraintGenerator()
+        model = ConstraintModel()
+
+        # Create one child referenced by two parents
+        child = self._make_candidate("part", score_val=0.8)
+        parent1 = self._make_candidate("part", score_val=0.9)
+        parent2 = self._make_candidate("part", score_val=0.7)
+
+        model.add_candidate(child)
+        model.add_candidate(parent1)
+        model.add_candidate(parent2)
+
+        # Track that both parents reference this child
+        generator._child_parents[child.id] = [parent1, parent2]
+
+        # Add child uniqueness constraints
+        generator.add_child_uniqueness_constraints(model)
+
+        # Maximize score - should pick parent1 (higher score)
+        model.maximize([(child, 800), (parent1, 900), (parent2, 700)])
+        success, selection = model.solve()
+
+        assert success is True
+        # At most one parent can be selected
+        assert selection[parent1.id] is True
+        assert selection[parent2.id] is False
+
+    def test_solver_picks_highest_scoring_parent(self) -> None:
+        """When child has multiple parents, solver picks highest-scoring one."""
+        generator = SchemaConstraintGenerator()
+        model = ConstraintModel()
+
+        # Create one child referenced by two parents with different scores
+        child = self._make_candidate("part", score_val=0.8)
+        parent_high = self._make_candidate("part", score_val=0.95)
+        parent_low = self._make_candidate("part", score_val=0.6)
+
+        model.add_candidate(child)
+        model.add_candidate(parent_high)
+        model.add_candidate(parent_low)
+
+        # Track relationships
+        generator._child_parents[child.id] = [parent_high, parent_low]
+
+        # Add child uniqueness constraints
+        generator.add_child_uniqueness_constraints(model)
+
+        # Maximize - solver should prefer parent_high
+        model.maximize([(child, 800), (parent_high, 950), (parent_low, 600)])
+        success, selection = model.solve()
+
+        assert success is True
+        assert selection[parent_high.id] is True
+        assert selection[parent_low.id] is False
+
+
 class TestConstraintModelIntegration:
     """Integration tests with ConstraintModel."""
 

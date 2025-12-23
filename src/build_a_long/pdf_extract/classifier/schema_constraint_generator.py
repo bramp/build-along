@@ -117,10 +117,20 @@ class SchemaConstraintGenerator:
     This class analyzes element schemas to automatically generate constraints
     like "if parent selected, child must be selected" based on field types.
 
+    Additionally, this class tracks parent→child relationships and can add
+    constraints ensuring each child element has at most one parent
+    (call add_child_uniqueness_constraints() after all classifiers processed).
+
     Convention: Dependencies are identified by field naming:
     - score_details.some_field_candidate: Candidate → single dependency
     - score_details.some_field_candidates: list[Candidate] → multiple dependencies
     """
+
+    def __init__(self) -> None:
+        """Initialize the constraint generator."""
+        # Track which parents reference each child: child_id → [parent_candidates]
+        # Used to add "each child has at most one parent" constraints
+        self._child_parents: dict[int, list[Candidate]] = {}
 
     def generate_for_classifier(
         self,
@@ -161,6 +171,7 @@ class SchemaConstraintGenerator:
         )
 
         # Generate structural constraints from Pydantic fields
+        # This also tracks parent→child relationships for later uniqueness constraints
         self._generate_field_constraints(element_class, candidates, model, result)
 
         # Generate custom constraints from __constraint_rules__
@@ -344,6 +355,52 @@ class SchemaConstraintGenerator:
             # But we can add: if parent selected, at least one child often makes sense
             # Skip for now - let custom rules handle this
             pass
+
+        # Track parent→child relationship for later uniqueness constraints
+        # (each child should have at most one parent)
+        for child in child_candidates_in_model:
+            child_id = child.id
+            if child_id not in self._child_parents:
+                self._child_parents[child_id] = []
+            self._child_parents[child_id].append(parent_cand)
+
+    def add_child_uniqueness_constraints(self, model: ConstraintModel) -> None:
+        """Add constraints ensuring each child has at most one parent.
+
+        This should be called after all classifiers have been processed via
+        generate_for_classifier(). It adds at_most_one_of constraints for
+        any child element that is referenced by multiple parent candidates.
+
+        This enforces the invariant that each element can only be used as
+        a child by one parent element, preventing scenarios like:
+        - Same StepNumber being used by multiple Step candidates
+        - Same PartsList being shared by multiple Steps
+        - Same Part being used in multiple PartsLists
+
+        Args:
+            model: The constraint model to add constraints to
+        """
+        constraints_added = 0
+
+        for child_id, parents in self._child_parents.items():
+            # Filter to parents that are in the model
+            parents_in_model = [p for p in parents if model.has_candidate(p)]
+
+            if len(parents_in_model) > 1:
+                model.at_most_one_of(parents_in_model)
+                constraints_added += 1
+                log.debug(
+                    "  [child uniqueness] child id=%d has %d potential parents, "
+                    "at most one allowed",
+                    child_id,
+                    len(parents_in_model),
+                )
+
+        if constraints_added > 0:
+            log.debug(
+                "Added %d child uniqueness constraints",
+                constraints_added,
+            )
 
     def _extract_child_candidates(
         self, parent_cand: Candidate, schema_field_name: str

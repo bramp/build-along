@@ -144,11 +144,10 @@ class StepClassifier(LabelClassifier):
         Constraints:
         - Uniqueness by step_value: At most one step per step_value (e.g., only
           one "Step 1"). The solver picks the highest-scoring candidate.
-        - Uniqueness by step_number: Each step_number candidate can only be used
-          by one step. This prevents the same step number element from being
-          shared by multiple step candidates.
-        - Uniqueness by parts_list: Each parts_list candidate can only be used
-          by one step. This prevents the same parts list from being shared.
+
+        Note: Child uniqueness constraints (each step_number/parts_list can only
+        be used by one parent) are handled automatically by
+        SchemaConstraintGenerator.add_child_uniqueness_constraints().
         """
         candidates = result.get_candidates(self.output)
         candidates_in_model = [c for c in candidates if model.has_candidate(c)]
@@ -158,10 +157,6 @@ class StepClassifier(LabelClassifier):
 
         # Group by step_value (semantic uniqueness)
         by_value: dict[int, list[Candidate]] = {}
-        # Group by step_number_candidate id (element uniqueness)
-        by_step_number: dict[int, list[Candidate]] = {}
-        # Group by parts_list_candidate id (element uniqueness)
-        by_parts_list: dict[int, list[Candidate]] = {}
 
         for cand in candidates_in_model:
             if isinstance(cand.score_details, _StepScore):
@@ -173,19 +168,6 @@ class StepClassifier(LabelClassifier):
                     by_value[step_value] = []
                 by_value[step_value].append(cand)
 
-                # Group by step_number_candidate id
-                step_num_id = score.step_number_candidate.id
-                if step_num_id not in by_step_number:
-                    by_step_number[step_num_id] = []
-                by_step_number[step_num_id].append(cand)
-
-                # Group by parts_list_candidate id (if present)
-                if score.parts_list_candidate is not None:
-                    pl_id = score.parts_list_candidate.id
-                    if pl_id not in by_parts_list:
-                        by_parts_list[pl_id] = []
-                    by_parts_list[pl_id].append(cand)
-
         # Add at_most_one constraint for each step_value
         for step_value, cands in by_value.items():
             if len(cands) > 1:
@@ -194,30 +176,6 @@ class StepClassifier(LabelClassifier):
                     "[step] Uniqueness constraint: at most one step with value=%d "
                     "(%d candidates)",
                     step_value,
-                    len(cands),
-                )
-
-        # Add at_most_one constraint for each step_number_candidate
-        # This ensures each StepNumber element is used by at most one Step
-        for step_num_id, cands in by_step_number.items():
-            if len(cands) > 1:
-                model.at_most_one_of(cands)
-                log.debug(
-                    "[step] Uniqueness constraint: step_number id=%d used by "
-                    "at most one step (%d candidates)",
-                    step_num_id,
-                    len(cands),
-                )
-
-        # Add at_most_one constraint for each parts_list_candidate
-        # This ensures each PartsList element is used by at most one Step
-        for pl_id, cands in by_parts_list.items():
-            if len(cands) > 1:
-                model.at_most_one_of(cands)
-                log.debug(
-                    "[step] Uniqueness constraint: parts_list id=%d used by "
-                    "at most one step (%d candidates)",
-                    pl_id,
                     len(cands),
                 )
 

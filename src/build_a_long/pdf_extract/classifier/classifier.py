@@ -742,6 +742,9 @@ class Classifier:
         for classifier in self.classifiers:
             generator.generate_for_classifier(classifier, model, result)
 
+        # Add child uniqueness constraints (each child has at most one parent)
+        generator.add_child_uniqueness_constraints(model)
+
         # Maximize total score (scale float scores 0.0-1.0 to int weights 0-1000)
         model.maximize([(cand, int(cand.score * 1000)) for cand in all_candidates])
 

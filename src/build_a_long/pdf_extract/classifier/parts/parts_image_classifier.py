@@ -289,9 +289,12 @@ class PartsImageClassifier(RuleBasedClassifier):
     ) -> None:
         """Add constraints for part_image candidates.
 
-        Two types of constraints:
-        1. Each shine can be used by at most one part_image
-        2. If a part_image uses a shine, the standalone shine candidate is excluded
+        Constraints:
+        - If a part_image uses a shine, the standalone shine candidate is excluded
+          (they share source blocks)
+
+        Note: The constraint "each shine can be used by at most one part_image"
+        is handled automatically by SchemaConstraintGenerator.
         """
         # Group candidates by which shine they use
         shine_to_part_images: dict[int, list[Candidate]] = {}
@@ -307,10 +310,9 @@ class PartsImageClassifier(RuleBasedClassifier):
                 shine_to_part_images[shine_cand.id].append(cand)
 
         # For each shine used by part_images:
-        # 1. Part_images that share a shine are mutually exclusive (at most one)
-        # 2. If any part_image with this shine is selected, the standalone shine
-        #    candidate cannot also be selected (they share source blocks)
-        for shine_id, part_image_cands in shine_to_part_images.items():
+        # If any part_image with this shine is selected, the standalone shine
+        # candidate cannot also be selected (they share source blocks)
+        for _shine_id, part_image_cands in shine_to_part_images.items():
             # Get the shine candidate for this ID
             shine_cand = part_image_cands[0].score_details
             assert isinstance(shine_cand, PartImageScore)
@@ -321,15 +323,6 @@ class PartsImageClassifier(RuleBasedClassifier):
                 # standalone shine (they share the shine's source blocks)
                 for pi_cand in part_image_cands:
                     model.at_most_one_of([pi_cand, standalone_shine])
-
-            # Part_images that share a shine are mutually exclusive
-            if len(part_image_cands) > 1:
-                model.at_most_one_of(part_image_cands)
-                log.debug(
-                    "[part_image] Shine %d shared by %d part_images",
-                    shine_id,
-                    len(part_image_cands),
-                )
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> PartImage:
         """Construct a PartImage element from a candidate.
