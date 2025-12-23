@@ -315,13 +315,29 @@ class SchemaConstraintGenerator:
             )
 
         elif cardinality == "optional_one":
-            # If parent selected, at most one child
-            model.model.Add(sum(child_vars) <= 1).OnlyEnforceIf(parent_var)
-            log.debug(
-                "  Field '%s': optional_one (%d child candidates)",
-                field_name,
-                len(child_candidates),
-            )
+            # Optional field handling depends on the number of child candidates.
+            #
+            # If there's exactly ONE child candidate: the parent was created
+            # specifically with that child in mind. If parent is selected,
+            # that specific child must also be selected.
+            #
+            # If there are MULTIPLE child candidates: we're choosing between
+            # them, so at most one can be selected.
+            if len(child_candidates_in_model) == 1:
+                # Single specific child - must be selected if parent is selected
+                model.model.Add(child_vars[0] == 1).OnlyEnforceIf(parent_var)
+                log.debug(
+                    "  Field '%s': optional_one with single child (must select)",
+                    field_name,
+                )
+            else:
+                # Multiple candidates - at most one can be selected
+                model.model.Add(sum(child_vars) <= 1).OnlyEnforceIf(parent_var)
+                log.debug(
+                    "  Field '%s': optional_one (%d child candidates)",
+                    field_name,
+                    len(child_candidates),
+                )
 
         elif cardinality == "many":
             # Sequence: zero or more allowed (no constraint needed)
