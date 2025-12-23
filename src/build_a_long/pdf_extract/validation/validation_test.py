@@ -633,9 +633,9 @@ def _make_classification_result(
         bbox=page.bbox,
         score=1.0,
         score_details=TestScore(),
-        constructed=page,
     )
     result.add_candidate(candidate)
+    result._build_cache[candidate.id] = page
 
     return result
 

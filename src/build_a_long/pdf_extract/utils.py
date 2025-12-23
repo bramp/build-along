@@ -1,7 +1,28 @@
 """Common utilities for PDF extraction."""
 
+import itertools
 import json
 from typing import Any
+
+# Global counter for generating unique element IDs
+_auto_id_counter = itertools.count(1)
+
+
+def _next_auto_id() -> int:
+    """Generate the next unique auto-generated ID."""
+    return next(_auto_id_counter)
+
+
+def auto_id_field() -> int:
+    """Create a Pydantic Field with auto-generated ID.
+
+    Use this as a default_factory for id fields:
+        id: int = Field(default_factory=auto_id_field)
+
+    Returns:
+        A unique integer ID
+    """
+    return _next_auto_id()
 
 
 def remove_empty_lists(obj: Any) -> Any:

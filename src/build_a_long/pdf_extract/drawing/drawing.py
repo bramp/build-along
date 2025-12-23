@@ -88,11 +88,10 @@ def _create_drawable_items(
 
         for _, candidates in all_candidates.items():
             for candidate in candidates:
-                is_constructed = candidate.constructed is not None
+                constructed = result.get_constructed(candidate)
+                is_constructed = constructed is not None
                 # Check if this constructed element is in the final Page hierarchy
-                is_winner = (
-                    is_constructed and id(candidate.constructed) in chosen_elements
-                )
+                is_winner = is_constructed and id(constructed) in chosen_elements
 
                 if not is_winner and not draw_deleted:
                     continue
@@ -106,11 +105,7 @@ def _create_drawable_items(
                 # Use constructed element's bbox if available (it may have been
                 # updated after construction, e.g., Step bbox includes diagram)
                 # Otherwise fall back to candidate bbox
-                bbox = (
-                    candidate.constructed.bbox
-                    if candidate.constructed
-                    else candidate.bbox
-                )
+                bbox = constructed.bbox if constructed else candidate.bbox
 
                 # Element without source block (e.g., Step, Page)
                 items.append(
@@ -131,12 +126,12 @@ def _create_drawable_items(
         # Also add elements from the Page hierarchy that don't have candidates
         # (e.g., SubAssemblyStep elements created as substeps without a candidate)
         if result.page:
-            drawn_element_ids = {
-                id(c.constructed)
-                for _, cs in all_candidates.items()
-                for c in cs
-                if c.constructed
-            }
+            drawn_element_ids: set[int] = set()
+            for _, cs in all_candidates.items():
+                for c in cs:
+                    constructed = result.get_constructed(c)
+                    if constructed:
+                        drawn_element_ids.add(id(constructed))
             for element in result.page.iter_elements():
                 if id(element) in drawn_element_ids:
                     continue

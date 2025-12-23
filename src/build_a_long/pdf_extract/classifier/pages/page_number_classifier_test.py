@@ -255,7 +255,7 @@ class TestPageNumberClassification:
         # Construct all candidates
         candidates = result.get_candidates("page_number")
         for candidate in candidates:
-            if candidate.constructed is None:
+            if result.get_constructed(candidate) is None:
                 result.build(candidate)
 
         assert len(candidates) == 2

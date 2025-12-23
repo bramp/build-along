@@ -34,7 +34,8 @@ def _make_candidate(
         label: The label for this candidate
         bbox: The bounding box
         source_block: The source block if any
-        has_constructed: Whether construction succeeded (creates a PageNumber if True)
+        has_constructed: Whether construction succeeded
+            (ignored - construction happens via result.build())
     """
     return Candidate(
         label=label,
@@ -42,7 +43,6 @@ def _make_candidate(
         source_blocks=[source_block] if source_block else [],
         score=0.9,
         score_details=TestScore(),
-        constructed=PageNumber(bbox=bbox, value=1) if has_constructed else None,
     )
 
 
@@ -93,9 +93,9 @@ def test_create_drawable_items_elements_only():
         source_blocks=[block],
         score=0.9,
         score_details=TestScore(),
-        constructed=page_number,
     )
     result.add_candidate(candidate)
+    result._build_cache[candidate.id] = page_number
 
     # Create a Page that includes this PageNumber
     page = Page(bbox=BBox(0, 0, 200, 200), pdf_page_number=1, page_number=page_number)
@@ -105,9 +105,9 @@ def test_create_drawable_items_elements_only():
         source_blocks=[],
         score=1.0,
         score_details=TestScore(),
-        constructed=page,
     )
     result.add_candidate(page_candidate)
+    result._build_cache[page_candidate.id] = page
 
     items = _create_drawable_items(
         result, draw_blocks=False, draw_elements=True, draw_deleted=False
@@ -135,9 +135,9 @@ def test_create_drawable_items_no_duplicate_blocks():
         source_blocks=[block],
         score=0.9,
         score_details=TestScore(),
-        constructed=page_number,
     )
     result.add_candidate(candidate)
+    result._build_cache[candidate.id] = page_number
 
     # Create a Page that includes this PageNumber
     page = Page(bbox=BBox(0, 0, 200, 200), pdf_page_number=1, page_number=page_number)
@@ -147,9 +147,9 @@ def test_create_drawable_items_no_duplicate_blocks():
         source_blocks=[],
         score=1.0,
         score_details=TestScore(),
-        constructed=page,
     )
     result.add_candidate(page_candidate)
+    result._build_cache[page_candidate.id] = page
 
     # Request both blocks and elements
     items = _create_drawable_items(
@@ -176,9 +176,9 @@ def test_create_drawable_items_element_without_source_block():
         source_blocks=[],
         score=1.0,
         score_details=TestScore(),
-        constructed=page,
     )
     result.add_candidate(candidate)
+    result._build_cache[candidate.id] = page
 
     items = _create_drawable_items(
         result, draw_blocks=False, draw_elements=True, draw_deleted=False
@@ -246,7 +246,6 @@ def test_create_drawable_items_filter_non_winner_elements():
         source_blocks=[block],
         score=0.9,
         score_details=TestScore(),
-        constructed=page_number,
     )
 
     # Create a non-winner candidate (constructed but not in the Page)
@@ -259,11 +258,12 @@ def test_create_drawable_items_filter_non_winner_elements():
         source_blocks=[block],
         score=0.8,
         score_details=TestScore(),
-        constructed=step_number_elem,
     )
 
     result.add_candidate(winner_candidate)
+    result._build_cache[winner_candidate.id] = page_number
     result.add_candidate(non_winner_candidate)
+    result._build_cache[non_winner_candidate.id] = step_number_elem
 
     # Build a Page that only includes the winner candidate's constructed element
     # This simulates the page builder choosing only the PageNumber
@@ -274,9 +274,9 @@ def test_create_drawable_items_filter_non_winner_elements():
         source_blocks=[],
         score=1.0,
         score_details=TestScore(),
-        constructed=page,
     )
     result.add_candidate(page_candidate)
+    result._build_cache[page_candidate.id] = page
 
     items = _create_drawable_items(
         result, draw_blocks=False, draw_elements=True, draw_deleted=False
@@ -304,7 +304,6 @@ def test_create_drawable_items_include_non_winner_elements():
         source_blocks=[block],
         score=0.9,
         score_details=TestScore(),
-        constructed=page_number,
     )
 
     # Create a non-winner candidate (constructed but not in the Page)
@@ -317,11 +316,12 @@ def test_create_drawable_items_include_non_winner_elements():
         source_blocks=[block],
         score=0.8,
         score_details=TestScore(),
-        constructed=step_number_elem,
     )
 
     result.add_candidate(winner_candidate)
+    result._build_cache[winner_candidate.id] = page_number
     result.add_candidate(non_winner_candidate)
+    result._build_cache[non_winner_candidate.id] = step_number_elem
 
     # Build a Page that only includes the winner candidate's constructed element
     page = Page(bbox=BBox(0, 0, 200, 200), pdf_page_number=1, page_number=page_number)
@@ -331,9 +331,9 @@ def test_create_drawable_items_include_non_winner_elements():
         source_blocks=[],
         score=1.0,
         score_details=TestScore(),
-        constructed=page,
     )
     result.add_candidate(page_candidate)
+    result._build_cache[page_candidate.id] = page
 
     items = _create_drawable_items(
         result, draw_blocks=False, draw_elements=True, draw_deleted=True

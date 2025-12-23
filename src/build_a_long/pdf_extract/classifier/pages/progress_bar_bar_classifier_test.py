@@ -148,8 +148,8 @@ class TestProgressBarBarClassifier:
         # The built bar should only be the bottom bar
         assert built.bbox == bottom_bar.bbox
 
-        # The higher candidate should NOT be marked as merged
-        assert higher_candidate.failure_reason is None
+        # The higher candidate should NOT be marked as failed
+        assert result.get_failure_reason(higher_candidate) is None
 
         # Source blocks should only contain the bottom bar
         assert len(bottom_candidate.source_blocks) == 1

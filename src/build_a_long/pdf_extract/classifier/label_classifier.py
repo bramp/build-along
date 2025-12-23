@@ -168,10 +168,9 @@ class LabelClassifier(BaseModel, ABC):
         for candidate in candidates:
             try:
                 elem = result.build(candidate)
-                candidate.constructed = elem
                 elements.append(elem)
-            except CandidateFailedError as e:
-                candidate.failure_reason = str(e)
+            except CandidateFailedError:
+                pass  # Failure reason already recorded by result.build()
         return elements
 
     @abstractmethod
@@ -184,7 +183,7 @@ class LabelClassifier(BaseModel, ABC):
         It should:
         1. Resolve any dependencies (e.g. ask result to construct parent candidates)
         2. Build the LegoPageElement
-        3. Return it (do not set candidate.constructed, the caller does that)
+        3. Return it (ClassificationResult stores the constructed element)
 
         IMPORTANT: Classifiers should only create elements they are responsible for.
         A classifier should NOT create elements of types handled by other classifiers.

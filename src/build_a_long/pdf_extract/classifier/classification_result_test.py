@@ -12,9 +12,6 @@ from build_a_long.pdf_extract.classifier import (
 from build_a_long.pdf_extract.classifier.config import PageNumberConfig
 from build_a_long.pdf_extract.classifier.test_utils import PageBuilder, TestScore
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.lego_page_elements import (
-    PageNumber,
-)
 from build_a_long.pdf_extract.extractor.page_blocks import Text
 
 
@@ -63,13 +60,11 @@ class TestClassificationResult:
         )
         block = page.blocks[0]
 
-        constructed = PageNumber(bbox=BBox(0, 0, 10, 10), value=1)
         candidate = Candidate(
             bbox=BBox(0, 0, 10, 10),
             label="page_number",
             score=0.95,
             score_details=TestScore(),
-            constructed=constructed,
             source_blocks=[block],
         )
 
@@ -243,7 +238,6 @@ class TestGetScoredCandidates:
                 label="test_label",
                 score=0.8,
                 score_details=TestScore(value=0.8),
-                constructed=PageNumber(bbox=text.bbox, value=1),
                 source_blocks=[text],
             ),
         )
@@ -253,7 +247,6 @@ class TestGetScoredCandidates:
                 label="test_label",
                 score=0.3,
                 score_details=TestScore(value=0.3),
-                constructed=PageNumber(bbox=text.bbox, value=2),
                 source_blocks=[text],
             ),
         )
@@ -263,7 +256,6 @@ class TestGetScoredCandidates:
                 label="test_label",
                 score=0.9,
                 score_details=TestScore(value=0.9),
-                constructed=PageNumber(bbox=text.bbox, value=3),
                 source_blocks=[text],
             ),
         )
@@ -295,7 +287,6 @@ class TestGetScoredCandidates:
                 label="test_label",
                 score=0.8,
                 score_details=TestScore(value=0.8),
-                constructed=PageNumber(bbox=text.bbox, value=1),
                 source_blocks=[text],
             ),
         )
@@ -305,7 +296,6 @@ class TestGetScoredCandidates:
                 label="test_label",
                 score=0.3,
                 score_details=TestScore(value=0.3),
-                constructed=PageNumber(bbox=text.bbox, value=2),
                 source_blocks=[text],
             ),
         )
@@ -335,7 +325,6 @@ class TestGetScoredCandidates:
                 label="test_label",
                 score=0.8,
                 score_details=TestScore(value=0.8),
-                constructed=PageNumber(bbox=text.bbox, value=1),
                 source_blocks=[text],
             ),
         )
@@ -346,7 +335,6 @@ class TestGetScoredCandidates:
                 label="test_label",
                 score=0.9,
                 score_details=TestScore(value=0.9),
-                constructed=PageNumber(bbox=text.bbox, value=2),
                 source_blocks=[text],
             ),
         )
@@ -389,7 +377,7 @@ class TestGetScoredCandidates:
         # constructed - this is for use during scoring phase
         candidates = result.get_scored_candidates("test_label")
         assert len(candidates) == 1
-        assert candidates[0].constructed is None
+        assert result.get_constructed(candidates[0]) is None
 
         # get_built_candidates should return empty list since nothing is constructed
         built_candidates = result.get_built_candidates("test_label")

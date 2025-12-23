@@ -85,7 +85,7 @@ class TestPartsClassification:
         assert result.count_successful_candidates("part") == 2
 
         # Verify the Part objects have the expected counts
-        parts = [c.constructed for c in result.get_built_candidates("part")]
+        parts = [result.get_constructed(c) for c in result.get_built_candidates("part")]
         assert all(isinstance(p, Part) for p in parts)
         part_counts = sorted([p.count.count for p in parts])  # type: ignore[union-attr]
         assert part_counts == [2, 3]
@@ -159,7 +159,7 @@ class TestPartsClassification:
         classifier.build_all(result)
 
         # Should create 1 Part
-        parts = [c.constructed for c in result.get_built_candidates("part")]
+        parts = [result.get_constructed(c) for c in result.get_built_candidates("part")]
         assert len(parts) == 1
         part = parts[0]
         assert isinstance(part, Part)
@@ -237,7 +237,7 @@ class TestPartsClassification:
         classifier.build_all(result)
 
         # Only 1 Part should be created (img1 pairs with t1, the closer one)
-        parts = [c.constructed for c in result.get_built_candidates("part")]
+        parts = [result.get_constructed(c) for c in result.get_built_candidates("part")]
         assert len(parts) == 1
         assert isinstance(parts[0], Part)
         assert parts[0].count.count == 2  # paired with t1 (the closer one)
@@ -247,4 +247,4 @@ class TestPartsClassification:
         assert result.count_successful_candidates("part_count") == 1
         unconstructed_pc_candidate = result.get_candidate_for_block(t2, "part_count")
         assert unconstructed_pc_candidate is not None
-        assert unconstructed_pc_candidate.constructed is None
+        assert result.get_constructed(unconstructed_pc_candidate) is None

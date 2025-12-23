@@ -18,14 +18,18 @@ from pydantic import (
 )
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.utils import SerializationMixin, remove_empty_lists
+from build_a_long.pdf_extract.utils import (
+    SerializationMixin,
+    auto_id_field,
+    remove_empty_lists,
+)
 
 
 class LegoPageElement(SerializationMixin, BaseModel, ABC):
     """Base class for LEGO-specific structured elements constructed by classifiers.
 
     LegoPageElements are typically constructed from one or more Blocks during
-    classification and are stored in Candidate.constructed, not in PageData.elements.
+    classification and stored via ClassificationResult.build().
 
     Contract:
     - Every element has exactly one bounding box in page coordinates
@@ -38,6 +42,14 @@ class LegoPageElement(SerializationMixin, BaseModel, ABC):
 
     # Note: page_data is excluded from serialization at dump time, not in config
     model_config = ConfigDict(populate_by_name=True)
+
+    id: int = Field(default_factory=auto_id_field, exclude=True)
+    """Unique identifier for this element.
+
+    Auto-generated at construction time. Use this for identity comparisons
+    instead of id() which can differ across Pydantic deep-copies.
+    Not serialized to JSON.
+    """
 
     bbox: BBox
 
@@ -633,6 +645,7 @@ class Part(LegoPageElement):
     }
 
     tag: Literal["Part"] = Field(default="Part", alias="__tag__", frozen=True)
+
     count: PartCount
 
     diagram: PartImage | None = None

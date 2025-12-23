@@ -71,12 +71,13 @@ class TestStepClassification:
 
         # Get constructed steps
         steps = [
-            c.constructed
+            result.get_constructed(c)
             for c in result.get_candidates("step")
-            if isinstance(c.constructed, Step)
+            if isinstance(result.get_constructed(c), Step)
         ]
         assert len(steps) == 1
         constructed_step = steps[0]
+        assert isinstance(constructed_step, Step)
 
         assert constructed_step.step_number.value == 10
         assert constructed_step.parts_list is not None
@@ -114,12 +115,13 @@ class TestStepClassification:
 
         # Get constructed steps
         steps = [
-            c.constructed
+            result.get_constructed(c)
             for c in result.get_candidates("step")
-            if isinstance(c.constructed, Step)
+            if isinstance(result.get_constructed(c), Step)
         ]
         assert len(steps) == 1
         constructed_step = steps[0]
+        assert isinstance(constructed_step, Step)
 
         assert constructed_step.step_number.value == 5
         assert constructed_step.parts_list is None  # No parts list candidate
@@ -177,14 +179,16 @@ class TestStepClassification:
 
         # Get constructed steps
         steps = [
-            c.constructed
+            result.get_constructed(c)
             for c in result.get_candidates("step")
-            if isinstance(c.constructed, Step)
+            if isinstance(result.get_constructed(c), Step)
         ]
         assert len(steps) == 2
 
         # Check that steps are in order by value
-        steps_sorted = sorted(steps, key=lambda s: s.step_number.value)
+        # Filter to Steps only for type safety
+        step_objs = [s for s in steps if isinstance(s, Step)]
+        steps_sorted = sorted(step_objs, key=lambda s: s.step_number.value)
         assert steps_sorted[0].step_number.value == 1
         assert steps_sorted[1].step_number.value == 2
 
@@ -304,14 +308,16 @@ class TestStepClassification:
 
         # Get constructed steps
         steps = [
-            c.constructed
+            result.get_constructed(c)
             for c in result.get_candidates("step")
-            if isinstance(c.constructed, Step)
+            if isinstance(result.get_constructed(c), Step)
         ]
 
         # Only ONE step should be created (uniqueness enforced at Step level)
         assert len(steps) == 1
-        assert steps[0].step_number.value == 1
+        step = steps[0]
+        assert isinstance(step, Step)
+        assert step.step_number.value == 1
 
 
 class TestFilterSubassemblyValues:

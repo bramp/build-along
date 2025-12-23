@@ -41,7 +41,7 @@ class TestStepNumberClassification:
 
         # Construct all candidates
         for candidate in result.get_candidates("step_number"):
-            if candidate.constructed is None:
+            if result.get_constructed(candidate) is None:
                 result.build(candidate)
 
         # Should have 2 step_numbers successfully constructed
@@ -54,15 +54,21 @@ class TestStepNumberClassification:
         # Check that big_step and small_step are the source blocks
         big_candidate = result.get_candidate_for_block(big_step, "step_number")
         small_candidate = result.get_candidate_for_block(small_step, "step_number")
-        assert big_candidate is not None and big_candidate.constructed is not None
-        assert small_candidate is not None and small_candidate.constructed is not None
+        assert (
+            big_candidate is not None
+            and result.get_constructed(big_candidate) is not None
+        )
+        assert (
+            small_candidate is not None
+            and result.get_constructed(small_candidate) is not None
+        )
 
         # Verify the step numbers have the correct values
-        step_values = {
-            c.constructed.value
-            for c in step_candidates
-            if isinstance(c.constructed, StepNumber)
-        }
+        step_values: set[int] = set()
+        for c in step_candidates:
+            constructed = result.get_constructed(c)
+            if isinstance(constructed, StepNumber):
+                step_values.add(constructed.value)
         assert step_values == {3, 12}
 
     def test_step_number_with_font_hints(self) -> None:
@@ -92,7 +98,7 @@ class TestStepNumberClassification:
 
         # Construct all candidates
         for candidate in result.get_candidates("step_number"):
-            if candidate.constructed is None:
+            if result.get_constructed(candidate) is None:
                 result.build(candidate)
 
         candidates = result.get_candidates("step_number")

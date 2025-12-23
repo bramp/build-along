@@ -39,7 +39,7 @@ class CandidateFailedError(Exception):
 
 
 class _BuildSnapshot(BaseModel):
-    """Snapshot of candidate and consumed block state for rollback.
+    """Snapshot of candidate build state for rollback.
 
     This is used to implement transactional semantics in build():
     if a classifier build fails, we can restore the state as if
@@ -48,8 +48,10 @@ class _BuildSnapshot(BaseModel):
 
     model_config = {"frozen": True}
 
-    # Map candidate id -> (constructed value, failure_reason)
-    candidate_states: dict[int, tuple[LegoPageElements | None, str | None]]
+    # Map Candidate.id -> constructed LegoPageElement
+    build_cache: dict[int, LegoPageElements]
+    # Map Candidate.id -> failure reason
+    failure_reasons: dict[int, str]
     # Set of consumed block IDs
     consumed_blocks: set[int]
 
@@ -125,6 +127,21 @@ class ClassificationResult(BaseModel):
     construction (treated as if they don't exist).
     
     Empty when solver is disabled or not yet run.
+    """
+
+    _build_cache: dict[int, LegoPageElements] = PrivateAttr(default_factory=dict)
+    """Map of Candidate.id -> constructed LegoPageElement.
+
+    This tracks which candidates have been successfully built. The same logical
+    candidate (identified by its unique Candidate.id) always returns the same
+    constructed element, even if Pydantic deep-copied the Candidate object.
+    """
+
+    _failure_reasons: dict[int, str] = PrivateAttr(default_factory=dict)
+    """Map of Candidate.id -> failure reason string.
+
+    This tracks why candidates failed to build (e.g., block conflicts,
+    validation errors). A candidate with an entry here cannot be built.
     """
 
     @model_validator(mode="after")
@@ -255,7 +272,7 @@ class ClassificationResult(BaseModel):
         """Construct a candidate using the registered classifier.
 
         This is the entry point for top-down construction. If the build fails,
-        all changes to candidate states and consumed blocks are automatically
+        all changes to build state and consumed blocks are automatically
         rolled back, ensuring transactional semantics.
 
         If a nested candidate fails due to conflicts, this method will attempt
@@ -276,12 +293,14 @@ class ClassificationResult(BaseModel):
                 Callers should only catch this exception type, allowing
                 programming errors to propagate.
         """
-        if candidate.constructed:
-            return candidate.constructed
+        # Check if already built (using Candidate.id for identity)
+        if candidate.id in self._build_cache:
+            return self._build_cache[candidate.id]
 
-        if candidate.failure_reason:
+        # Check if already failed
+        if candidate.id in self._failure_reasons:
             raise CandidateFailedError(
-                candidate, f"Candidate failed: {candidate.failure_reason}"
+                candidate, f"Candidate failed: {self._failure_reasons[candidate.id]}"
             )
 
         # Check if any source block is already consumed (pre-build check)
@@ -300,38 +319,12 @@ class ClassificationResult(BaseModel):
 
         # Take snapshot before building for automatic rollback on failure
         snapshot = self._take_snapshot()
-        original_source_blocks = list(candidate.source_blocks)
 
         try:
             element = classifier.build(candidate, self, **kwargs)
-            candidate.constructed = element
 
-            # Check if any NEW source blocks (added during build) are already consumed
-            # This handles classifiers that consume additional blocks during build()
-            new_blocks = [
-                b for b in candidate.source_blocks if b not in original_source_blocks
-            ]
-            if new_blocks:
-                log.debug(
-                    "[build] Classifier added %d blocks during build for '%s': %s",
-                    len(new_blocks),
-                    candidate.label,
-                    [b.id for b in new_blocks],
-                )
-                self._check_blocks_not_consumed(candidate, new_blocks)
-
-            # Sync candidate bbox with constructed element's bbox.
-            # The constructed element may have a different bbox (e.g., Step's
-            # bbox includes diagram which is only determined at build time).
-            if candidate.bbox != element.bbox:
-                log.debug(
-                    "[build] Updating candidate bbox from %s to %s - "
-                    "This indicate the bbox changed between score and build, "
-                    "and may indicate a classification bug",
-                    candidate.bbox,
-                    element.bbox,
-                )
-            candidate.bbox = element.bbox
+            # Store the constructed element
+            self._build_cache[candidate.id] = element
 
             # Mark blocks as consumed
             log.debug(
@@ -358,10 +351,8 @@ class ClassificationResult(BaseModel):
             # If the failed candidate has a "Replaced by reduced candidate" reason,
             # we may be able to find the replacement and the caller can retry
             failed_candidate = e.candidate
-            if (
-                failed_candidate.failure_reason
-                and "Replaced by reduced candidate" in failed_candidate.failure_reason
-            ):
+            failure_reason = self._failure_reasons.get(failed_candidate.id)
+            if failure_reason and "Replaced by reduced candidate" in failure_reason:
                 # The failed candidate was replaced - caller should retry with
                 # new candidates available
                 log.debug(
@@ -377,31 +368,21 @@ class ClassificationResult(BaseModel):
             raise
 
     def _take_snapshot(self) -> _BuildSnapshot:
-        """Take a snapshot of all candidate states and consumed blocks."""
-        candidate_states = {}
-        for candidates in self.candidates.values():
-            for c in candidates:
-                candidate_states[id(c)] = (c.constructed, c.failure_reason)
-
+        """Take a snapshot of build state for rollback."""
         return _BuildSnapshot(
-            candidate_states=candidate_states,
+            build_cache=self._build_cache.copy(),
+            failure_reasons=self._failure_reasons.copy(),
             consumed_blocks=self._consumed_blocks.copy(),
         )
 
     def _restore_snapshot(self, snapshot: _BuildSnapshot) -> None:
-        """Restore candidate states and consumed blocks from a snapshot."""
-        # Restore candidate states
-        for candidates in self.candidates.values():
-            for c in candidates:
-                cid = id(c)
-                if cid in snapshot.candidate_states:
-                    c.constructed, c.failure_reason = snapshot.candidate_states[cid]
-
-        # Restore consumed blocks
+        """Restore build state from a snapshot."""
+        self._build_cache = snapshot.build_cache.copy()
+        self._failure_reasons = snapshot.failure_reasons.copy()
         self._consumed_blocks = snapshot.consumed_blocks.copy()
 
     def _check_blocks_not_consumed(
-        self, candidate: Candidate, blocks: list[Blocks]
+        self, candidate: Candidate, blocks: Sequence[Blocks]
     ) -> None:
         """Check that none of the given blocks are already consumed.
 
@@ -419,14 +400,14 @@ class ClassificationResult(BaseModel):
                 winner_label = "unknown"
                 for _label, cat_candidates in self.candidates.items():
                     for c in cat_candidates:
-                        if c.constructed and any(
+                        if c.id in self._build_cache and any(
                             b.id == block.id for b in c.source_blocks
                         ):
                             winner_label = _label
                             break
 
                 failure_msg = f"Block {block.id} already consumed by '{winner_label}'"
-                candidate.failure_reason = failure_msg
+                self._failure_reasons[candidate.id] = failure_msg
                 raise CandidateFailedError(candidate, failure_msg)
 
     def _assert_no_duplicate_source_blocks(self, candidate: Candidate) -> None:
@@ -461,7 +442,7 @@ class ClassificationResult(BaseModel):
             for candidate in candidates:
                 if candidate is winner:
                     continue
-                if candidate.failure_reason:
+                if candidate.id in self._failure_reasons:
                     continue
 
                 # Check for overlap
@@ -480,7 +461,7 @@ class ClassificationResult(BaseModel):
                     f"candidate_blocks={candidate_block_ids}, "
                     f"conflicting={sorted(conflicting_block_ids)})"
                 )
-                candidate.failure_reason = failure_reason
+                self._failure_reasons[candidate.id] = failure_reason
                 log.debug(
                     "[conflict] '%s' at %s failed: %s",
                     label,
@@ -517,7 +498,7 @@ class ClassificationResult(BaseModel):
         """Returns the Page object built from this classification result."""
         page_candidates = self.get_built_candidates("page")
         if page_candidates:
-            page = page_candidates[0].constructed
+            page = self.get_constructed(page_candidates[0])
             assert isinstance(page, Page)
             return page
         return None
@@ -576,7 +557,7 @@ class ClassificationResult(BaseModel):
         scored = [
             c
             for c in candidates
-            if c.score_details is not None and c.failure_reason is None
+            if c.score_details is not None and c.id not in self._failure_reasons
         ]
 
         # Apply score threshold if specified
@@ -599,7 +580,7 @@ class ClassificationResult(BaseModel):
         **Use this method in build() or after classification is complete.**
 
         This returns only candidates where construction succeeded (i.e.,
-        `candidate.constructed` is not None and there's no failure_reason).
+        the candidate has been built and has no failure_reason).
         These are "valid" candidates whose elements can be safely accessed.
 
         Use get_scored_candidates() instead during the scoring phase when
@@ -609,7 +590,7 @@ class ClassificationResult(BaseModel):
             # In PageClassifier.build()
             page_number_candidates = result.get_built_candidates("page_number")
             if page_number_candidates:
-                page_number = page_number_candidates[0].constructed
+                page_number = result.get_constructed(page_number_candidates[0])
 
         Args:
             label: The label to get candidates for
@@ -622,7 +603,7 @@ class ClassificationResult(BaseModel):
         candidates = self.get_candidates(label)
 
         # Filter to valid candidates (constructed and no failure)
-        built = [c for c in candidates if c.is_valid]
+        built = [c for c in candidates if self.is_valid(c)]
 
         # Apply score threshold if specified
         if min_score > 0:
@@ -633,6 +614,65 @@ class ClassificationResult(BaseModel):
         built.sort(key=lambda c: -c.score)
 
         return built
+
+    def get_constructed(self, candidate: Candidate) -> LegoPageElements | None:
+        """Get the constructed element for a candidate.
+
+        Args:
+            candidate: The candidate to get the constructed element for
+
+        Returns:
+            The constructed LegoPageElement, or None if not built
+        """
+        return self._build_cache.get(candidate.id)
+
+    def get_failure_reason(self, candidate: Candidate) -> str | None:
+        """Get the failure reason for a candidate.
+
+        Args:
+            candidate: The candidate to get the failure reason for
+
+        Returns:
+            The failure reason string, or None if not failed
+        """
+        return self._failure_reasons.get(candidate.id)
+
+    def is_valid(self, candidate: Candidate) -> bool:
+        """Check if a candidate is valid (constructed and no failure).
+
+        A valid candidate has been successfully constructed and has no failure reason.
+        Use this to filter candidates when working with dependencies.
+
+        Args:
+            candidate: The candidate to check
+
+        Returns:
+            True if candidate has been built and has no failure reason
+        """
+        return (
+            candidate.id in self._build_cache
+            and candidate.id not in self._failure_reasons
+        )
+
+    def get_candidate_by_id(self, label: str, candidate_id: int) -> Candidate | None:
+        """Get a candidate by its unique ID.
+
+        This is useful when you have a potentially-copied Candidate (e.g., from
+        a Score object's nested list) and need to find the original Candidate
+        stored in result.candidates. Pydantic may deep-copy Candidate objects
+        when storing them in fields with generic type annotations.
+
+        Args:
+            label: The label to search in
+            candidate_id: The unique ID of the candidate to find
+
+        Returns:
+            The original Candidate with matching ID, or None if not found
+        """
+        for candidate in self.candidates.get(label, []):
+            if candidate.id == candidate_id:
+                return candidate
+        return None
 
     def get_all_candidates(self) -> dict[str, Sequence[Candidate]]:
         """Get all candidates across all labels.
@@ -654,7 +694,7 @@ class ClassificationResult(BaseModel):
         Returns:
             Count of successfully constructed candidates
         """
-        return sum(1 for c in self.get_candidates(label) if c.constructed is not None)
+        return sum(1 for c in self.get_candidates(label) if c.id in self._build_cache)
 
     # TODO This is one of the slowest methods. I wonder if we can change
     # the internal data structures to make this faster.
@@ -722,7 +762,7 @@ class ClassificationResult(BaseModel):
             if no successfully constructed candidate exists
         """
         candidates = self.get_all_candidates_for_block(block)
-        valid_candidates = [c for c in candidates if c.constructed is not None]
+        valid_candidates = [c for c in candidates if c.id in self._build_cache]
 
         if not valid_candidates:
             return None

@@ -383,7 +383,7 @@ class StepClassifier(LabelClassifier):
         # Collect available diagram candidates (not yet claimed by subassemblies)
         available_diagrams: list[Diagram] = []
         for diag_candidate in result.get_scored_candidates("diagram"):
-            if diag_candidate.constructed is None:
+            if result.get_constructed(diag_candidate) is None:
                 # Build the diagram
                 try:
                     diag_elem = result.build(diag_candidate)
@@ -395,7 +395,7 @@ class StepClassifier(LabelClassifier):
                         diag_candidate.bbox,
                         e,
                     )
-            elif isinstance(diag_candidate.constructed, Diagram):
+            elif isinstance(result.get_constructed(diag_candidate), Diagram):
                 # Already built (claimed by subassembly) - skip
                 pass
 
@@ -407,9 +407,10 @@ class StepClassifier(LabelClassifier):
         # Collect divider bboxes for obstruction checking (used by multiple phases)
         divider_bboxes: list[BBox] = []
         for div_candidate in result.get_built_candidates("divider"):
-            assert div_candidate.constructed is not None
-            assert isinstance(div_candidate.constructed, Divider)
-            divider_bboxes.append(div_candidate.constructed.bbox)
+            divider = result.get_constructed(div_candidate)
+            assert divider is not None
+            assert isinstance(divider, Divider)
+            divider_bboxes.append(divider.bbox)
 
         # Assign diagrams to steps using Hungarian matching
         # Dividers prevent pairing across page divisions
@@ -419,9 +420,10 @@ class StepClassifier(LabelClassifier):
         # Collect built subassemblies
         subassemblies: Sequence[SubAssembly] = []
         for sa_candidate in result.get_built_candidates("subassembly"):
-            assert sa_candidate.constructed is not None
-            assert isinstance(sa_candidate.constructed, SubAssembly)
-            subassemblies.append(sa_candidate.constructed)
+            subassembly = result.get_constructed(sa_candidate)
+            assert subassembly is not None
+            assert isinstance(subassembly, SubAssembly)
+            subassemblies.append(subassembly)
 
         log.debug(
             "[step] Assigning %d subassemblies to %d steps (%d dividers for "
@@ -478,9 +480,10 @@ class StepClassifier(LabelClassifier):
         # Collect built rotation symbols
         rotation_symbols: list[RotationSymbol] = []
         for rs_candidate in result.get_built_candidates("rotation_symbol"):
-            assert rs_candidate.constructed is not None
-            assert isinstance(rs_candidate.constructed, RotationSymbol)
-            rotation_symbols.append(rs_candidate.constructed)
+            rs = result.get_constructed(rs_candidate)
+            assert rs is not None
+            assert isinstance(rs, RotationSymbol)
+            rotation_symbols.append(rs)
 
         assign_rotation_symbols_to_steps(steps, rotation_symbols)
 
@@ -561,7 +564,9 @@ class StepClassifier(LabelClassifier):
         substep_candidates = result.get_scored_candidates("substep")
 
         # Filter to only unclaimed candidates (not yet built)
-        unclaimed_candidates = [c for c in substep_candidates if c.constructed is None]
+        unclaimed_candidates = [
+            c for c in substep_candidates if result.get_constructed(c) is None
+        ]
 
         if not unclaimed_candidates:
             return []
@@ -670,7 +675,9 @@ class StepClassifier(LabelClassifier):
 
         # Filter to only candidates that haven't been built yet
         # (subassemblies and rotation symbols built earlier may have claimed some)
-        available_candidates = [c for c in diagram_candidates if c.constructed is None]
+        available_candidates = [
+            c for c in diagram_candidates if result.get_constructed(c) is None
+        ]
 
         if not available_candidates:
             log.debug(
@@ -908,15 +915,16 @@ class StepClassifier(LabelClassifier):
         )
         best_candidate = find_best_scoring(overlapping_candidates)
 
-        if best_candidate and best_candidate.constructed is not None:
-            rotation_symbol = best_candidate.constructed
-            assert isinstance(rotation_symbol, RotationSymbol)
-            log.debug(
-                "[step] Found rotation symbol at %s (score=%.2f)",
-                rotation_symbol.bbox,
-                best_candidate.score,
-            )
-            return rotation_symbol
+        if best_candidate:
+            rotation_symbol = result.get_constructed(best_candidate)
+            if rotation_symbol is not None:
+                assert isinstance(rotation_symbol, RotationSymbol)
+                log.debug(
+                    "[step] Found rotation symbol at %s (score=%.2f)",
+                    rotation_symbol.bbox,
+                    best_candidate.score,
+                )
+                return rotation_symbol
 
         log.debug("[step] No rotation symbol found in step bbox %s", step_bbox)
         return None
@@ -990,14 +998,15 @@ class StepClassifier(LabelClassifier):
         overlapping_candidates = filter_overlapping(arrow_candidates, search_region)
 
         for candidate in overlapping_candidates:
-            assert candidate.constructed is not None
-            assert isinstance(candidate.constructed, Arrow)
+            arrow = result.get_constructed(candidate)
+            assert arrow is not None
+            assert isinstance(arrow, Arrow)
             log.debug(
                 "[step]   Arrow at %s overlaps search region (score=%.2f)",
                 candidate.bbox,
                 candidate.score,
             )
-            arrows.append(candidate.constructed)
+            arrows.append(arrow)
 
         log.debug(
             "[step] Found %d arrows for step %d",
@@ -1029,9 +1038,10 @@ class StepClassifier(LabelClassifier):
         # Get all built subassemblies
         all_subassemblies: Sequence[SubAssembly] = []
         for sa_candidate in result.get_built_candidates("subassembly"):
-            assert sa_candidate.constructed is not None
-            assert isinstance(sa_candidate.constructed, SubAssembly)
-            all_subassemblies.append(sa_candidate.constructed)
+            sa = result.get_constructed(sa_candidate)
+            assert sa is not None
+            assert isinstance(sa, SubAssembly)
+            all_subassemblies.append(sa)
 
         log.debug(
             "[step] Looking for subassemblies for step %d, found %d built",

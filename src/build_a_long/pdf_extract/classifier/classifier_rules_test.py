@@ -90,7 +90,10 @@ class TestClassifierRules:
             block_to_label: dict[int, str] = {}
             for label, candidates in result.get_all_candidates().items():
                 for candidate in candidates:
-                    if candidate.constructed is not None and candidate.source_blocks:
+                    if (
+                        result.get_constructed(candidate) is not None
+                        and candidate.source_blocks
+                    ):
                         for block in candidate.source_blocks:
                             block_to_label[id(block)] = label
 
@@ -139,8 +142,9 @@ class TestClassifierRules:
             element_id_to_candidate: dict[int, Candidate] = {}
             for _label, candidates in all_candidates.items():
                 for candidate in candidates:
-                    if candidate.constructed is not None:
-                        elem_id = id(candidate.constructed)
+                    constructed = result.get_constructed(candidate)
+                    if constructed is not None:
+                        elem_id = id(constructed)
                         src_id = (
                             id(candidate.source_blocks[0])
                             if candidate.source_blocks
@@ -149,7 +153,7 @@ class TestClassifierRules:
                         assert elem_id not in element_id_to_candidate, (
                             f"Source block id:{src_id} "
                             f"produced multiple elements of type "
-                            f"{candidate.constructed.__class__.__name__} "
+                            f"{constructed.__class__.__name__} "
                             f"in {fixture_file} page {page_idx}"
                         )
                         element_id_to_candidate[elem_id] = candidate
@@ -209,8 +213,9 @@ class TestClassifierRules:
             constructed_element_ids: set[int] = set()
             for _label, candidates in all_candidates.items():
                 for candidate in candidates:
-                    if candidate.constructed is not None:
-                        constructed_element_ids.add(id(candidate.constructed))
+                    constructed = result.get_constructed(candidate)
+                    if constructed is not None:
+                        constructed_element_ids.add(id(constructed))
 
             # Traverse all LegoPageElements in the Page tree
             orphan_elements: list[tuple[LegoPageElement, str]] = []
@@ -290,9 +295,10 @@ class TestClassifierRules:
             for label, candidates in all_candidates.items():
                 for candidate in candidates:
                     # If candidate is marked as constructed but not in the tree
+                    constructed = result.get_constructed(candidate)
                     if (
-                        candidate.constructed is not None
-                        and id(candidate.constructed) not in used_element_ids
+                        constructed is not None
+                        and id(constructed) not in used_element_ids
                     ):
                         orphaned_candidates.append((label, candidate))
 
@@ -302,11 +308,13 @@ class TestClassifierRules:
                     f"candidates in {fixture_file} page {page_idx}:"
                 )
                 for label, candidate in orphaned_candidates:
-                    elem_type = candidate.constructed.__class__.__name__
+                    constructed = result.get_constructed(candidate)
+                    elem_type = constructed.__class__.__name__ if constructed else "?"
+                    failure_reason = result.get_failure_reason(candidate)
                     log.error(
                         f"  - {label}: {elem_type} bbox:{candidate.bbox} "
                         f"score:{candidate.score:.3f} "
-                        f"failure:{candidate.failure_reason}"
+                        f"failure:{failure_reason}"
                     )
 
             assert len(orphaned_candidates) == 0, (

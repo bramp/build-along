@@ -9,7 +9,7 @@ from build_a_long.pdf_extract.classifier.classifier_rules_test import (
 from build_a_long.pdf_extract.classifier.classifier_rules_test import (
     _load_pages_from_fixture as load_pages,
 )
-from build_a_long.pdf_extract.extractor.lego_page_elements import PartImage, Shine
+from build_a_long.pdf_extract.extractor.lego_page_elements import PartImage
 
 
 @pytest.mark.xfail(reason="Requires full pipeline integration with constraint solver")
@@ -30,11 +30,11 @@ def test_shine_classification() -> None:
     # The shine should be consumed by a PartImage
     # Find the PartImage candidate that consumed the shine
     part_image_candidates = result.get_built_candidates("part_image")
-    shine_consumers = [
-        pi.constructed
-        for pi in part_image_candidates
-        if isinstance(pi.constructed, PartImage) and pi.constructed.shine is not None
-    ]
+    shine_consumers: list[PartImage] = []
+    for pi in part_image_candidates:
+        constructed = result.get_constructed(pi)
+        if isinstance(constructed, PartImage) and constructed.shine is not None:
+            shine_consumers.append(constructed)
 
     assert len(shine_consumers) == 1
     shine_part_image = shine_consumers[0]
@@ -42,7 +42,7 @@ def test_shine_classification() -> None:
     # Verify it's the correct shine drawing (check bbox match as proxy)
     # The shine element doesn't store the original block ID directly,
     # but we can check bbox
-    assert isinstance(shine_part_image.shine, Shine)
+    assert shine_part_image.shine is not None
     # BBox should match drawing id=67/68: [114.88..., 258.48...]
     # This is the shine on the part image in step 16
     assert shine_part_image.shine.bbox.x0 > 110

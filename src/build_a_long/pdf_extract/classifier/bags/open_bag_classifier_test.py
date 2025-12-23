@@ -60,7 +60,9 @@ class TestOpenBagClassification:
 
         # Get open_bag candidates
         open_bag_candidates = [
-            c for c in result.candidates.get("open_bag", []) if c.constructed
+            c
+            for c in result.candidates.get("open_bag", [])
+            if result.get_constructed(c)
         ]
 
         # Should have at least one open bag candidate
@@ -68,9 +70,10 @@ class TestOpenBagClassification:
 
         # Check the first candidate
         candidate = open_bag_candidates[0]
-        assert candidate.constructed is not None
-        assert isinstance(candidate.constructed, OpenBag)
-        open_bag = candidate.constructed
+        constructed = result.get_constructed(candidate)
+        assert constructed is not None
+        assert isinstance(constructed, OpenBag)
+        open_bag = constructed
         assert open_bag.number is not None
         assert open_bag.number.value == 1
 
@@ -99,15 +102,18 @@ class TestOpenBagClassification:
 
         # Should have an open bag candidate without a bag number
         open_bag_candidates = [
-            c for c in result.candidates.get("open_bag", []) if c.constructed
+            c
+            for c in result.candidates.get("open_bag", [])
+            if result.get_constructed(c)
         ]
         assert len(open_bag_candidates) > 0
 
         # Check that the open bag has no bag number
         candidate = open_bag_candidates[0]
-        assert candidate.constructed is not None
-        assert isinstance(candidate.constructed, OpenBag)
-        open_bag = candidate.constructed
+        constructed = result.get_constructed(candidate)
+        assert constructed is not None
+        assert isinstance(constructed, OpenBag)
+        open_bag = constructed
         assert open_bag.number is None
 
     def test_small_circle_doesnt_create_open_bag(self) -> None:

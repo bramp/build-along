@@ -52,8 +52,9 @@ def assert_page_elements_tracked(result: ClassificationResult) -> None:
     constructed_ids: set[int] = set()
     for _, candidates in result.candidates.items():
         for candidate in candidates:
-            if candidate.constructed is not None:
-                constructed_ids.add(id(candidate.constructed))
+            constructed = result.get_constructed(candidate)
+            if constructed is not None:
+                constructed_ids.add(id(constructed))
 
     # Check all elements in the page hierarchy
     untracked: list[str] = []
@@ -106,10 +107,11 @@ def assert_constructed_elements_on_page(result: ClassificationResult) -> None:
     orphaned: list[tuple[str, str]] = []  # (label, description)
     for label, candidates in result.candidates.items():
         for candidate in candidates:
-            if candidate.constructed is None:
+            constructed = result.get_constructed(candidate)
+            if constructed is None:
                 continue
-            if id(candidate.constructed) not in on_page_ids:
-                desc = f"{candidate.constructed.__class__.__name__} at {candidate.bbox}"
+            if id(constructed) not in on_page_ids:
+                desc = f"{constructed.__class__.__name__} at {candidate.bbox}"
                 orphaned.append((label, desc))
 
     if orphaned:
@@ -168,7 +170,8 @@ def assert_element_bbox_matches_source_and_children(
     for label, candidates in result.candidates.items():
         for candidate in candidates:
             # Skip candidates without constructed elements
-            if candidate.constructed is None:
+            constructed = result.get_constructed(candidate)
+            if constructed is None:
                 continue
 
             # Skip candidates without source blocks (synthetic/composite elements)
@@ -177,7 +180,7 @@ def assert_element_bbox_matches_source_and_children(
 
             # Validate this element
             _validate_element_bbox(
-                candidate.constructed,
+                constructed,
                 [block.bbox for block in candidate.source_blocks],
                 label,
                 mismatches,
@@ -214,7 +217,7 @@ def assert_no_shared_source_blocks(result: ClassificationResult) -> None:
 
     for label, candidates in result.candidates.items():
         for candidate in candidates:
-            if candidate.constructed is None:
+            if result.get_constructed(candidate) is None:
                 continue
             # Include candidate id and source block IDs for debugging
             block_ids = sorted(b.id for b in candidate.source_blocks)

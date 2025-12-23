@@ -135,7 +135,7 @@ class PartsImageClassifier(RuleBasedClassifier):
 
         for shine_cand in shine_candidates:
             # Skip if already built (consumed by another part image)
-            if shine_cand.constructed is not None:
+            if result.get_constructed(shine_cand) is not None:
                 continue
 
             # Shine must overlap with the image to be considered a match.

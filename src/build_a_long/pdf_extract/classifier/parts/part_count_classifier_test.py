@@ -102,7 +102,7 @@ class TestPartCountClassification:
         # Construct all candidates
         candidates = result.get_candidates("part_count")
         for candidate in candidates:
-            if candidate.constructed is None:
+            if result.get_constructed(candidate) is None:
                 result.build(candidate)
 
         assert len(candidates) == 2

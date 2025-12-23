@@ -164,9 +164,11 @@ class SubStepClassifier(LabelClassifier):
 
         # Get dividers for obstruction checking
         divider_candidates = result.get_built_candidates("divider")
-        divider_bboxes = [
-            c.constructed.bbox for c in divider_candidates if c.constructed is not None
-        ]
+        divider_bboxes: list[BBox] = []
+        for c in divider_candidates:
+            constructed = result.get_constructed(c)
+            if constructed is not None:
+                divider_bboxes.append(constructed.bbox)
 
         # Extract bboxes for pairing
         step_bboxes = [c.bbox for c in step_candidates]

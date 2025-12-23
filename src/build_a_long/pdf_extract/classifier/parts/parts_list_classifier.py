@@ -164,7 +164,6 @@ class PartsListClassifier(LabelClassifier):
                 score=score.score(),
                 score_details=score,
                 source_blocks=list(group),
-                failure_reason=failure_reason,
             )
 
             result.add_candidate(candidate)
@@ -183,6 +182,10 @@ class PartsListClassifier(LabelClassifier):
         """Construct a PartsList from a single candidate's score details.
 
         Validates and extracts Part elements from the parent candidates.
+
+        Note: We look up candidates by ID because Pydantic may deep-copy
+        Candidate objects when storing them in Score fields with generic
+        type annotations like list[Candidate[Part]].
         """
         assert isinstance(candidate.score_details, _PartsListScore)
         score = candidate.score_details
@@ -190,14 +193,23 @@ class PartsListClassifier(LabelClassifier):
         # Validate and extract Part elements from parent candidates
         parts: list[Part] = []
         for part_candidate in score.part_candidates:
+            # Look up the original candidate by ID to handle Pydantic copies
+            original = result.get_candidate_by_id("part", part_candidate.id)
+            if original is None:
+                log.warning(
+                    "Part candidate ID %d not found in result.candidates",
+                    part_candidate.id,
+                )
+                continue
+
             try:
-                part_elem = result.build(part_candidate)
+                part_elem = result.build(original)
                 assert isinstance(part_elem, Part)
                 parts.append(part_elem)
             except Exception as e:
                 log.warning(
                     "Failed to construct part candidate at %s: %s",
-                    part_candidate.bbox,
+                    original.bbox,
                     e,
                 )
 

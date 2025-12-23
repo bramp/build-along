@@ -222,11 +222,12 @@ class PageClassifier(LabelClassifier):
         Previews are built by StepClassifier.build_all alongside subassemblies
         to properly deconflict white boxes that could be either.
         """
-        return [
-            c.constructed
-            for c in result.get_candidates("preview")
-            if c.constructed is not None and isinstance(c.constructed, Preview)
-        ]
+        previews = []
+        for c in result.get_candidates("preview"):
+            constructed = result.get_constructed(c)
+            if constructed is not None and isinstance(constructed, Preview):
+                previews.append(constructed)
+        return previews
 
     def _determine_categories(
         self,
@@ -252,14 +253,20 @@ class PageClassifier(LabelClassifier):
     def _get_standalone_parts(
         self, all_parts: list[Part], steps: list[Step]
     ) -> list[Part]:
-        """Filter parts to get standalone catalog parts (not in steps)."""
+        """Filter parts to get standalone catalog parts (not in steps).
+
+        Uses Part.id for identity comparison since each Part gets a unique
+        auto-generated ID at construction time.
+        """
+        # Collect IDs of parts that appear in steps
         parts_in_steps: set[int] = set()
         for step in steps:
             if step.parts_list:
                 for part in step.parts_list.parts:
-                    parts_in_steps.add(id(part))
+                    parts_in_steps.add(part.id)
 
-        standalone = [p for p in all_parts if id(p) not in parts_in_steps]
+        # Filter to parts whose ID doesn't appear in any step
+        standalone = [p for p in all_parts if p.id not in parts_in_steps]
 
         log.debug(
             "[page] Found %d total parts, %d in steps, %d standalone",

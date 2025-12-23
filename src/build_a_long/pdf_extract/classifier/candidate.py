@@ -4,20 +4,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from build_a_long.pdf_extract.classifier.score import Score
 from build_a_long.pdf_extract.extractor.bbox import BBox
-from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElements
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks
+from build_a_long.pdf_extract.utils import auto_id_field
 
 if TYPE_CHECKING:
     from build_a_long.pdf_extract.extractor.lego_page_elements import LegoPageElement
 
 
-# TODO Change this to be frozen
 class Candidate[T: "LegoPageElement"](BaseModel):
-    """A candidate block with its score and constructed LegoElement.
+    """A candidate block with its score.
 
     The generic type parameter T indicates what LegoPageElement type this
     candidate will produce when built. This enables type-safe constraint
@@ -31,14 +30,28 @@ class Candidate[T: "LegoPageElement"](BaseModel):
         part_candidates: list[Candidate[Part]]
 
     Represents a single block that was considered for a particular label,
-    including its score, the constructed LegoPageElement (if successful),
-    and information about why it succeeded or failed.
+    including its score and score details.
+
+    Mutable state (constructed element, failure reasons) is tracked separately
+    in ClassificationResult. Use the result's accessor methods (get_constructed,
+    get_failure_reason, is_valid) to check build state.
+
+    Note: source_blocks is mutable because some classifiers add additional
+    blocks during build() (e.g., consuming shadow blocks for bag numbers).
 
     This enables:
     - Re-evaluation with hints (exclude specific candidates)
     - Debugging (see all candidates and why they won/lost)
     - UI support (show users alternatives)
     - Type-safe constraint generation
+    """
+
+    id: int = Field(default_factory=auto_id_field)
+    """Unique identifier for this candidate.
+
+    This ID is assigned at construction time and is preserved when Pydantic
+    deep-copies the object (e.g., when storing in Score objects with generic
+    type annotations). Use this for identity comparisons instead of id().
     """
 
     bbox: BBox
@@ -54,33 +67,18 @@ class Candidate[T: "LegoPageElement"](BaseModel):
     score_details: Score
     """The detailed score object inheriting from Score (e.g., _PageNumberScore)"""
 
-    constructed: LegoPageElements | None = None
-    """The constructed LegoElement if parsing succeeded, None if failed"""
-
-    source_blocks: list[Blocks] = []
+    source_blocks: list[Blocks] = Field(default_factory=list)
     """The raw elements that were scored (empty for synthetic elements like Step).
     
     Multiple source blocks indicate the candidate was derived from multiple inputs.
     For example, a PieceLength is derived from both a Text block (the number) and
     a Drawing block (the circle diagram).
     
+    This list is mutable because some classifiers add additional blocks during
+    build() (e.g., consuming shadow blocks for bag numbers).
+    
     Callers should ensure unique blocks.
     """
-
-    failure_reason: str | None = None
-    """Why construction failed, if it did"""
-
-    @property
-    def is_valid(self) -> bool:
-        """Check if this candidate is valid (constructed and no failure).
-
-        A valid candidate has been successfully constructed and has no failure reason.
-        Use this to filter candidates when working with dependencies.
-
-        Returns:
-            True if candidate.constructed is not None and failure_reason is None
-        """
-        return self.constructed is not None and self.failure_reason is None
 
     @model_validator(mode="after")
     def validate_source_blocks_for_label(self) -> Candidate:

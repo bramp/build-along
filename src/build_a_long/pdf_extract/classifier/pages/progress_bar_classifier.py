@@ -110,7 +110,7 @@ class ProgressBarClassifier(LabelClassifier):
         for bar_cand in bar_candidates:
             # Find the best matching indicator for this bar
             best_indicator, extension_amount = self._find_best_indicator(
-                bar_cand, indicator_candidates, used_indicators, config
+                bar_cand, indicator_candidates, used_indicators, config, result
             )
 
             # Mark indicator as used if found
@@ -143,6 +143,7 @@ class ProgressBarClassifier(LabelClassifier):
         indicator_candidates: Sequence[Candidate],
         used_indicators: set[int],
         config: ProgressBarConfig,
+        result: ClassificationResult,
     ) -> tuple[Candidate | None, float]:
         """Find the best matching indicator for a bar candidate.
 
@@ -175,7 +176,7 @@ class ProgressBarClassifier(LabelClassifier):
                 continue
 
             # Skip if already built (consumed elsewhere)
-            if ind_cand.constructed is not None:
+            if result.get_constructed(ind_cand) is not None:
                 continue
 
             ind_bbox = ind_cand.bbox

@@ -341,11 +341,8 @@ def print_classification_debug(
         if node.synthetic_candidate:
             # Synthetic candidate (Page, Step, OpenBag, etc.)
             candidate = node.synthetic_candidate
-            elem_str = (
-                str(candidate.constructed)
-                if candidate.constructed
-                else "NOT CONSTRUCTED"
-            )
+            constructed = result.get_constructed(candidate)
+            elem_str = str(constructed) if constructed else "NOT CONSTRUCTED"
             line += f"[{candidate.label}] {elem_str} (score={candidate.score:.3f})"
         elif node.block:
             # Regular block
@@ -374,7 +371,11 @@ def print_classification_debug(
                 best = sorted_candidates[0]
 
                 # Show best candidate prominently
-                elem_str = str(best.constructed) if best.constructed else str(block)
+                elem_str = (
+                    str(result.get_constructed(best))
+                    if result.get_constructed(best)
+                    else str(block)
+                )
                 line += f"[{best.label}] {elem_str} (score={best.score:.3f})"
 
                 # If multiple candidates, show others on additional lines
@@ -383,7 +384,9 @@ def print_classification_debug(
                     for other in sorted_candidates[1:]:
                         other_indent = indent + ("  " if is_last else "│ ")
                         elem_str = (
-                            str(other.constructed) if other.constructed else str(block)
+                            str(result.get_constructed(other))
+                            if result.get_constructed(other)
+                            else str(block)
                         )
                         alt_line = (
                             f"{color}{other_indent}   alt [{other.label}] "
@@ -463,9 +466,12 @@ def print_classification_debug(
             in_page = [
                 c
                 for c in candidates
-                if c.constructed and id(c.constructed) in elements_in_page
+                if result.get_constructed(c)
+                and id(result.get_constructed(c)) in elements_in_page
             ]
-            constructed = [c for c in candidates if c.constructed is not None]
+            constructed = [
+                c for c in candidates if result.get_constructed(c) is not None
+            ]
             print(
                 f"{lbl:<20} {len(candidates):<8} "
                 f"{len(in_page):<8} {len(constructed):<12}"
@@ -487,14 +493,12 @@ def print_classification_debug(
                 block_id_str = f"{block.id:3d}" if block else "  ?"
 
                 # Determine if this candidate made it into the final Page
-                in_page = (
-                    candidate.constructed
-                    and id(candidate.constructed) in elements_in_page
-                )
+                constructed = result.get_constructed(candidate)
+                in_page = constructed and id(constructed) in elements_in_page
                 winner_mark = "✓ " if in_page else "  "
 
-                if candidate.constructed:
-                    constructed_str = str(candidate.constructed)
+                if constructed:
+                    constructed_str = str(constructed)
                 else:
                     constructed_str = "<never constructed>"
 
