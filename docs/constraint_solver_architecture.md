@@ -2,7 +2,7 @@
 
 **Date:** December 21, 2025 (Updated: December 22, 2025)  
 **Branch:** `feature/constraint-solver-classification`  
-**Status:** Phase 1 Infrastructure Complete
+**Status:** Phase 2 OpenBag Complete
 
 ## Current Implementation Summary
 
@@ -119,8 +119,8 @@ class Step(LegoPageElement):
 
 Start with simple classifiers, add complexity incrementally:
 
-**Phase 1:** Simple parent-child (PartsList → Parts)  
-**Phase 2:** Add alternatives (OpenBag with greedy/conservative variants)  
+**Phase 1:** Simple parent-child (PartsList → Parts) ✅  
+**Phase 2:** OpenBag with Candidate[T] generics ✅  
 **Phase 3:** Add spatial assignment (Step + Diagram)  
 **Phase 4:** Full integration (all classifiers)
 
