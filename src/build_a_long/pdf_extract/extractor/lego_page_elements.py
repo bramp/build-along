@@ -18,6 +18,11 @@ from pydantic import (
 )
 
 from build_a_long.pdf_extract.extractor.bbox import BBox
+from build_a_long.pdf_extract.extractor.sorting import (
+    sort_by_columns,
+    sort_by_rows,
+    sort_left_to_right,
+)
 from build_a_long.pdf_extract.utils import (
     SerializationMixin,
     auto_id_field,
@@ -698,6 +703,12 @@ class PartsList(LegoPageElement):
     tag: Literal["PartsList"] = Field(default="PartsList", alias="__tag__", frozen=True)
     parts: Sequence[Part]
 
+    @model_validator(mode="after")
+    def _sort_parts(self) -> PartsList:
+        """Sort parts left-to-right, row by row."""
+        object.__setattr__(self, "parts", sort_by_rows(self.parts))
+        return self
+
     @property
     def total_items(self) -> int:
         """Total number of individual items accounting for counts.
@@ -910,6 +921,13 @@ class SubAssembly(LegoPageElement):
     count: StepCount | None = None
     """Optional count indicating how many times to build this sub-assembly."""
 
+    @model_validator(mode="after")
+    def _sort_steps(self) -> SubAssembly:
+        """Sort steps by step number."""
+        sorted_steps = sorted(self.steps, key=lambda s: s.step_number.value)
+        object.__setattr__(self, "steps", sorted_steps)
+        return self
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         count_str = f"count={self.count.count}x, " if self.count else ""
@@ -974,6 +992,20 @@ class Step(LegoPageElement):
     contained in a white callout box - they appear directly on the page.
     """
 
+    @model_validator(mode="after")
+    def _sort_elements(self) -> Step:
+        """Sort child sequences: substeps by number, others by position."""
+        # Sort substeps by step number
+        sorted_substeps = sorted(self.substeps, key=lambda s: s.step_number.value)
+        object.__setattr__(self, "substeps", sorted_substeps)
+
+        # Sort arrows and subassemblies left-to-right
+        object.__setattr__(self, "arrows", sort_left_to_right(self.arrows))
+        object.__setattr__(
+            self, "subassemblies", sort_left_to_right(self.subassemblies)
+        )
+        return self
+
     def __str__(self) -> str:
         """Return a single-line string representation with key information."""
         rotation_str = ", rotation" if self.rotation_symbol else ""
@@ -1028,6 +1060,24 @@ class InstructionContent(BaseModel):
     open_bags: Sequence[OpenBag] = Field(default_factory=list)
     """List of OpenBag elements indicating which bags to open."""
 
+    @model_validator(mode="after")
+    def _sort_elements(self) -> InstructionContent:
+        """Sort steps by step number, open_bags by bag number then position."""
+        # Sort steps by step number
+        sorted_steps = sorted(self.steps, key=lambda s: s.step_number.value)
+        object.__setattr__(self, "steps", sorted_steps)
+
+        # Sort open_bags: by bag number if present, else by x position
+        def open_bag_key(bag: OpenBag) -> tuple[int, float]:
+            # Bags with numbers sort first by number, bags without sort by position
+            if bag.number:
+                return (0, bag.number.value)
+            return (1, bag.bbox.x0)
+
+        sorted_bags = sorted(self.open_bags, key=open_bag_key)
+        object.__setattr__(self, "open_bags", sorted_bags)
+        return self
+
     def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over all child elements."""
         for open_bag in self.open_bags:
@@ -1050,6 +1100,12 @@ class CatalogContent(BaseModel):
     parts: Sequence[Part] = Field(default_factory=list)
     """List of Part elements shown in the catalog."""
 
+    @model_validator(mode="after")
+    def _sort_parts(self) -> CatalogContent:
+        """Sort parts top-to-bottom in columns."""
+        object.__setattr__(self, "parts", sort_by_columns(self.parts))
+        return self
+
     def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over all child elements."""
         for part in self.parts:
@@ -1070,6 +1126,12 @@ class InfoContent(BaseModel):
 
     decorations: Sequence[Decoration] = Field(default_factory=list)
     """List of decorative elements (logos, graphics, etc.)."""
+
+    @model_validator(mode="after")
+    def _sort_decorations(self) -> InfoContent:
+        """Sort decorations left-to-right."""
+        object.__setattr__(self, "decorations", sort_left_to_right(self.decorations))
+        return self
 
     def iter_elements(self) -> Iterator[LegoPageElement]:
         """Iterate over all child elements."""
@@ -1154,6 +1216,13 @@ class Page(LegoPageElement):
 
     info: InfoContent | None = None
     """Content for info pages (decorations). None if not info."""
+
+    @model_validator(mode="after")
+    def _sort_elements(self) -> Page:
+        """Sort dividers and previews left-to-right."""
+        object.__setattr__(self, "dividers", sort_left_to_right(self.dividers))
+        object.__setattr__(self, "previews", sort_left_to_right(self.previews))
+        return self
 
     @property
     def is_instruction(self) -> bool:
