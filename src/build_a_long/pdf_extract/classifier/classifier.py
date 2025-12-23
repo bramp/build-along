@@ -562,11 +562,17 @@ class Classifier:
     # elements (e.g., parts_list contains parts, parts have part_count/part_number).
     DEFAULT_SOLVER_LABELS: frozenset[str] = frozenset(
         {
+            # Parts-related labels
             "parts_list",
             "part",
             "part_count",
             "part_image",
             "part_number",
+            # Page-level singleton elements
+            "page_number",
+            "progress_bar",
+            "progress_bar_bar",
+            "progress_bar_indicator",
         }
     )
 

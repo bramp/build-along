@@ -9,6 +9,7 @@ from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
+from build_a_long.pdf_extract.classifier.constraint_model import ConstraintModel
 from build_a_long.pdf_extract.classifier.rule_based_classifier import (
     RuleBasedClassifier,
 )
@@ -40,6 +41,23 @@ class PageNumberClassifier(RuleBasedClassifier):
 
     output = "page_number"
     requires = frozenset()
+
+    def declare_constraints(
+        self, model: ConstraintModel, result: ClassificationResult
+    ) -> None:
+        """Declare constraints for page_number candidates.
+
+        At most one page number per page - this is a singleton element.
+        """
+        candidates = list(result.get_scored_candidates("page_number"))
+        candidates_in_model = [c for c in candidates if model.has_candidate(c)]
+
+        if len(candidates_in_model) > 1:
+            model.at_most_one_of(candidates_in_model)
+            log.debug(
+                "[page_number] Added at_most_one constraint for %d candidates",
+                len(candidates_in_model),
+            )
 
     @property
     def min_score(self) -> float:

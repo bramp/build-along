@@ -31,6 +31,7 @@ from build_a_long.pdf_extract.classifier.classification_result import (
     ClassificationResult,
 )
 from build_a_long.pdf_extract.classifier.config import ProgressBarConfig
+from build_a_long.pdf_extract.classifier.constraint_model import ConstraintModel
 from build_a_long.pdf_extract.classifier.label_classifier import LabelClassifier
 from build_a_long.pdf_extract.classifier.score import Score, Weight
 from build_a_long.pdf_extract.extractor.lego_page_elements import (
@@ -83,6 +84,23 @@ class ProgressBarClassifier(LabelClassifier):
 
     output = "progress_bar"
     requires = frozenset({"progress_bar_bar", "progress_bar_indicator"})
+
+    def declare_constraints(
+        self, model: ConstraintModel, result: ClassificationResult
+    ) -> None:
+        """Declare constraints for progress_bar candidates.
+
+        At most one progress bar per page - this is a singleton element.
+        """
+        candidates = list(result.get_scored_candidates("progress_bar"))
+        candidates_in_model = [c for c in candidates if model.has_candidate(c)]
+
+        if len(candidates_in_model) > 1:
+            model.at_most_one_of(candidates_in_model)
+            log.debug(
+                "[progress_bar] Added at_most_one constraint for %d candidates",
+                len(candidates_in_model),
+            )
 
     def _score(self, result: ClassificationResult) -> None:
         """Create ProgressBar candidates by pairing bar and indicator candidates."""
