@@ -141,16 +141,17 @@ class FontSizeHints(BaseModel):
             )
 
             # Extract step_number_size from instruction pages
-            # Look for the second most common part count size as it often
-            # represents step numbers
-            top_instruction_sizes = (
-                instruction_histogram.part_count_font_sizes.most_common(4)
+            # Step numbers are plain integers (1-999) that aren't page numbers
+            step_number_size = cls._extract_size_with_minimum(
+                instruction_histogram.step_number_font_sizes, "step_number"
             )
-            step_number_size = cls._extract_nth_size_with_minimum(
-                top_instruction_sizes, 1, "step_number"
+
+            # Extract step_repeat_size as the second most common step number size
+            top_step_number_sizes = (
+                instruction_histogram.step_number_font_sizes.most_common(4)
             )
             step_repeat_size = cls._extract_nth_size_with_minimum(
-                top_instruction_sizes, 2, "step_repeat"
+                top_step_number_sizes, 1, "step_repeat"
             )
 
         # Extract catalog-specific sizes from catalog pages
