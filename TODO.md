@@ -96,6 +96,61 @@ This would be a broader effort covering:
 - OCR for text embedded in images
 - Pattern recognition for other visual elements (rotation symbols, etc.)
 
+## Classifier Score Improvements
+
+The following classifiers have low-scoring winners (< 0.7) that need score tuning.
+Use `pants run src/build_a_long/pdf_extract/classifier/tools:analyze_classifier_scores`
+to regenerate this analysis.
+
+### Fixed Issues
+
+- [x] **step_number**: Previously all winners scored exactly 0.400 (font_size_score=0.0)
+  - **Root cause**: `FontSizeHints` was extracting `step_number_size` from the 2nd most
+    common part count font size, but step numbers are plain integers (not `\dx` patterns).
+  - **Fix**: Added `step_number_font_sizes` tracking in `TextHistogram` for small integers
+    (1-999) that aren't page numbers. Updated `FontSizeHints` to extract `step_number_size`
+    from this dedicated counter instead.
+  - **Result**: All step_numbers now score 0.800 (max_score) with font_size_score=1.000
+
+### High Priority (Low Scoring Winners)
+
+- [ ] **part_image**: Winners score 0.010-0.655 (avg 0.344)
+  - Parts list page (page 180) images score very low (no shine elements)
+  - Score based on size ratio only; needs better heuristics for parts list context
+
+- [ ] **substep_number**: All winners score exactly 0.656
+  - Font size scoring is the limiting factor (font_size_score=0.400)
+  - Note: Shares same font hint issue as step_number - may need similar fix
+
+- [ ] **progress_bar_indicator**: Winners score 0.533-0.760 (avg 0.554)
+
+- [ ] **rotation_symbol**: Winners score 0.474-0.639 (avg 0.603)
+
+- [ ] **step**: Some winners score as low as 0.300
+  - Pages with non-standard layouts (e.g., 6433200_page_031)
+
+- [ ] **bag_number**: Winners score 0.595-0.682 (avg 0.641)
+
+- [ ] **divider**: Winners score 0.560-0.800 (avg 0.728)
+
+### Score Distribution Summary (Winners)
+
+| Label | Count | Min | Avg | Max |
+|-------|-------|-----|-----|-----|
+| step_number | 39 | 0.800 | 0.800 | 0.800 |
+| substep_number | 19 | 0.800 | 0.800 | 0.800 |
+| part_image | 171 | 0.010 | 0.344 | 0.982 |
+| progress_bar_indicator | 11 | 0.533 | 0.554 | 0.760 |
+| rotation_symbol | 6 | 0.474 | 0.603 | 0.639 |
+| bag_number | 3 | 0.595 | 0.641 | 0.682 |
+| divider | 10 | 0.560 | 0.728 | 0.800 |
+| part_number | 89 | 0.534 | 0.711 | 0.785 |
+| arrow | 16 | 0.710 | 0.710 | 0.710 |
+| page_number | 24 | 0.751 | 0.753 | 0.756 |
+| progress_bar_bar | 23 | 0.766 | 0.767 | 0.769 |
+| step | 39 | 0.300 | 0.910 | 0.984 |
+| subassembly | 16 | 0.747 | 0.937 | 1.000 |
+
 ## Misc
 
 - [x] pytest is in requirements.txt but should it instead be in requirements-dev.txt?

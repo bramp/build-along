@@ -308,6 +308,31 @@ HTTP caching (VCR):
 
 Note: We do not commit cassettes to the repo. In CI, you can add a cache step to persist the cassette directory between runs for faster tests and fewer network calls.
 
+### Development Tools
+
+#### Analyze Classifier Scores
+
+Analyze the scoring of classifiers against golden test fixtures to identify areas for improvement:
+
+```bash
+pants run src/build_a_long/pdf_extract/classifier/tools/analyze_classifier_scores.py
+```
+
+This tool reports:
+- **Low-scoring winners**: Candidates that won but scored below 0.7 (indicating weak confidence)
+- **High-scoring losers**: Candidates that lost but scored above 0.5 (potential false positives)
+- **Score distribution**: Statistics per label (min, avg, max scores)
+
+Use this to identify classifiers that need score tuning. Results are summarized in `TODO.md`.
+
+#### Regenerate Golden Files
+
+After modifying classifiers, regenerate the expected output files:
+
+```bash
+pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_files.py
+```
+
 ## Profiling
 
 I can't figure out how to get pants to run cProfile directly, so use this workaround:
