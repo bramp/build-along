@@ -80,22 +80,34 @@ class TestTextHistogram:
         # Build the histogram
         histogram = TextHistogram.from_pages(pages)
 
-        # Verify font size counts (only includes "other integers" - not part
-        # counts or page numbers)
-        # In this test: page numbers (str(i)) match page ±1, so they're in
-        # page_number_font_sizes
-        # Step numbers (i*2) are integers but NOT within ±1 of page number,
-        # so they're in font_size_counts
-        assert len(histogram.remaining_font_sizes) == 1
+        # Verify font size counts
+        # - Page numbers (str(i)) match page ±1, so they're in page_number_font_sizes
+        # - Step numbers (i*2) are small integers (1-999) that aren't page numbers,
+        #   so they're in step_number_font_sizes
+        # - remaining_font_sizes should be empty since all integers are accounted for
+        assert len(histogram.remaining_font_sizes) == 0
+
+        # Verify step number font sizes
+        # Page 1: 2 (not ±1 of 1)
+        # Page 2: 4 (not ±1 of 2)
+        # Page 3: 6 (not ±1 of 3 - but 6 is ±1 of page 3? No, page 3 is 3, 6 is not ±1)
+        # Actually: i*2 for pages 1,2,3 = 2, 4, 6. Page numbers are 1, 2, 3.
+        # Page 1: "2" -> |2-1|=1 -> page number!
+        # Page 2: "4" -> |4-2|=2 -> step number
+        # Page 3: "6" -> |6-3|=3 -> step number
+        assert len(histogram.step_number_font_sizes) == 1
         assert (
-            histogram.remaining_font_sizes[24.0] == 2
-        )  # Only pages 1 and 2 have step numbers outside ±1 range
+            histogram.step_number_font_sizes[24.0] == 2
+        )  # Only pages 2 and 3 have step numbers outside ±1 range
 
         # Verify part count font sizes
         assert len(histogram.part_count_font_sizes) == 1
         assert histogram.part_count_font_sizes[12.0] == 6  # 6 part counts
 
         # Verify page number font sizes
+        # Page 1: "1" (page num) and "2" (step num but ±1 of page 1)
+        # Page 2: "2" (page num)
+        # Page 3: "3" (page num)
         assert len(histogram.page_number_font_sizes) == 2
         assert histogram.page_number_font_sizes[8.0] == 3  # 3 page numbers
         assert (
@@ -131,21 +143,21 @@ class TestTextHistogram:
                     Text(
                         id=0,
                         bbox=BBox(10, 10, 50, 50),
-                        text="10",  # Integer text (not matching page ±1)
+                        text="10",  # Integer text 1-999, not page ±1 -> step_number
                         font_name="Arial",
                         font_size=12.0,
                     ),
                     Text(
                         id=1,
                         bbox=BBox(10, 60, 50, 80),
-                        text="20",  # Integer text (not matching page ±1)
+                        text="20",  # Integer text (None font, won't be counted)
                         font_name=None,
                         font_size=None,
                     ),
                     Text(
                         id=2,
                         bbox=BBox(10, 90, 50, 110),
-                        text="30",  # Integer text (not matching page ±1)
+                        text="30",  # Integer text 1-999, not page ±1 -> step_number
                         font_name="Arial",
                         font_size=12.0,
                     ),
@@ -157,10 +169,12 @@ class TestTextHistogram:
         histogram = TextHistogram.from_pages(pages)
 
         # Only the non-None values should be counted
-        # font_size_counts only tracks integers that aren't part counts or page numbers
-        assert len(histogram.remaining_font_sizes) == 1
+        # "10" and "30" are small integers (1-999) not matching page ±1, so they're
+        # step_number_font_sizes, not remaining_font_sizes
+        assert len(histogram.remaining_font_sizes) == 0
+        assert len(histogram.step_number_font_sizes) == 1
         assert (
-            histogram.remaining_font_sizes[12.0] == 2
+            histogram.step_number_font_sizes[12.0] == 2
         )  # "10" and "30" (not "20" which has None font_size)
 
         assert len(histogram.font_name_counts) == 1

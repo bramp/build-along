@@ -25,6 +25,9 @@ class TextHistogram(BaseModel):
     part_count_font_sizes: Counter[float]
     r"""Font sizes for text matching \dx pattern (e.g., '2x', '3x')"""
 
+    step_number_font_sizes: Counter[float]
+    """Font sizes for text matching step numbers (1-999, excluding page numbers)"""
+
     page_number_font_sizes: Counter[float]
     """Font sizes for text matching page numbers (±1 from current page)"""
 
@@ -44,6 +47,7 @@ class TextHistogram(BaseModel):
         return TextHistogram(
             font_name_counts=Counter(),
             part_count_font_sizes=Counter(),
+            step_number_font_sizes=Counter(),
             page_number_font_sizes=Counter(),
             element_id_font_sizes=Counter(),
             remaining_font_sizes=Counter(),
@@ -57,6 +61,7 @@ class TextHistogram(BaseModel):
         """
         self.font_name_counts.update(other.font_name_counts)
         self.part_count_font_sizes.update(other.part_count_font_sizes)
+        self.step_number_font_sizes.update(other.step_number_font_sizes)
         self.page_number_font_sizes.update(other.page_number_font_sizes)
         self.element_id_font_sizes.update(other.element_id_font_sizes)
         self.remaining_font_sizes.update(other.remaining_font_sizes)
@@ -102,6 +107,9 @@ class TextHistogram(BaseModel):
                         # Check if text matches page number (±1 from current)
                         elif abs(text_num - page.page_number) <= 1:
                             histogram.page_number_font_sizes[block.font_size] += 1
+                        # Check if text matches step number pattern (1-999)
+                        elif 1 <= text_num <= 999:
+                            histogram.step_number_font_sizes[block.font_size] += 1
                         else:
                             histogram.remaining_font_sizes[block.font_size] += 1
 
