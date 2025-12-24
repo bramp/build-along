@@ -11,7 +11,7 @@ class ArrowConfig(BaseModel):
     """Configuration for arrow (arrowhead) classification."""
 
     min_score: Weight = Field(
-        default=0.5, description="Minimum score threshold for arrow candidates."
+        default=0.4, description="Minimum score threshold for arrow candidates."
     )
 
     ideal_size: float = Field(

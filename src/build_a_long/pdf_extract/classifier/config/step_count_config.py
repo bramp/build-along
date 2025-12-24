@@ -15,7 +15,7 @@ class StepCountConfig(BaseModel):
     """
 
     min_score: Weight = Field(
-        default=0.5, description="Minimum score threshold for step count candidates."
+        default=0.4, description="Minimum score threshold for step count candidates."
     )
 
     text_weight: Weight = Field(

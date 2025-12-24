@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
+from typing import ClassVar
 
 from build_a_long.pdf_extract.classifier.candidate import Candidate
 from build_a_long.pdf_extract.classifier.classification_result import (
@@ -55,20 +56,39 @@ class _ProgressBarPairScore(Score):
     extension_amount: float = 0.0
     """How much the indicator extends beyond the bar (normalized)."""
 
+    # Score ranges:
+    # - 0.9-1.0: Composite with high-confidence children (bar + indicator)
+    # - 0.8-0.9: Composite with bar only (no indicator)
+    # - 0.6-0.8: Individual intrinsic elements cap here
+    COMPOSITE_BONUS: ClassVar[float] = 0.15
+    INDICATOR_BONUS: ClassVar[float] = 0.10
+
     def score(self) -> Weight:
         """Calculate final weighted score.
 
-        Base score is the bar's score. If an indicator is present,
-        boost the score based on how much it extends beyond the bar.
+        Composite elements (like progress_bar) get a bonus on top of their
+        children's quality scores. This encourages the solver to prefer
+        complete structures while still considering child quality.
+
+        Score = bar_score + COMPOSITE_BONUS + (INDICATOR_BONUS if indicator)
+        Capped at 1.0.
+
+        With a good bar (score ~0.7) and indicator:
+        - 0.7 + 0.15 + 0.10 = 0.95 (high confidence composite)
+        With a good bar only:
+        - 0.7 + 0.15 = 0.85 (composite base)
         """
+        # Start with the bar's intrinsic quality
         base_score = self.bar_candidate.score
+
+        # Add composite bonus for being a complete structure
+        base_score += self.COMPOSITE_BONUS
 
         # Boost score if we have a good indicator match
         if self.indicator_candidate:
-            # Add extension bonus (up to 0.2)
-            base_score = min(1.0, base_score + self.extension_amount * 0.2)
+            base_score += self.INDICATOR_BONUS
 
-        return base_score
+        return min(1.0, base_score)
 
 
 class ProgressBarClassifier(LabelClassifier):

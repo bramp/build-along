@@ -14,7 +14,7 @@ class BagNumberConfig(BaseModel):
     """
 
     min_score: Weight = Field(
-        default=0.1, description="Minimum score threshold for bag number candidates."
+        default=0.08, description="Minimum score threshold for bag number candidates."
     )
 
     text_weight: Weight = Field(

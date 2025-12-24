@@ -11,8 +11,8 @@ class ProgressBarConfig(BaseModel):
     # --- Bar settings ---
 
     min_score: float = Field(
-        default=0.6,
-        description="Minimum score to be considered a valid progress bar.",
+        default=0.48,
+        description="Minimum score for progress bar bar (scaled for max_score=0.8).",
     )
 
     max_bottom_margin_ratio: float = Field(

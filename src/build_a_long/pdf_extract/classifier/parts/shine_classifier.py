@@ -28,10 +28,20 @@ from build_a_long.pdf_extract.extractor.page_blocks import Drawing
 
 
 class ShineClassifier(RuleBasedClassifier):
-    """Classifier for 'shine' or 'sparkle' effects."""
+    """Classifier for 'shine' or 'sparkle' effects.
+
+    This is an intrinsic classifier - it identifies shines based on their
+    own properties (size, aspect ratio). Scores are scaled by 0.8 to ensure
+    composite classifiers can win when competing for shared blocks.
+    """
 
     output: ClassVar[str] = "shine"
     requires: ClassVar[frozenset[str]] = frozenset()
+
+    @property
+    def max_score(self) -> float:
+        """Scale shine scores to 0.8 (intrinsic classifier)."""
+        return 0.8
 
     @property
     def effects_margin(self) -> float | None:

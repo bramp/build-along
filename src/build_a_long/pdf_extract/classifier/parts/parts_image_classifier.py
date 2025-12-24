@@ -72,6 +72,11 @@ class PartImageScore(Score):
     Tracks both the base image score and optional shine score.
     """
 
+    # Bonus added to part_image score when a shine is well-positioned.
+    # This should be enough to make part_image-with-shine beat part_image-without-shine
+    # when competing for the same image blocks.
+    SHINE_BONUS: ClassVar[float] = 0.15
+
     # Base image scores (from RuleBasedClassifier rules)
     base_score: float
     """Score from size-based rules."""
@@ -91,11 +96,11 @@ class PartImageScore(Score):
 
     def score(self) -> float:
         """Combined score: base score + shine bonus."""
-        # If shine present, add a small bonus based on shine position quality
-        # The shine_score is already 0-1 based on exponential decay from TR corner
+        # If shine present, add a bonus based on shine position quality.
+        # The shine_score is 0-1 based on exponential decay from TR corner.
+        # A well-positioned shine adds up to SHINE_BONUS to the score.
         if self.shine_candidate is not None:
-            # Weight shine contribution - good shine position gives bonus
-            return self.base_score + (self.shine_score * 0.1)
+            return self.base_score + (self.shine_score * self.SHINE_BONUS)
         return self.base_score
 
     @property
@@ -284,22 +289,27 @@ class PartsImageClassifier(RuleBasedClassifier):
         matches.sort(key=lambda x: x[2], reverse=True)
         return matches
 
-    def add_constraints(
-        self, result: ClassificationResult, model: ConstraintModel
+    def declare_constraints(
+        self, model: ConstraintModel, result: ClassificationResult
     ) -> None:
-        """Add constraints for part_image candidates.
+        """Declare constraints for part_image candidates.
 
         Constraints:
+        - Each shine can only be selected if a part_image that uses it is selected
+          (shine needs a parent that actually references it)
         - If a part_image uses a shine, the standalone shine candidate is excluded
           (they share source blocks)
 
         Note: The constraint "each shine can be used by at most one part_image"
         is handled automatically by SchemaConstraintGenerator.
         """
-        # Group candidates by which shine they use
+        shine_candidates = list(result.get_scored_candidates("shine"))
+        part_image_candidates = list(result.get_scored_candidates(self.output))
+
+        # Build a map: shine_id -> list of part_images that use this shine
         shine_to_part_images: dict[int, list[Candidate]] = {}
 
-        for cand in result.get_scored_candidates(self.output):
+        for cand in part_image_candidates:
             if not isinstance(cand.score_details, PartImageScore):
                 continue
 
@@ -309,20 +319,43 @@ class PartsImageClassifier(RuleBasedClassifier):
                     shine_to_part_images[shine_cand.id] = []
                 shine_to_part_images[shine_cand.id].append(cand)
 
-        # For each shine used by part_images:
-        # If any part_image with this shine is selected, the standalone shine
-        # candidate cannot also be selected (they share source blocks)
-        for _shine_id, part_image_cands in shine_to_part_images.items():
-            # Get the shine candidate for this ID
-            shine_cand = part_image_cands[0].score_details
-            assert isinstance(shine_cand, PartImageScore)
-            standalone_shine = shine_cand.shine_candidate
+        # For each shine: it can only be selected if at least one part_image
+        # that uses it is also selected. Orphan shines (not used by any
+        # part_image) cannot be selected.
+        for shine_cand in shine_candidates:
+            if not model.has_candidate(shine_cand):
+                continue
 
-            if standalone_shine is not None:
-                # Each part_image with shine is mutually exclusive with the
-                # standalone shine (they share the shine's source blocks)
-                for pi_cand in part_image_cands:
-                    model.at_most_one_of([pi_cand, standalone_shine])
+            parent_part_images = shine_to_part_images.get(shine_cand.id, [])
+            registered_parents = [
+                pi for pi in parent_part_images if model.has_candidate(pi)
+            ]
+
+            if registered_parents:
+                # Shine can only be selected if at least one parent is selected
+                model.if_any_selected_then_one_of([shine_cand], registered_parents)
+            else:
+                # Orphan shine: no part_image references it, so it can't be built.
+                # Force it to not be selected. The solver will prefer other
+                # candidates (like progress_bar_indicator) that use these blocks.
+                model.force_unselected(shine_cand)
+
+        # For each part_image that uses a shine: if the part_image is selected,
+        # its shine MUST also be selected (so we can build it)
+        for _shine_id, part_image_cands in shine_to_part_images.items():
+            # Get the shine candidate
+            shine_score = part_image_cands[0].score_details
+            assert isinstance(shine_score, PartImageScore)
+            shine_cand = shine_score.shine_candidate
+
+            if shine_cand is None or not model.has_candidate(shine_cand):
+                continue
+
+            # Each part_image with shine requires that shine to be selected
+            for pi_cand in part_image_cands:
+                if model.has_candidate(pi_cand):
+                    # If this part_image is selected, its shine must be selected
+                    model.if_any_selected_then_one_of([pi_cand], [shine_cand])
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> PartImage:
         """Construct a PartImage element from a candidate.

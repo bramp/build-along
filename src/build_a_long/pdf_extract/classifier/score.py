@@ -12,6 +12,11 @@ from pydantic import BaseModel, ConfigDict
 # Weight value constrained to [0.0, 1.0] range
 Weight = Annotated[float, Ge(0), Le(1)]
 
+# Score scaling factor for intrinsic classifiers (those without children).
+# Intrinsic classifiers identify elements based on their own properties only.
+# Composite classifiers (with children) use the default 1.0 and can score higher.
+INTRINSIC_SCORE_SCALE = 0.8
+
 
 class Score(BaseModel):
     """Abstract base class for score_details objects.
@@ -22,6 +27,35 @@ class Score(BaseModel):
     The score() method MUST return a value in the range [0.0, 1.0] where:
     - 0.0 indicates lowest confidence/worst match
     - 1.0 indicates highest confidence/best match
+
+    Score Ranges and Guidelines
+    ---------------------------
+    Scores are used by the constraint solver to select optimal candidates.
+    To ensure correct behavior, follow these scoring guidelines:
+
+    **Intrinsic Scores (0.0 - 0.8):**
+    Single-element classifiers that identify elements based on their own
+    properties (size, shape, position, text content) should cap at 0.8.
+    Examples: shine, progress_bar_indicator, step_number, page_number.
+
+    Use `max_score = 0.8` in RuleBasedClassifier subclasses for intrinsic
+    classifiers.
+
+    **Composite Scores (0.8 - 1.0):**
+    Classifiers that assemble multiple child elements into a parent structure
+    can score above 0.8. The composite bonus rewards complete structures.
+    Examples: progress_bar (bar + indicator), part (count + image).
+
+    Composite score formula:
+        score = child_quality + COMPOSITE_BONUS + CHILD_BONUSES
+
+    **Why This Matters:**
+    The constraint solver maximizes total score. When candidates compete for
+    the same blocks, the higher-scoring candidate wins. By capping intrinsic
+    scores at 0.8, we ensure:
+    - Composite structures (0.85+) beat orphan intrinsic candidates (≤0.8)
+    - Child quality still matters (higher child scores = higher composite)
+    - False positives (orphan shines, etc.) don't beat real structures
 
     IMPORTANT: Pairing Classifiers and Constraint Solver Integration
     -----------------------------------------------------------------

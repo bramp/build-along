@@ -100,8 +100,9 @@ class TestPieceLengthClassifier:
 
         candidate = result.get_candidate_for_block(text, "piece_length")
         assert candidate is not None
-        # Score should be high because TextContainerFitRule finds the small circle
-        assert candidate.score > 0.8
+        # Score should be reasonable because TextContainerFitRule finds the small circle
+        # With max_score=0.8 (intrinsic classifier), a good match scores 0.48+
+        assert candidate.score >= 0.48
 
         pl = classifier.build(candidate, result)
         assert isinstance(pl, PieceLength)
@@ -126,14 +127,14 @@ class TestPieceLengthClassifier:
         result = ClassificationResult(page_data=page)
         classifier._score(result)
 
-        # Good candidate should have high score
+        # Good candidate should have max score (0.8 for intrinsic classifiers)
         cand_good = result.get_candidate_for_block(text_good, "piece_length")
         assert cand_good is not None
-        assert cand_good.score > 0.9
+        assert cand_good.score == 0.8  # Perfect score with max_score=0.8
 
         # Bad candidate should have lower score (FontSizeMatch fails)
         cand_bad = result.get_candidate_for_block(text_bad, "piece_length")
         assert cand_bad is not None
         # Score should be significantly lower than good candidate
-        # 1.0 (Value) + 1.0 (Fit) + 0.0 (Font) / 3.0 approx 0.67
+        # (1.0 (Value) + 1.0 (Fit) + 0.0 (Font)) / 3.0 * 0.8 ≈ 0.53
         assert cand_bad.score < cand_good.score

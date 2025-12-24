@@ -57,6 +57,10 @@ class PieceLengthClassifier(RuleBasedClassifier):
     requires = frozenset()
 
     @property
+    def max_score(self) -> float:
+        return 0.8  # Intrinsic classifier
+
+    @property
     def rules(self) -> Sequence[Rule]:
         hints = self.config.font_size_hints
         # Prefer part_count_size, fall back to catalog_part_count_size

@@ -56,6 +56,10 @@ class PartCountClassifier(RuleBasedClassifier):
     requires = frozenset()
 
     @property
+    def max_score(self) -> float:
+        return 0.8  # Intrinsic classifier
+
+    @property
     def min_score(self) -> float:
         return self.config.part_count.min_score
 

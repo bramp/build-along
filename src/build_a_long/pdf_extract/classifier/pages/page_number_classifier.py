@@ -42,6 +42,10 @@ class PageNumberClassifier(RuleBasedClassifier):
     output = "page_number"
     requires = frozenset()
 
+    @property
+    def max_score(self) -> float:
+        return 0.8  # Intrinsic classifier
+
     def declare_constraints(
         self, model: ConstraintModel, result: ClassificationResult
     ) -> None:

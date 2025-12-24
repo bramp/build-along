@@ -15,7 +15,7 @@ class RotationSymbolConfig(BaseModel):
     """
 
     min_score: Weight = Field(
-        default=0.3,
+        default=0.24,
         description="Minimum score threshold for rotation symbol candidates.",
     )
 

@@ -57,6 +57,10 @@ class DividerClassifier(RuleBasedClassifier):
     output: ClassVar[str] = "divider"
     requires: ClassVar[frozenset[str]] = frozenset()  # No dependencies
 
+    @property
+    def max_score(self) -> float:
+        return 0.8  # Intrinsic classifier
+
     def declare_constraints(
         self, model: ConstraintModel, result: ClassificationResult
     ) -> None:

@@ -14,7 +14,7 @@ class PageNumberConfig(BaseModel):
     """
 
     min_score: Weight = Field(
-        default=0.5, description="Minimum score threshold for page number candidates."
+        default=0.4, description="Minimum score threshold for page number candidates."
     )
 
     text_weight: Weight = Field(

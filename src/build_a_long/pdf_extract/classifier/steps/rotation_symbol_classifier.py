@@ -70,12 +70,16 @@ class _RotationSymbolScore(Score):
     config: RotationSymbolConfig
     """Configuration containing weights for score calculation."""
 
+    # Cap for intrinsic classifiers (0.8) to allow composites to score higher
+    MAX_SCORE: float = 0.8
+
     def score(self) -> Weight:
-        """Calculate final weighted score from components."""
-        return (
+        """Calculate final weighted score from components, capped at 0.8."""
+        raw_score = (
             self.size_score * self.config.size_weight
             + self.aspect_score * self.config.aspect_weight
         )
+        return raw_score * self.MAX_SCORE
 
 
 class RotationSymbolClassifier(LabelClassifier):

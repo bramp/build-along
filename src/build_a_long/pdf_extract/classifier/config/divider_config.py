@@ -15,7 +15,7 @@ class DividerConfig(BaseModel):
     """
 
     min_score: Weight = Field(
-        default=0.5, description="Minimum score threshold for divider candidates."
+        default=0.4, description="Minimum score threshold for divider candidates."
     )
 
     min_length_ratio: float = Field(

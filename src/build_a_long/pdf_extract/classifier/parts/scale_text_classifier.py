@@ -57,6 +57,10 @@ class ScaleTextClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()
 
     @property
+    def max_score(self) -> float:
+        return 0.8  # Intrinsic classifier
+
+    @property
     def rules(self) -> Sequence[Rule]:
         return [
             IsInstanceFilter(Text),

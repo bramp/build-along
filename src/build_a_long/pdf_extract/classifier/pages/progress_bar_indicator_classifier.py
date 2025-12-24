@@ -61,6 +61,10 @@ class ProgressBarIndicatorClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()
 
     @property
+    def max_score(self) -> float:
+        return 0.8  # Intrinsic classifier
+
+    @property
     def effects_margin(self) -> float | None:
         """Use the configured shadow margin for finding indicator effects."""
         return self.config.progress_bar.indicator_shadow_margin

@@ -16,7 +16,7 @@ class TriviaTextConfig(BaseModel):
     """
 
     min_score: Weight = Field(
-        default=0.5, description="Minimum score threshold for trivia text candidates."
+        default=0.4, description="Minimum score threshold for trivia text candidates."
     )
 
     min_text_block_count: int = Field(

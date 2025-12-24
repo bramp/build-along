@@ -16,7 +16,7 @@ class SubStepNumberConfig(BaseModel):
     """
 
     min_score: Weight = Field(
-        default=0.5,
+        default=0.4,
         description="Minimum score threshold for substep number candidates.",
     )
 

@@ -67,6 +67,10 @@ class BagNumberClassifier(RuleBasedClassifier):
     requires: ClassVar[frozenset[str]] = frozenset()
 
     @property
+    def max_score(self) -> float:
+        return 0.8  # Intrinsic classifier
+
+    @property
     def effects_margin(self) -> float | None:
         return None
 

@@ -159,6 +159,26 @@ class ConstraintModel:
         """
         return candidate.id in self._candidate_vars
 
+    # TODO This seems a hack - due to poor constraints. Lets remove?
+    def force_unselected(self, candidate: Candidate) -> None:
+        """Force a candidate to not be selected.
+
+        Use this to exclude candidates that are known to be invalid
+        (e.g., orphan elements with no valid parent).
+
+        Args:
+            candidate: The candidate to exclude
+        """
+        var = self.get_var(candidate)
+        self.model.Add(var == 0)
+        self._track_constraint("force_unselected")
+
+        log.debug(
+            "  [constraint] force_unselected: %s@%s",
+            candidate.label,
+            candidate.bbox,
+        )
+
     def at_most_one_of(self, candidates: list[Candidate]) -> None:
         """Add constraint: at most one of these candidates can be selected.
 
@@ -329,25 +349,85 @@ class ConstraintModel:
             len([b for b, c in block_to_candidates.items() if len(c) > 1]),
         )
 
-    def maximize(self, objective_terms: list[tuple[Candidate, int]]) -> None:
-        """Set objective: maximize sum of (candidate_var * weight).
+    def maximize(
+        self,
+        objective_terms: list[tuple[Candidate, int]],
+        *,
+        coverage_penalty: int = 0,
+    ) -> None:
+        """Set objective: maximize sum of (candidate_var * weight) - coverage penalty.
 
         CP-SAT requires integer coefficients. Weights should be in the range
         0-1000 (or similar scale). Callers should scale float scores before
         passing them here.
 
+        The coverage penalty encourages the solver to prefer solutions that
+        consume more source blocks. For each block that could be claimed by
+        at least one candidate, we penalize leaving it unclaimed.
+
         Args:
             objective_terms: List of (candidate, weight) tuples where weight
                 is an integer (typically 0-1000)
+            coverage_penalty: Penalty per uncovered block (default 0 = disabled).
+                Recommended value: 10-50. Higher values prioritize coverage over
+                individual candidate scores.
         """
         terms = []
         for candidate, weight in objective_terms:
             var = self.get_var(candidate)
             terms.append(var * weight)
 
+        # Add coverage penalty if enabled
+        if coverage_penalty > 0:
+            coverage_terms = self._create_coverage_penalty_terms(coverage_penalty)
+            terms.extend(coverage_terms)
+            log.debug(
+                "  Added coverage penalty: %d terms, penalty=%d per block",
+                len(coverage_terms),
+                coverage_penalty,
+            )
+
         self.model.Maximize(sum(terms))
 
         log.debug("Set objective: maximize sum of %d terms", len(objective_terms))
+
+    def _create_coverage_penalty_terms(
+        self, penalty_per_block: int
+    ) -> list[cp_model.LinearExpr]:
+        """Create penalty terms for uncovered blocks.
+
+        For each block that could be claimed by at least one candidate,
+        we add: -penalty * (1 - any_candidate_covers_block)
+
+        This is equivalent to: -penalty + penalty * any_candidate_covers_block
+        So we reward covering blocks.
+
+        Returns:
+            List of terms to add to the objective (negative = penalty)
+        """
+        # Build map: block_id -> candidates that use this block
+        block_to_candidates: dict[int, list[Candidate]] = {}
+        for candidate in self._candidates.values():
+            for block in candidate.source_blocks:
+                if block.id not in block_to_candidates:
+                    block_to_candidates[block.id] = []
+                block_to_candidates[block.id].append(candidate)
+
+        terms: list[cp_model.LinearExpr] = []
+        for block_id, candidates in block_to_candidates.items():
+            # Get variables for candidates that could cover this block
+            candidate_vars = [self.get_var(c) for c in candidates]
+
+            # Create indicator: block_covered = (sum(candidate_vars) >= 1)
+            block_covered = self.model.NewBoolVar(f"block_{block_id}_covered")
+            self.model.Add(sum(candidate_vars) >= 1).OnlyEnforceIf(block_covered)
+            self.model.Add(sum(candidate_vars) == 0).OnlyEnforceIf(block_covered.Not())
+
+            # Reward covering this block (equivalent to penalizing not covering)
+            # +penalty if covered, 0 if not covered
+            terms.append(block_covered * penalty_per_block)
+
+        return terms
 
     def solve(self) -> tuple[bool, dict[int, bool]]:
         """Solve the constraint satisfaction problem.

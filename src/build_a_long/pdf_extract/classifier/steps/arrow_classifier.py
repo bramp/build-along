@@ -92,15 +92,19 @@ class _ArrowScore(Score):
     shape_weight: float = 0.7
     size_weight: float = 0.3
 
+    # Cap for intrinsic classifiers (0.8) to allow composites to score higher
+    MAX_SCORE: float = 0.8
+
     def score(self) -> Weight:
-        """Return the average score of all arrowheads."""
+        """Return the average score of all arrowheads, capped at 0.8."""
         if not self.heads:
             return 0.0
         total = sum(
             h.shape_score * self.shape_weight + h.size_score * self.size_weight
             for h in self.heads
         )
-        return total / len(self.heads)
+        raw_score = total / len(self.heads)
+        return raw_score * self.MAX_SCORE
 
 
 class ArrowClassifier(LabelClassifier):

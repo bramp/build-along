@@ -15,7 +15,7 @@ class BackgroundConfig(BaseModel):
     """
 
     min_score: Weight = Field(
-        default=0.5, description="Minimum score threshold for background candidates."
+        default=0.4, description="Minimum score threshold for background candidates."
     )
 
     min_coverage_ratio: float = Field(

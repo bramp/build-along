@@ -98,6 +98,39 @@ class RuleBasedClassifier(LabelClassifier):
     - Default implementation finds visual effects (shadows, outlines)
     - Set `effects_margin` to automatically include nearby drawings/images
 
+    Attributes (Override in Subclass)
+    ----------------------------------
+
+    - ``output``: The label name this classifier produces
+    - ``requires``: Set of labels that must be classified first
+    - ``rules``: List of Rule objects for scoring (see Rules section)
+    - ``min_score``: Minimum score threshold for acceptance (default 0.0)
+    - ``max_score``: Score scaling factor (default 1.0, use 0.8 for intrinsic)
+    - ``effects_margin``: Distance to search for visual effects (default None)
+
+    Score Capping (max_score)
+    -------------------------
+
+    Classifiers fall into two categories:
+
+    **Intrinsic Classifiers (max_score = 0.8):**
+    Identify elements based solely on their own properties (size, shape, text,
+    position). These should set ``max_score = 0.8`` so composite classifiers
+    can outcompete them when both match the same blocks.
+
+    Examples: step_number, part_count, shine, page_number, progress_bar_bar
+
+    **Important:** When adding ``max_score = 0.8`` to an intrinsic classifier,
+    also scale down its ``min_score`` threshold by 0.8 (e.g., 0.5 → 0.4) to
+    maintain the same acceptance rate.
+
+    **Composite Classifiers (max_score = 1.0, default):**
+    Assemble child elements into parent structures. These naturally score
+    higher because they combine multiple verified children and add bonuses
+    for complete structures.
+
+    Examples: progress_bar, step, parts_list, part
+
     Example Implementation
     ----------------------
 
@@ -108,8 +141,12 @@ class RuleBasedClassifier(LabelClassifier):
             requires = frozenset()  # Or frozenset({"dependency"})
 
             @property
+            def max_score(self) -> float:
+                return 0.8  # Intrinsic classifier
+
+            @property
             def min_score(self) -> float:
-                return 0.6  # Require 60% confidence
+                return 0.4  # Scaled from 0.5 for max_score=0.8
 
             @property
             def rules(self) -> Sequence[Rule]:
@@ -194,10 +231,26 @@ class RuleBasedClassifier(LabelClassifier):
         """Get the list of rules for this classifier."""
         pass
 
+    # TODO This property might want to be renamed, to threshold_score or similar
     @property
     def min_score(self) -> float:
         """Minimum score threshold for acceptance. Defaults to 0.0."""
         return 0.0
+
+    @property
+    def max_score(self) -> float:
+        """Score scaling factor.
+
+        The final score is multiplied by this value, allowing intrinsic
+        classifiers to produce lower scores than composite classifiers.
+
+        Intrinsic classifiers (that identify elements by their own properties)
+        should set this to 0.8 to ensure composite classifiers can win when
+        competing for the same blocks. See Score class docstring for details.
+
+        Defaults to 1.0 (no scaling).
+        """
+        return 1.0
 
     @property
     def effects_margin(self) -> float | None:
@@ -304,8 +357,8 @@ class RuleBasedClassifier(LabelClassifier):
         if total_weight == 0:
             return None
 
-        # Calculate final score from rules
-        final_score = weighted_sum / total_weight
+        # Calculate final score from rules, scaled by max_score
+        final_score = (weighted_sum / total_weight) * self.max_score
 
         # Build source blocks list, deduplicating as we go
         seen_ids: set[int] = {block.id}

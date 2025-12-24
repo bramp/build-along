@@ -568,6 +568,8 @@ class Classifier:
             "part_count",
             "part_image",
             "part_number",
+            "piece_length",
+            "shine",
             # Page-level singleton elements
             "page_number",
             "progress_bar",
@@ -746,7 +748,12 @@ class Classifier:
         generator.add_child_uniqueness_constraints(model)
 
         # Maximize total score (scale float scores 0.0-1.0 to int weights 0-1000)
-        model.maximize([(cand, int(cand.score * 1000)) for cand in all_candidates])
+        # Note: Coverage penalty disabled for now as it can reward false positive
+        # candidates that happen to cover more blocks.
+        model.maximize(
+            [(cand, int(cand.score * 1000)) for cand in all_candidates],
+            coverage_penalty=0,  # Disabled - can cause false positives to win
+        )
 
         # Solve
         solved, selection = model.solve()
