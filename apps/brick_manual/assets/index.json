@@ -1,0 +1,53 @@
+[
+  {
+    "set": "6055739",
+    "locale": "en-us",
+    "name": "TIE Fighter",
+    "theme": "Star Wars",
+    "age": "9+",
+    "pieces": 519,
+    "year": 2021,
+    "set_image_url": "https://www.lego.com/cdn/cs/set/assets/blt7f4e4b1b35a9a3ce/75300.png",
+    "pdfs": [
+      {
+        "url": "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6359999.pdf",
+        "filename": "6359999.pdf",
+        "filehash": "sha256-hash-of-tie-fighter-pdf"
+      }
+    ]
+  },
+  {
+    "set": "6055740",
+    "locale": "en-us",
+    "name": "X-Wing Starfighter",
+    "theme": "Star Wars",
+    "age": "9+",
+    "pieces": 474,
+    "year": 2021,
+    "set_image_url": "https://www.lego.com/cdn/cs/set/assets/blt253517975c8a1653/75301.png",
+    "pdfs": [
+      {
+        "url": "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6360010.pdf",
+        "filename": "6360010.pdf",
+        "filehash": "sha256-hash-of-x-wing-pdf"
+      }
+    ]
+  },
+  {
+    "set": "6055741",
+    "locale": "en-us",
+    "name": "Millennium Falcon",
+    "theme": "Star Wars",
+    "age": "9+",
+    "pieces": 1351,
+    "year": 2019,
+    "set_image_url": "https://www.lego.com/cdn/cs/set/assets/blt3e443d8e65b34059/75257.png",
+    "pdfs": [
+      {
+        "url": "https://www.lego.com/cdn/product-assets/product.bi.core.pdf/6289897.pdf",
+        "filename": "6289897.pdf",
+        "filehash": "sha256-hash-of-falcon-pdf"
+      }
+    ]
+  }
+]
