@@ -20,6 +20,9 @@ dist/
 # macOS
 .DS_Store
 
+# Debug output
+debug/
+
 # Local copies of collected pdfs.
 # See data/.gitignore for details
 sets.txt

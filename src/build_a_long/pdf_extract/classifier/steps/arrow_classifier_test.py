@@ -85,7 +85,7 @@ class TestArrowScore:
     """Tests for _ArrowScore."""
 
     def test_score_calculation(self):
-        """Test score combines shape and size scores with weights, capped at 0.8."""
+        """Test score combines shape and size scores with weights, capped at 0.95."""
         # Create a mock Drawing block for the head
         bbox = BBox(x0=100.0, y0=50.0, x1=110.0, y1=60.0)
         drawing = make_drawing(bbox, fill_color=(1.0, 1.0, 1.0))
@@ -101,11 +101,11 @@ class TestArrowScore:
             shape_weight=0.7,
             size_weight=0.3,
         )
-        # Raw: 1.0 * 0.7 + 0.8 * 0.3 = 0.94, then * 0.8 (intrinsic cap) = 0.752
-        assert score.score() == pytest.approx(0.752)
+        # Raw: 1.0 * 0.7 + 0.8 * 0.3 = 0.94, then * 0.95 (composite cap) = 0.893
+        assert score.score() == pytest.approx(0.893)
 
     def test_score_with_low_shape_score(self):
-        """Test score with lower shape score, capped at 0.8."""
+        """Test score with lower shape score, capped at 0.95."""
         # Create a mock Drawing block for the head
         bbox = BBox(x0=100.0, y0=100.0, x1=110.0, y1=110.0)
         drawing = make_drawing(bbox, fill_color=(1.0, 1.0, 1.0))
@@ -121,8 +121,8 @@ class TestArrowScore:
             shape_weight=0.6,
             size_weight=0.4,
         )
-        # Raw: 0.5 * 0.6 + 1.0 * 0.4 = 0.7, then * 0.8 (intrinsic cap) = 0.56
-        assert score.score() == pytest.approx(0.56)
+        # Raw: 0.5 * 0.6 + 1.0 * 0.4 = 0.7, then * 0.95 (composite cap) = 0.665
+        assert score.score() == pytest.approx(0.665)
 
 
 class TestArrowClassifier:

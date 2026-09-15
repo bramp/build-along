@@ -68,6 +68,17 @@ def test_contains_property(b1, b2):
         assert b1.contains(b2)
 
 
+@given(
+    bboxes(),
+    st.floats(min_value=-1e6, max_value=1e6),
+    st.floats(min_value=-1e6, max_value=1e6),
+)
+def test_contains_point_property(b, x, y):
+    # Definition of contains_point: point inside or on boundary
+    expected = b.x0 <= x <= b.x1 and b.y0 <= y <= b.y1
+    assert b.contains_point(x, y) == expected
+
+
 @given(bboxes(), bboxes())
 def test_union_property(b1, b2):
     u = b1.union(b2)

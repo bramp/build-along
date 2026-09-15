@@ -40,6 +40,7 @@ from build_a_long.pdf_extract.classifier.rules.text import (
     RegexMatch,
     StepNumberTextRule,
     StepValueMaxFilter,
+    TextLengthScoreRule,
 )
 from build_a_long.pdf_extract.classifier.rules.visual import (
     CurveCountRule,
@@ -82,6 +83,7 @@ __all__ = [
     "StepValueMaxFilter",
     "StrokeColorScore",
     "TextContainerFitRule",
+    "TextLengthScoreRule",
     "TopLeftPositionScore",
     "WidthCoverageScore",
 ]

@@ -44,13 +44,19 @@ log = logging.getLogger(__name__)
 
 
 class _ScaleScore(Score):
-    """Score details for Scale candidates."""
+    """Score details for Scale candidates.
 
-    piece_length_candidate: Candidate | None = None
-    """The PieceLength candidate associated with this scale."""
+    Uses generic Candidate[T] types to enable automatic constraint mapping.
+    SchemaConstraintGenerator matches:
+    - Candidate[PieceLength] → Scale.length
+    - Candidate[ScaleText] → Scale.text
+    """
 
-    scale_text_candidate: Candidate
-    """The ScaleText candidate associated with this scale."""
+    piece_length_candidate: Candidate[PieceLength] | None = None
+    """The PieceLength candidate (maps to Scale.length)."""
+
+    scale_text_candidate: Candidate[ScaleText]
+    """The ScaleText candidate (maps to Scale.text)."""
 
     def score(self) -> float:
         """Calculate overall score."""
@@ -123,85 +129,82 @@ class ScaleClassifier(LabelClassifier):
             )
             search_bbox = containing_box.bbox
 
-            # Look for PieceLength candidates inside the box
-            piece_length_candidate = self._find_candidate_in_box(
-                search_bbox, piece_length_candidates
+            # Find ALL PieceLength candidates inside the box.
+            # We create a Scale candidate for each one, letting the constraint
+            # solver decide which pairing is optimal based on scores and
+            # block exclusivity constraints.
+            contained_piece_lengths = filter_contained(
+                piece_length_candidates, search_bbox
             )
 
-            piece_length_block_ids = set()
-            if piece_length_candidate:
-                log.debug(
-                    "[scale] Found piece_length at %s inside box",
-                    piece_length_candidate.bbox,
-                )
+            if not contained_piece_lengths:
+                log.debug("[scale] No piece_length candidates inside box, skipping")
+                continue
+
+            log.debug(
+                "[scale] Found %d piece_length candidates inside box",
+                len(contained_piece_lengths),
+            )
+
+            # Get scale_text block IDs (owned by scale_text candidate)
+            scale_text_block_ids = {b.id for b in scale_text_cand.source_blocks}
+
+            # Create a Scale candidate for each piece_length inside the box.
+            # The solver will pick the best one via block exclusivity.
+            for piece_length_candidate in contained_piece_lengths:
                 piece_length_block_ids = {
                     b.id for b in piece_length_candidate.source_blocks
                 }
 
-            # Get scale_text block IDs to exclude from scale's source_blocks
-            scale_text_block_ids = {b.id for b in scale_text_cand.source_blocks}
+                # Blocks owned by children (excluded from scale's source_blocks)
+                child_block_ids = piece_length_block_ids | scale_text_block_ids
 
-            # Blocks owned by children (will be excluded from scale's source_blocks)
-            child_block_ids = piece_length_block_ids | scale_text_block_ids
-
-            # Create score
-            score = _ScaleScore(
-                piece_length_candidate=piece_length_candidate,
-                scale_text_candidate=scale_text_cand,
-            )
-
-            # Collect source blocks for Scale (container + diagram).
-            # ScaleText and PieceLength blocks are owned by their candidates.
-            source_blocks: Sequence[Blocks] = []
-
-            # Find similar drawings to the containing box (border/shadow effects)
-            similar_groups = group_by_similar_bbox(drawings, tolerance=2.0)
-            for group in similar_groups:
-                if containing_box in group:
-                    for d in group:
-                        if d.id not in child_block_ids:
-                            source_blocks.append(d)
-                    break
-
-            # Capture all drawings inside the box (vector part image, ruler, etc.)
-            contained_drawings = filter_contained(drawings, search_bbox)
-            for drawing in contained_drawings:
-                if drawing not in source_blocks and drawing.id not in child_block_ids:
-                    source_blocks.append(drawing)
-
-            # Note: We don't add text blocks here - ScaleText candidate owns them
-            # and any shadow effects should ideally be handled there.
-
-            log.debug(
-                "[scale] Collected %d source blocks for scale at %s",
-                len(source_blocks),
-                containing_box.bbox,
-            )
-
-            result.add_candidate(
-                Candidate(
-                    label=self.output,
-                    bbox=containing_box.bbox,
-                    score=score.score(),
-                    score_details=score,
-                    source_blocks=source_blocks,
+                # Create score
+                score = _ScaleScore(
+                    piece_length_candidate=piece_length_candidate,
+                    scale_text_candidate=scale_text_cand,
                 )
-            )
 
-    def _find_candidate_in_box(
-        self,
-        box_bbox: BBox,
-        candidates: Sequence[Candidate],
-    ) -> Candidate | None:
-        """Find the best candidate inside the given box."""
-        # Find candidates contained in the box
-        contained = filter_contained(candidates, box_bbox)
+                # Collect source blocks for Scale (container + diagram).
+                # ScaleText and PieceLength blocks are owned by their candidates.
+                source_blocks: list[Blocks] = []
 
-        if not contained:
-            return None
+                # Find similar drawings to the containing box (border/shadow effects)
+                similar_groups = group_by_similar_bbox(drawings, tolerance=2.0)
+                for group in similar_groups:
+                    if containing_box in group:
+                        for d in group:
+                            if d.id not in child_block_ids:
+                                source_blocks.append(d)
+                        break
 
-        # Return the highest-scoring one
-        return max(contained, key=lambda c: c.score)
+                # Capture all drawings inside the box (vector part image, ruler, etc.)
+                contained_drawings = filter_contained(drawings, search_bbox)
+                for drawing in contained_drawings:
+                    if (
+                        drawing not in source_blocks
+                        and drawing.id not in child_block_ids
+                    ):
+                        source_blocks.append(drawing)
+
+                # Note: We don't add text blocks here - ScaleText candidate owns them
+                # and any shadow effects should ideally be handled there.
+
+                log.debug(
+                    "[scale] Created candidate with piece_length at %s (score=%.2f)",
+                    piece_length_candidate.bbox,
+                    score.score(),
+                )
+
+                result.add_candidate(
+                    Candidate(
+                        label=self.output,
+                        bbox=containing_box.bbox,
+                        score=score.score(),
+                        score_details=score,
+                        source_blocks=source_blocks,
+                    )
+                )
 
     def build(self, candidate: Candidate, result: ClassificationResult) -> Scale:
         """Construct a Scale element from a candidate."""

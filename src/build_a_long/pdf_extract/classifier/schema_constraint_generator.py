@@ -402,6 +402,93 @@ class SchemaConstraintGenerator:
                 constraints_added,
             )
 
+    def add_spatial_containment_constraints(
+        self, model: ConstraintModel, result: ClassificationResult
+    ) -> None:
+        """Add constraints excluding candidates from wrong spatial containers.
+
+        This enforces the hierarchical containment invariant:
+        - PartsList contains only Part (not step_count, substep_number, etc.)
+        - SubAssembly contains SubStep and StepCount (not part_count, etc.)
+
+        If a candidate is spatially inside a container but is NOT a valid child
+        type for that container, it gets force_unselected.
+
+        This prevents issues like:
+        - step_count "2x" text inside a parts_list being selected as step_count
+          (it should be part_count instead, since it's in the parts area)
+        - substep_number "1" inside a parts_list being selected
+
+        Args:
+            model: The constraint model to add constraints to
+            result: The classification result containing all candidates
+        """
+        # Define containers and their allowed child labels
+        # Labels not in this list are excluded from the container
+        container_allowed_children: dict[str, set[str]] = {
+            "parts_list": {
+                "part",
+                "part_count",
+                "part_image",
+                "part_number",
+                "piece_length",
+                "shine",
+            },
+            # SubAssembly contains substeps and step_count, NOT part_count
+            "subassembly": {
+                "substep",
+                "substep_number",
+                "step_count",
+                "diagram",
+                "part_image",
+                "shine",
+                "arrow",
+            },
+        }
+
+        constraints_added = 0
+
+        for container_label, allowed_children in container_allowed_children.items():
+            container_candidates = list(
+                result.get_scored_candidates(container_label) or []
+            )
+            if not container_candidates:
+                continue
+
+            # Check each container candidate
+            for container_cand in container_candidates:
+                if not model.has_candidate(container_cand):
+                    continue
+
+                container_bbox = container_cand.bbox
+
+                # Check all other labels for candidates inside this container
+                for label, candidates in result.candidates.items():
+                    # Skip allowed children and the container itself
+                    if label in allowed_children or label == container_label:
+                        continue
+
+                    for cand in candidates:
+                        if not model.has_candidate(cand):
+                            continue
+
+                        # Check if candidate is spatially inside the container
+                        if container_bbox.contains(cand.bbox):
+                            model.force_unselected(cand)
+                            constraints_added += 1
+                            log.debug(
+                                "  [spatial exclusion] %s@%s inside %s, excluded",
+                                cand.label,
+                                cand.bbox,
+                                container_label,
+                            )
+
+        if constraints_added > 0:
+            log.debug(
+                "Added %d spatial containment exclusion constraints",
+                constraints_added,
+            )
+
     def _extract_child_candidates(
         self, parent_cand: Candidate, schema_field_name: str
     ) -> list[Candidate]:

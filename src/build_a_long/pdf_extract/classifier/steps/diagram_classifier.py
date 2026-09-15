@@ -72,11 +72,16 @@ class _DiagramScore(Score):
     num_images: int
     """Number of images/drawings in this cluster."""
 
+    # Diagram is a catch-all classifier that claims remaining images after
+    # other classifiers (progress_bar_indicator, part_image, etc.) have run.
+    # Score is intentionally low so it loses to more specific classifiers
+    # if they compete for the same Image blocks.
+    DEFAULT_SCORE: float = 0.5
+
     def score(self) -> Weight:
         """Calculate final weighted score from components."""
-        # All diagram clusters get score of 1.0
-        # Filtering happens in _score() method
-        return 1.0
+        # Low score ensures diagrams defer to more specific classifiers
+        return self.DEFAULT_SCORE
 
 
 class DiagramClassifier(LabelClassifier):

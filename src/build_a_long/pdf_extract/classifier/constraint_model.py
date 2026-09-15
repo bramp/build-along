@@ -354,12 +354,17 @@ class ConstraintModel:
         objective_terms: list[tuple[Candidate, int]],
         *,
         coverage_penalty: int = 0,
+        structural_bonuses: dict[str, int] | None = None,
     ) -> None:
-        """Set objective: maximize sum of (candidate_var * weight) - coverage penalty.
+        """Set objective: maximize sum of (candidate_var * weight) + structural bonuses.
 
         CP-SAT requires integer coefficients. Weights should be in the range
         0-1000 (or similar scale). Callers should scale float scores before
         passing them here.
+
+        Structural bonuses encourage the solver to prefer solutions that include
+        certain expected elements. For example, pages typically have page_numbers,
+        so selecting at least one page_number should get a bonus.
 
         The coverage penalty encourages the solver to prefer solutions that
         consume more source blocks. For each block that could be claimed by
@@ -371,11 +376,19 @@ class ConstraintModel:
             coverage_penalty: Penalty per uncovered block (default 0 = disabled).
                 Recommended value: 10-50. Higher values prioritize coverage over
                 individual candidate scores.
+            structural_bonuses: Dict mapping label -> bonus for having at least
+                one of that label selected. For example, {"page_number": 500}
+                adds 500 to the objective if any page_number is selected.
         """
-        terms = []
+        terms: list[cp_model.LinearExpr] = []
         for candidate, weight in objective_terms:
             var = self.get_var(candidate)
             terms.append(var * weight)
+
+        # Add structural bonuses for expected elements
+        if structural_bonuses:
+            bonus_terms = self._create_structural_bonus_terms(structural_bonuses)
+            terms.extend(bonus_terms)
 
         # Add coverage penalty if enabled
         if coverage_penalty > 0:
@@ -390,6 +403,45 @@ class ConstraintModel:
         self.model.Maximize(sum(terms))
 
         log.debug("Set objective: maximize sum of %d terms", len(objective_terms))
+
+    def _create_structural_bonus_terms(
+        self, bonuses: dict[str, int]
+    ) -> list[cp_model.LinearExpr]:
+        """Create bonus terms for having at least one of certain labels selected.
+
+        For each label with a bonus, we add:
+            bonus * has_at_least_one_of_label
+
+        This encourages the solver to include expected elements like page_number.
+
+        Args:
+            bonuses: Dict mapping label -> bonus value
+
+        Returns:
+            List of terms to add to the objective
+        """
+        terms: list[cp_model.LinearExpr] = []
+        for label, bonus in bonuses.items():
+            candidates = self.get_candidates_by_label(label)
+            if not candidates:
+                continue
+
+            # Create indicator: has_label = (sum of label vars >= 1)
+            candidate_vars = [self.get_var(c) for c in candidates]
+            has_label = self.model.NewBoolVar(f"has_{label}")
+            self.model.Add(sum(candidate_vars) >= 1).OnlyEnforceIf(has_label)
+            self.model.Add(sum(candidate_vars) == 0).OnlyEnforceIf(has_label.Not())
+
+            # Add bonus term
+            terms.append(has_label * bonus)
+            log.debug(
+                "  [structural_bonus] %s: +%d if selected (from %d candidates)",
+                label,
+                bonus,
+                len(candidates),
+            )
+
+        return terms
 
     def _create_coverage_penalty_terms(
         self, penalty_per_block: int

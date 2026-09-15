@@ -236,6 +236,7 @@ and stored in score_details for constraint validation by CP-SAT.
 
 The architecture doc mentioned generating "greedy" vs "conservative" variants per bag.
 This was not implemented because:
+
 1. Current OpenBag classification doesn't have obvious conflict scenarios
 2. The constraint solver already handles conflicts via block exclusivity
 3. Variants can be added later if a specific use case emerges
@@ -270,8 +271,11 @@ This was not implemented because:
     - [x] Unique step values (at most one step per step_value)
     - [ ] If step selected, step_number must be selected
     - [ ] If step selected, parts_list (if present) must be selected
-    - [ ] No orphaned arrows (arrows need at least one step)
-    - [ ] No orphaned rotation symbols
+    - [x] No orphaned arrows (arrows need at least one step) ✅
+    - [x] No orphaned rotation symbols ✅
+    - [x] No orphaned subassemblies ✅
+    - [x] No orphaned substeps ✅
+    - [x] No orphaned diagrams ✅
 
 - [x] **Update StepNumberClassifier constraints** ✅
 
@@ -323,10 +327,11 @@ This was not implemented because:
 - [ ] **Add constraint rules to all elements**
   - [x] `StepNumber` - unique by value ✅
   - [ ] `Diagram` - can be shared or assigned spatially
-  - [ ] `Arrow` - needs parent step
-  - [ ] `RotationSymbol` - needs parent step
-  - [ ] `SubAssembly` - spatial assignment to step
-  - [ ] `SubStep` - needs parent SubAssembly or Step
+  - [x] `Arrow` - needs parent step (no-orphan constraint declared) ✅
+  - [x] `RotationSymbol` - needs parent step (no-orphan constraint declared) ✅
+  - [x] `SubAssembly` - needs parent step (no-orphan constraint declared) ✅
+  - [x] `SubStep` - needs parent SubAssembly or Step (no-orphan constraint declared) ✅
+  - [x] `Diagram` - needs parent step (no-orphan constraint declared) ✅
   - [ ] `BagNumber` - unique by value
   - [x] `PageNumber` - at most one per page ✅
   - [x] `ProgressBar` - at most one per page ✅
@@ -347,7 +352,7 @@ This was not implemented because:
   - [x] `ProgressBarClassifier` ✅
   - [x] `BackgroundClassifier` ✅
   - [x] `DividerClassifier` ✅
-  - [x] `StepClassifier` ✅ - uniqueness by step_value
+  - [x] `StepClassifier` ✅ - uniqueness by step_value + no-orphan constraints
 
 ### Enable by Default
 
@@ -417,6 +422,91 @@ This was not implemented because:
 
 ---
 
+## Incremental Label Rollout Plan
+
+**Strategy:** Add labels to the solver in small, related batches. Test each batch
+thoroughly before moving to the next. This minimizes risk and makes debugging easier.
+
+### Batch 1: Parts Extensions ⏳ PARTIAL
+
+Labels added: `piece_length` ✅
+Labels deferred: `shine` ❌ (conflicts with progress_bar block exclusivity)
+
+**Rationale:** These are already child candidates of `Part` and should integrate smoothly.
+
+- [x] Add `piece_length` to `DEFAULT_SOLVER_LABELS` ✅
+- [ ] Add `shine` to `DEFAULT_SOLVER_LABELS` - DEFERRED
+  - Problem: shine candidates are small drawings that can conflict with progress_bar
+  - Solution needed: Either add soft constraints, or only include shine in solver
+    when it's inside a part_image candidate
+- [x] Run `pants test ::` to verify no regressions ✅
+- [ ] Test on sample PDFs
+
+### Batch 2: Scale Elements ✅ COMPLETE
+
+Labels to add: `scale`, `scale_text`
+
+**Rationale:** These appear on parts lists and relate to existing solver labels.
+
+- [x] Add `scale` to `DEFAULT_SOLVER_LABELS` ✅
+- [x] Add `scale_text` to `DEFAULT_SOLVER_LABELS` ✅
+- [x] Update `_ScaleScore` to use generic `Candidate[T]` types ✅
+- [x] Run tests and verify ✅
+
+### Batch 3: Step Children (Basic) ✅ COMPLETE
+
+Labels to add: `arrow`, `rotation_symbol`, `diagram`
+
+**Rationale:** These are direct children of Step. No-orphan constraints already declared.
+**Note:** These are leaf elements without child candidates, so no Candidate[T] changes needed.
+
+- [x] ArrowClassifier - leaf element, no changes needed ✅
+- [x] RotationSymbolClassifier - leaf element, no changes needed ✅
+- [x] DiagramClassifier - leaf element, no changes needed ✅
+- [x] Add `arrow`, `rotation_symbol`, `diagram` to `DEFAULT_SOLVER_LABELS` ✅
+- [x] Run tests and verify ✅
+
+### Batch 4: Subassembly + Substep
+
+Labels to add: `subassembly`, `substep`, `substep_number`, `step_count`
+
+**Rationale:** Subassemblies are complex structures containing substeps.
+No-orphan constraints already declared for these.
+
+- [ ] Update `SubAssemblyClassifier` to integrate with solver
+- [ ] Update `SubStepClassifier` to integrate with solver
+- [ ] Update `SubstepNumberClassifier` to integrate with solver
+- [ ] Update `StepCountClassifier` to integrate with solver
+- [ ] Add labels to `DEFAULT_SOLVER_LABELS`
+- [ ] Run tests and verify
+
+### Batch 5: Open Bag Extensions
+
+Labels to add: (open_bag, bag_number, loose_part_symbol already done)
+
+**Note:** These are already in the solver. Just verify working correctly.
+
+- [x] `open_bag` - in solver ✅
+- [x] `bag_number` - in solver ✅
+- [x] `loose_part_symbol` - in solver ✅
+
+### Batch 6: Page-Level Elements
+
+Labels to add: `preview`, `trivia_text`, `decoration`, `full_page_background`, `page_edge`, `page`
+
+**Rationale:** These are page-level elements with simpler constraints.
+
+- [ ] Add labels to `DEFAULT_SOLVER_LABELS`
+- [ ] Run tests and verify
+
+### Remaining Labels (Future Batches)
+
+- `call_out`, `call_out_box`, `call_out_count`
+- `line`, `text`
+- Other specialized elements
+
+---
+
 ## Performance Monitoring
 
 ### Metrics to Track
@@ -464,11 +554,18 @@ This was not implemented because:
 - Can rollback via feature flag if issues arise
 - Schema-driven approach should make maintenance easier
 
-**Current Status:** 
+**Current Status:**
+
 - Phase 0 ✅ COMPLETE
 - Phase 1 ✅ COMPLETE (PartsList + Parts with Candidate[T] generics)
 - Phase 2 ✅ COMPLETE (OpenBag with Candidate[T] generics)
-- Phase 3: Next up (Step + Spatial Assignment)
+- Phase 3 ⏳ IN PROGRESS (Step + Spatial Assignment - constraints done, spatial assignment pending)
+
+**Labels Currently Using Solver:**
+
+- parts_list, part, part_count, part_image, part_number, piece_length
+- page_number, progress_bar, progress_bar_bar, progress_bar_indicator, background, divider
+- step, step_number
 
 **Key Design Decision:** Using generic `Candidate[T]` instead of `ChildOf` annotations.
 This provides type-safe constraint mapping that the IDE can check, without requiring
@@ -480,13 +577,14 @@ string literals that could get out of sync with schema field names.
 
 ### Problem Statement
 
-Currently, scores are not calibrated across classifiers. A SubAssembly score of 1.0 
-might be a "weak" match while a BagNumber of 0.8 might be a "strong" match. This 
+Currently, scores are not calibrated across classifiers. A SubAssembly score of 1.0
+might be a "weak" match while a BagNumber of 0.8 might be a "strong" match. This
 makes it difficult for the constraint solver to make globally optimal decisions.
 
 ### TODO: Unconsumed Blocks Penalty
 
 - [x] **Add unconsumed blocks penalty to objective function**
+
   - File: `src/build_a_long/pdf_extract/classifier/constraint_model.py`
   - Method: `maximize()` now accepts `unconsumed_penalty` parameter
   - Prefer solutions that explain more of the page's blocks
@@ -503,18 +601,22 @@ makes it difficult for the constraint solver to make globally optimal decisions.
 Add soft constraints that reward structurally valid configurations:
 
 - [ ] **SubAssembly should be inside a Step**
+
   - Orphaned SubAssembly (not inside any Step) = penalty
   - Could be a soft constraint or post-validation warning
 
 - [ ] **OpenBag should appear early on instruction pages**
+
   - OpenBag on page > 10 without prior bag changes = suspicious
   - Lower score or add penalty term
 
 - [ ] **Step should have at least one of: diagram, parts_list, or subassembly**
+
   - Empty Step = likely misclassification
   - Could add min_count constraint on Step children
 
 - [ ] **Bag number sequence should be monotonic**
+
   - Bag 3 appearing before Bag 2 on same page = likely error
   - Add soft ordering constraint
 
@@ -527,6 +629,7 @@ Add soft constraints that reward structurally valid configurations:
 Establish consistent score interpretation across all classifiers:
 
 - [ ] **Define score calibration standard**
+
   ```
   Score Interpretation:
   - 0.9+ : Very confident - strong intrinsic match + confirmed by context
@@ -536,14 +639,17 @@ Establish consistent score interpretation across all classifiers:
   ```
 
 - [ ] **Calibrate OpenBag scores**
+
   - Current: 0.97-1.05 range with bag_number bonus
   - Target: 0.8 base for good circle match, +0.1 for bag_number inside
 
 - [ ] **Calibrate SubAssembly scores**
+
   - Current: Weighted combination of box_score, count, content
   - Target: 0.8 for white box with content, +0.1 for step_count
 
 - [ ] **Calibrate BagNumber vs SubstepNumber**
+
   - Both compete for single-digit text
   - BagNumber: Higher score if inside OpenBag circle
   - SubstepNumber: Higher score if inside SubAssembly box
@@ -559,4 +665,3 @@ Establish consistent score interpretation across all classifiers:
 3. SubAssembly inside Step constraint
 4. BagNumber vs SubstepNumber disambiguation
 5. Score calibration for OpenBag/SubAssembly competition
-

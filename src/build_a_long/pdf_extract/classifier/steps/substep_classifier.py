@@ -58,6 +58,11 @@ log = logging.getLogger(__name__)
 class _SubStepScore(Score):
     """Score details for SubStep candidates.
 
+    Uses generic Candidate[T] types to enable automatic constraint mapping.
+    SchemaConstraintGenerator matches:
+    - Candidate[StepNumber] → SubStep.step_number
+    - Candidate[Diagram] → SubStep.diagram
+
     Scoring is based on:
     - Position: step number should be to the left/top of the diagram
     - Distance: step number should be close to the diagram
@@ -66,11 +71,11 @@ class _SubStepScore(Score):
     step_value: int
     """The parsed step number value (e.g., 1, 2, 3)."""
 
-    substep_number_candidate: Candidate
-    """The substep_number candidate for this substep."""
+    substep_number_candidate: Candidate[StepNumber]
+    """The substep_number candidate (maps to SubStep.step_number)."""
 
-    diagram_candidate: Candidate
-    """The diagram candidate paired with this step number."""
+    diagram_candidate: Candidate[Diagram]
+    """The diagram candidate (maps to SubStep.diagram)."""
 
     position_score: float
     """Score based on step number being to left/top of diagram (0.0-1.0)."""

@@ -595,6 +595,19 @@ def print_page_hierarchy(page_data: PageData, page: Page) -> None:
             if step.diagram:
                 print(f"      Diagram: {step.diagram.bbox}")
 
+            if step.arrows:
+                print(f"      Arrows: {len(step.arrows)}")
+                for arrow in step.arrows:
+                    heads_str = ", ".join(
+                        f"tip=({h.tip[0]:.1f}, {h.tip[1]:.1f})" for h in arrow.heads
+                    )
+                    tail_str = (
+                        f"tail=({arrow.tail[0]:.1f}, {arrow.tail[1]:.1f})"
+                        if arrow.tail
+                        else "no tail"
+                    )
+                    print(f"        • {arrow.bbox} [{heads_str}, {tail_str}]")
+
 
 def build_and_print_page_hierarchy(
     pages: list[PageData], results: list[ClassificationResult]

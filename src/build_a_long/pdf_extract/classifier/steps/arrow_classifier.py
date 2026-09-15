@@ -92,11 +92,13 @@ class _ArrowScore(Score):
     shape_weight: float = 0.7
     size_weight: float = 0.3
 
-    # Cap for intrinsic classifiers (0.8) to allow composites to score higher
-    MAX_SCORE: float = 0.8
+    # Arrows are composite elements (arrowhead + shaft), so they should
+    # score higher than intrinsic classifiers like shine (0.8 max).
+    # Use 0.95 to ensure arrows win over shines in block exclusivity conflicts.
+    MAX_SCORE: float = 0.95
 
     def score(self) -> Weight:
-        """Return the average score of all arrowheads, capped at 0.8."""
+        """Return the average score of all arrowheads, capped at MAX_SCORE."""
         if not self.heads:
             return 0.0
         total = sum(

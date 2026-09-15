@@ -124,6 +124,19 @@ class BBox(BaseModel):
             and other.y1 <= self.y1
         )
 
+    def contains_point(self, x: float, y: float) -> bool:
+        """
+        Checks if this bounding box contains a point.
+
+        Args:
+            x: The x coordinate of the point.
+            y: The y coordinate of the point.
+
+        Returns:
+            True if the point is inside or on the boundary of the bbox.
+        """
+        return self.x0 <= x <= self.x1 and self.y0 <= y <= self.y1
+
     def adjacent(self, other: BBox, tolerance: float = 1e-6) -> bool:
         """
         Checks if this bounding box is adjacent to another bounding box

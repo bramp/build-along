@@ -383,3 +383,40 @@ class FontSizeSmallerThanRule(Rule):
         else:
             # Larger than reference - less likely but still possible
             return 0.4
+
+
+class TextLengthScoreRule(Rule):
+    """Rule that scores based on text length.
+
+    Useful for penalizing very short text (e.g., single characters) when
+    longer patterns are expected. This helps resolve conflicts where a
+    single digit "2" competes with "2x" for classification.
+
+    Args:
+        min_length: Minimum length for full score (default: 2)
+        short_penalty: Score multiplier for text shorter than min_length (default: 0.7)
+        weight: Weight of this rule in score calculation
+        name: Name for debugging
+    """
+
+    def __init__(
+        self,
+        min_length: int = 2,
+        short_penalty: float = 0.7,
+        weight: float = 1.0,
+        name: str = "TextLengthScore",
+        required: bool = False,
+    ):
+        self.name = name
+        self.min_length = min_length
+        self.short_penalty = short_penalty
+        self.weight = weight
+        self.required = required
+
+    def calculate(self, block: Block, context: RuleContext) -> float | None:
+        if not isinstance(block, Text):
+            return 0.0
+        text = block.text.strip()
+        if len(text) >= self.min_length:
+            return 1.0
+        return self.short_penalty

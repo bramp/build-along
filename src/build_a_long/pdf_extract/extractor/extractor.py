@@ -92,6 +92,7 @@ class PageData(BaseModel):
     blocks: list[Blocks]
 
 
+# TODO Rename this to indicate it's a the raw blocks
 class ExtractionResult(SerializationMixin, BaseModel):
     """Top-level container for extracted PDF data."""
 

@@ -1014,11 +1014,13 @@ class StepClassifier(LabelClassifier):
 
         Arrows are built in Phase 3 of build_all(), before subassemblies.
         This method finds arrows that are positioned near the step's diagram
-        and assigns them to this step.
+        and assigns them to this step using spatial heuristics.
 
-        Typically these are arrows pointing from subassembly callout boxes
-        to the main diagram. The search region includes both the diagram and
-        any subassemblies assigned to this step.
+        Heuristics for arrow-step matching (in priority order):
+        1. Arrow head tip overlaps the step's diagram -> arrow points INTO diagram
+        2. Arrow tail overlaps a subassembly -> arrow originates FROM subassembly
+        3. Arrow head tip overlaps a subassembly -> arrow points INTO subassembly
+        4. Fallback: arrow bbox overlaps the expanded search region
 
         Args:
             step_num: The step number element
@@ -1041,9 +1043,105 @@ class StepClassifier(LabelClassifier):
         if not arrow_candidates:
             return []
 
-        # Build search region from diagram and subassemblies
-        # Arrows typically connect subassemblies to the main diagram, so we need
-        # to search both areas
+        arrows: list[Arrow] = []
+
+        for candidate in arrow_candidates:
+            arrow = result.get_constructed(candidate)
+            assert arrow is not None
+            assert isinstance(arrow, Arrow)
+
+            # Check if arrow belongs to this step using spatial heuristics
+            if self._arrow_belongs_to_step(arrow, diagram, subassemblies, step_num):
+                log.debug(
+                    "[step]   Arrow at %s belongs to step %d",
+                    candidate.bbox,
+                    step_num.value,
+                )
+                arrows.append(arrow)
+
+        log.debug(
+            "[step] Found %d arrows for step %d",
+            len(arrows),
+            step_num.value,
+        )
+        return arrows
+
+    def _arrow_belongs_to_step(
+        self,
+        arrow: Arrow,
+        diagram: Diagram | None,
+        subassemblies: Sequence[SubAssembly],
+        step_num: StepNumber,
+    ) -> bool:
+        """Check if an arrow belongs to this step using spatial heuristics.
+
+        Arrows typically:
+        - Point FROM a subassembly callout TO the main diagram
+        - Or indicate motion/insertion within the step's diagram
+
+        We check if the arrow's head tips or tail point overlap with:
+        1. The step's main diagram (head tip inside = arrow points into diagram)
+        2. Any of the step's subassemblies (tail inside = arrow from subassembly)
+
+        Args:
+            arrow: The Arrow element to check
+            diagram: The step's diagram (if any)
+            subassemblies: The step's subassemblies
+            step_num: The step number element (fallback for search region)
+
+        Returns:
+            True if the arrow belongs to this step
+        """
+        # Check each arrow head's tip
+        for head in arrow.heads:
+            tip_x, tip_y = head.tip
+
+            # Check if head tip is inside the diagram
+            if diagram and diagram.bbox.contains_point(tip_x, tip_y):
+                log.debug(
+                    "[step]     Arrow head tip (%.1f, %.1f) inside diagram %s",
+                    tip_x,
+                    tip_y,
+                    diagram.bbox,
+                )
+                return True
+
+            # Check if head tip is inside any subassembly
+            for sa in subassemblies:
+                if sa.bbox.contains_point(tip_x, tip_y):
+                    log.debug(
+                        "[step]     Arrow head tip (%.1f, %.1f) inside subassembly %s",
+                        tip_x,
+                        tip_y,
+                        sa.bbox,
+                    )
+                    return True
+
+        # Check if tail is inside any subassembly (arrow originates from subassembly)
+        if arrow.tail:
+            tail_x, tail_y = arrow.tail
+            for sa in subassemblies:
+                if sa.bbox.contains_point(tail_x, tail_y):
+                    log.debug(
+                        "[step]     Arrow tail (%.1f, %.1f) inside subassembly %s",
+                        tail_x,
+                        tail_y,
+                        sa.bbox,
+                    )
+                    return True
+
+            # Also check if tail is inside diagram (less common but possible)
+            if diagram and diagram.bbox.contains_point(tail_x, tail_y):
+                log.debug(
+                    "[step]     Arrow tail (%.1f, %.1f) inside diagram %s",
+                    tail_x,
+                    tail_y,
+                    diagram.bbox,
+                )
+                return True
+
+        # Fallback: check if arrow bbox overlaps the expanded search region
+        # This catches arrows that are near but not directly touching elements
         search_bboxes: list[BBox] = []
         if diagram:
             search_bboxes.append(diagram.bbox)
@@ -1056,38 +1154,17 @@ class StepClassifier(LabelClassifier):
 
         # Compute union of all components and expand
         search_bbox = BBox.union_all(search_bboxes)
+        search_region = search_bbox.expand(50.0)  # Smaller margin for fallback
 
-        # Expand search region to catch arrows near the components
-        # Use a larger margin since arrows can extend further
-        search_region = search_bbox.expand(100.0)
-
-        log.debug(
-            "[step] Arrow search region for step %d: %s",
-            step_num.value,
-            search_region,
-        )
-
-        # Find arrows within or overlapping the search region
-        arrows: list[Arrow] = []
-        overlapping_candidates = filter_overlapping(arrow_candidates, search_region)
-
-        for candidate in overlapping_candidates:
-            arrow = result.get_constructed(candidate)
-            assert arrow is not None
-            assert isinstance(arrow, Arrow)
+        if arrow.bbox.overlaps(search_region):
             log.debug(
-                "[step]   Arrow at %s overlaps search region (score=%.2f)",
-                candidate.bbox,
-                candidate.score,
+                "[step]     Arrow bbox %s overlaps search region %s (fallback)",
+                arrow.bbox,
+                search_region,
             )
-            arrows.append(arrow)
+            return True
 
-        log.debug(
-            "[step] Found %d arrows for step %d",
-            len(arrows),
-            step_num.value,
-        )
-        return arrows
+        return False
 
     def _get_subassemblies_for_step(
         self,

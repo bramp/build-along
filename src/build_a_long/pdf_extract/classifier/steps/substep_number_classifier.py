@@ -4,8 +4,21 @@ SubStep number classifier.
 This classifier finds smaller step numbers that appear inside subassembly boxes
 or as naked substeps alongside main steps. These have a smaller font size than
 regular step numbers.
+
+Spatial constraints are handled by the parent classifiers:
+- SubStepClassifier pairs substep_numbers with diagrams (spatial proximity scoring)
+- SubAssemblyClassifier claims substeps inside its white boxes
+- StepClassifier uses remaining substeps as naked substeps
+
+Only substep_numbers that can pair with diagrams will be selected as part of
+a SubStep. This naturally excludes page numbers in the bottom band since there
+are no diagrams near them.
+
+Sequential constraints (1, 2, 3 must be in order) are enforced by
+SubAssemblyClassifier for each subassembly box independently.
 """
 
+import logging
 from collections.abc import Sequence
 from typing import ClassVar
 
@@ -19,6 +32,7 @@ from build_a_long.pdf_extract.classifier.rule_based_classifier import (
 )
 from build_a_long.pdf_extract.classifier.rules import (
     FontSizeSmallerThanRule,
+    InBottomBandFilter,
     IsInstanceFilter,
     Rule,
     StepNumberTextRule,
@@ -31,6 +45,8 @@ from build_a_long.pdf_extract.extractor.lego_page_elements import (
     StepNumber,
 )
 from build_a_long.pdf_extract.extractor.page_blocks import Blocks, Text
+
+log = logging.getLogger(__name__)
 
 
 class SubStepNumberClassifier(RuleBasedClassifier):
@@ -54,7 +70,8 @@ class SubStepNumberClassifier(RuleBasedClassifier):
 
     @property
     def max_score(self) -> float:
-        return 0.8  # Intrinsic classifier
+        # Lower than step_count (0.8) so "2x" wins over "2" when blocks overlap
+        return 0.7
 
     @property
     def min_score(self) -> float:
@@ -88,6 +105,14 @@ class SubStepNumberClassifier(RuleBasedClassifier):
                 threshold_ratio=substep_config.size_ratio,
                 weight=substep_config.font_size_weight,
                 name="font_size_score",
+            ),
+            # OPTIMIZATION: Exclude bottom 10% where page numbers typically live.
+            # This avoids block exclusivity conflicts with page_number candidates.
+            # May be removed if structural bonuses and font hints become sufficient.
+            InBottomBandFilter(
+                threshold_ratio=0.1,
+                invert=True,  # Exclude bottom band, not include
+                name="not_in_page_number_area",
             ),
         ]
 
