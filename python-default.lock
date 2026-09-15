@@ -28,7 +28,7 @@
 //     "pytimeparse2~=1.7.1",
 //     "scipy~=1.16.3",
 //     "snakeviz~=2.2.2",
-//     "tqdm~=4.67.1",
+//     "tqdm~=4.70.1",
 //     "vcrpy~=8.1.1"
 //   ],
 //   "manylinux": "manylinux2014",
@@ -1451,31 +1451,28 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf",
-              "url": "https://files.pythonhosted.org/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl"
+              "hash": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73",
+              "url": "https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb",
-              "url": "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz"
+              "hash": "cefd0eca11b2a37a3aee776544d4f4ae913f02688135b5556b8788dfa474afc4",
+              "url": "https://files.pythonhosted.org/packages/0d/ea/b2a5bd54b28a324dae8211928b2d730b6547500342c7e6c6dea08bd0a485/tqdm-4.70.1.tar.gz"
             }
           ],
           "project_name": "tqdm",
           "requires_dists": [
             "colorama; platform_system == \"Windows\"",
-            "importlib_metadata; python_version < \"3.8\"",
+            "envwrap; extra == \"discord\"",
+            "envwrap; extra == \"slack\"",
+            "envwrap; extra == \"telegram\"",
             "ipywidgets>=6; extra == \"notebook\"",
-            "nbval; extra == \"dev\"",
-            "pytest-asyncio>=0.24; extra == \"dev\"",
-            "pytest-cov; extra == \"dev\"",
-            "pytest-timeout; extra == \"dev\"",
-            "pytest>=6; extra == \"dev\"",
             "requests; extra == \"discord\"",
             "requests; extra == \"telegram\"",
             "slack-sdk; extra == \"slack\""
           ],
-          "requires_python": ">=3.7",
-          "version": "4.67.3"
+          "requires_python": ">=3.8",
+          "version": "4.70.1"
         },
         {
           "artifacts": [
@@ -1685,7 +1682,7 @@
     "pytimeparse2~=1.7.1",
     "scipy~=1.16.3",
     "snakeviz~=2.2.2",
-    "tqdm~=4.67.1",
+    "tqdm~=4.70.1",
     "vcrpy~=8.1.1"
   ],
   "requires_python": [
