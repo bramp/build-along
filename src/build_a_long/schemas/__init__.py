@@ -5,17 +5,21 @@ for backward compatibility.
 """
 
 from build_a_long.downloader.models import (
+    ImageEntry,
     InstructionMetadata,
     MainIndex,
     PdfEntry,
+    VideoEntry,
     YearlyIndex,
     YearlyIndexSummary,
 )
 
 __all__ = [
+    "ImageEntry",
     "InstructionMetadata",
     "MainIndex",
     "PdfEntry",
+    "VideoEntry",
     "YearlyIndex",
     "YearlyIndexSummary",
 ]

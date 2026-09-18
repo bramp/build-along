@@ -1,4 +1,31 @@
 $defs:
+  ImageEntry:
+    description: Represents a product image or asset from LEGO.com.
+    properties:
+      id:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: The asset identifier.
+        title: Id
+      url:
+        description: The URL to the image.
+        format: uri
+        minLength: 1
+        title: Url
+        type: string
+      alt_text:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: Alt text or description of the image.
+        title: Alt Text
+    required:
+    - url
+    title: ImageEntry
+    type: object
   PdfEntry:
     description: 'Represents a single instruction PDF file.
 
@@ -67,9 +94,51 @@ $defs:
         description: The total number of PDFs in a multi-part instruction set (e.g., 4 for
           1/4).
         title: Sequence Total
+      preview_alt:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: The alt text for the preview cover image, if available.
+        title: Preview Alt
     required:
     - url
     title: PdfEntry
+    type: object
+  VideoEntry:
+    description: Represents a product video from LEGO.com.
+    properties:
+      id:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: The video asset identifier.
+        title: Id
+      title:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: The video title.
+        title: Title
+      description:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: The video description.
+        title: Description
+      url:
+        anyOf:
+        - format: uri
+          minLength: 1
+          type: string
+        - type: 'null'
+        default: null
+        description: The URL to the video file, if available.
+        title: Url
+    title: VideoEntry
     type: object
 description: JSON Schema for LEGO set metadata, generated from Pydantic models. This schema
   describes the structure of metadata.json files containing information about LEGO sets and
@@ -127,6 +196,94 @@ properties:
     default: null
     description: URL to an image of the LEGO set.
     title: Set Image Url
+  set_image_alt:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: Alt text for the image of the LEGO set.
+    title: Set Image Alt
+  description:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: The product description for the LEGO set.
+    title: Description
+  features_text:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: The features and details text (including dimensions and highlights).
+    title: Features Text
+  meta_description:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: A short summary description of the set.
+    title: Meta Description
+  meta_title:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: The meta title of the set product page.
+    title: Meta Title
+  slug:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: The URL slug of the set on LEGO.com.
+    title: Slug
+  hires_image_url:
+    anyOf:
+    - format: uri
+      minLength: 1
+      type: string
+    - type: 'null'
+    default: null
+    description: URL to a high-resolution image of the LEGO set.
+    title: Hires Image Url
+  thumbnail_image_url:
+    anyOf:
+    - format: uri
+      minLength: 1
+      type: string
+    - type: 'null'
+    default: null
+    description: URL to a thumbnail image of the LEGO set.
+    title: Thumbnail Image Url
+  images:
+    default: []
+    description: List of all product and gallery images available for the set.
+    items:
+      $ref: '#/$defs/ImageEntry'
+    title: Images
+    type: array
+  videos:
+    default: []
+    description: List of all product videos available for the set.
+    items:
+      $ref: '#/$defs/VideoEntry'
+    title: Videos
+    type: array
+  categories:
+    default: []
+    description: Categories or tags associated with the set.
+    items:
+      type: string
+    title: Categories
+    type: array
+  brand:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: The brand category of the set (e.g., 'Star Wars', 'Icons').
+    title: Brand
   pdfs:
     default: []
     description: A list of PDF instruction entries for the set.

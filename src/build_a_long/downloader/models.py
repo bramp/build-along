@@ -55,6 +55,31 @@ class PdfEntry(BaseModel):
             "(e.g., 4 for 1/4)."
         ),
     )
+    preview_alt: str | None = Field(
+        default=None,
+        description="The alt text for the preview cover image, if available.",
+    )
+
+
+class ImageEntry(BaseModel):
+    """Represents a product image or asset from LEGO.com."""
+
+    id: str | None = Field(default=None, description="The asset identifier.")
+    url: AnyUrl = Field(..., description="The URL to the image.")
+    alt_text: str | None = Field(
+        default=None, description="Alt text or description of the image."
+    )
+
+
+class VideoEntry(BaseModel):
+    """Represents a product video from LEGO.com."""
+
+    id: str | None = Field(default=None, description="The video asset identifier.")
+    title: str | None = Field(default=None, description="The video title.")
+    description: str | None = Field(default=None, description="The video description.")
+    url: AnyUrl | None = Field(
+        default=None, description="The URL to the video file, if available."
+    )
 
 
 class InstructionMetadata(BaseModel):
@@ -87,6 +112,49 @@ class InstructionMetadata(BaseModel):
     year: int | None = Field(default=None, description="The year the set was released.")
     set_image_url: AnyUrl | None = Field(
         default=None, description="URL to an image of the LEGO set."
+    )
+    set_image_alt: str | None = Field(
+        default=None, description="Alt text for the image of the LEGO set."
+    )
+    description: str | None = Field(
+        default=None, description="The product description for the LEGO set."
+    )
+    features_text: str | None = Field(
+        default=None,
+        description="The features and details text (including dimensions and highlights).",
+    )
+    meta_description: str | None = Field(
+        default=None, description="A short summary description of the set."
+    )
+    meta_title: str | None = Field(
+        default=None, description="The meta title of the set product page."
+    )
+    slug: str | None = Field(
+        default=None, description="The URL slug of the set on LEGO.com."
+    )
+    hires_image_url: AnyUrl | None = Field(
+        default=None,
+        description="URL to a high-resolution image of the LEGO set.",
+    )
+    thumbnail_image_url: AnyUrl | None = Field(
+        default=None,
+        description="URL to a thumbnail image of the LEGO set.",
+    )
+    images: list[ImageEntry] = Field(
+        default=[],
+        description="List of all product and gallery images available for the set.",
+    )
+    videos: list[VideoEntry] = Field(
+        default=[],
+        description="List of all product videos available for the set.",
+    )
+    categories: list[str] = Field(
+        default=[],
+        description="Categories or tags associated with the set.",
+    )
+    brand: str | None = Field(
+        default=None,
+        description="The brand category of the set (e.g., 'Star Wars', 'Icons').",
     )
     pdfs: list[PdfEntry] = Field(
         default=[], description="A list of PDF instruction entries for the set."
@@ -152,6 +220,14 @@ class DownloadUrl(BaseModel):
         description=(
             "Indicates if the instruction is a supplemental or additional info booklet."
         ),
+    )
+    filesize: int | None = Field(
+        default=None,
+        description="The size of the PDF file in bytes if available from metadata.",
+    )
+    preview_alt: str | None = Field(
+        default=None,
+        description="Alt text for the preview cover image, if available.",
     )
 
 
