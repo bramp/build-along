@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import os
 from collections.abc import Callable, Iterable
 from contextlib import AbstractContextManager
 from pathlib import Path
@@ -13,7 +14,7 @@ from pydantic import AnyUrl
 from build_a_long.downloader.legocom import (
     LEGO_BASE,
     build_instructions_url,
-    build_metadata,
+    fetch_metadata,
 )
 from build_a_long.downloader.metadata import read_metadata, write_metadata
 from build_a_long.downloader.models import DownloadedFile, DownloaderStats
@@ -23,8 +24,17 @@ from build_a_long.schemas import (
     InstructionMetadata,
 )
 
+
+def get_data_dir() -> Path | None:
+    """Get the LEGO data directory from the LEGO_DATA_DIR environment variable."""
+    if env_dir := os.environ.get("LEGO_DATA_DIR"):
+        return Path(env_dir)
+    return None
+
+
 __all__ = [
     "LegoInstructionDownloader",
+    "get_data_dir",
 ]
 
 
@@ -41,7 +51,7 @@ class LegoInstructionDownloader:
     def __init__(
         self,
         locale: str = "en-us",
-        out_dir: Path | None = None,
+        data_dir: Path | None = None,
         overwrite_metadata_if_older_than: datetime.timedelta | None = None,
         overwrite_download: bool = False,
         show_progress: bool = True,
@@ -55,7 +65,7 @@ class LegoInstructionDownloader:
 
         Args:
             locale: LEGO locale to use (e.g., "en-us", "en-gb").
-            out_dir: Base output directory for downloads.
+            data_dir: Base directory containing downloaded LEGO set data.
             overwrite_metadata_if_older_than: Overwrite metadata if older than this
                 timedelta.
             overwrite_download: If True, re-download existing files.
@@ -67,7 +77,7 @@ class LegoInstructionDownloader:
             skip_pdfs: If True, only download metadata, skip PDF downloads.
         """
         self.locale = locale
-        self.out_dir = out_dir
+        self.data_dir = data_dir
         self.overwrite_metadata_if_older_than = overwrite_metadata_if_older_than
         self.overwrite_download = overwrite_download
         self.show_progress = show_progress
@@ -124,6 +134,17 @@ class LegoInstructionDownloader:
         """Fetch the HTML for the instructions page of a set."""
         url = build_instructions_url(set_number, self.locale)
         return self.fetch_url_text(url)
+
+    def fetch_set_metadata(self, set_number: str) -> InstructionMetadata | None:
+        """Fetch complete set metadata using GraphQL first, falling back to HTML."""
+        client = self._get_client()
+        return fetch_metadata(
+            client=client,
+            set_number=set_number,
+            locale=self.locale,
+            base=LEGO_BASE,
+            debug=self.debug,
+        )
 
     def download(
         self,
@@ -266,7 +287,7 @@ class LegoInstructionDownloader:
         # If we're here, we need to fetch the metadata from the website.
         print(f"Processing set: {set_number}")
         try:
-            html = self.fetch_instructions_page(set_number)
+            metadata = self.fetch_set_metadata(set_number)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 print(f"Set {set_number} not found on LEGO.com (404).")
@@ -276,12 +297,8 @@ class LegoInstructionDownloader:
                 return None
             raise
 
-        metadata = build_metadata(
-            html, set_number, self.locale, base=LEGO_BASE, debug=self.debug
-        )
-
         # If no metadata is found, mark it as not found and return.
-        if not metadata.name:
+        if not metadata or not metadata.name:
             print(f"Set {set_number} not found or has no data on LEGO.com.")
             out_dir.mkdir(parents=True, exist_ok=True)
             not_found_path.touch()
@@ -402,7 +419,12 @@ class LegoInstructionDownloader:
             Exit code: 0 for success, non-zero for errors.
         """
         self.stats.sets_processed += 1
-        out_dir = self.out_dir if self.out_dir else Path("data") / set_number
+        base_dir = self.data_dir if self.data_dir else get_data_dir()
+        if not base_dir:
+            raise ValueError(
+                "No data directory specified. Provide data_dir or set the LEGO_DATA_DIR environment variable."
+            )
+        out_dir = base_dir / set_number
 
         # Process the metadata for the set.
         result = self._process_set_metadata(set_number, out_dir)

@@ -9,8 +9,10 @@ Usage:
     pants run src/build_a_long/pdf_extract/classifier/tools/generate_golden_hints.py
 """
 
+import argparse
 import json
 import logging
+import os
 import re
 import sys
 from pathlib import Path
@@ -41,7 +43,7 @@ def extract_element_id(filename: str) -> str | None:
     return match.group(1) if match else None
 
 
-def find_pdf_for_element(element_id: str, data_dir: Path) -> Path | None:
+def find_pdf_for_element(element_id: str, data_dir: Path | None) -> Path | None:
     """Find a PDF file for the given element ID in the data directory.
 
     Searches data/$set_id/$element_id.pdf for matching PDFs.
@@ -53,6 +55,8 @@ def find_pdf_for_element(element_id: str, data_dir: Path) -> Path | None:
     Returns:
         Path to the PDF if found, None otherwise
     """
+    if not data_dir or not data_dir.exists():
+        return None
     # Search all subdirectories of data/ for matching PDF
     for set_dir in data_dir.iterdir():
         if not set_dir.is_dir():
@@ -203,8 +207,18 @@ def generate_hints_from_pdf(
 def main() -> None:
     """Generate golden files for FontSizeHints and PageHintCollection."""
 
+    parser = argparse.ArgumentParser(
+        description="Generate golden files for FontSizeHints and PageHintCollection."
+    )
+    parser.add_argument(
+        "--data-dir",
+        default=os.environ.get("LEGO_DATA_DIR"),
+        help="Path to LEGO data directory (defaults to LEGO_DATA_DIR env var).",
+    )
+    args = parser.parse_args()
+
     fixtures_dir = Path("src/build_a_long/pdf_extract/fixtures")
-    data_dir = Path("data")
+    data_dir = Path(args.data_dir) if args.data_dir else None
 
     if not fixtures_dir.exists():
         log.error(f"Fixtures directory not found: {fixtures_dir}")
@@ -259,9 +273,11 @@ def main() -> None:
         log.error("      <pdf_path> --output-dir <fixtures_dir> \\")
         log.error("      --debug-json --debug-extra-json --compress-json")
         log.error("")
-        log.error("  Option 2: Download the PDF")
-        log.error("    pants run src/build_a_long/downloader:main -- <set_id>")
-        log.error("    (PDF should be saved to: data/<set_id>/<element_id>.pdf)")
+        log.error("  Option 2: Download the PDF or pass --data-dir / set LEGO_DATA_DIR")
+        log.error(
+            "    pants run src/build_a_long/downloader:main -- download <set_id> --data-dir <dir>"
+        )
+        log.error("    (PDF should be saved to: <data_dir>/<set_id>/<element_id>.pdf)")
         log.error("")
         log.error("=" * 70)
         sys.exit(1)

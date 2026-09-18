@@ -4,6 +4,8 @@ This module wraps the existing verify functionality.
 """
 
 import argparse
+import os
+import sys
 from pathlib import Path
 
 from .verify import verify_data_integrity as _verify_data_integrity
@@ -20,8 +22,8 @@ def add_verify_parser(subparsers: argparse._SubParsersAction) -> None:
     )
     verify_parser.add_argument(
         "--data-dir",
-        default="data",
-        help="Directory containing the downloaded LEGO set data.",
+        default=os.environ.get("LEGO_DATA_DIR"),
+        help="Directory containing the downloaded LEGO set data (defaults to LEGO_DATA_DIR env var).",
     )
 
 
@@ -34,4 +36,11 @@ def run_verify(args: argparse.Namespace) -> int:
     Returns:
         Exit code from verify_data_integrity.
     """
-    return _verify_data_integrity(Path(args.data_dir))
+    data_dir = args.data_dir or os.environ.get("LEGO_DATA_DIR")
+    if not data_dir:
+        print(
+            "Error: Data directory must be specified via --data-dir or the LEGO_DATA_DIR environment variable.",
+            file=sys.stderr,
+        )
+        return 1
+    return _verify_data_integrity(Path(data_dir))

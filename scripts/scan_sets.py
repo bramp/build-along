@@ -1,3 +1,4 @@
+import argparse
 import csv
 import json
 import os
@@ -6,21 +7,18 @@ from collections import defaultdict
 
 # Determine repo root relative to this script
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(REPO_ROOT, "data")
 
 
-def scan_sets():
+def scan_sets(data_dir: str):
     # year -> theme -> list of {set, filename, path}
     sets_by_year = defaultdict(lambda: defaultdict(list))
 
     set_dirs = [
-        d for d in os.listdir(DATA_DIR) if os.path.isdir(os.path.join(DATA_DIR, d))
+        d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))
     ]
 
-    # print(f"Found {len(set_dirs)} set directories.", file=sys.stderr)
-
     for set_id in set_dirs:
-        metadata_path = os.path.join(DATA_DIR, set_id, "metadata.json")
+        metadata_path = os.path.join(data_dir, set_id, "metadata.json")
         if not os.path.exists(metadata_path):
             continue
 
@@ -40,7 +38,7 @@ def scan_sets():
             if not pdf_filename:
                 continue
 
-            pdf_path = os.path.join(DATA_DIR, set_id, pdf_filename)
+            pdf_path = os.path.join(data_dir, set_id, pdf_filename)
 
             if not os.path.exists(pdf_path):
                 continue
@@ -95,5 +93,27 @@ def scan_sets():
         writer.writerow(row)
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Scan LEGO sets and generate example CSV."
+    )
+    parser.add_argument(
+        "--data-dir",
+        default=os.environ.get("LEGO_DATA_DIR"),
+        help="Directory containing the downloaded LEGO set data (defaults to LEGO_DATA_DIR env var).",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    scan_sets()
+    args = parse_args()
+    if not args.data_dir:
+        print(
+            "Error: Data directory must be specified via --data-dir or the LEGO_DATA_DIR environment variable.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if not os.path.exists(args.data_dir):
+        print(f"Error: Data directory does not exist: {args.data_dir}", file=sys.stderr)
+        sys.exit(1)
+    scan_sets(args.data_dir)

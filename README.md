@@ -76,24 +76,29 @@ Run with Pants (recommended):
 
 ```bash
 # Fetch metadata only (no downloads) for set 75419
-pants run src/build_a_long/downloader:main -- download 75419 --metadata
+pants run src/build_a_long/downloader:main -- download 75419 --print-metadata
 
-# Download PDFs to data/75419
+# Download PDFs for a set (specifying --data-dir or using LEGO_DATA_DIR)
+pants run src/build_a_long/downloader:main -- download 75419 --data-dir path/to/data
+
+# Or set LEGO_DATA_DIR
+export LEGO_DATA_DIR=path/to/data
 pants run src/build_a_long/downloader:main -- download 75419
 
 # Pipe a list of set numbers into the downloader
 echo -e "75419\n75159\n" | pants run src/build_a_long/downloader:main -- download --stdin
 
-# Fetch metadata for multiple sets from stdin
-cat sets.txt | pants run src/build_a_long/downloader:main -- download --stdin --metadata
+# Fetch metadata for multiple sets from stdin (prints JSON without downloading)
+cat sets.txt | pants run src/build_a_long/downloader:main -- download --stdin --print-metadata
 ```
 
 Options:
 
 - `--locale` (default `en-us`): Locale segment used by lego.com.
-- `--out-dir`: Output directory (defaults to `data/<set>`).
-- `--metadata`: Only fetch and print metadata as JSON (no downloads).
-- `--force`: Re-download PDFs even if the file already exists.
+- `--data-dir`: Base data directory for downloaded files (saved to `<data-dir>/<set_number>/`). If omitted, the `LEGO_DATA_DIR` environment variable must be set.
+- `--print-metadata`: Only fetch and print metadata as JSON (no downloads or output directory needed).
+- `--overwrite-pdfs`: Re-download PDFs even if they already exist.
+- `--overwrite-metadata`: Force metadata update even if already cached.
 
 **Summarize Command**
 
@@ -102,20 +107,20 @@ The `summarize` command scans the downloaded metadata and creates yearly index f
 Run with Pants:
 
 ```bash
-pants run src/build_a_long/downloader:main -- summarize
+pants run src/build_a_long/downloader:main -- summarize --data-dir path/to/data
 ```
 
 Options:
 
-- `--data-dir` (default `data`): Directory containing the downloaded LEGO set data.
-- `--output-dir` (default `data/indices`): Directory to store the generated index files.
+- `--data-dir`: Directory containing the downloaded LEGO set data (defaults to `LEGO_DATA_DIR` environment variable).
+- `--output-dir` (default `<data-dir>/indices`): Directory to store the generated index files.
 
 Notes:
 
-- Large PDFs may take time to download; files are saved under the `data/` folder (ignored by git).
-- Sources are scraped from pages like `https://www.lego.com/en-us/service/building-instructions/<set>`.
-- Existing files are skipped by default; use `--force` to overwrite. A simple progress indicator is shown per file.
-- Metadata includes: set number, title, age, pieces, year, and ordered list of instruction PDF URLs.
+- Data directory must be configured via `--data-dir` or the `LEGO_DATA_DIR` environment variable.
+- Sources are scraped from pages like `https://www.lego.com/en-us/service/building-instructions/<set>` and LEGO.com's product API.
+- Existing files are skipped by default; use `--overwrite-pdfs` or `--overwrite-metadata` to overwrite.
+- Metadata includes: set number, title, age, pieces, year, description, features text, meta description, product images, categories, brand, and ordered list of instruction PDF URLs.
 
 ### Bounding Box Extractor CLI
 

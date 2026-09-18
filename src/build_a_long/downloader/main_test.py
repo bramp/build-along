@@ -11,6 +11,7 @@ from build_a_long.downloader.models import DownloaderStats
 @patch("build_a_long.downloader.download.command.LegoInstructionDownloader")
 def test_main_routes_to_download_command(mock_downloader_class, monkeypatch, capsys):
     """Test that main correctly routes to the download command."""
+    monkeypatch.setenv("LEGO_DATA_DIR", "/tmp/lego")
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
@@ -37,7 +38,7 @@ def test_main_routes_to_summarize_command(mock_summarize, monkeypatch):
     exit_code = main()
 
     assert exit_code == 0
-    mock_summarize.assert_called_once_with(Path("/tmp/data"), Path("data/indices"))
+    mock_summarize.assert_called_once_with(Path("/tmp/data"), Path("/tmp/data/indices"))
 
 
 @patch("build_a_long.downloader.verify.command._verify_data_integrity")
@@ -49,6 +50,24 @@ def test_main_routes_to_verify_command(mock_verify, monkeypatch):
 
     assert exit_code == 0
     mock_verify.assert_called_once_with(Path("/tmp/data"))
+
+
+def test_main_summarize_without_data_dir_or_env(monkeypatch, capsys):
+    """Test error when summarize is run without --data-dir or LEGO_DATA_DIR."""
+    monkeypatch.delenv("LEGO_DATA_DIR", raising=False)
+    monkeypatch.setattr(sys, "argv", ["main.py", "summarize"])
+    exit_code = main()
+    assert exit_code == 1
+    assert "Error: Data directory must be specified" in capsys.readouterr().err
+
+
+def test_main_verify_without_data_dir_or_env(monkeypatch, capsys):
+    """Test error when verify is run without --data-dir or LEGO_DATA_DIR."""
+    monkeypatch.delenv("LEGO_DATA_DIR", raising=False)
+    monkeypatch.setattr(sys, "argv", ["main.py", "verify"])
+    exit_code = main()
+    assert exit_code == 1
+    assert "Error: Data directory must be specified" in capsys.readouterr().err
 
 
 def test_main_no_command_specified(monkeypatch, capsys):

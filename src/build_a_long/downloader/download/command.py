@@ -1,6 +1,7 @@
 """Download command for LEGO instruction manuals."""
 
 import argparse
+import os
 import sys
 from datetime import timedelta
 from pathlib import Path
@@ -8,7 +9,6 @@ from pathlib import Path
 import pytimeparse2
 
 from build_a_long.downloader.downloader import LegoInstructionDownloader
-from build_a_long.downloader.legocom import LEGO_BASE, build_metadata
 from build_a_long.downloader.util import is_valid_set_id
 
 
@@ -71,9 +71,9 @@ def add_download_parser(subparsers: argparse._SubParsersAction) -> None:
         help="LEGO locale to use, e.g. en-us, en-gb, de-de",
     )
     download_parser.add_argument(
-        "--out-dir",
-        default=None,
-        help="Directory to store PDFs. Defaults to data/<set_number>",
+        "--data-dir",
+        default=os.environ.get("LEGO_DATA_DIR"),
+        help="Directory containing LEGO set data (sets stored in <data-dir>/<set_number>). Defaults to LEGO_DATA_DIR env var.",
     )
     download_parser.add_argument(
         "--print-metadata",
@@ -153,17 +153,18 @@ def run_download(args: argparse.Namespace) -> int:
 
     # Print metadata mode: fetch and print JSON without downloading or saving
     if args.print_metadata:
-        with LegoInstructionDownloader(locale=args.locale) as downloader:
+        with LegoInstructionDownloader(
+            locale=args.locale, debug=args.debug
+        ) as downloader:
             for set_number in all_set_numbers:
                 try:
-                    html = downloader.fetch_instructions_page(set_number)
-                    meta = build_metadata(
-                        html,
-                        set_number,
-                        args.locale,
-                        base=LEGO_BASE,
-                        debug=args.debug,
-                    )
+                    meta = downloader.fetch_set_metadata(set_number)
+                    if not meta or not meta.name:
+                        print(
+                            f"Error: Set {set_number} not found on LEGO.com.",
+                            file=sys.stderr,
+                        )
+                        return 1
                     print(meta.model_dump_json(indent=2, exclude_unset=True))
                 except Exception as e:
                     print(
@@ -173,10 +174,19 @@ def run_download(args: argparse.Namespace) -> int:
                     return 1
         return 0
 
+    data_dir = args.data_dir or os.environ.get("LEGO_DATA_DIR")
+    # Ensure data directory is specified via flag or environment variable
+    if not data_dir:
+        print(
+            "Error: Data directory must be specified via --data-dir or the LEGO_DATA_DIR environment variable.",
+            file=sys.stderr,
+        )
+        return 1
+
     # Download mode: use the class-based downloader with shared state
     with LegoInstructionDownloader(
         locale=args.locale,
-        out_dir=Path(args.out_dir) if args.out_dir else None,
+        data_dir=Path(data_dir),
         overwrite_metadata_if_older_than=overwrite_metadata_if_older_than,
         overwrite_download=args.overwrite_pdfs,
         show_progress=True,

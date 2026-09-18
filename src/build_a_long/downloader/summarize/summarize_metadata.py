@@ -3,6 +3,8 @@
 import argparse
 import collections
 import json
+import os
+import sys
 from pathlib import Path
 
 from tqdm.auto import tqdm
@@ -105,13 +107,13 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--data-dir",
-        default="data",
-        help="Directory containing the downloaded LEGO set data.",
+        default=os.environ.get("LEGO_DATA_DIR"),
+        help="Directory containing the downloaded LEGO set data (defaults to LEGO_DATA_DIR env var).",
     )
     parser.add_argument(
         "--output-dir",
-        default="data/indices",
-        help="Directory to store the generated index files.",
+        default=None,
+        help="Directory to store the generated index files (defaults to <data-dir>/indices).",
     )
     return parser.parse_args()
 
@@ -119,7 +121,16 @@ def _parse_args() -> argparse.Namespace:
 def main() -> int:
     """Main entry point for the metadata summarizer."""
     args = _parse_args()
-    return summarize_metadata(Path(args.data_dir), Path(args.output_dir))
+    if not args.data_dir:
+        print(
+            "Error: Data directory must be specified via --data-dir or the LEGO_DATA_DIR environment variable.",
+            file=sys.stderr,
+        )
+        return 1
+    output_dir = (
+        Path(args.output_dir) if args.output_dir else Path(args.data_dir) / "indices"
+    )
+    return summarize_metadata(Path(args.data_dir), output_dir)
 
 
 if __name__ == "__main__":

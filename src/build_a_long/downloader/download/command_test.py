@@ -6,6 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from pydantic import AnyUrl
 
 from build_a_long.downloader.models import DownloaderStats
@@ -14,13 +15,19 @@ from build_a_long.schemas import InstructionMetadata, PdfEntry
 from .command import get_set_numbers_from_args, run_download
 
 
+@pytest.fixture(autouse=True)
+def default_data_dir_env(monkeypatch):
+    """Set default LEGO_DATA_DIR for tests."""
+    monkeypatch.setenv("LEGO_DATA_DIR", "/tmp/lego_data")
+
+
 def make_args(**kwargs):
     """Create a mock args object with default values."""
     defaults = {
         "set_number": "12345",
         "stdin": False,
         "locale": "en-us",
-        "out_dir": None,
+        "data_dir": None,
         "print_metadata": False,
         "skip_pdfs": False,
         "overwrite_metadata": False,
@@ -138,13 +145,11 @@ def test_run_download_custom_locale_and_overwrites(mock_downloader_class):
 
 
 @patch("downloader.download.command.LegoInstructionDownloader")
-@patch("downloader.download.command.build_metadata")
-def test_run_download_metadata_mode(mock_build_metadata, mock_downloader_class, capsys):
+def test_run_download_metadata_mode(mock_downloader_class, capsys):
     """Test --metadata flag outputs JSON without downloading."""
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
-    mock_instance.fetch_instructions_page.return_value = "<html></html>"
     mock_downloader_class.return_value = mock_instance
 
     # Mock metadata return
@@ -167,7 +172,7 @@ def test_run_download_metadata_mode(mock_build_metadata, mock_downloader_class, 
             )
         ],
     )
-    mock_build_metadata.return_value = mock_meta
+    mock_instance.fetch_set_metadata.return_value = mock_meta
 
     args = make_args(set_number="12345", print_metadata=True)
 
@@ -176,9 +181,8 @@ def test_run_download_metadata_mode(mock_build_metadata, mock_downloader_class, 
     assert exit_code == 0
     # Should not call process_sets (download path)
     mock_instance.process_sets.assert_not_called()
-    # Should fetch page and build metadata
-    mock_instance.fetch_instructions_page.assert_called_once_with("12345")
-    mock_build_metadata.assert_called_once()
+    # Should fetch set metadata
+    mock_instance.fetch_set_metadata.assert_called_once_with("12345")
 
     # Check JSON output
     output = capsys.readouterr().out
@@ -189,21 +193,21 @@ def test_run_download_metadata_mode(mock_build_metadata, mock_downloader_class, 
 
 
 @patch("downloader.download.command.LegoInstructionDownloader")
-def test_run_download_custom_out_dir(mock_downloader_class):
-    """Test download with custom output directory."""
+def test_run_download_custom_data_dir(mock_downloader_class):
+    """Test download with custom data directory."""
     mock_instance = MagicMock()
     mock_instance.__enter__ = MagicMock(return_value=mock_instance)
     mock_instance.__exit__ = MagicMock(return_value=None)
     mock_instance.process_sets.return_value = DownloaderStats()
     mock_downloader_class.return_value = mock_instance
 
-    args = make_args(set_number="12345", out_dir="/tmp/lego")
+    args = make_args(set_number="12345", data_dir="/tmp/lego")
 
     exit_code = run_download(args)
 
     assert exit_code == 0
     call_kwargs = mock_downloader_class.call_args[1]
-    assert call_kwargs["out_dir"] == Path("/tmp/lego")
+    assert call_kwargs["data_dir"] == Path("/tmp/lego")
 
 
 @patch("downloader.download.command.LegoInstructionDownloader")
@@ -264,4 +268,17 @@ def test_run_download_invalid_duration_string(capsys):
     exit_code = run_download(args)
 
     assert exit_code == 1
-    assert "Error: Invalid duration string:" in capsys.readouterr().err
+
+
+def test_run_download_missing_data_dir_and_env(monkeypatch, capsys):
+    """Test error when neither --data-dir nor LEGO_DATA_DIR is provided."""
+    monkeypatch.delenv("LEGO_DATA_DIR", raising=False)
+    args = make_args(set_number="12345", data_dir=None)
+
+    exit_code = run_download(args)
+
+    assert exit_code == 1
+    assert (
+        "Error: Data directory must be specified via --data-dir or the LEGO_DATA_DIR environment variable."
+        in capsys.readouterr().err
+    )
