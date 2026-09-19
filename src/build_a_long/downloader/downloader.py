@@ -305,13 +305,15 @@ class LegoInstructionDownloader:
             self.stats.sets_not_found += 1
             return None
 
-        # If we have existing metadata, try to carry over file size and hash
-        # from matching PDFs to avoid losing this data when overwriting.
+        # If we have existing metadata, try to carry over file size, hash, and
+        # filename from matching PDFs to avoid losing this data when overwriting.
         if existing_meta:
             existing_pdfs_by_url = {str(p.url): p for p in existing_meta.pdfs}
             for pdf in metadata.pdfs:
                 if str(pdf.url) in existing_pdfs_by_url:
                     existing_pdf = existing_pdfs_by_url[str(pdf.url)]
+                    if not pdf.filename and existing_pdf.filename:
+                        pdf.filename = existing_pdf.filename
                     if not pdf.filesize:
                         pdf.filesize = existing_pdf.filesize
                     if not pdf.filehash:
@@ -436,13 +438,7 @@ class LegoInstructionDownloader:
 
         # Skip PDF downloads if skip_pdfs is True
         if self.skip_pdfs:
-            if not use_cached:
-                # Write the metadata if it's new or updated
-                try:
-                    write_metadata(out_dir / "metadata.json", metadata)
-                    print(f"Wrote metadata: {out_dir / 'metadata.json'}")
-                except OSError as e:
-                    print(f"Warning: Failed to write {out_dir / 'metadata.json'}: {e}")
+            self.stats.pdfs_found += len(metadata.pdfs)
             return 0
 
         # Process the PDFs for the set.
