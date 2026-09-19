@@ -165,7 +165,7 @@ def run_download(args: argparse.Namespace) -> int:
                             file=sys.stderr,
                         )
                         return 1
-                    print(meta.model_dump_json(indent=2, exclude_unset=True))
+                    print(meta.model_dump_json(indent=2, exclude_none=True))
                 except Exception as e:
                     print(
                         f"Error fetching metadata for set {set_number}: {e}",

@@ -590,7 +590,7 @@ def test_skip_pdfs_has_no_filename(tmp_path: Path, capsys):
         # Check that filename is None
         assert len(new_data["pdfs"]) == 1
         pdf = new_data["pdfs"][0]
-        assert pdf["filename"] is None
+        assert pdf.get("filename") is None
         assert not (set_dir / "77777.pdf").exists()
 
 

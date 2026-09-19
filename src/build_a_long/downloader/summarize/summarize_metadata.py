@@ -78,7 +78,7 @@ def summarize_metadata(data_dir: Path, output_dir: Path) -> int:
         with open(output_file, "w") as f:
             # Convert to dict for JSON serialization with mode='json' to serialize URLs
             json.dump(
-                [m.model_dump(mode="json", exclude_unset=True) for m in metadata_list],
+                [m.model_dump(mode="json", exclude_none=True) for m in metadata_list],
                 f,
                 indent=2,
             )
