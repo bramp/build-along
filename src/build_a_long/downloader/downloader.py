@@ -248,14 +248,28 @@ class LegoInstructionDownloader:
         meta_path = out_dir / "metadata.json"
         not_found_path = out_dir / self.NOT_FOUND_SUFFIX
 
+        existing_meta = None
+        if meta_path.exists():
+            try:
+                existing_meta = read_metadata(meta_path)
+            except (OSError, ValueError) as e:
+                print(f"Warning: Could not read {meta_path}: {e}")
+
         should_overwrite = False
         if self.overwrite_metadata_if_older_than is not None:
             if not meta_path.exists():
                 # This is not an overwrite, it's a first download
                 pass
             else:
-                file_mtime = datetime.datetime.fromtimestamp(meta_path.stat().st_mtime)
-                now = datetime.datetime.now()
+                if existing_meta and existing_meta.last_updated:
+                    file_mtime = existing_meta.last_updated
+                else:
+                    file_mtime = datetime.datetime.fromtimestamp(
+                        meta_path.stat().st_mtime, tz=datetime.timezone.utc
+                    )
+                now = datetime.datetime.now(datetime.timezone.utc)
+                if file_mtime.tzinfo is None:
+                    file_mtime = file_mtime.replace(tzinfo=datetime.timezone.utc)
                 if (now - file_mtime) > self.overwrite_metadata_if_older_than:
                     print(
                         f"Metadata for set {set_number} is older than specified "
@@ -269,13 +283,6 @@ class LegoInstructionDownloader:
             print(f"Skipping set {set_number} (marked as not found).")
             self.stats.sets_not_found += 1
             return None
-
-        existing_meta = None
-        if meta_path.exists():
-            try:
-                existing_meta = read_metadata(meta_path)
-            except (OSError, ValueError) as e:
-                print(f"Warning: Could not read {meta_path}: {e}")
 
         # If metadata.json exists and we're not forcing an update,
         # use the loaded metadata.

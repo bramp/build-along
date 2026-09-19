@@ -40,6 +40,7 @@ class InstructionMetadata {
     this.pieces,
     this.year,
     this.setImageUrl,
+    this.lastUpdated,
     this.pdfs = const [],
   });
 
@@ -51,6 +52,7 @@ class InstructionMetadata {
   final int? pieces;
   final int? year;
   final String? setImageUrl;
+  final DateTime? lastUpdated;
   final List<PdfEntry> pdfs;
 
   // TODO: Automate generation of this class and PdfEntry from Python models
@@ -71,6 +73,9 @@ class InstructionMetadata {
       pieces: json['pieces'],
       year: json['year'],
       setImageUrl: json['set_image_url'],
+      lastUpdated: json['_last_updated'] != null
+          ? DateTime.tryParse(json['_last_updated'] as String)
+          : null,
       pdfs: pdfsList,
     );
   }

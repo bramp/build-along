@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import logging
 from contextlib import suppress
 from typing import Any
@@ -445,6 +446,7 @@ def parse_metadata_from_graphql(
         )
 
     return InstructionMetadata(
+        last_updated=datetime.datetime.now(datetime.timezone.utc),
         set=set_number,
         locale=locale,
         name=name,

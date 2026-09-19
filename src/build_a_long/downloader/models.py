@@ -5,9 +5,10 @@ shared metadata models (InstructionMetadata, PdfEntry) that are used for seriali
 instruction data to JSON files and generating schemas for other applications.
 """
 
+import datetime
 from pathlib import Path
 
-from pydantic import AnyUrl, BaseModel, Field, RootModel
+from pydantic import AliasChoices, AnyUrl, BaseModel, ConfigDict, Field, RootModel
 
 # =============================================================================
 # Shared metadata models (source of truth for JSON schema generation)
@@ -100,6 +101,15 @@ class InstructionMetadata(BaseModel):
     This is the main model serialized to metadata.json files in each set's
     data directory. It contains all information about a set and its PDFs.
     """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    last_updated: datetime.datetime | None = Field(
+        default=None,
+        serialization_alias="_last_updated",
+        validation_alias=AliasChoices("_last_updated", "last_updated"),
+        description="Timestamp when this metadata was fetched from LEGO.com (ISO 8601 UTC).",
+    )
 
     # TODO maybe rename 'set' to 'set_number' for clarity
     set: str = Field(..., description="The unique identifier for the LEGO set.")

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import json
 import logging
 import re
@@ -202,6 +203,7 @@ def parse_set_metadata(
             break
 
     return InstructionMetadata(
+        last_updated=datetime.datetime.now(datetime.timezone.utc),
         set=set_number,
         locale=locale,
         name=name,

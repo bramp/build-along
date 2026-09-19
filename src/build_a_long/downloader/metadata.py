@@ -42,5 +42,8 @@ def write_metadata(path: Path, data: InstructionMetadata) -> None:
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(data.model_dump_json(indent=2, exclude_none=True), encoding="utf-8")
+    tmp.write_text(
+        data.model_dump_json(by_alias=True, indent=2, exclude_none=True),
+        encoding="utf-8",
+    )
     tmp.replace(path)

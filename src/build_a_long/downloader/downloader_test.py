@@ -243,7 +243,9 @@ def test_read_metadata_handles_invalid_json(tmp_path: Path):
 
 def test_write_and_read_metadata_round_trip(tmp_path: Path):
     meta_path = tmp_path / "metadata.json"
+    now = datetime.datetime.now(datetime.timezone.utc)
     payload = InstructionMetadata(
+        last_updated=now,
         set="12345",
         locale="en-us",
         name="Test",
@@ -266,8 +268,12 @@ def test_write_and_read_metadata_round_trip(tmp_path: Path):
     write_metadata(meta_path, payload)
     assert meta_path.exists()
 
+    raw_json = json.loads(meta_path.read_text(encoding="utf-8"))
+    assert "_last_updated" in raw_json
+
     loaded = read_metadata(meta_path)
     assert loaded == payload
+    assert loaded.last_updated == now
 
 
 @patch(
@@ -543,6 +549,45 @@ def test_process_set_preserves_filesize_and_hash_on_overwrite(tmp_path: Path, ca
         pdf = new_data["pdfs"][0]
         assert pdf["filesize"] == 12345
         assert pdf["filehash"] == "cafebabe" * 8
+
+
+def test_process_set_checks_embedded_last_updated(tmp_path: Path):
+    """Test that embedded _last_updated timestamp takes precedence over file mtime."""
+    set_number = "88889"
+    out_dir = tmp_path
+    set_dir = out_dir / set_number
+    set_dir.mkdir(parents=True, exist_ok=True)
+
+    # File mtime is old (10 days ago), but embedded _last_updated is recent (10 minutes ago)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    recent_timestamp = (now - datetime.timedelta(minutes=10)).isoformat()
+    existing_meta = {
+        "_last_updated": recent_timestamp,
+        "set": set_number,
+        "locale": "en-us",
+        "name": "Cached Name",
+        "pdfs": [
+            {
+                "url": "https://www.lego.com/88889.pdf",
+                "filename": "88889.pdf",
+            }
+        ],
+    }
+    (set_dir / "metadata.json").write_text(json.dumps(existing_meta), encoding="utf-8")
+    past_time = time.time() - (10 * 24 * 3600)
+    os.utime(set_dir / "metadata.json", (past_time, past_time))
+
+    downloader = LegoInstructionDownloader(
+        data_dir=out_dir,
+        overwrite_metadata_if_older_than=datetime.timedelta(days=1),
+        show_progress=False,
+        skip_pdfs=True,
+    )
+    # Mock fetch_set_metadata to fail if called
+    with patch.object(downloader, "fetch_set_metadata") as mock_fetch:
+        exit_code = downloader.process_set(set_number)
+        assert exit_code == 0
+        mock_fetch.assert_not_called()  # Because _last_updated was recent!
 
 
 def test_skip_pdfs_has_no_filename(tmp_path: Path, capsys):

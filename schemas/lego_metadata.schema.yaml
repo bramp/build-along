@@ -177,6 +177,14 @@ description: JSON Schema for LEGO set metadata, generated from Pydantic models. 
   describes the structure of metadata.json files containing information about LEGO sets and
   their instruction PDFs.
 properties:
+  _last_updated:
+    anyOf:
+    - format: date-time
+      type: string
+    - type: 'null'
+    default: null
+    description: Timestamp when this metadata was fetched from LEGO.com (ISO 8601 UTC).
+    title: Last Updated
   set:
     description: The unique identifier for the LEGO set.
     title: Set

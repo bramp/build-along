@@ -62,6 +62,7 @@ def generate_metadata_schema() -> dict[str, Any]:
     """
     schema = InstructionMetadata.model_json_schema(
         mode="serialization",
+        by_alias=True,
     )
 
     schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
