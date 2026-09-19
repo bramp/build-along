@@ -86,6 +86,14 @@ class VideoEntry(BaseModel):
     )
 
 
+class Dimensions(BaseModel):
+    """Dimensions of the assembled LEGO model in centimeters."""
+
+    height: float | None = Field(default=None, description="Height in centimeters.")
+    width: float | None = Field(default=None, description="Width in centimeters.")
+    depth: float | None = Field(default=None, description="Depth in centimeters.")
+
+
 class InstructionMetadata(BaseModel):
     """Complete metadata for a LEGO set's instructions.
 
@@ -159,6 +167,46 @@ class InstructionMetadata(BaseModel):
     brand: str | None = Field(
         default=None,
         description="The brand category of the set (e.g., 'Star Wars', 'Icons').",
+    )
+    minifigure_count: int | None = Field(
+        default=None,
+        description="The number of minifigures included in the set.",
+    )
+    dimensions: Dimensions | None = Field(
+        default=None,
+        description="Dimensions of the assembled set in centimeters.",
+    )
+    availability_status: str | None = Field(
+        default=None,
+        description="Availability status on LEGO.com (e.g. 'E_AVAILABLE', 'R_RETIRED').",
+    )
+    availability_text: str | None = Field(
+        default=None,
+        description="Human-readable availability text (e.g. 'Available now', 'Retired product').",
+    )
+    price_formatted: str | None = Field(
+        default=None,
+        description="Formatted price (e.g. '$999.99').",
+    )
+    price_cents: int | None = Field(
+        default=None,
+        description="Price in cents.",
+    )
+    currency: str | None = Field(
+        default=None,
+        description="Currency code (e.g. 'USD').",
+    )
+    rating: float | None = Field(
+        default=None,
+        description="Average customer review rating out of 5.",
+    )
+    sku: str | None = Field(
+        default=None,
+        description="The LEGO shop item/SKU number.",
+    )
+    flags: list[str] = Field(
+        default=[],
+        description="Special badges or flags (e.g. 'Exclusives', 'New').",
     )
     pdfs: list[PdfEntry] = Field(
         default=[], description="A list of PDF instruction entries for the set."

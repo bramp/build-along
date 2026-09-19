@@ -91,6 +91,24 @@ SAMPLE_GRAPHQL_DATA = {
                 },
             },
         ],
+        "variant": {
+            "sku": "6529122",
+            "price": {
+                "centAmount": 99999,
+                "formattedAmount": "$999.99",
+                "currencyCode": "USD",
+            },
+            "attributes": {
+                "minifigureCount": 38,
+                "buildHeight": 70,
+                "buildWidth": 79,
+                "buildDepth": 27,
+                "availabilityStatus": "E_AVAILABLE",
+                "availabilityText": "Available now",
+                "rating": 3.5,
+                "featuredFlags": [{"key": "exclusive", "label": "Exclusives"}],
+            },
+        },
     },
 }
 
@@ -125,6 +143,19 @@ def test_parse_metadata_from_graphql():
     assert meta.videos[0].title == "Designer Video"
     assert meta.videos[0].url == AnyUrl("https://www.lego.com/video.mp4")
     assert meta.videos[0].quality == "Highest"
+    assert meta.minifigure_count == 38
+    assert meta.dimensions is not None
+    assert meta.dimensions.height == 70.0
+    assert meta.dimensions.width == 79.0
+    assert meta.dimensions.depth == 27.0
+    assert meta.availability_status == "E_AVAILABLE"
+    assert meta.availability_text == "Available now"
+    assert meta.rating == 3.5
+    assert meta.price_formatted == "$999.99"
+    assert meta.price_cents == 99999
+    assert meta.currency == "USD"
+    assert meta.sku == "6529122"
+    assert meta.flags == ["Exclusives"]
     assert len(meta.pdfs) == 2
     assert meta.pdfs[0].filesize == 92919030
     assert meta.pdfs[0].sequence_number == 1

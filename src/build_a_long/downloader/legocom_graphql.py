@@ -11,6 +11,7 @@ import httpx
 from pydantic import AnyUrl
 
 from build_a_long.downloader.models import (
+    Dimensions,
     ImageEntry,
     InstructionMetadata,
     PdfEntry,
@@ -173,6 +174,30 @@ def fetch_set_data_graphql(
         }}
       }}
     }}
+    ... on SingleVariantProduct {{
+      variant {{
+        id
+        sku
+        price {{
+          centAmount
+          formattedAmount
+          currencyCode
+        }}
+        attributes {{
+          minifigureCount
+          buildHeight
+          buildWidth
+          buildDepth
+          availabilityStatus
+          availabilityText
+          rating
+          featuredFlags {{
+            key
+            label
+          }}
+        }}
+      }}
+    }}
   }}
 }}"""
 
@@ -321,6 +346,52 @@ def parse_metadata_from_graphql(
     if isinstance(brand_cat, dict) and brand_cat.get("name"):
         brand = brand_cat["name"]
 
+    # Product variant attributes: minifigures, dimensions, availability, price
+    minifigure_count = None
+    dimensions = None
+    availability_status = None
+    availability_text = None
+    price_formatted = None
+    price_cents = None
+    currency = None
+    rating = None
+    sku = None
+    flags: list[str] = []
+
+    variant = product_data.get("variant")
+    if isinstance(variant, dict):
+        sku = variant.get("sku")
+        price_obj = variant.get("price")
+        if isinstance(price_obj, dict):
+            price_formatted = price_obj.get("formattedAmount")
+            price_cents = price_obj.get("centAmount")
+            currency = price_obj.get("currencyCode")
+
+        attrs = variant.get("attributes")
+        if isinstance(attrs, dict):
+            if attrs.get("minifigureCount") is not None:
+                with suppress(ValueError, TypeError):
+                    minifigure_count = int(attrs["minifigureCount"])
+            h = attrs.get("buildHeight")
+            w = attrs.get("buildWidth")
+            d = attrs.get("buildDepth")
+            if h is not None or w is not None or d is not None:
+                dimensions = Dimensions(
+                    height=float(h) if h is not None else None,
+                    width=float(w) if w is not None else None,
+                    depth=float(d) if d is not None else None,
+                )
+            availability_status = attrs.get("availabilityStatus")
+            availability_text = attrs.get("availabilityText")
+            if attrs.get("rating") is not None:
+                with suppress(ValueError, TypeError):
+                    rating = float(attrs["rating"])
+            for flag in attrs.get("featuredFlags") or []:
+                if isinstance(flag, dict) and flag.get("label"):
+                    flag_label = flag["label"].strip()
+                    if flag_label and flag_label not in flags:
+                        flags.append(flag_label)
+
     # PDFs
     pdfs: list[PdfEntry] = []
     for item in cs_data.get("buildingInstructions") or []:
@@ -393,5 +464,15 @@ def parse_metadata_from_graphql(
         videos=videos,
         categories=categories,
         brand=brand,
+        minifigure_count=minifigure_count,
+        dimensions=dimensions,
+        availability_status=availability_status,
+        availability_text=availability_text,
+        price_formatted=price_formatted,
+        price_cents=price_cents,
+        currency=currency,
+        rating=rating,
+        sku=sku,
+        flags=flags,
         pdfs=pdfs,
     )

@@ -5,6 +5,7 @@ for backward compatibility.
 """
 
 from build_a_long.downloader.models import (
+    Dimensions,
     ImageEntry,
     InstructionMetadata,
     MainIndex,
@@ -15,6 +16,7 @@ from build_a_long.downloader.models import (
 )
 
 __all__ = [
+    "Dimensions",
     "ImageEntry",
     "InstructionMetadata",
     "MainIndex",

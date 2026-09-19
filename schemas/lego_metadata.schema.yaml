@@ -1,4 +1,30 @@
 $defs:
+  Dimensions:
+    description: Dimensions of the assembled LEGO model in centimeters.
+    properties:
+      height:
+        anyOf:
+        - type: number
+        - type: 'null'
+        default: null
+        description: Height in centimeters.
+        title: Height
+      width:
+        anyOf:
+        - type: number
+        - type: 'null'
+        default: null
+        description: Width in centimeters.
+        title: Width
+      depth:
+        anyOf:
+        - type: number
+        - type: 'null'
+        default: null
+        description: Depth in centimeters.
+        title: Depth
+    title: Dimensions
+    type: object
   ImageEntry:
     description: Represents a product image or asset from LEGO.com.
     properties:
@@ -291,6 +317,75 @@ properties:
     default: null
     description: The brand category of the set (e.g., 'Star Wars', 'Icons').
     title: Brand
+  minifigure_count:
+    anyOf:
+    - type: integer
+    - type: 'null'
+    default: null
+    description: The number of minifigures included in the set.
+    title: Minifigure Count
+  dimensions:
+    anyOf:
+    - $ref: '#/$defs/Dimensions'
+    - type: 'null'
+    default: null
+    description: Dimensions of the assembled set in centimeters.
+  availability_status:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: Availability status on LEGO.com (e.g. 'E_AVAILABLE', 'R_RETIRED').
+    title: Availability Status
+  availability_text:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: Human-readable availability text (e.g. 'Available now', 'Retired product').
+    title: Availability Text
+  price_formatted:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: Formatted price (e.g. '$999.99').
+    title: Price Formatted
+  price_cents:
+    anyOf:
+    - type: integer
+    - type: 'null'
+    default: null
+    description: Price in cents.
+    title: Price Cents
+  currency:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: Currency code (e.g. 'USD').
+    title: Currency
+  rating:
+    anyOf:
+    - type: number
+    - type: 'null'
+    default: null
+    description: Average customer review rating out of 5.
+    title: Rating
+  sku:
+    anyOf:
+    - type: string
+    - type: 'null'
+    default: null
+    description: The LEGO shop item/SKU number.
+    title: Sku
+  flags:
+    default: []
+    description: Special badges or flags (e.g. 'Exclusives', 'New').
+    items:
+      type: string
+    title: Flags
+    type: array
   pdfs:
     default: []
     description: A list of PDF instruction entries for the set.
