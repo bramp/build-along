@@ -80,6 +80,10 @@ class VideoEntry(BaseModel):
     url: AnyUrl | None = Field(
         default=None, description="The URL to the video file, if available."
     )
+    quality: str | None = Field(
+        default=None,
+        description="The video stream quality (e.g., 'Highest').",
+    )
 
 
 class InstructionMetadata(BaseModel):

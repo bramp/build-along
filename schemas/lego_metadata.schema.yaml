@@ -138,6 +138,13 @@ $defs:
         default: null
         description: The URL to the video file, if available.
         title: Url
+      quality:
+        anyOf:
+        - type: string
+        - type: 'null'
+        default: null
+        description: The video stream quality (e.g., 'Highest').
+        title: Quality
     title: VideoEntry
     type: object
 description: JSON Schema for LEGO set metadata, generated from Pydantic models. This schema

@@ -168,6 +168,7 @@ def fetch_set_data_graphql(
           description
           videoFormats {{
             url
+            quality
           }}
         }}
       }}
@@ -287,18 +288,22 @@ def parse_metadata_from_graphql(
         elif typename == "ProductAssetVideo":
             video_obj = asset.get("video") or {}
             video_url = None
+            quality = None
             formats = video_obj.get("videoFormats") or []
             if formats and isinstance(formats, list) and isinstance(formats[0], dict):
-                first_format_url = formats[0].get("url")
+                first_format = formats[0]
+                first_format_url = first_format.get("url")
                 if first_format_url:
                     with suppress(Exception):
                         video_url = AnyUrl(first_format_url)
+                quality = first_format.get("quality") or None
             videos.append(
                 VideoEntry(
                     id=asset.get("id"),
-                    title=video_obj.get("title"),
-                    description=video_obj.get("description"),
+                    title=video_obj.get("title") or None,
+                    description=video_obj.get("description") or None,
                     url=video_url,
+                    quality=quality,
                 )
             )
 

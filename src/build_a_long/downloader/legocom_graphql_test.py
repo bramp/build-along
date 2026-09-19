@@ -85,7 +85,9 @@ SAMPLE_GRAPHQL_DATA = {
                 "video": {
                     "title": "Designer Video",
                     "description": "Meet the designers",
-                    "videoFormats": [{"url": "https://www.lego.com/video.mp4"}],
+                    "videoFormats": [
+                        {"url": "https://www.lego.com/video.mp4", "quality": "Highest"}
+                    ],
                 },
             },
         ],
@@ -122,6 +124,7 @@ def test_parse_metadata_from_graphql():
     assert len(meta.videos) == 1
     assert meta.videos[0].title == "Designer Video"
     assert meta.videos[0].url == AnyUrl("https://www.lego.com/video.mp4")
+    assert meta.videos[0].quality == "Highest"
     assert len(meta.pdfs) == 2
     assert meta.pdfs[0].filesize == 92919030
     assert meta.pdfs[0].sequence_number == 1
