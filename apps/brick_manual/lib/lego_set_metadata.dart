@@ -1,7 +1,7 @@
-// Dart equivalent of src/build_a_long/downloader/metadata.py
+// Dart equivalent of src/build_a_long/downloader/models.py
 
 /// Represents a single instruction PDF file.
-/// Corresponds to Python's `PdfEntry` in `src/build_a_long/downloader/metadata.py`.
+/// Corresponds to Python's `PdfEntry` in `src/build_a_long/downloader/models.py`.
 class PdfEntry {
   const PdfEntry({
     required this.url,
@@ -28,10 +28,10 @@ class PdfEntry {
   }
 }
 
-/// Complete metadata for a LEGO set's instructions.
-/// Corresponds to Python's `InstructionMetadata` in `src/build_a_long/downloader/metadata.py`.
-class InstructionMetadata {
-  const InstructionMetadata({
+/// Complete metadata for a LEGO set.
+/// Corresponds to Python's `LegoSetMetadata` in `src/build_a_long/downloader/models.py`.
+class LegoSetMetadata {
+  const LegoSetMetadata({
     required this.set,
     required this.locale,
     this.name,
@@ -58,13 +58,13 @@ class InstructionMetadata {
   // TODO: Automate generation of this class and PdfEntry from Python models
   // to ensure consistency and reduce manual effort.
 
-  factory InstructionMetadata.fromJson(Map<String, dynamic> json) {
+  factory LegoSetMetadata.fromJson(Map<String, dynamic> json) {
     var pdfsFromJson = json['pdfs'] as List<dynamic>?;
     List<PdfEntry> pdfsList = pdfsFromJson != null
         ? pdfsFromJson.map((i) => PdfEntry.fromJson(i)).toList()
         : [];
 
-    return InstructionMetadata(
+    return LegoSetMetadata(
       set: json['set'],
       locale: json['locale'],
       name: json['name'],

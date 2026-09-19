@@ -5,7 +5,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i3;
 
-import 'package:brick_manual/instruction_metadata.dart' as _i4;
+import 'package:brick_manual/lego_set_metadata.dart' as _i4;
 import 'package:brick_manual/lego_set_repository.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 
@@ -41,7 +41,7 @@ class MockLegoSetRepository extends _i1.Mock implements _i2.LegoSetRepository {
           as _i3.Future<List<String>>);
 
   @override
-  _i3.Future<List<_i4.InstructionMetadata>> fetchIndexFile({
+  _i3.Future<List<_i4.LegoSetMetadata>> fetchIndexFile({
     required String? indexUrl,
     void Function(int, int)? onReceiveProgress,
   }) =>
@@ -50,9 +50,9 @@ class MockLegoSetRepository extends _i1.Mock implements _i2.LegoSetRepository {
               #indexUrl: indexUrl,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i3.Future<List<_i4.InstructionMetadata>>.value(
-              <_i4.InstructionMetadata>[],
+            returnValue: _i3.Future<List<_i4.LegoSetMetadata>>.value(
+              <_i4.LegoSetMetadata>[],
             ),
           )
-          as _i3.Future<List<_i4.InstructionMetadata>>);
+          as _i3.Future<List<_i4.LegoSetMetadata>>);
 }

@@ -20,7 +20,7 @@ from build_a_long.downloader.downloader import (
 from build_a_long.downloader.legocom_test import HTML_WITH_METADATA_AND_PDF
 from build_a_long.downloader.models import DownloadedFile
 from build_a_long.downloader.util import extract_filename_from_url
-from build_a_long.schemas import InstructionMetadata, PdfEntry
+from build_a_long.schemas import LegoSetMetadata, PdfEntry
 
 
 def _make_mock_httpx_client(html: str):
@@ -244,7 +244,7 @@ def test_read_metadata_handles_invalid_json(tmp_path: Path):
 def test_write_and_read_metadata_round_trip(tmp_path: Path):
     meta_path = tmp_path / "metadata.json"
     now = datetime.datetime.now(datetime.timezone.utc)
-    payload = InstructionMetadata(
+    payload = LegoSetMetadata(
         last_updated=now,
         set="12345",
         locale="en-us",
@@ -284,7 +284,7 @@ def test_process_set_creates_not_found_on_empty_name(
 ):
     """Test that a .not_found file is created when metadata has an empty name."""
     # Mock fetch_set_metadata to return metadata with an empty name
-    mock_fetch_set_metadata.return_value = InstructionMetadata(
+    mock_fetch_set_metadata.return_value = LegoSetMetadata(
         set="10516",
         locale="en-us",
         name="",
@@ -366,7 +366,7 @@ def test_process_set_skips_download_if_exists(tmp_path: Path, monkeypatch, capsy
     pdf_path.write_text("existing content")
 
     # Mock metadata that points to the existing PDF
-    meta = InstructionMetadata(
+    meta = LegoSetMetadata(
         set=set_number,
         locale="en-us",
         name="Test Set",
@@ -407,7 +407,7 @@ def test_process_set_skips_download_if_not_found_exists(
     not_found_path = set_dir / f"{pdf_filename}.not_found"
     not_found_path.touch()
 
-    meta = InstructionMetadata(
+    meta = LegoSetMetadata(
         set=set_number,
         locale="en-us",
         name="Test Set",
@@ -446,7 +446,7 @@ def test_process_set_creates_not_found_for_pdf_on_404(
     pdf_filename = "7000001.pdf"
     not_found_path = set_dir / f"{pdf_filename}.not_found"
 
-    meta = InstructionMetadata(
+    meta = LegoSetMetadata(
         set=set_number,
         locale="en-us",
         name="Test Set",
@@ -510,7 +510,7 @@ def test_process_set_preserves_filesize_and_hash_on_overwrite(tmp_path: Path, ca
     past_time = time.time() - (10 * 24 * 3600)
     os.utime(set_dir / "metadata.json", (past_time, past_time))
 
-    new_meta_obj = InstructionMetadata(
+    new_meta_obj = LegoSetMetadata(
         set=set_number,
         locale="en-us",
         name="New Name",
@@ -599,7 +599,7 @@ def test_skip_pdfs_has_no_filename(tmp_path: Path, capsys):
 
     pdf_url = "https://www.lego.com/77777.pdf"
 
-    meta_obj = InstructionMetadata(
+    meta_obj = LegoSetMetadata(
         set=set_number,
         locale="en-us",
         name="Metadata Only Set",

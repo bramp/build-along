@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdfrx/pdfrx.dart';
-import 'package:brick_manual/instruction_metadata.dart';
+import 'package:brick_manual/lego_set_metadata.dart';
 import 'package:brick_manual/lego_set_repository.dart';
 import 'package:dio/dio.dart';
 
@@ -38,7 +38,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final LegoSetRepository _repository;
-  late final Future<List<InstructionMetadata>> _allSetsFuture;
+  late final Future<List<LegoSetMetadata>> _allSetsFuture;
   String _searchQuery = '';
 
   @override
@@ -48,9 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _allSetsFuture = _loadLegoSets();
   }
 
-  Future<List<InstructionMetadata>> _loadLegoSets() async {
+  Future<List<LegoSetMetadata>> _loadLegoSets() async {
     final manifest = await _repository.fetchManifest();
-    final List<InstructionMetadata> allSets = [];
+    final List<LegoSetMetadata> allSets = [];
     for (final indexUrl in manifest) {
       final sets = await _repository.fetchIndexFile(indexUrl: indexUrl);
       allSets.addAll(sets);
@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<InstructionMetadata>>(
+            child: FutureBuilder<List<LegoSetMetadata>>(
               future: _allSetsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:brick_manual/instruction_metadata.dart';
+import 'package:brick_manual/lego_set_metadata.dart';
 
 const String BASE_URL = 'https://lego.bramp.net';
 const String MANIFEST_URL = '$BASE_URL/manifest.json';
@@ -9,7 +9,7 @@ const String MANIFEST_URL = '$BASE_URL/manifest.json';
 /// This allows for easy mocking in tests.
 abstract class LegoSetRepository {
   Future<List<String>> fetchManifest();
-  Future<List<InstructionMetadata>> fetchIndexFile({
+  Future<List<LegoSetMetadata>> fetchIndexFile({
     required String indexUrl,
     void Function(int count, int total)? onReceiveProgress,
   });
@@ -38,7 +38,7 @@ class LegoSetRepositoryImpl implements LegoSetRepository {
   }
 
   @override
-  Future<List<InstructionMetadata>> fetchIndexFile({
+  Future<List<LegoSetMetadata>> fetchIndexFile({
     required String indexUrl,
     void Function(int count, int total)? onReceiveProgress,
   }) async {
@@ -52,7 +52,7 @@ class LegoSetRepositoryImpl implements LegoSetRepository {
       if (response.statusCode == 200 && response.data != null) {
         final String responseBody = utf8.decode(response.data as List<int>);
         final List<dynamic> data = json.decode(responseBody);
-        return data.map((i) => InstructionMetadata.fromJson(i)).toList();
+        return data.map((i) => LegoSetMetadata.fromJson(i)).toList();
       } else {
         throw Exception('Failed to load index file $indexUrl: Status code ${response.statusCode}');
       }

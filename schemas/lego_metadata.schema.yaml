@@ -56,7 +56,7 @@ $defs:
     description: 'Represents a single instruction PDF file.
 
 
-      This model is serialized to JSON as part of InstructionMetadata and is
+      This model is serialized to JSON as part of LegoSetMetadata and is
 
       used by both Python and other applications (via generated schemas).'
     properties:

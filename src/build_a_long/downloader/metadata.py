@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from build_a_long.downloader.models import InstructionMetadata
+from build_a_long.downloader.models import LegoSetMetadata
 
 __all__ = [
     "read_metadata",
@@ -10,24 +10,24 @@ __all__ = [
 ]
 
 
-def read_metadata(path: Path) -> InstructionMetadata:
+def read_metadata(path: Path) -> LegoSetMetadata:
     """Read a metadata.json file from disk using Pydantic.
 
     Args:
         path: Path to the metadata.json file.
 
     Returns:
-        The parsed InstructionMetadata object.
+        The parsed LegoSetMetadata object.
 
     Raises:
         OSError: If the file cannot be read.
         ValueError: If the JSON is invalid or doesn't match the schema.
     """
     text = path.read_text(encoding="utf-8")
-    return InstructionMetadata.model_validate_json(text)
+    return LegoSetMetadata.model_validate_json(text)
 
 
-def write_metadata(path: Path, data: InstructionMetadata) -> None:
+def write_metadata(path: Path, data: LegoSetMetadata) -> None:
     """Write metadata to disk atomically as UTF-8 JSON.
 
     This creates parent directories if they do not exist and writes with
@@ -35,7 +35,7 @@ def write_metadata(path: Path, data: InstructionMetadata) -> None:
 
     Args:
         path: Destination path for metadata.json
-        data: The InstructionMetadata object to write
+        data: The LegoSetMetadata object to write
 
     Raises:
         OSError: If the file cannot be written.

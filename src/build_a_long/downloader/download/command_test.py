@@ -10,7 +10,7 @@ import pytest
 from pydantic import AnyUrl
 
 from build_a_long.downloader.models import DownloaderStats
-from build_a_long.schemas import InstructionMetadata, PdfEntry
+from build_a_long.schemas import LegoSetMetadata, PdfEntry
 
 from .command import get_set_numbers_from_args, run_download
 
@@ -153,7 +153,7 @@ def test_run_download_metadata_mode(mock_downloader_class, capsys):
     mock_downloader_class.return_value = mock_instance
 
     # Mock metadata return
-    mock_meta = InstructionMetadata(
+    mock_meta = LegoSetMetadata(
         set="12345",
         locale="en-us",
         name="Test Set",

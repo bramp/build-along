@@ -15,7 +15,7 @@ from pydantic import AnyUrl
 
 from build_a_long.downloader.models import (
     DownloadUrl,
-    InstructionMetadata,
+    LegoSetMetadata,
     PdfEntry,
 )
 from build_a_long.downloader.util import clean_features_text
@@ -125,19 +125,19 @@ def parse_set_metadata(
     locale: str = "",
     base: str = LEGO_BASE,
     debug: bool = False,
-) -> InstructionMetadata:
+) -> LegoSetMetadata:
     """Parse a LEGO instructions HTML page and extract set metadata."""
     next_data = _extract_next_data(html, debug=debug)
     if not next_data:
-        return InstructionMetadata(set=set_number, locale=locale)
+        return LegoSetMetadata(set=set_number, locale=locale)
 
     apollo_state = _get_apollo_state(next_data)
     if not apollo_state:
-        return InstructionMetadata(set=set_number, locale=locale)
+        return LegoSetMetadata(set=set_number, locale=locale)
 
     bi_data = _get_building_instruction_data(apollo_state)
     if not bi_data or not bi_data.get("name"):
-        return InstructionMetadata(set=set_number, locale=locale)
+        return LegoSetMetadata(set=set_number, locale=locale)
 
     # Extract name
     name = bi_data.get("name")
@@ -202,7 +202,7 @@ def parse_set_metadata(
                 name = value.get("name")
             break
 
-    return InstructionMetadata(
+    return LegoSetMetadata(
         last_updated=datetime.datetime.now(datetime.timezone.utc),
         set=set_number,
         locale=locale,
@@ -339,8 +339,8 @@ def build_metadata_from_html(
     locale: str,
     base: str = LEGO_BASE,
     debug: bool = False,
-) -> InstructionMetadata:
-    """Construct an InstructionMetadata model from the instructions HTML."""
+) -> LegoSetMetadata:
+    """Construct a LegoSetMetadata model from the instructions HTML."""
     metadata = parse_set_metadata(
         html, set_number=set_number, locale=locale, base=base, debug=debug
     )

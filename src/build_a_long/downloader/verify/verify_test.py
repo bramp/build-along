@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from pydantic import AnyUrl
 
-from build_a_long.schemas import InstructionMetadata, PdfEntry
+from build_a_long.schemas import LegoSetMetadata, PdfEntry
 
 from .verify import verify_data_integrity
 
@@ -35,7 +35,7 @@ def test_verify_data_integrity_happy_path(data_dir: Path, capsys):
     pdf_hash = hasher.hexdigest()
     pdf_size = len(pdf_content)
 
-    metadata = InstructionMetadata(
+    metadata = LegoSetMetadata(
         set="12345",
         locale="en-us",
         pdfs=[
@@ -61,7 +61,7 @@ def test_verify_data_integrity_missing_file(data_dir: Path, capsys):
     set_dir = data_dir / "12345"
     set_dir.mkdir()
 
-    metadata = InstructionMetadata(
+    metadata = LegoSetMetadata(
         set="12345",
         locale="en-us",
         pdfs=[
@@ -91,7 +91,7 @@ def test_verify_data_integrity_filesize_mismatch(data_dir: Path, capsys):
     pdf_path = set_dir / "12345-1.pdf"
     create_dummy_file(pdf_path, pdf_content)
 
-    metadata = InstructionMetadata(
+    metadata = LegoSetMetadata(
         set="12345",
         locale="en-us",
         pdfs=[
@@ -125,7 +125,7 @@ def test_verify_data_integrity_hash_mismatch(data_dir: Path, capsys):
     hasher.update(pdf_content)
     pdf_hash = hasher.hexdigest()
 
-    metadata = InstructionMetadata(
+    metadata = LegoSetMetadata(
         set="12345",
         locale="en-us",
         pdfs=[
@@ -174,7 +174,7 @@ def test_verify_data_integrity_missing_filename(data_dir: Path, capsys):
     set_dir.mkdir()
 
     # Metadata with a PdfEntry lacking a filename
-    metadata = InstructionMetadata(
+    metadata = LegoSetMetadata(
         set="12345",
         locale="en-us",
         pdfs=[
@@ -217,7 +217,7 @@ def test_verify_data_integrity_orphaned_pdf(data_dir: Path, capsys):
     pdf_hash = hasher.hexdigest()
     pdf_size = len(pdf_content)
 
-    metadata = InstructionMetadata(
+    metadata = LegoSetMetadata(
         set="12345",
         locale="en-us",
         pdfs=[

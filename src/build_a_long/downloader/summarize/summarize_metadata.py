@@ -11,17 +11,17 @@ from tqdm.auto import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from build_a_long.downloader.metadata import read_metadata
-from build_a_long.schemas import InstructionMetadata
+from build_a_long.schemas import LegoSetMetadata
 
 
-def _load_single_metadata(metadata_file: Path) -> InstructionMetadata | None:
+def _load_single_metadata(metadata_file: Path) -> LegoSetMetadata | None:
     """Load and parse a single metadata file.
 
     Args:
         metadata_file: Path to the metadata.json file.
 
     Returns:
-        The parsed InstructionMetadata object, or None if there was an error.
+        The parsed LegoSetMetadata object, or None if there was an error.
     """
     try:
         return read_metadata(metadata_file)

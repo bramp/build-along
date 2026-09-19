@@ -7,7 +7,7 @@ for backward compatibility.
 from build_a_long.downloader.models import (
     Dimensions,
     ImageEntry,
-    InstructionMetadata,
+    LegoSetMetadata,
     MainIndex,
     PdfEntry,
     VideoEntry,
@@ -18,7 +18,7 @@ from build_a_long.downloader.models import (
 __all__ = [
     "Dimensions",
     "ImageEntry",
-    "InstructionMetadata",
+    "LegoSetMetadata",
     "MainIndex",
     "PdfEntry",
     "VideoEntry",

@@ -21,7 +21,7 @@ from build_a_long.downloader.models import DownloadedFile, DownloaderStats
 from build_a_long.downloader.transport import RateLimitedTransport
 from build_a_long.downloader.util import extract_filename_from_url
 from build_a_long.schemas import (
-    InstructionMetadata,
+    LegoSetMetadata,
 )
 
 
@@ -135,7 +135,7 @@ class LegoInstructionDownloader:
         url = build_instructions_url(set_number, self.locale)
         return self.fetch_url_text(url)
 
-    def fetch_set_metadata(self, set_number: str) -> InstructionMetadata | None:
+    def fetch_set_metadata(self, set_number: str) -> LegoSetMetadata | None:
         """Fetch complete set metadata using GraphQL first, falling back to HTML."""
         client = self._get_client()
         return fetch_metadata(
@@ -224,7 +224,7 @@ class LegoInstructionDownloader:
         file_hash = file_hash_obj.hexdigest()
         return DownloadedFile(path=dest_path, size=file_size, hash=file_hash)
 
-    def _load_existing_metadata(self, meta_path: Path) -> InstructionMetadata | None:
+    def _load_existing_metadata(self, meta_path: Path) -> LegoSetMetadata | None:
         """Load metadata from disk if present, handling errors gracefully."""
         if meta_path.exists():
             try:
@@ -236,7 +236,7 @@ class LegoInstructionDownloader:
     def _should_overwrite_metadata(
         self,
         meta_path: Path,
-        existing_meta: InstructionMetadata | None,
+        existing_meta: LegoSetMetadata | None,
         set_number: str,
     ) -> bool:
         """Check whether existing metadata should be overwritten based on age."""
@@ -270,8 +270,8 @@ class LegoInstructionDownloader:
 
     def _merge_existing_pdf_info(
         self,
-        metadata: InstructionMetadata,
-        existing_meta: InstructionMetadata | None,
+        metadata: LegoSetMetadata,
+        existing_meta: LegoSetMetadata | None,
     ) -> None:
         """Carry over filename, filesize, and filehash from matching existing PDFs."""
         if not existing_meta:
@@ -290,7 +290,7 @@ class LegoInstructionDownloader:
         self,
         set_number: str,
         out_dir: Path,
-    ) -> tuple[InstructionMetadata, bool] | None:
+    ) -> tuple[LegoSetMetadata, bool] | None:
         """Fetch and cache metadata for a single LEGO set.
 
         This method handles the logic for checking for existing metadata,
@@ -303,7 +303,7 @@ class LegoInstructionDownloader:
             out_dir: The output directory for the set.
 
         Returns:
-            A tuple of the `InstructionMetadata` and a boolean indicating
+            A tuple of the `LegoSetMetadata` and a boolean indicating
             if the metadata was loaded from cache, or `None` if the set
             was not found.
         """
@@ -357,7 +357,7 @@ class LegoInstructionDownloader:
         self.stats.sets_found += 1
         return metadata, False
 
-    def _process_set_pdfs(self, metadata: InstructionMetadata, out_dir: Path) -> bool:
+    def _process_set_pdfs(self, metadata: LegoSetMetadata, out_dir: Path) -> bool:
         """Download PDFs for a single LEGO set.
 
         This method iterates through the PDFs in the metadata, and for each
@@ -366,7 +366,7 @@ class LegoInstructionDownloader:
         size and hash.
 
         Args:
-            metadata: The `InstructionMetadata` for the set.
+            metadata: The `LegoSetMetadata` for the set.
             out_dir: The output directory for the set.
 
         Returns:
@@ -489,13 +489,13 @@ class LegoInstructionDownloader:
     def _print_metadata_info(
         self,
         set_number: str,
-        metadata: InstructionMetadata,
+        metadata: LegoSetMetadata,
     ) -> None:
         """Print metadata information on a single line.
 
         Args:
             set_number: The LEGO set number.
-            metadata: InstructionMetadata object.
+            metadata: LegoSetMetadata object.
         """
         parts = [f"Found {len(metadata.pdfs)} PDF(s) for set {set_number}"]
 

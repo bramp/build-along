@@ -14,7 +14,7 @@ from pydantic import AnyUrl
 from build_a_long.downloader.models import (
     Dimensions,
     ImageEntry,
-    InstructionMetadata,
+    LegoSetMetadata,
     PdfEntry,
     VideoEntry,
 )
@@ -233,8 +233,8 @@ def parse_metadata_from_graphql(
     set_number: str,
     locale: str,
     base: str = LEGO_BASE,
-) -> InstructionMetadata | None:
-    """Parse GraphQL response dictionary into an InstructionMetadata model.
+) -> LegoSetMetadata | None:
+    """Parse GraphQL response dictionary into a LegoSetMetadata model.
 
     Returns None if the set was not found.
     """
@@ -445,7 +445,7 @@ def parse_metadata_from_graphql(
             )
         )
 
-    return InstructionMetadata(
+    return LegoSetMetadata(
         last_updated=datetime.datetime.now(datetime.timezone.utc),
         set=set_number,
         locale=locale,

@@ -29,7 +29,7 @@ from build_a_long.downloader.legocom_html import (
 from build_a_long.downloader.models import (
     DownloadUrl,
     ImageEntry,
-    InstructionMetadata,
+    LegoSetMetadata,
     PdfEntry,
     VideoEntry,
 )
@@ -40,7 +40,7 @@ __all__ = [
     "LEGO_BASE",
     "DownloadUrl",
     "ImageEntry",
-    "InstructionMetadata",
+    "LegoSetMetadata",
     "PdfEntry",
     "VideoEntry",
     "_extract_next_data",
@@ -68,7 +68,7 @@ def build_metadata(
     locale: str,
     base: str = LEGO_BASE,
     debug: bool = False,
-) -> InstructionMetadata:
+) -> LegoSetMetadata:
     """Build metadata from HTML content (backward compatibility alias)."""
     return build_metadata_from_html(
         html=html,
@@ -85,7 +85,7 @@ def fetch_metadata(
     locale: str = "en-us",
     base: str = LEGO_BASE,
     debug: bool = False,
-) -> InstructionMetadata | None:
+) -> LegoSetMetadata | None:
     """Fetch complete metadata for a LEGO set.
 
     First attempts the fast GraphQL API (which returns instructions + full descriptions,
@@ -100,7 +100,7 @@ def fetch_metadata(
         debug: Whether to print debug information.
 
     Returns:
-        The InstructionMetadata object, or None if the set does not exist.
+        The LegoSetMetadata object, or None if the set does not exist.
     """
     # 1. Try GraphQL first
     try:

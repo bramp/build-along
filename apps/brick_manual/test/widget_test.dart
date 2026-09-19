@@ -1,4 +1,4 @@
-import 'package:brick_manual/instruction_metadata.dart';
+import 'package:brick_manual/lego_set_metadata.dart';
 import 'package:brick_manual/lego_set_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,7 +19,7 @@ void main() {
   testWidgets('HomeScreen loads and displays sets on success', (WidgetTester tester) async {
     // Define our dummy data
     final manifest = ['index-1.json'];
-    final sets1 = [const InstructionMetadata(set: '1', locale: 'en', name: 'Set 1')];
+    final sets1 = [const LegoSetMetadata(set: '1', locale: 'en', name: 'Set 1')];
 
     // Stub the repository methods
     when(mockRepository.fetchManifest()).thenAnswer((_) async => manifest);
@@ -37,7 +37,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // We should see the set and the loading UI should be gone.
-    expect(find.text('Set 1'), findsOneWidget);
+    expect(find.textContaining('Set 1'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
@@ -65,8 +65,8 @@ void main() {
     // Define our dummy data
     final manifest = ['index-1.json'];
     final sets = [
-      const InstructionMetadata(set: '1', locale: 'en', name: 'TIE Fighter'),
-      const InstructionMetadata(set: '2', locale: 'en', name: 'X-Wing'),
+      const LegoSetMetadata(set: '1', locale: 'en', name: 'TIE Fighter'),
+      const LegoSetMetadata(set: '2', locale: 'en', name: 'X-Wing'),
     ];
 
     // Stub the repository methods

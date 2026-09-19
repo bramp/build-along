@@ -9,7 +9,7 @@ from pydantic import BaseModel, ValidationError
 from tqdm.auto import tqdm  # Keep tqdm.auto for tqdm.write
 from tqdm.contrib.concurrent import process_map
 
-from build_a_long.schemas import InstructionMetadata
+from build_a_long.schemas import LegoSetMetadata
 
 
 class VerificationError(BaseModel):
@@ -33,7 +33,7 @@ def _verify_single_metadata(metadata_path: Path) -> list[VerificationError]:
     try:
         with open(metadata_path) as f:
             data = json.load(f)
-        metadata = InstructionMetadata.model_validate(data)
+        metadata = LegoSetMetadata.model_validate(data)
     except (ValidationError, json.JSONDecodeError) as e:
         errors.append(
             VerificationError(

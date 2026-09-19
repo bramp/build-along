@@ -37,7 +37,7 @@ from build_a_long.downloader.legocom import (
     parse_instruction_pdf_urls,
     parse_set_metadata,
 )
-from build_a_long.schemas import InstructionMetadata
+from build_a_long.schemas import LegoSetMetadata
 
 # Skip all tests in this module unless explicitly enabled
 # Set ENABLE_INTEGRATION_TESTS=true to run these tests
@@ -163,6 +163,6 @@ def test_invalid_set_number_handling(http_client):
 
     # Should not crash, and should return proper types (likely with empty/minimal data)
     assert isinstance(pdfs, list)
-    assert isinstance(meta, InstructionMetadata)
+    assert isinstance(meta, LegoSetMetadata)
     assert meta.set == set_number
     assert meta.locale == locale

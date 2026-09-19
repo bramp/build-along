@@ -28,7 +28,7 @@ from typing import Any
 
 import yaml
 
-from build_a_long.downloader.models import InstructionMetadata
+from build_a_long.downloader.models import LegoSetMetadata
 from build_a_long.pdf_extract.extractor.lego_page_elements import Manual
 
 
@@ -60,7 +60,7 @@ def generate_metadata_schema() -> dict[str, Any]:
     Returns:
         A JSON Schema dict with all model definitions for set metadata.
     """
-    schema = InstructionMetadata.model_json_schema(
+    schema = LegoSetMetadata.model_json_schema(
         mode="serialization",
         by_alias=True,
     )

@@ -41,7 +41,7 @@ After evaluating several PDF viewer libraries, `pdfrx` was chosen for the follow
 
 ### 5.1 Python/Dart Model Sharing
 
-To maintain velocity, the `InstructionMetadata` and `PdfEntry` data models are currently duplicated manually in Dart (`lib/instruction_metadata.dart`) from their Python counterparts (`src/build_a_long/downloader/metadata.py`).
+To maintain velocity, the `LegoSetMetadata` and `PdfEntry` data models are currently duplicated manually in Dart (`lib/lego_set_metadata.dart`) from their Python counterparts (`src/build_a_long/downloader/models.py`).
 
 **TODO**: Investigate and implement a code generation solution (e.g., Protocol Buffers) to automate the synchronization of these models between Python and Dart, ensuring consistency and reducing manual maintenance.
 

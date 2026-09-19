@@ -1,8 +1,8 @@
 """Pydantic models for the LEGO instruction downloader.
 
 This module contains both internal models (DownloadedFile, DownloaderStats) and
-shared metadata models (InstructionMetadata, PdfEntry) that are used for serializing
-instruction data to JSON files and generating schemas for other applications.
+shared metadata models (LegoSetMetadata, PdfEntry) that are used for serializing
+instruction and set product data to JSON files and generating schemas.
 """
 
 import datetime
@@ -18,7 +18,7 @@ from pydantic import AliasChoices, AnyUrl, BaseModel, ConfigDict, Field, RootMod
 class PdfEntry(BaseModel):
     """Represents a single instruction PDF file.
 
-    This model is serialized to JSON as part of InstructionMetadata and is
+    This model is serialized to JSON as part of LegoSetMetadata and is
     used by both Python and other applications (via generated schemas).
     """
 
@@ -95,8 +95,8 @@ class Dimensions(BaseModel):
     depth: float | None = Field(default=None, description="Depth in centimeters.")
 
 
-class InstructionMetadata(BaseModel):
-    """Complete metadata for a LEGO set's instructions.
+class LegoSetMetadata(BaseModel):
+    """Complete metadata for a LEGO set.
 
     This is the main model serialized to metadata.json files in each set's
     data directory. It contains all information about a set and its PDFs.
@@ -240,11 +240,11 @@ class MainIndex(RootModel[list[YearlyIndexSummary]]):
     )
 
 
-class YearlyIndex(RootModel[list[InstructionMetadata]]):
+class YearlyIndex(RootModel[list[LegoSetMetadata]]):
     """A yearly index file containing metadata for all sets from that year."""
 
-    root: list[InstructionMetadata] = Field(
-        ..., description="A list of instruction metadata for a single year."
+    root: list[LegoSetMetadata] = Field(
+        ..., description="A list of LEGO set metadata for a single year."
     )
 
 
