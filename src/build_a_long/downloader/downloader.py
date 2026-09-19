@@ -224,6 +224,68 @@ class LegoInstructionDownloader:
         file_hash = file_hash_obj.hexdigest()
         return DownloadedFile(path=dest_path, size=file_size, hash=file_hash)
 
+    def _load_existing_metadata(self, meta_path: Path) -> InstructionMetadata | None:
+        """Load metadata from disk if present, handling errors gracefully."""
+        if meta_path.exists():
+            try:
+                return read_metadata(meta_path)
+            except (OSError, ValueError) as e:
+                print(f"Warning: Could not read {meta_path}: {e}")
+        return None
+
+    def _should_overwrite_metadata(
+        self,
+        meta_path: Path,
+        existing_meta: InstructionMetadata | None,
+        set_number: str,
+    ) -> bool:
+        """Check whether existing metadata should be overwritten based on age."""
+        if self.overwrite_metadata_if_older_than is None or not meta_path.exists():
+            return False
+
+        if existing_meta and existing_meta.last_updated:
+            file_mtime = existing_meta.last_updated
+        else:
+            file_mtime = datetime.datetime.fromtimestamp(
+                meta_path.stat().st_mtime, tz=datetime.timezone.utc
+            )
+
+        if file_mtime.tzinfo is None:
+            file_mtime = file_mtime.replace(tzinfo=datetime.timezone.utc)
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if (now - file_mtime) > self.overwrite_metadata_if_older_than:
+            print(
+                f"Metadata for set {set_number} is older than specified duration. Overwriting."
+            )
+            return True
+        return False
+
+    def _mark_set_not_found(self, out_dir: Path, message: str) -> None:
+        """Mark a set as not found by creating a .not_found file and updating stats."""
+        print(message)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / self.NOT_FOUND_SUFFIX).touch()
+        self.stats.sets_not_found += 1
+
+    def _merge_existing_pdf_info(
+        self,
+        metadata: InstructionMetadata,
+        existing_meta: InstructionMetadata | None,
+    ) -> None:
+        """Carry over filename, filesize, and filehash from matching existing PDFs."""
+        if not existing_meta:
+            return
+        existing_pdfs_by_url = {str(p.url): p for p in existing_meta.pdfs}
+        for pdf in metadata.pdfs:
+            if existing_pdf := existing_pdfs_by_url.get(str(pdf.url)):
+                if not pdf.filename and existing_pdf.filename:
+                    pdf.filename = existing_pdf.filename
+                if not pdf.filesize:
+                    pdf.filesize = existing_pdf.filesize
+                if not pdf.filehash:
+                    pdf.filehash = existing_pdf.filehash
+
     def _process_set_metadata(
         self,
         set_number: str,
@@ -248,83 +310,43 @@ class LegoInstructionDownloader:
         meta_path = out_dir / "metadata.json"
         not_found_path = out_dir / self.NOT_FOUND_SUFFIX
 
-        existing_meta = None
-        if meta_path.exists():
-            try:
-                existing_meta = read_metadata(meta_path)
-            except (OSError, ValueError) as e:
-                print(f"Warning: Could not read {meta_path}: {e}")
+        existing_meta = self._load_existing_metadata(meta_path)
+        should_overwrite = self._should_overwrite_metadata(
+            meta_path, existing_meta, set_number
+        )
 
-        should_overwrite = False
-        if self.overwrite_metadata_if_older_than is not None:
-            if not meta_path.exists():
-                # This is not an overwrite, it's a first download
-                pass
-            else:
-                if existing_meta and existing_meta.last_updated:
-                    file_mtime = existing_meta.last_updated
-                else:
-                    file_mtime = datetime.datetime.fromtimestamp(
-                        meta_path.stat().st_mtime, tz=datetime.timezone.utc
-                    )
-                now = datetime.datetime.now(datetime.timezone.utc)
-                if file_mtime.tzinfo is None:
-                    file_mtime = file_mtime.replace(tzinfo=datetime.timezone.utc)
-                if (now - file_mtime) > self.overwrite_metadata_if_older_than:
-                    print(
-                        f"Metadata for set {set_number} is older than specified "
-                        "duration. Overwriting."
-                    )
-                    should_overwrite = True
-
-        # If a .not_found file exists, and we're not forcing a metadata
-        # update, skip this set.
+        # If a .not_found file exists, and we're not forcing an update, skip this set.
         if not_found_path.exists() and not should_overwrite:
             print(f"Skipping set {set_number} (marked as not found).")
             self.stats.sets_not_found += 1
             return None
 
-        # If metadata.json exists and we're not forcing an update,
-        # use the loaded metadata.
+        # If metadata.json exists and we're not forcing an update, use the cached metadata.
         if existing_meta and existing_meta.pdfs and not should_overwrite:
             print(f"Processing set: {set_number} [cached]")
             self.stats.sets_found += 1
             return existing_meta, True
 
-        # If we're here, we need to fetch the metadata from the website.
+        # Fetch fresh metadata from the website
         print(f"Processing set: {set_number}")
         try:
             metadata = self.fetch_set_metadata(set_number)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
-                print(f"Set {set_number} not found on LEGO.com (404).")
-                out_dir.mkdir(parents=True, exist_ok=True)
-                not_found_path.touch()
-                self.stats.sets_not_found += 1
+                self._mark_set_not_found(
+                    out_dir, f"Set {set_number} not found on LEGO.com (404)."
+                )
                 return None
             raise
 
-        # If no metadata is found, mark it as not found and return.
         if not metadata or not metadata.name:
-            print(f"Set {set_number} not found or has no data on LEGO.com.")
-            out_dir.mkdir(parents=True, exist_ok=True)
-            not_found_path.touch()
-            self.stats.sets_not_found += 1
+            self._mark_set_not_found(
+                out_dir, f"Set {set_number} not found or has no data on LEGO.com."
+            )
             return None
 
-        # If we have existing metadata, try to carry over file size, hash, and
-        # filename from matching PDFs to avoid losing this data when overwriting.
-        if existing_meta:
-            existing_pdfs_by_url = {str(p.url): p for p in existing_meta.pdfs}
-            for pdf in metadata.pdfs:
-                if str(pdf.url) in existing_pdfs_by_url:
-                    existing_pdf = existing_pdfs_by_url[str(pdf.url)]
-                    if not pdf.filename and existing_pdf.filename:
-                        pdf.filename = existing_pdf.filename
-                    if not pdf.filesize:
-                        pdf.filesize = existing_pdf.filesize
-                    if not pdf.filehash:
-                        pdf.filehash = existing_pdf.filehash
+        # Carry over existing downloaded PDF details
+        self._merge_existing_pdf_info(metadata, existing_meta)
 
         # Write the new metadata to disk.
         try:
