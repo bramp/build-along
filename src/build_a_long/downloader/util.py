@@ -59,3 +59,25 @@ def extract_filename_from_url(url: AnyUrl | str) -> str | None:
         return None
 
     return filename
+
+
+def clean_features_text(
+    features_text: str | None, description: str | None
+) -> str | None:
+    """Remove duplicate description prefix from features_text.
+
+    LEGO.com's CMS often prefixes featuresText with the exact text of description.
+    This helper strips out that duplicate introductory text, leaving only the
+    distinct bullet points (usually <ul>...</ul>) or None if identical.
+    """
+    if not features_text:
+        return None
+    features = features_text.strip()
+    if description:
+        desc = description.strip()
+        if features == desc:
+            return None
+        if features.startswith(desc):
+            remainder = features[len(desc) :].strip()
+            return remainder or None
+    return features or None

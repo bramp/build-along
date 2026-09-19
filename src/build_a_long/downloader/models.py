@@ -133,7 +133,7 @@ class InstructionMetadata(BaseModel):
     )
     features_text: str | None = Field(
         default=None,
-        description="The features and details text (including dimensions and highlights).",
+        description="The features and details text (bullet points list, e.g. <ul>...</ul>) with any duplicate description prefix removed.",
     )
     meta_description: str | None = Field(
         default=None, description="A short summary description of the set."

@@ -17,6 +17,7 @@ from build_a_long.downloader.models import (
     PdfEntry,
     VideoEntry,
 )
+from build_a_long.downloader.util import clean_features_text
 
 LEGO_BASE = "https://www.lego.com"
 
@@ -277,7 +278,7 @@ def parse_metadata_from_graphql(
 
     # Product catalog fields
     description = product_data.get("description")
-    features_text = product_data.get("featuresText")
+    features_text = clean_features_text(product_data.get("featuresText"), description)
     meta_description = product_data.get("metaDescription")
     meta_title = product_data.get("metaTitle")
     slug = product_data.get("slug")

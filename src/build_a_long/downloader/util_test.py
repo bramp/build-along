@@ -2,7 +2,11 @@
 
 from pydantic import AnyUrl
 
-from build_a_long.downloader.util import extract_filename_from_url, is_valid_set_id
+from build_a_long.downloader.util import (
+    clean_features_text,
+    extract_filename_from_url,
+    is_valid_set_id,
+)
 
 
 def test_is_valid_set_id_numeric():
@@ -91,3 +95,31 @@ def test_extract_filename_from_url_lego_specific():
     assert filename1 == "8110_X_8110 Snow Plow "
     assert filename2 == "8110_X_8110 Snow Plow "
     assert filename1 == filename2
+
+
+def test_clean_features_text_strips_duplicate_description_prefix():
+    desc = "<p>Welcome to the Death Star!</p>"
+    feat = "<p>Welcome to the Death Star!</p><ul><li>38 characters</li></ul>"
+    assert clean_features_text(feat, desc) == "<ul><li>38 characters</li></ul>"
+
+
+def test_clean_features_text_identical_returns_none():
+    desc = "<p>Small polybag build.</p>"
+    feat = "<p>Small polybag build.</p>"
+    assert clean_features_text(feat, desc) is None
+
+
+def test_clean_features_text_no_description():
+    feat = "<ul><li>Features only</li></ul>"
+    assert clean_features_text(feat, None) == "<ul><li>Features only</li></ul>"
+
+
+def test_clean_features_text_distinct_text_retained():
+    desc = "<p>Different intro.</p>"
+    feat = "<ul><li>Separate bullet list</li></ul>"
+    assert clean_features_text(feat, desc) == "<ul><li>Separate bullet list</li></ul>"
+
+
+def test_clean_features_text_empty_or_none():
+    assert clean_features_text(None, "something") is None
+    assert clean_features_text("", "something") is None

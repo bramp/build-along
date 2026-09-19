@@ -17,6 +17,7 @@ from build_a_long.downloader.models import (
     InstructionMetadata,
     PdfEntry,
 )
+from build_a_long.downloader.util import clean_features_text
 
 LEGO_BASE = "https://www.lego.com"
 
@@ -192,7 +193,7 @@ def parse_set_metadata(
             "SingleVariantProduct",
         ):
             description = value.get("description")
-            features_text = value.get("featuresText")
+            features_text = clean_features_text(value.get("featuresText"), description)
             meta_description = value.get("metaDescription")
             meta_title = value.get("metaTitle")
             slug = value.get("slug")

@@ -58,7 +58,7 @@ SAMPLE_GRAPHQL_DATA = {
         "metaTitle": "Death Star™ 75419",
         "metaDescription": "The ultimate Death Star buildable model",
         "description": "<p>Build the ultimate Death Star!</p>",
-        "featuresText": "<ul><li>38 characters</li></ul>",
+        "featuresText": "<p>Build the ultimate Death Star!</p><ul><li>38 characters</li></ul>",
         "primaryImage": "https://www.lego.com/cdn/cs/set/assets/blt/75419_Prod.png",
         "hires": "https://www.lego.com/cdn/cs/set/assets/blt/75419_Prod.png?width=1500",
         "thumbnail": "https://www.lego.com/cdn/cs/set/assets/blt/75419_Prod.png?width=320",
