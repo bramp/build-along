@@ -90,6 +90,13 @@ echo -e "75419\n75159\n" | pants run src/build_a_long/downloader:main -- downloa
 
 # Fetch metadata for multiple sets from stdin (prints JSON without downloading)
 cat sets.txt | pants run src/build_a_long/downloader:main -- download --stdin --print-metadata
+
+# Update metadata only (skip PDF downloads) for sets older than 30 days, released in the last 5 years, rate-limited to 10/min
+cat sets.txt | pants run src/build_a_long/downloader:main -- download --stdin \
+    --skip-pdfs \
+    --overwrite-metadata-if-older-than 30d \
+    --released-within-years 5 \
+    --rate-limit 10
 ```
 
 Options:
@@ -97,8 +104,12 @@ Options:
 - `--locale` (default `en-us`): Locale segment used by lego.com.
 - `--data-dir`: Base data directory for downloaded files (saved to `<data-dir>/<set_number>/`). If omitted, the `LEGO_DATA_DIR` environment variable must be set.
 - `--print-metadata`: Only fetch and print metadata as JSON (no downloads or output directory needed).
+- `--skip-pdfs`: Download and save metadata only, skipping PDF downloads.
 - `--overwrite-pdfs`: Re-download PDFs even if they already exist.
 - `--overwrite-metadata`: Force metadata update even if already cached.
+- `--overwrite-metadata-if-older-than`: Overwrite metadata if older than a duration string, e.g. `30d`, `12h` (default `1d`).
+- `--released-within-years`: Only overwrite metadata for sets released within the last N years (older sets skip re-fetching).
+- `--rate-limit` (default `60`): Maximum HTTP requests allowed per minute.
 
 **Summarize Command**
 
