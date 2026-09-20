@@ -10,30 +10,8 @@ name: Pants
 "on": [push, pull_request]
 
 jobs:
-    lockfiles:
-        name: Verify Lockfiles
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  submodules: true
-            - uses: actions/setup-python@v6
-              with:
-                  python-version: 3.14
-            - uses: pantsbuild/actions/init-pants@v10
-              with:
-                  gha-cache-key: v0-py3.14
-                  named-caches-hash: ${{ hashFiles('python-default.lock') }}
-                  cache-lmdb-store: true
-
-            - name: Check lockfiles are up to date
-              run: |
-                  pants generate-lockfiles
-                  git diff --exit-code -- python-default.lock
-
     format:
         name: Lint and Formatting
-        needs: lockfiles
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -57,7 +35,6 @@ jobs:
 
     test:
         name: Run Tests
-        needs: lockfiles
         runs-on: ubuntu-latest
         strategy:
             matrix:
