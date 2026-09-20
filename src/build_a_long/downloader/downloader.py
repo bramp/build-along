@@ -57,9 +57,10 @@ class LegoInstructionDownloader:
         show_progress: bool = True,
         client: httpx.Client | None = None,
         debug: bool = False,
-        max_calls: int = 1,
-        period: int = 1,
+        max_calls: int = 60,
+        period: int = 60,
         skip_pdfs: bool = False,
+        released_within_years: int | None = None,
     ):
         """Initialize the downloader.
 
@@ -72,9 +73,11 @@ class LegoInstructionDownloader:
             show_progress: If True, show download progress.
             client: Optional httpx.Client to use (if None, creates one internally).
             debug: If True, enable debug output.
-            max_calls: Maximum number of calls to allow in a period.
-            period: The time period in seconds.
+            max_calls: Maximum number of calls to allow in a period (defaults to 60).
+            period: The time period in seconds (defaults to 60).
             skip_pdfs: If True, only download metadata, skip PDF downloads.
+            released_within_years: If set, only overwrite metadata for sets released
+                within the last N years.
         """
         self.locale = locale
         self.data_dir = data_dir
@@ -87,6 +90,7 @@ class LegoInstructionDownloader:
         self.max_calls = max_calls
         self.period = period
         self.skip_pdfs = skip_pdfs
+        self.released_within_years = released_within_years
 
         # Statistics
         self.stats = DownloaderStats()
@@ -239,9 +243,23 @@ class LegoInstructionDownloader:
         existing_meta: LegoSetMetadata | None,
         set_number: str,
     ) -> bool:
-        """Check whether existing metadata should be overwritten based on age."""
+        """Check whether existing metadata should be overwritten based on age and release year."""
         if self.overwrite_metadata_if_older_than is None or not meta_path.exists():
             return False
+
+        if (
+            self.released_within_years is not None
+            and existing_meta
+            and existing_meta.year is not None
+        ):
+            current_year = datetime.datetime.now(datetime.timezone.utc).year
+            min_year = current_year - self.released_within_years
+            if existing_meta.year < min_year:
+                if self.debug:
+                    print(
+                        f"Set {set_number} released in {existing_meta.year} (< {min_year}). Skipping overwrite."
+                    )
+                return False
 
         if existing_meta and existing_meta.last_updated:
             file_mtime = existing_meta.last_updated
@@ -322,7 +340,7 @@ class LegoInstructionDownloader:
             return None
 
         # If metadata.json exists and we're not forcing an update, use the cached metadata.
-        if existing_meta and existing_meta.pdfs and not should_overwrite:
+        if existing_meta and not should_overwrite:
             print(f"Processing set: {set_number} [cached]")
             self.stats.sets_found += 1
             return existing_meta, True

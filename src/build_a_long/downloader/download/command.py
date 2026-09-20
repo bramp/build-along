@@ -104,6 +104,24 @@ def add_download_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Force re-downloading of PDFs, even if they exist.",
     )
     download_parser.add_argument(
+        "--rate-limit",
+        type=int,
+        default=60,
+        help="Maximum number of HTTP requests allowed per minute. Defaults to 60.",
+    )
+    download_parser.add_argument(
+        "--released-within-years",
+        "--update-if-released-within-years",
+        "--released-in-last-years",
+        type=int,
+        default=None,
+        dest="released_within_years",
+        help=(
+            "Only update metadata for sets released within the last N years "
+            "(e.g., --released-within-years 5)."
+        ),
+    )
+    download_parser.add_argument(
         "--debug",
         action="store_true",
         help="Enable debug output",
@@ -133,6 +151,20 @@ def run_download(args: argparse.Namespace) -> int:
         )
         return 1
 
+    if args.released_within_years is not None and args.released_within_years < 0:
+        print(
+            "Error: --released-within-years must be non-negative.",
+            file=sys.stderr,
+        )
+        return 1
+
+    if args.rate_limit <= 0:
+        print(
+            "Error: --rate-limit must be greater than 0.",
+            file=sys.stderr,
+        )
+        return 1
+
     overwrite_metadata_if_older_than: timedelta | None = None
     if args.overwrite_metadata_if_older_than:
         duration_str = args.overwrite_metadata_if_older_than
@@ -154,7 +186,10 @@ def run_download(args: argparse.Namespace) -> int:
     # Print metadata mode: fetch and print JSON without downloading or saving
     if args.print_metadata:
         with LegoInstructionDownloader(
-            locale=args.locale, debug=args.debug
+            locale=args.locale,
+            debug=args.debug,
+            max_calls=args.rate_limit,
+            period=60,
         ) as downloader:
             for set_number in all_set_numbers:
                 try:
@@ -194,6 +229,9 @@ def run_download(args: argparse.Namespace) -> int:
         show_progress=True,
         debug=args.debug,
         skip_pdfs=args.skip_pdfs,
+        max_calls=args.rate_limit,
+        period=60,
+        released_within_years=args.released_within_years,
     ) as downloader:
         stats = downloader.process_sets(all_set_numbers)
 

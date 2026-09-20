@@ -33,6 +33,8 @@ def make_args(**kwargs):
         "overwrite_metadata": False,
         "overwrite_metadata_if_older_than": "1d",
         "overwrite_pdfs": False,
+        "rate_limit": 60,
+        "released_within_years": None,
         "debug": False,
     }
     defaults.update(kwargs)
@@ -282,3 +284,97 @@ def test_run_download_missing_data_dir_and_env(monkeypatch, capsys):
         "Error: Data directory must be specified via --data-dir or the LEGO_DATA_DIR environment variable."
         in capsys.readouterr().err
     )
+
+
+@patch("downloader.download.command.LegoInstructionDownloader")
+def test_run_download_passes_released_within_years(mock_downloader_class):
+    """Test that released_within_years is passed down to LegoInstructionDownloader."""
+    mock_instance = MagicMock()
+    mock_instance.__enter__ = MagicMock(return_value=mock_instance)
+    mock_instance.__exit__ = MagicMock(return_value=None)
+    mock_instance.process_sets.return_value = DownloaderStats()
+    mock_downloader_class.return_value = mock_instance
+
+    args = make_args(set_number="12345", released_within_years=5)
+
+    exit_code = run_download(args)
+
+    assert exit_code == 0
+    call_kwargs = mock_downloader_class.call_args[1]
+    assert call_kwargs["released_within_years"] == 5
+
+
+def test_run_download_negative_released_within_years_error(capsys):
+    """Test error when released_within_years is negative."""
+    args = make_args(set_number="12345", released_within_years=-1)
+
+    exit_code = run_download(args)
+
+    assert exit_code == 1
+    assert (
+        "Error: --released-within-years must be non-negative."
+        in capsys.readouterr().err
+    )
+
+
+def test_parser_released_within_years_aliases():
+    """Test that CLI parser correctly parses aliases for released_within_years."""
+    import argparse
+    from .command import add_download_parser
+
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="subcommand")
+    add_download_parser(subparsers)
+
+    args1 = parser.parse_args(["download", "12345", "--released-within-years", "3"])
+    assert args1.released_within_years == 3
+
+    args2 = parser.parse_args(
+        ["download", "12345", "--update-if-released-within-years", "4"]
+    )
+    assert args2.released_within_years == 4
+
+    args3 = parser.parse_args(["download", "12345", "--released-in-last-years", "5"])
+    assert args3.released_within_years == 5
+
+
+@patch("downloader.download.command.LegoInstructionDownloader")
+def test_run_download_passes_rate_limit(mock_downloader_class):
+    """Test that rate_limit is passed as max_calls with period=60."""
+    mock_instance = MagicMock()
+    mock_instance.__enter__ = MagicMock(return_value=mock_instance)
+    mock_instance.__exit__ = MagicMock(return_value=None)
+    mock_instance.process_sets.return_value = DownloaderStats()
+    mock_downloader_class.return_value = mock_instance
+
+    args = make_args(set_number="12345", rate_limit=10)
+
+    exit_code = run_download(args)
+
+    assert exit_code == 0
+    call_kwargs = mock_downloader_class.call_args[1]
+    assert call_kwargs["max_calls"] == 10
+    assert call_kwargs["period"] == 60
+
+
+def test_run_download_invalid_rate_limit(capsys):
+    """Test error when rate_limit is not positive."""
+    args = make_args(set_number="12345", rate_limit=0)
+
+    exit_code = run_download(args)
+
+    assert exit_code == 1
+    assert "Error: --rate-limit must be greater than 0." in capsys.readouterr().err
+
+
+def test_parser_default_rate_limit():
+    """Test that CLI parser defaults rate_limit to 60 per minute."""
+    import argparse
+    from .command import add_download_parser
+
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="subcommand")
+    add_download_parser(subparsers)
+
+    args = parser.parse_args(["download", "12345"])
+    assert args.rate_limit == 60
