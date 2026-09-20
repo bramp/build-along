@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import json
 import os
 from collections.abc import Callable, Iterable
 from contextlib import AbstractContextManager
@@ -18,6 +19,10 @@ from build_a_long.downloader.legocom import (
 )
 from build_a_long.downloader.metadata import read_metadata, write_metadata
 from build_a_long.downloader.models import DownloadedFile, DownloaderStats
+from build_a_long.downloader.set_sources import (
+    fetch_lego_sitemap_sets,
+    fetch_rebrickable_sets,
+)
 from build_a_long.downloader.transport import RateLimitedTransport
 from build_a_long.downloader.util import extract_filename_from_url
 from build_a_long.schemas import (
@@ -542,3 +547,92 @@ class LegoInstructionDownloader:
         for set_number in set_numbers:
             self.process_set(set_number)
         return self.stats
+
+    def _get_cache_dir(self) -> Path:
+        """Resolve the cache directory for downloaded artifacts and set lists."""
+        if self.data_dir:
+            cache_dir = self.data_dir / ".cache"
+        else:
+            xdg_cache = os.environ.get("XDG_CACHE_HOME")
+            base = Path(xdg_cache) if xdg_cache else Path.home() / ".cache"
+            cache_dir = base / "build-along"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir
+
+    def get_set_list(
+        self,
+        source: str = "lego",
+        *,
+        use_cache: bool = True,
+        cache_ttl: datetime.timedelta | None = datetime.timedelta(days=1),
+        min_year: int | None = None,
+    ) -> list[str]:
+        """Fetch list of set numbers from LEGO.com sitemap or Rebrickable.
+
+        Results can be cached to disk to avoid repeated network calls.
+
+        Args:
+            source: Source to query ('lego' or 'rebrickable'). Defaults to 'lego'.
+            use_cache: Whether to use cached set list if still within cache_ttl.
+            cache_ttl: How long cached results remain valid. Set to None to keep indefinitely.
+            min_year: Optional minimum release year to filter by (supported for 'rebrickable').
+
+        Returns:
+            Sorted list of unique set number strings.
+        """
+        source_key = source.lower().strip()
+        if source_key in ("lego", "lego.com"):
+            cache_filename = f"set_list_lego_{self.locale}.json"
+        elif source_key == "rebrickable":
+            year_part = f"_min{min_year}" if min_year is not None else ""
+            cache_filename = f"set_list_rebrickable{year_part}.json"
+        else:
+            raise ValueError(
+                f"Unknown set list source: '{source}'. Supported: 'lego', 'rebrickable'"
+            )
+
+        cache_path = self._get_cache_dir() / cache_filename
+
+        if use_cache and cache_path.exists():
+            try:
+                data = json.loads(cache_path.read_text(encoding="utf-8"))
+                cached_at_str = data.get("_timestamp")
+                if cached_at_str and cache_ttl is not None:
+                    cached_at = datetime.datetime.fromisoformat(cached_at_str)
+                    if cached_at.tzinfo is None:
+                        cached_at = cached_at.replace(tzinfo=datetime.timezone.utc)
+                    now = datetime.datetime.now(datetime.timezone.utc)
+                    if (now - cached_at) <= cache_ttl:
+                        if self.debug:
+                            print(
+                                f"Loaded {len(data['sets'])} sets from cache: {cache_path}"
+                            )
+                        return list(data["sets"])
+                elif cache_ttl is None:
+                    return list(data["sets"])
+            except Exception as e:
+                if self.debug:
+                    print(f"Warning: Failed to read cache {cache_path}: {e}")
+
+        # Fetch fresh list
+        client = self._get_client()
+        if source_key in ("lego", "lego.com"):
+            sets = fetch_lego_sitemap_sets(client, locale=self.locale, base=LEGO_BASE)
+        else:
+            sets = fetch_rebrickable_sets(client, min_year=min_year)
+
+        # Cache to disk
+        try:
+            cache_record = {
+                "_timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "source": source_key,
+                "sets": sets,
+            }
+            cache_path.write_text(json.dumps(cache_record, indent=2), encoding="utf-8")
+            if self.debug:
+                print(f"Cached {len(sets)} sets to {cache_path}")
+        except Exception as e:
+            if self.debug:
+                print(f"Warning: Failed to write cache {cache_path}: {e}")
+
+        return sets

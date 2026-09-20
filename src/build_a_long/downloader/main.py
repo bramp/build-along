@@ -4,6 +4,7 @@ import argparse
 import sys
 
 from build_a_long.downloader.download import add_download_parser, run_download
+from build_a_long.downloader.list_sets import add_list_sets_parser, run_list_sets
 from build_a_long.downloader.summarize import add_summarize_parser, run_summarize
 from build_a_long.downloader.verify import add_verify_parser, run_verify
 
@@ -19,6 +20,7 @@ def _parse_args() -> argparse.Namespace:
 
     # Add subcommand parsers
     add_download_parser(subparsers)
+    add_list_sets_parser(subparsers)
     add_summarize_parser(subparsers)
     add_verify_parser(subparsers)
 
@@ -37,6 +39,8 @@ def main() -> int:
 
     if args.command == "download":
         return run_download(args)
+    elif args.command in ("list-sets", "list"):
+        return run_list_sets(args)
     elif args.command == "summarize":
         return run_summarize(args)
     elif args.command == "verify":
@@ -44,7 +48,7 @@ def main() -> int:
     else:
         # This case should not be reached if subparsers are configured correctly
         print(
-            "Error: No command specified. Use 'download', 'summarize', or 'verify'.",
+            "Error: No command specified. Use 'download', 'list-sets', 'summarize', or 'verify'.",
             file=sys.stderr,
         )
         return 1

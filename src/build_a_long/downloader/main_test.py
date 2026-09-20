@@ -52,6 +52,20 @@ def test_main_routes_to_verify_command(mock_verify, monkeypatch):
     mock_verify.assert_called_once_with(Path("/tmp/data"))
 
 
+@patch("build_a_long.downloader.main.run_list_sets")
+def test_main_routes_to_list_sets_command(mock_run_list_sets, monkeypatch):
+    """Test that main correctly routes to the list-sets command and alias."""
+    mock_run_list_sets.return_value = 0
+    monkeypatch.setattr(sys, "argv", ["main.py", "list-sets"])
+    assert main() == 0
+    mock_run_list_sets.assert_called_once()
+
+    mock_run_list_sets.reset_mock()
+    monkeypatch.setattr(sys, "argv", ["main.py", "list"])
+    assert main() == 0
+    mock_run_list_sets.assert_called_once()
+
+
 def test_main_summarize_without_data_dir_or_env(monkeypatch, capsys):
     """Test error when summarize is run without --data-dir or LEGO_DATA_DIR."""
     monkeypatch.delenv("LEGO_DATA_DIR", raising=False)

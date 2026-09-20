@@ -803,3 +803,38 @@ def test_statistics_not_found(tmp_path: Path):
     assert stats.sets_processed == 1
     assert stats.sets_not_found == 1
     assert stats.sets_found == 0
+
+
+def test_get_set_list_lego_and_caching(tmp_path: Path):
+    """Test get_set_list caches results and reuses them."""
+    downloader = LegoInstructionDownloader(data_dir=tmp_path, locale="en-us")
+
+    with patch(
+        "build_a_long.downloader.downloader.fetch_lego_sitemap_sets",
+        return_value=["10210", "10211"],
+    ) as mock_fetch:
+        # First call fetches from source
+        sets = downloader.get_set_list(source="lego")
+        assert sets == ["10210", "10211"]
+        mock_fetch.assert_called_once()
+
+        # Cache file should exist in tmp_path/.cache/
+        cache_file = tmp_path / ".cache" / "set_list_lego_en-us.json"
+        assert cache_file.exists()
+
+        # Second call should read from cache without calling fetch
+        mock_fetch.reset_mock()
+        cached_sets = downloader.get_set_list(source="lego")
+        assert cached_sets == ["10210", "10211"]
+        mock_fetch.assert_not_called()
+
+        # With use_cache=False, it should fetch again
+        fresh_sets = downloader.get_set_list(source="lego", use_cache=False)
+        assert fresh_sets == ["10210", "10211"]
+        mock_fetch.assert_called_once()
+
+
+def test_get_set_list_unknown_source(tmp_path: Path):
+    downloader = LegoInstructionDownloader(data_dir=tmp_path)
+    with pytest.raises(ValueError, match="Unknown set list source"):
+        downloader.get_set_list(source="unknown")

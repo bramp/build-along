@@ -70,6 +70,38 @@ pre-commit install
 
 Download LEGO building instruction PDFs for a given set number by scraping the official instructions page.
 
+**List Sets Command**
+
+List all known LEGO set numbers quickly from LEGO.com's official product sitemap (default) or Rebrickable's open database, with built-in caching:
+
+```bash
+# List all current set numbers from LEGO.com (fast single request, cached for 1 day)
+pants run src/build_a_long/downloader:main -- list-sets
+
+# Count available sets
+pants run src/build_a_long/downloader:main -- list-sets --count
+
+# List all sets from Rebrickable released since 2021
+pants run src/build_a_long/downloader:main -- list-sets --source rebrickable --min-year 2021
+
+# Pipe directly into download to fetch metadata for all LEGO.com sets
+pants run src/build_a_long/downloader:main -- list-sets | \
+    pants run src/build_a_long/downloader:main -- download --stdin \
+        --skip-pdfs \
+        --overwrite-metadata-if-older-than 30d \
+        --rate-limit 60
+```
+
+Options:
+
+- `--source` (default `lego`): Source to query (`lego` or `rebrickable`).
+- `--locale` (default `en-us`): LEGO locale for product sitemap.
+- `--no-cache`: Force re-fetching from source without using cache.
+- `--cache-ttl` (default `1d`): How long cached set lists remain valid (e.g. `1d`, `12h`, `1w`).
+- `--min-year`: Filter sets by minimum release year (supported for `rebrickable`).
+- `--limit`: Output only the first N sets.
+- `--count`: Print the total count of sets instead of listing them.
+
 **Download Command**
 
 Run with Pants (recommended):
