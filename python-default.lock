@@ -29,7 +29,7 @@
 //     "scipy~=1.18.1",
 //     "snakeviz~=2.2.2",
 //     "tqdm~=4.70.1",
-//     "vcrpy~=8.1.1"
+//     "vcrpy~=8.3.0"
 //   ],
 //   "manylinux": "manylinux2014",
 //   "requirement_constraints": [],
@@ -1644,13 +1644,13 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "2d16f31ad56493efb6165182dd99767207031b0da3f68b18f975545ede8ac4b9",
-              "url": "https://files.pythonhosted.org/packages/3a/d7/f79b05a5d728f8786876a7d75dfb0c5cae27e428081b2d60152fb52f155f/vcrpy-8.1.1-py3-none-any.whl"
+              "hash": "bd66e6143746778157f00e2a922527a8d96b2fdc350be8988a45a29c843815b9",
+              "url": "https://files.pythonhosted.org/packages/34/77/cb4219be91508399cbcb6143bad89462cfb16f6c638458f454a5d46ac95a/vcrpy-8.3.0-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "58e3053e33b423f3594031cb758c3f4d1df931307f1e67928e30cf352df7709f",
-              "url": "https://files.pythonhosted.org/packages/b3/07/bcfd5ebd7cb308026ab78a353e091bd699593358be49197d39d004e5ad83/vcrpy-8.1.1.tar.gz"
+              "hash": "46d64e77e8d95e5c76c7d9a94ff05d8b38b2ae4e1d4869eb0235024b6fcb5212",
+              "url": "https://files.pythonhosted.org/packages/39/d5/8a1f8eb603e2d35fbb0ecd1e309d0c5c18a0ecfc8c0a8f04088bbc8f833b/vcrpy-8.3.0.tar.gz"
             }
           ],
           "project_name": "vcrpy",
@@ -1659,24 +1659,32 @@
             "aiohttp; extra == \"tests\"",
             "boto3; extra == \"tests\"",
             "cryptography; extra == \"tests\"",
-            "httpbin; extra == \"tests\"",
-            "httpcore; extra == \"tests\"",
+            "httpbin>=0.10.3; extra == \"tests\"",
+            "httpbin>=0.10.3; extra == \"tests-niquests\"",
             "httplib2; extra == \"tests\"",
+            "httpx-curl-cffi; extra == \"tests\"",
+            "httpx2; extra == \"tests\"",
             "httpx; extra == \"tests\"",
+            "niquests; extra == \"tests-niquests\"",
             "pycurl; platform_python_implementation != \"PyPy\" and extra == \"tests\"",
+            "pyreqwest; python_version >= \"3.11\" and extra == \"tests\"",
             "pytest-aiohttp; extra == \"tests\"",
+            "pytest-aiohttp; extra == \"tests-niquests\"",
             "pytest-asyncio; extra == \"tests\"",
+            "pytest-asyncio; extra == \"tests-niquests\"",
             "pytest-cov; extra == \"tests\"",
+            "pytest-cov; extra == \"tests-niquests\"",
             "pytest-httpbin; extra == \"tests\"",
+            "pytest-httpbin; extra == \"tests-niquests\"",
             "pytest; extra == \"tests\"",
+            "pytest; extra == \"tests-niquests\"",
             "requests>=2.22.0; extra == \"tests\"",
             "tornado; extra == \"tests\"",
             "urllib3; extra == \"tests\"",
-            "werkzeug==2.0.3; extra == \"tests\"",
             "wrapt"
           ],
           "requires_python": ">=3.10",
-          "version": "8.1.1"
+          "version": "8.3.0"
         },
         {
           "artifacts": [
@@ -1812,7 +1820,7 @@
     "scipy~=1.18.1",
     "snakeviz~=2.2.2",
     "tqdm~=4.70.1",
-    "vcrpy~=8.1.1"
+    "vcrpy~=8.3.0"
   ],
   "requires_python": [
     "CPython==3.14.*"
