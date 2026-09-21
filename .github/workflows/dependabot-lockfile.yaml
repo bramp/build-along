@@ -31,7 +31,7 @@ jobs:
         with:
           submodules: true
           ref: ${{ github.head_ref }}
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
       - uses: pantsbuild/actions/init-pants@v11
